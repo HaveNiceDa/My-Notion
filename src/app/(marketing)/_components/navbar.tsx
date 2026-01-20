@@ -27,25 +27,18 @@ export const Navbar = () => {
         {!isAuthenticated && !isLoading && (
           <>
             <SignInButton>
-              <Button variant="ghost" size="sm" className="cursor-pointer">
+              <Button variant="ghost" size="sm">
                 Log in
               </Button>
             </SignInButton>
             <SignInButton>
-              <Button size="sm" className="cursor-pointer">
-                Get Notion free
-              </Button>
+              <Button size="sm">Get Notion free</Button>
             </SignInButton>
           </>
         )}
         {isAuthenticated && !isLoading && (
           <>
-            <Button
-              variant="ghost"
-              size="sm"
-              asChild
-              className="cursor-pointer"
-            >
+            <Button variant="ghost" size="sm" asChild>
               <Link href="/documents">Enter Notion</Link>
             </Button>
             <UserButton />
