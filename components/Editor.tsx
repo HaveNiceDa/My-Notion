@@ -48,7 +48,6 @@ function Editor({ onChange, initialContent, editable }: EditorProps) {
       <BlockNoteViewRaw
         editor={editor}
         theme={resolvedTheme === "dark" ? "dark" : "light"}
-        editable={editable !== false}
       />
     </div>
   );
