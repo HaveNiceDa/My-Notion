@@ -1,15 +1,14 @@
-'use client'	
+"use client";
 
-import {Dialog,DialogContent,DialogHeader} from '@/components/ui/dialog'
-import { useSettings } from "@/hooks/use-settings"
-import {Label} from '@/components/ui//label'
-import { ModeToggle } from "@/components/mode-toggle"
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { useSettings } from "@/hooks/use-settings";
+import { Label } from "@/components/ui//label";
+import { ModeToggle } from "@/components/mode-toggle";
 
-export function SettingsModal () {
+export function SettingsModal() {
+  const settings = useSettings();
 
-  const settings = useSettings()
-  
-return (
+  return (
     <Dialog open={settings.isOpen} onOpenChange={settings.onClose}>
       <DialogContent>
         <DialogHeader className="border-b pb-3">
@@ -17,16 +16,14 @@ return (
         </DialogHeader>
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-y-1">
-            <Label>
-              Apperance
-            </Label>
+            <Label>Apperance</Label>
             <span className="text-[0.8rem] text-muted-foreground">
-              Customize how Jotion looks on your device
+              Customize how Notion-L looks on your device
             </span>
           </div>
-          <ModeToggle/>
+          <ModeToggle />
         </div>
       </DialogContent>
     </Dialog>
-)
+  );
 }

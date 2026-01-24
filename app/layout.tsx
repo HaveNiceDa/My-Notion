@@ -11,7 +11,7 @@ import { EdgeStoreProvider } from "@/lib/edgestore";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Jotion",
+  title: "Notion-L",
   description: "The connected workspace where better, faster work happens.",
   icons: {
     icon: [
@@ -44,7 +44,7 @@ export default function RootLayout({
               defaultTheme="system"
               enableSystem
               disableTransitionOnChange
-              storageKey="jotion-clone-2"
+              storageKey="notion-clone-2"
             >
               <Toaster position="bottom-center" />
               <ModalProvider />

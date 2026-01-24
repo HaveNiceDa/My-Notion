@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const font = Poppins({
   subsets: ["latin"],
-  weight: ["400", "600"]
+  weight: ["400", "600"],
 });
 
 export const Logo = () => {
@@ -25,9 +25,7 @@ export const Logo = () => {
         alt="Logo"
         className="hidden dark:block"
       />
-      <p className={cn("font-semibold", font.className)}>
-        Jotion
-      </p>
+      <p className={cn("font-semibold", font.className)}>Notion-L</p>
     </div>
-  )
-}
+  );
+};
