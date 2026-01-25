@@ -1,10 +1,10 @@
-# Notion 克隆项目
+# My-Notion
 
 ## 🚀 体验地址
 
 [https://notion-j9zj.vercel.app/](https://notion-j9zj.vercel.app/)
 
-一个功能强大的 Notion 克隆应用，使用现代前端技术栈构建，支持文档编辑、协作和管理。
+一个功能强大的个人化 Notion 风格应用，使用现代前端技术栈构建，支持文档编辑、协作和管理，提供类似 Notion 的用户体验和功能。
 
 ## 功能特性
 
