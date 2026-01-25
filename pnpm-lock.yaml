@@ -24,11 +24,11 @@ importers:
         specifier: ^5.59.6
         version: 5.59.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       '@edgestore/react':
-        specifier: ^0.1.4
-        version: 0.1.7(next@16.1.4(@babel/core@7.28.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
+        specifier: ^0.6.0
+        version: 0.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
       '@edgestore/server':
-        specifier: ^0.1.4
-        version: 0.1.7(@aws-sdk/client-s3@3.975.0)(@aws-sdk/s3-request-presigner@3.975.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
+        specifier: ^0.6.0
+        version: 0.6.0(@aws-sdk/client-s3@3.975.0)(@aws-sdk/s3-request-presigner@3.975.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
       '@radix-ui/react-alert-dialog':
         specifier: ^1.0.5
         version: 1.1.15(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -102,8 +102,8 @@ importers:
         specifier: ^3.22.4
         version: 3.25.76
       zustand:
-        specifier: ^4.4.3
-        version: 4.5.7(@types/react@19.2.9)(react@19.2.3)
+        specifier: ^5.0.10
+        version: 5.0.10(@types/react@19.2.9)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3))
     devDependencies:
       '@types/node':
         specifier: ^20
@@ -443,16 +443,15 @@ packages:
       react-dom:
         optional: true
 
-  '@edgestore/react@0.1.7':
-    resolution: {integrity: sha512-NaoS9VwzIDhYi47NQoOx4DllsXMcL5c+yl5JHs8JqxT3tEmVPKyj7z0reRGN5XIf7yxRIAPrwwiZ0PovWNo2rA==}
+  '@edgestore/react@0.6.0':
+    resolution: {integrity: sha512-JYqGM0c0OW5m6Q6yyzmJkCUgIyCS8fZZuHcgEoGOHIOkzofUIoj9XjexL/kCNy1dprvieB+O1NxIYAj+lRGnpA==}
     peerDependencies:
-      next: '*'
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
       zod: '>=3.0.0'
 
-  '@edgestore/server@0.1.7':
-    resolution: {integrity: sha512-/iIB8nRPgdhDlQCloZD7zseklbMvwedm4zsjbORv7LJs8LAM64xdtdd2PefSWbrKY1jOrtG6W8UFpW4s6QbE1w==}
+  '@edgestore/server@0.6.0':
+    resolution: {integrity: sha512-YBh2cY36zJoeR9ulMS3/gbTn1szNlASsEuOMGtK4pdf+ezJGplTU6nbLhiHjXVz8rIe2e+HbXPlpRVQ9M61qMw==}
     peerDependencies:
       '@aws-sdk/client-s3': '>=3.0.0'
       '@aws-sdk/s3-request-presigner': '>=3.0.0'
@@ -468,8 +467,8 @@ packages:
       zod:
         optional: true
 
-  '@edgestore/shared@0.1.7':
-    resolution: {integrity: sha512-4GQjy+Bgq0iQXSYPVGg7Z4cUBik4XSDxuLCsAGzXUi6n7GAqlpIOQbK0cU4Vta4Zh73ci1oIlt4Lx0VcyalArQ==}
+  '@edgestore/shared@0.6.0':
+    resolution: {integrity: sha512-FBPCykRGMrfupUIFr/XFubeGjWU2hXgdwS4fuzaRs+I8iewQscm2xvTsO4JWpSrq8TNjCM/XCGzDlcSOw5+QvQ==}
     peerDependencies:
       react: '>=16.8.0'
       react-dom: '>=16.8.0'
@@ -2106,8 +2105,8 @@ packages:
       react:
         optional: true
 
-  cookie@0.5.0:
-    resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
+  cookie@0.7.2:
+    resolution: {integrity: sha512-yki5XnKuf750l50uGTllt6kKILY4nQ1eNIQatoXEByZ5dWgnKqbnqmTrBE5B4N7lrMJKQ2ytWMiTO2o0v6Ew/w==}
     engines: {node: '>= 0.6'}
 
   crelt@1.0.6:
@@ -3904,19 +3903,22 @@ packages:
   zod@3.25.76:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
-  zustand@4.5.7:
-    resolution: {integrity: sha512-CHOUy7mu3lbD6o6LJLfllpjkzhHXSBlX8B9+qPddUsIfeF5S/UZ5q0kmCsnRqT1UHFQZchNFDDzMbQsuesHWlw==}
-    engines: {node: '>=12.7.0'}
+  zustand@5.0.10:
+    resolution: {integrity: sha512-U1AiltS1O9hSy3rul+Ub82ut2fqIAefiSuwECWt6jlMVUGejvf+5omLcRBSzqbRagSM3hQZbtzdeRc6QVScXTg==}
+    engines: {node: '>=12.20.0'}
     peerDependencies:
-      '@types/react': '>=16.8'
+      '@types/react': '>=18.0.0'
       immer: '>=9.0.6'
-      react: '>=16.8'
+      react: '>=18.0.0'
+      use-sync-external-store: '>=1.2.0'
     peerDependenciesMeta:
       '@types/react':
         optional: true
       immer:
         optional: true
       react:
+        optional: true
+      use-sync-external-store:
         optional: true
 
   zwitch@2.0.4:
@@ -4700,15 +4702,14 @@ snapshots:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
 
-  '@edgestore/react@0.1.7(next@16.1.4(@babel/core@7.28.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
+  '@edgestore/react@0.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
     dependencies:
       '@aws-sdk/client-s3': 3.975.0
       '@aws-sdk/s3-request-presigner': 3.975.0
-      '@edgestore/shared': 0.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
+      '@edgestore/shared': 0.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
       '@panva/hkdf': 1.2.1
-      cookie: 0.5.0
+      cookie: 0.7.2
       jose: 4.15.9
-      next: 16.1.4(@babel/core@7.28.6)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
       uuid: 9.0.1
@@ -4716,11 +4717,11 @@ snapshots:
     transitivePeerDependencies:
       - aws-crt
 
-  '@edgestore/server@0.1.7(@aws-sdk/client-s3@3.975.0)(@aws-sdk/s3-request-presigner@3.975.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
+  '@edgestore/server@0.6.0(@aws-sdk/client-s3@3.975.0)(@aws-sdk/s3-request-presigner@3.975.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
     dependencies:
-      '@edgestore/shared': 0.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
+      '@edgestore/shared': 0.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)
       '@panva/hkdf': 1.2.1
-      cookie: 0.5.0
+      cookie: 0.7.2
       jose: 4.15.9
       uuid: 9.0.1
     optionalDependencies:
@@ -4731,7 +4732,7 @@ snapshots:
       - react
       - react-dom
 
-  '@edgestore/shared@0.1.7(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
+  '@edgestore/shared@0.6.0(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@3.25.76)':
     dependencies:
       react: 19.2.3
       react-dom: 19.2.3(react@19.2.3)
@@ -6376,7 +6377,7 @@ snapshots:
       '@clerk/clerk-react': 5.59.6(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       react: 19.2.3
 
-  cookie@0.5.0: {}
+  cookie@0.7.2: {}
 
   crelt@1.0.6: {}
 
@@ -8750,11 +8751,10 @@ snapshots:
 
   zod@3.25.76: {}
 
-  zustand@4.5.7(@types/react@19.2.9)(react@19.2.3):
-    dependencies:
-      use-sync-external-store: 1.6.0(react@19.2.3)
+  zustand@5.0.10(@types/react@19.2.9)(react@19.2.3)(use-sync-external-store@1.6.0(react@19.2.3)):
     optionalDependencies:
       '@types/react': 19.2.9
       react: 19.2.3
+      use-sync-external-store: 1.6.0(react@19.2.3)
 
   zwitch@2.0.4: {}
