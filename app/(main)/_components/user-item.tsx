@@ -8,9 +8,9 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/app/components/ui/dropdown-menu";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar } from "@/app/components/ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
 
 export function UserItem() {

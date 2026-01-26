@@ -9,10 +9,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useConverImage } from "@/hooks/use-cover-image";
-import { SingleImageDropzone } from "@/components/single-image-dropzone";
-import { useEdgeStore } from "@/lib/edgestore";
+} from "@/app/components/ui/dialog";
+import { useConverImage } from "@/app/hooks/use-cover-image";
+import { SingleImageDropzone } from "@/app/components/single-image-dropzone";
+import { useEdgeStore } from "@/app/lib/edgestore";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 

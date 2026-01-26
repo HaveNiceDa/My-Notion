@@ -5,10 +5,10 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useSettings } from "@/hooks/use-settings";
-import { Label } from "@/components/ui//label";
-import { ModeToggle } from "@/components/mode-toggle";
+} from "@/app/components/ui/dialog";
+import { useSettings } from "@/app/hooks/use-settings";
+import { Label } from "@/app/components/ui/label";
+import { ModeToggle } from "@/app/components/mode-toggle";
 
 export function SettingsModal() {
   const settings = useSettings();

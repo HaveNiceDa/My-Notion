@@ -6,9 +6,9 @@ import { use, useMemo } from "react";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Toolbar } from "@/components/Toolbar";
-import { Cover } from "@/components/Cover";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Toolbar } from "@/app/components/Toolbar";
+import { Cover } from "@/app/components/Cover";
+import { Skeleton } from "@/app/components/ui/skeleton";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -20,7 +20,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
 
   const Editor = useMemo(
-    () => dynamic(() => import("@/components/Editor"), { ssr: false }),
+    () => dynamic(() => import("@/app/components/Editor"), { ssr: false }),
     [],
   );
 

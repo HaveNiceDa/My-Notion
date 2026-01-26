@@ -8,7 +8,7 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 import { useTheme } from "next-themes";
 
-import { useEdgeStore } from "@/lib/edgestore";
+import { useEdgeStore } from "@/app/lib/edgestore";
 
 interface EditorProps {
   onChange: (value: string) => void;

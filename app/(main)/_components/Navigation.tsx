@@ -14,16 +14,16 @@ import {
 import { useMediaQuery } from "usehooks-ts";
 import { toast } from "sonner";
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/app/lib/utils";
 import { UserItem } from "./user-item";
 import { api } from "@/convex/_generated/api";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
-} from "@/components/ui/popover";
-import { useSearch } from "@/hooks/use-search";
-import { useSettings } from "@/hooks/use-settings";
+} from "@/app/components/ui/popover";
+import { useSearch } from "@/app/hooks/use-search";
+import { useSettings } from "@/app/hooks/use-settings";
 
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";

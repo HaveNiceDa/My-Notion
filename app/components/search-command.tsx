@@ -12,8 +12,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
-import { useSearch } from "@/hooks/use-search";
+} from "@/app/components/ui/command";
+import { useSearch } from "@/app/hooks/use-search";
 import { api } from "@/convex/_generated/api";
 import { useEffect, useState } from "react";
 

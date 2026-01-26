@@ -1,9 +1,9 @@
 "use client";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/app/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Heroes } from "./Heroes";
 import { useConvexAuth } from "convex/react";
-import { Spinner } from "@/components/spinner";
+import { Spinner } from "@/app/components/spinner";
 import Link from "next/link";
 import { SignInButton } from "@clerk/clerk-react";
 
