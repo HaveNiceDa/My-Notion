@@ -5,6 +5,7 @@ import { useScrollTop } from "@/src/hooks/use-scroll-top";
 import { cn } from "@/src/lib/utils";
 import { Logo } from "./Logo";
 import { ModeToggle } from "@/src/components/mode-toggle";
+import { LanguageToggle } from "@/src/components/language-toggle";
 import { SignInButton, UserButton } from "@clerk/clerk-react";
 import { Button } from "@/src/components/ui/button";
 import { Spinner } from "@/src/components/spinner";
@@ -47,6 +48,7 @@ export function Navbar() {
           </>
         )}
         <ModeToggle />
+        <LanguageToggle />
       </div>
     </div>
   );

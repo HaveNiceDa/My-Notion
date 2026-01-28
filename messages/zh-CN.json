@@ -97,7 +97,9 @@
     "settings": {
       "mySettings": "我的设置",
       "appearance": "外观",
-      "customizeHowNotionLooks": "自定义 Notion 在您设备上的显示方式"
+        "customizeHowNotionLooks": "自定义 Notion 的外观",
+        "language": "语言",
+        "changeTheLanguageOfNotion": "更改 Notion 的语言"
     },
     "confirm": {
       "areYouAbsolutelySure": "您确定要这样做吗？",

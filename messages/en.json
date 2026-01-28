@@ -97,7 +97,9 @@
     "settings": {
       "mySettings": "My settings",
       "appearance": "Apperance",
-      "customizeHowNotionLooks": "Customize how Notion looks on your device"
+        "customizeHowNotionLooks": "Customize how Notion looks",
+        "language": "Language",
+        "changeTheLanguageOfNotion": "Change the language of Notion"
     },
     "confirm": {
       "areYouAbsolutelySure": "Are you absolutely sure?",
