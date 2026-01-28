@@ -125,14 +125,14 @@ export function Navigation() {
   };
 
   const handleCreate = () => {
-    const promise = create({ title: "Untitled" }).then((documentId) =>
+    const promise = create({ title: t("untitled") }).then((documentId) =>
       router.push(`/documents/${documentId}`),
     );
 
     toast.promise(promise, {
-      loading: t('creatingNewNote'),
-      success: t('newNoteCreated'),
-      error: t('failedToCreateNote'),
+      loading: t("creatingNewNote"),
+      success: t("newNoteCreated"),
+      error: t("failedToCreateNote"),
     });
   };
 
@@ -161,20 +161,28 @@ export function Navigation() {
           <div>
             <UserItem />
             <Item
-              label={t('search')}
+              label={t("search")}
               icon={Search}
               isSearch
               onClick={search.onOpen}
             />
-            <Item label={t('settings')} icon={Settings} onClick={settings.onOpen} />
-            <Item onClick={handleCreate} label={t('newPage')} icon={PlusCircle} />
+            <Item
+              label={t("settings")}
+              icon={Settings}
+              onClick={settings.onOpen}
+            />
+            <Item
+              onClick={handleCreate}
+              label={t("newPage")}
+              icon={PlusCircle}
+            />
           </div>
           <div className="mt-4">
             <DocumentList />
-            <Item onClick={handleCreate} icon={Plus} label={t('addAPage')} />
+            <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
             <Popover>
               <PopoverTrigger className="w-full mt-4">
-                <Item label={t('trash')} icon={Trash} />
+                <Item label={t("trash")} icon={Trash} />
               </PopoverTrigger>
               <PopoverContent
                 className="p-0 w-72 "

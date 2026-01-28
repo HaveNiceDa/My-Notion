@@ -79,7 +79,7 @@
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNewNote": "创建新笔记失败",
-    "untitled": "无标题",
+    "untitled": "新笔记",
     "delete": "删除",
     "lastEditedBy": "最后编辑者：{name}"
   },
@@ -91,22 +91,24 @@
     "trash": "回收站",
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
-    "failedToCreateNote": "创建笔记失败。"
+    "failedToCreateNote": "创建笔记失败。",
+    "untitled": "新笔记"
   },
   "Documents": {
     "welcome": "欢迎来到 {name} 的 Notion",
     "createNote": "创建笔记",
     "creatingNote": "正在创建新笔记...",
     "noteCreated": "新笔记已创建",
-    "failedToCreateNote": "创建新笔记失败"
+    "failedToCreateNote": "创建新笔记失败",
+    "untitled": "新笔记"
   },
   "Modals": {
     "settings": {
       "mySettings": "我的设置",
       "appearance": "外观",
-        "customizeHowNotionLooks": "自定义 Notion 的外观",
-        "language": "语言",
-        "changeTheLanguageOfNotion": "更改 Notion 的语言"
+      "customizeHowNotionLooks": "自定义 Notion 的外观",
+      "language": "语言",
+      "changeTheLanguageOfNotion": "更改 Notion 的语言"
     },
     "confirm": {
       "areYouAbsolutelySure": "您确定要这样做吗？",

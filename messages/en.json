@@ -79,7 +79,7 @@
     "creatingNewNote": "Creating a new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNewNote": "Failed to create a new note",
-    "untitled": "Untitled",
+    "untitled": "New Note",
     "delete": "Delete",
     "lastEditedBy": "Last edited by: {name}"
   },
@@ -91,22 +91,24 @@
     "trash": "Trash",
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
-    "failedToCreateNote": "Failed to create note."
+    "failedToCreateNote": "Failed to create note.",
+    "untitled": "New Note"
   },
   "Documents": {
     "welcome": "Welcome to {name}'s Notion",
     "createNote": "Create note",
     "creatingNote": "Creating a new note...",
     "noteCreated": "New note created",
-    "failedToCreateNote": "Failed to create a new note"
+    "failedToCreateNote": "Failed to create a new note",
+    "untitled": "New Note"
   },
   "Modals": {
     "settings": {
       "mySettings": "My settings",
       "appearance": "Apperance",
-        "customizeHowNotionLooks": "Customize how Notion looks",
-        "language": "Language",
-        "changeTheLanguageOfNotion": "Change the language of Notion"
+      "customizeHowNotionLooks": "Customize how Notion looks",
+      "language": "Language",
+      "changeTheLanguageOfNotion": "Change the language of Notion"
     },
     "confirm": {
       "areYouAbsolutelySure": "Are you absolutely sure?",

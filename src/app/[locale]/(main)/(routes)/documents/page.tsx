@@ -16,7 +16,7 @@ export default function DocumentsPage() {
   const t = useTranslations("Documents");
 
   const onCreate = () => {
-    const promise = create({ title: "Untitled" });
+    const promise = create({ title: t("untitled") });
 
     toast.promise(promise, {
       loading: t("creatingNote"),
