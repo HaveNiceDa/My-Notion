@@ -1,7 +1,8 @@
 {
   "SearchCommand": {
     "placeholder": "Search {name}'s Notion",
-    "empty": "No results found."
+    "empty": "No results found.",
+    "documents": "Documents"
   },
   "Cover": {
     "change": "Change Cover",
@@ -90,5 +91,21 @@
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note."
+  },
+  "Modals": {
+    "settings": {
+      "mySettings": "My settings",
+      "appearance": "Apperance",
+      "customizeHowNotionLooks": "Customize how Notion looks on your device"
+    },
+    "confirm": {
+      "areYouAbsolutelySure": "Are you absolutely sure?",
+      "thisActionCannotBeUndone": "This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Confirm"
+    },
+    "coverImage": {
+      "coverImage": "Cover Image"
+    }
   }
 }

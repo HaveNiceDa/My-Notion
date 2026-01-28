@@ -12,6 +12,7 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 interface ConfirmModalProps {
   children: React.ReactNode;
@@ -19,6 +20,8 @@ interface ConfirmModalProps {
 }
 
 export function ConfirmModal({ children, onConfirm }: ConfirmModalProps) {
+  const t = useTranslations("Modals.confirm");
+  
   const handleConfirm = (
     e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
   ) => {
@@ -32,19 +35,20 @@ export function ConfirmModal({ children, onConfirm }: ConfirmModalProps) {
         {children}
       </AlertDialogTrigger>
       <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-            Cancel
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirm}>Confirm</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('areYouAbsolutelySure')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('thisActionCannotBeUndone')}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="flex flex-col gap-3">{children}</div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+              {t('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirm}>{t('confirm')}</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
     </AlertDialog>
   );
 }

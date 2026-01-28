@@ -1,7 +1,8 @@
 {
   "SearchCommand": {
     "placeholder": "搜尋 {name} 的 Notion",
-    "empty": "未找到結果。"
+    "empty": "未找到結果。",
+    "documents": "文件"
   },
   "Cover": {
     "change": "更換封面",
@@ -90,5 +91,21 @@
     "creatingNewNote": "正在創建新筆記...",
     "newNoteCreated": "新筆記已創建！",
     "failedToCreateNote": "創建筆記失敗。"
+  },
+  "Modals": {
+    "settings": {
+      "mySettings": "我的設置",
+      "appearance": "外觀",
+      "customizeHowNotionLooks": "自定義 Notion 在您設備上的顯示方式"
+    },
+    "confirm": {
+      "areYouAbsolutelySure": "您確定要這樣做嗎？",
+      "thisActionCannotBeUndone": "此操作無法撤銷。",
+      "cancel": "取消",
+      "confirm": "確認"
+    },
+    "coverImage": {
+      "coverImage": "封面圖片"
+    }
   }
 }

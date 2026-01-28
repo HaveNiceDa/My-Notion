@@ -58,7 +58,7 @@ export function SearchCommand() {
       <CommandInput placeholder={t('placeholder', { name: user?.fullName || 'your' })} />
       <CommandList>
         <CommandEmpty>{t('empty')}</CommandEmpty>
-        <CommandGroup heading="Documents">
+        <CommandGroup heading={t('documents')}>
           {documents?.map((document) => (
             <CommandItem
               key={document._id}

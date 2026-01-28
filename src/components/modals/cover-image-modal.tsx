@@ -12,6 +12,7 @@ import {
 } from "@/src/components/ui/dialog";
 import { useConverImage } from "@/src/hooks/use-cover-image";
 import { SingleImageDropzone } from "@/src/components/single-image-dropzone";
+import { useTranslations } from "next-intl";
 import { useEdgeStore } from "@/src/lib/edgestore";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -23,6 +24,7 @@ export function CoverImageModal() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const coverImage = useConverImage();
   const { edgestore } = useEdgeStore();
+  const t = useTranslations("Modals.coverImage");
 
   const onClose = () => {
     setFile(undefined);
@@ -55,7 +57,7 @@ export function CoverImageModal() {
     <Dialog open={coverImage.isOpen} onOpenChange={coverImage.onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="text-center">Cover Image</DialogTitle>
+          <DialogTitle className="text-center">{t('coverImage')}</DialogTitle>
         </DialogHeader>
         <SingleImageDropzone
           className="w-full outline-none"

@@ -1,7 +1,8 @@
 {
   "SearchCommand": {
     "placeholder": "搜索 {name} 的 Notion",
-    "empty": "未找到结果。"
+    "empty": "未找到结果。",
+    "documents": "文档"
   },
   "Cover": {
     "change": "更换封面",
@@ -90,5 +91,21 @@
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNote": "创建笔记失败。"
+  },
+  "Modals": {
+    "settings": {
+      "mySettings": "我的设置",
+      "appearance": "外观",
+      "customizeHowNotionLooks": "自定义 Notion 在您设备上的显示方式"
+    },
+    "confirm": {
+      "areYouAbsolutelySure": "您确定要这样做吗？",
+      "thisActionCannotBeUndone": "此操作无法撤销。",
+      "cancel": "取消",
+      "confirm": "确认"
+    },
+    "coverImage": {
+      "coverImage": "封面图片"
+    }
   }
 }
