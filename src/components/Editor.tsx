@@ -7,8 +7,11 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 import { useTheme } from "next-themes";
+import { useParams } from "next/navigation";
+import * as locales from "@blocknote/core/locales";
 
 import { useEdgeStore } from "@/src/lib/edgestore";
+import { getBlockNoteLocale } from "@/src/lib/utils";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -19,6 +22,8 @@ interface EditorProps {
 function Editor({ onChange, initialContent, editable = true }: EditorProps) {
   const { resolvedTheme } = useTheme();
   const { edgestore } = useEdgeStore();
+  const params = useParams();
+  const locale = (params.locale as string) || "en";
 
   const handleUpload = async (file: File) => {
     const response = await edgestore.publicFiles.upload({ file });
@@ -31,6 +36,7 @@ function Editor({ onChange, initialContent, editable = true }: EditorProps) {
       ? (JSON.parse(initialContent) as PartialBlock[])
       : undefined,
     uploadFile: handleUpload,
+    dictionary: locales[getBlockNoteLocale(locale)] || locales.en,
   });
 
   useEffect(() => {
