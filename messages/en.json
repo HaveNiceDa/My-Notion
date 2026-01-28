@@ -56,5 +56,39 @@
     "unpublishing": "Unpublishing...",
     "noteUnpublished": "Note unpublished",
     "errorToUnpublishNote": "Error to unpublish note."
+  },
+  "TrashBox": {
+    "filterByPageTitle": "Filter by page title...",
+    "noDocumentsFound": "No documents found",
+    "restoringNote": "Restoring note...",
+    "noteRestored": "Note restored!",
+    "failedToRestoreNote": "Failed to restore note",
+    "deletingNote": "Deleting note...",
+    "noteDeleted": "Note deleted!",
+    "failedToDeleteNote": "Failed to delete note"
+  },
+  "DocumentList": {
+    "noPagesAvailable": "No pages available"
+  },
+  "Item": {
+    "movingToTrash": "Moving to trash...",
+    "noteMovedToTrash": "Note moved to trash!",
+    "failedToArchiveNote": "Failed to archive note",
+    "creatingNewNote": "Creating a new note...",
+    "newNoteCreated": "New note created!",
+    "failedToCreateNewNote": "Failed to create a new note",
+    "untitled": "Untitled",
+    "delete": "Delete",
+    "lastEditedBy": "Last edited by: {name}"
+  },
+  "Navigation": {
+    "search": "Search",
+    "settings": "Settings",
+    "newPage": "New page",
+    "addAPage": "Add a page",
+    "trash": "Trash",
+    "creatingNewNote": "Creating new note...",
+    "newNoteCreated": "New note created!",
+    "failedToCreateNote": "Failed to create note."
   }
 }

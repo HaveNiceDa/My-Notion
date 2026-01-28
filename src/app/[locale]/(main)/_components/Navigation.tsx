@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useMediaQuery } from "usehooks-ts";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 import { cn } from "@/src/lib/utils";
 import { UserItem } from "./user-item";
@@ -38,6 +39,7 @@ export function Navigation() {
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width:768px)");
   const create = useMutation(api.documents.create);
+  const t = useTranslations("Navigation");
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -128,9 +130,9 @@ export function Navigation() {
     );
 
     toast.promise(promise, {
-      loading: "Creating new note...",
-      success: "New note created!",
-      error: "Failed to create note.",
+      loading: t('creatingNewNote'),
+      success: t('newNoteCreated'),
+      error: t('failedToCreateNote'),
     });
   };
 
@@ -159,20 +161,20 @@ export function Navigation() {
           <div>
             <UserItem />
             <Item
-              label="Search"
+              label={t('search')}
               icon={Search}
               isSearch
               onClick={search.onOpen}
             />
-            <Item label="Settings" icon={Settings} onClick={settings.onOpen} />
-            <Item onClick={handleCreate} label="New page" icon={PlusCircle} />
+            <Item label={t('settings')} icon={Settings} onClick={settings.onOpen} />
+            <Item onClick={handleCreate} label={t('newPage')} icon={PlusCircle} />
           </div>
           <div className="mt-4">
             <DocumentList />
-            <Item onClick={handleCreate} icon={Plus} label="Add a page" />
+            <Item onClick={handleCreate} icon={Plus} label={t('addAPage')} />
             <Popover>
               <PopoverTrigger className="w-full mt-4">
-                <Item label="Trash" icon={Trash} />
+                <Item label={t('trash')} icon={Trash} />
               </PopoverTrigger>
               <PopoverContent
                 className="p-0 w-72 "

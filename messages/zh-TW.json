@@ -52,9 +52,43 @@
     "shareYourWorkWithOthers": "與他人分享你的作品。",
     "publishing": "正在發布...",
     "notePublished": "筆記已發布",
-    "errorToPublishNote": "發布筆記失敗。",
+    "errorToPublishNote": "發布筆記時出錯。",
     "unpublishing": "正在取消發布...",
     "noteUnpublished": "筆記已取消發布",
-    "errorToUnpublishNote": "取消發布筆記失敗。"
+    "errorToUnpublishNote": "取消發布筆記時出錯。"
+  },
+  "TrashBox": {
+    "filterByPageTitle": "按頁面標題過濾...",
+    "noDocumentsFound": "未找到文檔",
+    "restoringNote": "正在恢復筆記...",
+    "noteRestored": "筆記已恢復！",
+    "failedToRestoreNote": "恢復筆記失敗",
+    "deletingNote": "正在刪除筆記...",
+    "noteDeleted": "筆記已刪除！",
+    "failedToDeleteNote": "刪除筆記失敗"
+  },
+  "DocumentList": {
+    "noPagesAvailable": "沒有可用頁面"
+  },
+  "Item": {
+    "movingToTrash": "正在移至回收站...",
+    "noteMovedToTrash": "筆記已移至回收站！",
+    "failedToArchiveNote": "歸檔筆記失敗",
+    "creatingNewNote": "正在創建新筆記...",
+    "newNoteCreated": "新筆記已創建！",
+    "failedToCreateNewNote": "創建新筆記失敗",
+    "untitled": "無標題",
+    "delete": "刪除",
+    "lastEditedBy": "最後編輯者：{name}"
+  },
+  "Navigation": {
+    "search": "搜索",
+    "settings": "設置",
+    "newPage": "新頁面",
+    "addAPage": "添加頁面",
+    "trash": "回收站",
+    "creatingNewNote": "正在創建新筆記...",
+    "newNoteCreated": "新筆記已創建！",
+    "failedToCreateNote": "創建筆記失敗。"
   }
 }

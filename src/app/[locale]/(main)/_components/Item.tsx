@@ -23,6 +23,7 @@ import {
   Trash,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/clerk-react";
 
 interface ItemProps {
@@ -38,22 +39,12 @@ interface ItemProps {
   icon: LucideIcon;
 }
 
-export function Item({
-  id,
-  label,
-  onClick,
-  icon: Icon,
-  active,
-  documentIcon,
-  isSearch,
-  level = 0,
-  onExpand,
-  expanded,
-}: ItemProps) {
+export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isSearch, level = 0, onExpand, expanded, }: ItemProps) {
   const { user } = useUser();
   const router = useRouter();
   const create = useMutation(api.documents.create);
   const archive = useMutation(api.documents.archive);
+  const t = useTranslations("Item");
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
@@ -61,9 +52,9 @@ export function Item({
     const promise = archive({ id }).then(() => router.push("/documents"));
 
     toast.promise(promise, {
-      loading: "Moving to trash...",
-      success: "Note moved to trash!",
-      error: "Failed to archive note",
+      loading: t('movingToTrash'),
+      success: t('noteMovedToTrash'),
+      error: t('failedToArchiveNote'),
     });
   };
 
@@ -75,7 +66,7 @@ export function Item({
   const onCreate = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
     if (!id) return;
-    const promise = create({ title: "Untitled", parentDocument: id }).then(
+    const promise = create({ title: t('untitled'), parentDocument: id }).then(
       (documentId) => {
         if (!expanded) {
           onExpand?.();
@@ -85,9 +76,9 @@ export function Item({
     );
 
     toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created!",
-      error: "Failed to create a new note",
+      loading: t('creatingNewNote'),
+      success: t('newNoteCreated'),
+      error: t('failedToCreateNewNote'),
     });
   };
 
@@ -148,11 +139,11 @@ export function Item({
             >
               <DropdownMenuItem onClick={onArchive}>
                 <Trash className="w-4 h-4 mr-2" />
-                Delete
+                {t('delete')}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <div className="text-xs text-muted-foreground p-2">
-                Last edited by: {user?.fullName}
+                {t('lastEditedBy', { name: user?.fullName ?? '' })}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>

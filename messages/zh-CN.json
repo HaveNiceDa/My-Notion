@@ -52,9 +52,43 @@
     "shareYourWorkWithOthers": "与他人分享你的作品。",
     "publishing": "正在发布...",
     "notePublished": "笔记已发布",
-    "errorToPublishNote": "发布笔记失败。",
+    "errorToPublishNote": "发布笔记时出错。",
     "unpublishing": "正在取消发布...",
     "noteUnpublished": "笔记已取消发布",
-    "errorToUnpublishNote": "取消发布笔记失败。"
+    "errorToUnpublishNote": "取消发布笔记时出错。"
+  },
+  "TrashBox": {
+    "filterByPageTitle": "按页面标题过滤...",
+    "noDocumentsFound": "未找到文档",
+    "restoringNote": "正在恢复笔记...",
+    "noteRestored": "笔记已恢复！",
+    "failedToRestoreNote": "恢复笔记失败",
+    "deletingNote": "正在删除笔记...",
+    "noteDeleted": "笔记已删除！",
+    "failedToDeleteNote": "删除笔记失败"
+  },
+  "DocumentList": {
+    "noPagesAvailable": "没有可用页面"
+  },
+  "Item": {
+    "movingToTrash": "正在移至回收站...",
+    "noteMovedToTrash": "笔记已移至回收站！",
+    "failedToArchiveNote": "归档笔记失败",
+    "creatingNewNote": "正在创建新笔记...",
+    "newNoteCreated": "新笔记已创建！",
+    "failedToCreateNewNote": "创建新笔记失败",
+    "untitled": "无标题",
+    "delete": "删除",
+    "lastEditedBy": "最后编辑者：{name}"
+  },
+  "Navigation": {
+    "search": "搜索",
+    "settings": "设置",
+    "newPage": "新页面",
+    "addAPage": "添加页面",
+    "trash": "回收站",
+    "creatingNewNote": "正在创建新笔记...",
+    "newNoteCreated": "新笔记已创建！",
+    "failedToCreateNote": "创建笔记失败。"
   }
 }
