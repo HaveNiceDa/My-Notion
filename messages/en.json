@@ -22,5 +22,9 @@
   },
   "Preview": {
     "notFound": "Not Found"
+  },
+  "Error": {
+    "somethingWentWrong": "Something went wrong!",
+    "goBack": "Go back"
   }
 }

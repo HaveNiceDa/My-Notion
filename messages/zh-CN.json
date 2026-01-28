@@ -22,5 +22,9 @@
   },
   "Preview": {
     "notFound": "未找到"
+  },
+  "Error": {
+    "somethingWentWrong": "出现了错误！",
+    "goBack": "返回"
   }
 }

@@ -2,10 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/src/components/ui/button";
 
 export default function Error() {
+  const t = useTranslations("Error");
+  
   return (
     <div className="h-full flex flex-col justify-center items-center space-y-4">
       <Image
@@ -22,9 +25,9 @@ export default function Error() {
         width="300"
         alt="Error"
       />
-      <h2 className="text-xl font-medium">Something went wrong!</h2>
+      <h2 className="text-xl font-medium">{t('somethingWentWrong')}</h2>
       <Button asChild>
-        <Link href="/documents">Go back</Link>
+        <Link href="/documents">{t('goBack')}</Link>
       </Button>
     </div>
   );
