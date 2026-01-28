@@ -2,6 +2,7 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
+import {NextIntlClientProvider} from 'next-intl';
 
 import { ThemeProvider } from "@/src/components/providers/theme-provider";
 import { ConvexClientProvider } from "@/src/components/providers/convex-provider";
@@ -48,7 +49,9 @@ export default function RootLayout({
             >
               <Toaster position="bottom-center" />
               <ModalProvider />
-              {children}
+              <NextIntlClientProvider>
+                {children}
+              </NextIntlClientProvider>
             </ThemeProvider>
           </EdgeStoreProvider>
         </ConvexClientProvider>
