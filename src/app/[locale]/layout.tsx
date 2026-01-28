@@ -2,7 +2,9 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
-import {NextIntlClientProvider} from 'next-intl';
+import {NextIntlClientProvider, hasLocale} from 'next-intl';
+import {notFound} from 'next/navigation';
+import {routing} from '@/src/i18n/routing';
 
 import { ThemeProvider } from "@/src/components/providers/theme-provider";
 import { ConvexClientProvider } from "@/src/components/providers/convex-provider";
@@ -30,13 +32,27 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: {
+interface RootLayoutProps {
   children: React.ReactNode;
-}) {
+  params: Promise<{
+    locale: string;
+  }>;
+}
+
+export default async function RootLayout({
+  children,
+  params
+}: RootLayoutProps) {
+  const {locale} = await params;
+  if (!hasLocale(routing.locales, locale)) {
+    notFound();
+  }
+
+  // Load messages for the current locale
+  const messages = await import(`../../../messages/${locale}.json`);
+
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning={true}>
         <ConvexClientProvider>
           <EdgeStoreProvider>
@@ -49,7 +65,7 @@ export default function RootLayout({
             >
               <Toaster position="bottom-center" />
               <ModalProvider />
-              <NextIntlClientProvider>
+              <NextIntlClientProvider locale={locale} messages={messages.default}>
                 {children}
               </NextIntlClientProvider>
             </ThemeProvider>
