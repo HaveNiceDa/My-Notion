@@ -2,10 +2,10 @@ import "./globals.css";
 import { Toaster } from "sonner";
 import { Inter } from "next/font/google";
 import type { Metadata } from "next";
-import {NextIntlClientProvider, hasLocale} from 'next-intl';
-import {getTranslations} from 'next-intl/server';
-import {notFound} from 'next/navigation';
-import {routing} from '@/src/i18n/routing';
+import { NextIntlClientProvider, hasLocale } from "next-intl";
+import { getTranslations } from "next-intl/server";
+import { notFound } from "next/navigation";
+import { routing } from "@/src/i18n/routing";
 
 import { ThemeProvider } from "@/src/components/providers/theme-provider";
 import { ConvexClientProvider } from "@/src/components/providers/convex-provider";
@@ -15,18 +15,18 @@ import { EdgeStoreProvider } from "@/src/lib/edgestore";
 const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata({
-  params
+  params,
 }: {
   params: Promise<{
     locale: string;
   }>;
 }): Promise<Metadata> {
-  const {locale} = await params;
-  const t = await getTranslations({locale, namespace: 'Layout'});
-  
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Layout" });
+
   return {
-    title: t('title'),
-    description: t('description'),
+    title: t("title"),
+    description: t("description"),
     icons: {
       icon: [
         {
@@ -42,7 +42,7 @@ export async function generateMetadata({
       ],
     },
   };
-};
+}
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -53,9 +53,9 @@ interface RootLayoutProps {
 
 export default async function RootLayout({
   children,
-  params
+  params,
 }: RootLayoutProps) {
-  const {locale} = await params;
+  const { locale } = await params;
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
@@ -75,8 +75,11 @@ export default async function RootLayout({
               disableTransitionOnChange
               storageKey="notion-clone-2"
             >
-              <NextIntlClientProvider locale={locale} messages={messages.default}>
-                <Toaster position="bottom-center" />
+              <NextIntlClientProvider
+                locale={locale}
+                messages={messages.default}
+              >
+                <Toaster position="top-center" />
                 <ModalProvider />
                 {children}
               </NextIntlClientProvider>

@@ -95,7 +95,10 @@
   },
   "Documents": {
     "welcome": "欢迎来到 {name} 的 Notion",
-    "createNote": "创建笔记"
+    "createNote": "创建笔记",
+    "creatingNote": "正在创建新笔记...",
+    "noteCreated": "新笔记已创建",
+    "failedToCreateNote": "创建新笔记失败"
   },
   "Modals": {
     "settings": {

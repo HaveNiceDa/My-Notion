@@ -19,9 +19,9 @@ export default function DocumentsPage() {
     const promise = create({ title: "Untitled" });
 
     toast.promise(promise, {
-      loading: "Creating a new note...",
-      success: "New note created",
-      error: "Failed to create a new note",
+      loading: t("creatingNote"),
+      success: t("noteCreated"),
+      error: t("failedToCreateNote"),
     });
   };
 

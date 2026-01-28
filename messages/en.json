@@ -95,7 +95,10 @@
   },
   "Documents": {
     "welcome": "Welcome to {name}'s Notion",
-    "createNote": "Create note"
+    "createNote": "Create note",
+    "creatingNote": "Creating a new note...",
+    "noteCreated": "New note created",
+    "failedToCreateNote": "Failed to create a new note"
   },
   "Modals": {
     "settings": {
