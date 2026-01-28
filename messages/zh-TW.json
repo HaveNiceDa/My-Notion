@@ -85,13 +85,17 @@
   },
   "Navigation": {
     "search": "搜索",
-    "settings": "設置",
-    "newPage": "新頁面",
+    "settings": "設定",
+    "newPage": "新建頁面",
     "addAPage": "添加頁面",
     "trash": "回收站",
     "creatingNewNote": "正在創建新筆記...",
     "newNoteCreated": "新筆記已創建！",
     "failedToCreateNote": "創建筆記失敗。"
+  },
+  "Documents": {
+    "welcome": "歡迎來到 {name} 的 Notion",
+    "createNote": "創建筆記"
   },
   "Modals": {
     "settings": {

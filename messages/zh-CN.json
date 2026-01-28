@@ -86,12 +86,16 @@
   "Navigation": {
     "search": "搜索",
     "settings": "设置",
-    "newPage": "新页面",
+    "newPage": "新建页面",
     "addAPage": "添加页面",
     "trash": "回收站",
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNote": "创建笔记失败。"
+  },
+  "Documents": {
+    "welcome": "欢迎来到 {name} 的 Notion",
+    "createNote": "创建笔记"
   },
   "Modals": {
     "settings": {

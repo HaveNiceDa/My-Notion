@@ -93,6 +93,10 @@
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note."
   },
+  "Documents": {
+    "welcome": "Welcome to {name}'s Notion",
+    "createNote": "Create note"
+  },
   "Modals": {
     "settings": {
       "mySettings": "My settings",
