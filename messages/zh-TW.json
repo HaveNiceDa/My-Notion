@@ -19,5 +19,8 @@
     "login": "登入",
     "privacyPolicy": "隱私政策",
     "termsConditions": "條款與條件"
+  },
+  "Preview": {
+    "notFound": "未找到"
   }
 }

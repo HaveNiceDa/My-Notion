@@ -3,6 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { use, useMemo } from "react";
+import { useTranslations } from "next-intl";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -18,6 +19,7 @@ interface DocumentIdPageProps {
 
 export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
+  const t = useTranslations("Preview");
 
   const Editor = useMemo(
     () => dynamic(() => import("@/src/components/Editor"), { ssr: false }),
@@ -54,7 +56,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   }
 
   if (document === null) {
-    return <div>Not Found</div>;
+    return <div>{t('notFound')}</div>;
   }
 
   return (

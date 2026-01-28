@@ -19,5 +19,8 @@
     "login": "Login",
     "privacyPolicy": "Privacy Policy",
     "termsConditions": "Terms & Conditions"
+  },
+  "Preview": {
+    "notFound": "Not Found"
   }
 }
