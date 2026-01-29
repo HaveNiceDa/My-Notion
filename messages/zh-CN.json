@@ -13,13 +13,14 @@
     "description": "连接的工作空间，让工作更美好、更高效。"
   },
   "Marketing": {
-    "heading": "你的想法、文档和计划。统一管理。欢迎来到",
-    "subheading": "连接工作空间，让工作更美好、更高效",
+    "heading": "您的想法、文档和计划。统一管理。欢迎使用",
+    "subheading": "连接的工作空间，让工作更好、更快",
     "enterNotion": "进入 Notion",
     "getNotionFree": "免费获取 Notion",
     "login": "登录",
     "privacyPolicy": "隐私政策",
-    "termsConditions": "条款与条件"
+    "termsConditions": "条款和条件",
+    "comingSoon": "敬请期待"
   },
   "Preview": {
     "notFound": "未找到"

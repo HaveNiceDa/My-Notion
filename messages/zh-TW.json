@@ -13,13 +13,14 @@
     "description": "連接的工作空間，讓工作更美好、更高效。"
   },
   "Marketing": {
-    "heading": "你的想法、文件和計畫。統一管理。歡迎來到",
-    "subheading": "連接工作空間，讓工作更美好、更高效",
+    "heading": "您的想法、文檔和計劃。統一管理。歡迎使用",
+    "subheading": "連接的工作空間，讓工作更好、更快",
     "enterNotion": "進入 Notion",
     "getNotionFree": "免費獲取 Notion",
-    "login": "登入",
+    "login": "登錄",
     "privacyPolicy": "隱私政策",
-    "termsConditions": "條款與條件"
+    "termsConditions": "條款和條件",
+    "comingSoon": "敬請期待"
   },
   "Preview": {
     "notFound": "未找到"
