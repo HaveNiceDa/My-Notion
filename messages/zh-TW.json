@@ -83,6 +83,7 @@
     "movingDocument": "正在移動文檔...",
     "documentMoved": "文檔已移動！",
     "failedToMoveDocument": "移動文檔失敗",
+    "cannotMoveIntoOwnSubtree": "不能將文檔移動到自己的子文檔中",
     "untitled": "新筆記",
     "delete": "刪除",
     "lastEditedBy": "最後編輯者：{name}"

@@ -83,6 +83,7 @@
     "movingDocument": "正在移动文档...",
     "documentMoved": "文档已移动！",
     "failedToMoveDocument": "移动文档失败",
+    "cannotMoveIntoOwnSubtree": "不能将文档移动到自己的子文档中",
     "untitled": "新笔记",
     "delete": "删除",
     "lastEditedBy": "最后编辑者：{name}"

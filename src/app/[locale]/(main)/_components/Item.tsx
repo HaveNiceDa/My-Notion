@@ -75,7 +75,7 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     setIsOver(false);
   };
 
-  const onDrop = (e: React.DragEvent) => {
+  const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsOver(false);
     
@@ -86,13 +86,22 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     if (draggedDocumentId === id) return;
     
     // 执行移动操作
-    const promise = move({ id: draggedDocumentId as Id<'documents'>, parentDocument: id });
-    
-    toast.promise(promise, {
-      loading: t('movingDocument'),
-      success: t('documentMoved'),
-      error: t('failedToMoveDocument'),
-    });
+    try {
+      toast.loading(t('movingDocument'));
+      await move({ id: draggedDocumentId as Id<'documents'>, parentDocument: id });
+      toast.success(t('documentMoved'));
+    } catch (error) {
+      // 捕获并显示具体的错误原因
+      if (error instanceof Error) {
+        if (error.message.includes('Cannot move document into its own subtree')) {
+          toast.error(t('cannotMoveIntoOwnSubtree'));
+        } else {
+          toast.error(error.message);
+        }
+      } else {
+        toast.error(t('failedToMoveDocument'));
+      }
+    }
   };
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {

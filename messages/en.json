@@ -83,6 +83,7 @@
     "movingDocument": "Moving document...",
     "documentMoved": "Document moved!",
     "failedToMoveDocument": "Failed to move document",
+    "cannotMoveIntoOwnSubtree": "Cannot move document into its own subtree",
     "untitled": "New Note",
     "delete": "Delete",
     "lastEditedBy": "Last edited by: {name}"
