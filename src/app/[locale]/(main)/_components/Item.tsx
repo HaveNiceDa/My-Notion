@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
@@ -44,7 +45,55 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
   const router = useRouter();
   const create = useMutation(api.documents.create);
   const archive = useMutation(api.documents.archive);
+  const move = useMutation(api.documents.move);
   const t = useTranslations("Item");
+  const [isDragging, setIsDragging] = useState(false);
+  const [isOver, setIsOver] = useState(false);
+
+  const onDragStart = (e: React.DragEvent) => {
+    if (!id) return;
+    e.dataTransfer.setData('text/plain', id);
+    setIsDragging(true);
+    // 设置拖拽效果
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onDragEnd = () => {
+    setIsDragging(false);
+    setIsOver(false);
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    if (!id) return;
+    // 防止默认行为，允许放置
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setIsOver(true);
+  };
+
+  const onDragLeave = () => {
+    setIsOver(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsOver(false);
+    
+    if (!id) return;
+    
+    const draggedDocumentId = e.dataTransfer.getData('text/plain');
+    // 防止将文档拖放到自身
+    if (draggedDocumentId === id) return;
+    
+    // 执行移动操作
+    const promise = move({ id: draggedDocumentId as Id<'documents'>, parentDocument: id });
+    
+    toast.promise(promise, {
+      loading: t('movingDocument'),
+      success: t('documentMoved'),
+      error: t('failedToMoveDocument'),
+    });
+  };
 
   const onArchive = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
@@ -88,12 +137,20 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     <div
       className={cn(
         `group min-h-[27px] text-sm py-1 pr-3 w-full hover:bg-primary/5
-    flex items-center text-muted-foreground font-medium`,
+    flex items-center text-muted-foreground font-medium transition-colors duration-200`,
         active && "bg-primary/5 text-primary",
+        isDragging && "opacity-50",
+        isOver && "bg-primary/10 border-l-2 border-primary",
       )}
       onClick={onClick}
       role="button"
       style={{ paddingLeft: level ? `${level * 12 + 12}px` : "12px" }}
+      draggable={!!id}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
     >
       {!!id && (
         <div

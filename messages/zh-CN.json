@@ -80,6 +80,9 @@
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNewNote": "创建新笔记失败",
+    "movingDocument": "正在移动文档...",
+    "documentMoved": "文档已移动！",
+    "failedToMoveDocument": "移动文档失败",
     "untitled": "新笔记",
     "delete": "删除",
     "lastEditedBy": "最后编辑者：{name}"

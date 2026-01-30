@@ -80,6 +80,9 @@
     "creatingNewNote": "Creating a new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNewNote": "Failed to create a new note",
+    "movingDocument": "Moving document...",
+    "documentMoved": "Document moved!",
+    "failedToMoveDocument": "Failed to move document",
     "untitled": "New Note",
     "delete": "Delete",
     "lastEditedBy": "Last edited by: {name}"

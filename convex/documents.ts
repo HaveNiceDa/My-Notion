@@ -353,3 +353,48 @@ export const removeCoverImage = mutation({
     return document
   }
 })
+
+export const move = mutation({
+  args:{
+    id:v.id('documents'),
+    parentDocument:v.optional(v.id('documents'))
+  },
+  handler:async (context,args) => {
+    const identity = await context.auth.getUserIdentity()
+
+    if (!identity) {
+      throw new Error("Unauthenticated")
+    }
+
+    const userId = identity.subject
+
+    const existingDocument = await context.db.get(args.id)
+
+    if (!existingDocument) {
+      throw new Error('Not found')
+    }
+
+    if (existingDocument.userId !== userId) {
+      throw new Error('Unauthorized')
+    }
+
+    // 防止循环移动（将文档移动到自己的子文档中）
+    if (args.parentDocument) {
+      let currentParent: Id<'documents'> | undefined = args.parentDocument
+      while (currentParent) {
+        const parentDoc: Doc<'documents'> | null = await context.db.get(currentParent)
+        if (!parentDoc) break
+        if (parentDoc._id === args.id) {
+          throw new Error('Cannot move document into its own subtree')
+        }
+        currentParent = parentDoc.parentDocument
+      }
+    }
+
+    const document = await context.db.patch(args.id,{
+      parentDocument:args.parentDocument
+    })
+
+    return document
+  }
+})

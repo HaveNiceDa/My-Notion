@@ -80,6 +80,9 @@
     "creatingNewNote": "正在創建新筆記...",
     "newNoteCreated": "新筆記已創建！",
     "failedToCreateNewNote": "創建新筆記失敗",
+    "movingDocument": "正在移動文檔...",
+    "documentMoved": "文檔已移動！",
+    "failedToMoveDocument": "移動文檔失敗",
     "untitled": "新筆記",
     "delete": "刪除",
     "lastEditedBy": "最後編輯者：{name}"
