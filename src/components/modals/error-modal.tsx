@@ -8,6 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/src/components/ui/alert-dialog";
+import { useTranslations } from "next-intl";
 
 interface ErrorModalProps {
   open: boolean;
@@ -17,6 +18,8 @@ interface ErrorModalProps {
 }
 
 export function ErrorModal({ open, onOpenChange, title, description }: ErrorModalProps) {
+  const t = useTranslations('Error');
+  
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
@@ -28,7 +31,7 @@ export function ErrorModal({ open, onOpenChange, title, description }: ErrorModa
         </AlertDialogHeader>
         <div className="flex justify-center mt-4">
           <AlertDialogAction className="w-full max-w-xs">
-            好的
+            {t('ok')}
           </AlertDialogAction>
         </div>
       </AlertDialogContent>

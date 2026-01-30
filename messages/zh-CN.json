@@ -27,7 +27,10 @@
   },
   "Error": {
     "somethingWentWrong": "出现了错误！",
-    "goBack": "返回"
+    "goBack": "返回",
+    "ok": "好的",
+    "dragErrorTitle": "嘿！",
+    "dragErrorDescription": "文档不能移动到这里。"
   },
   "Banner": {
     "pageInTrash": "此页面在回收站中。",

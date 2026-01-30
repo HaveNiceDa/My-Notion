@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import { use, useMemo, useRef, useState } from "react";
 import { useTitle } from "@/src/hooks/use-title";
+import { useTranslations } from "next-intl";
 import type { EditorRef } from "@/src/components/Editor";
 
 import { api } from "@/convex/_generated/api";
@@ -21,6 +22,7 @@ interface DocumentIdPageProps {
 
 export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
+  const t = useTranslations('Error');
 
   const Editor = useMemo(
     () => dynamic(() => import("@/src/components/Editor"), { ssr: false }),
@@ -67,8 +69,8 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     const documentId = e.dataTransfer.getData('text/plain');
     if (documentId) {
       // 显示错误提示，因为不能将文档移动到文档详情页
-      setErrorModalTitle("嘿！");
-      setErrorModalDescription("文档不能移动到这里。");
+      setErrorModalTitle(t('dragErrorTitle'));
+      setErrorModalDescription(t('dragErrorDescription'));
       setErrorModalOpen(true);
     }
   };

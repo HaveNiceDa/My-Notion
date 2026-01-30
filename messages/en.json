@@ -27,7 +27,10 @@
   },
   "Error": {
     "somethingWentWrong": "Something went wrong!",
-    "goBack": "Go back"
+    "goBack": "Go back",
+    "ok": "OK",
+    "dragErrorTitle": "Hey!",
+    "dragErrorDescription": "Documents cannot be moved here."
   },
   "Banner": {
     "pageInTrash": "This page is in the Trash.",
