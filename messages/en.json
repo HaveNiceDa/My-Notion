@@ -127,5 +127,14 @@
     "coverImage": {
       "coverImage": "Cover Image"
     }
+  },
+  "Toolbar": {
+    "addIcon": "Add icon",
+    "addCover": "Add cover"
+  },
+  "LanguageDetector": {
+    "message": "We noticed you're using {language}. Would you like to switch to this language?",
+    "switch": "Switch",
+    "dismiss": "Dismiss"
   }
 }

@@ -4,6 +4,7 @@ import React, { useRef, useState } from "react";
 import { ImageIcon, Smile, X } from "lucide-react";
 import { useMutation } from "convex/react";
 import TextAreaAutoSize from "react-textarea-autosize";
+import { useTranslations } from "next-intl";
 
 import { useConverImage } from "@/src/hooks/use-cover-image";
 import { Doc } from "@/convex/_generated/dataModel";
@@ -23,6 +24,7 @@ export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
   const titleRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [value, setValue] = useState(initialData.title);
+  const t = useTranslations("Toolbar");
 
   const update = useMutation(api.documents.update);
   const removeIcon = useMutation(api.documents.removeIcon);
@@ -36,30 +38,32 @@ export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
     const target = e.currentTarget;
     const rect = target.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
+
     // 创建一个临时范围来计算光标位置
     const range = document.createRange();
-    
+
     // 尝试找到点击位置的文本节点
     let closestNode = target;
     while (closestNode && closestNode.firstChild) {
       closestNode = closestNode.firstChild as HTMLDivElement;
     }
-    
+
     let position: number | null = null;
-    
+
     if (closestNode && closestNode.nodeType === Node.TEXT_NODE) {
       range.setStart(closestNode, 0);
       range.setEnd(closestNode, closestNode.textContent?.length || 0);
-      
+
       // 计算光标位置
       const rangeRect = range.getBoundingClientRect();
       const textLength = closestNode.textContent?.length || 0;
-      
+
       // 简单的线性近似来计算光标位置
       if (rangeRect.width > 0) {
-        position = Math.min(Math.round((x / rangeRect.width) * textLength), textLength);
+        position = Math.min(
+          Math.round((x / rangeRect.width) * textLength),
+          textLength,
+        );
       }
     }
 
@@ -139,7 +143,7 @@ export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
               size="sm"
             >
               <Smile className="w-4 h-4 mr-2" />
-              Add icon
+              {t("addIcon")}
             </Button>
           </IconPicker>
         )}
@@ -151,7 +155,7 @@ export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
             onClick={coverImage.onOpen}
           >
             <ImageIcon className="w-4 h-4 mr-2" />
-            Add cover
+            {t("addCover")}
           </Button>
         )}
       </div>

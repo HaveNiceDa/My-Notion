@@ -127,5 +127,14 @@
     "coverImage": {
       "coverImage": "封面图片"
     }
+  },
+  "LanguageDetector": {
+    "message": "我们注意到你正在使用 {language}。你想要切换到这种语言吗？",
+    "switch": "切换",
+    "dismiss": "关闭"
+  },
+  "Toolbar": {
+    "addIcon": "添加图标",
+    "addCover": "添加封面"
   }
 }
