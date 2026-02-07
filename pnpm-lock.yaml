@@ -68,9 +68,6 @@ importers:
       '@radix-ui/react-slot':
         specifier: ^1.0.2
         version: 1.2.4(@types/react@19.2.9)(react@19.2.3)
-      '@tiptap/react':
-        specifier: ^3.19.0
-        version: 3.19.0(@floating-ui/dom@1.7.4)(@tiptap/core@3.17.0(@tiptap/pm@3.17.0))(@tiptap/pm@3.17.0)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
       antd:
         specifier: ^6.2.2
         version: 6.2.2(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
