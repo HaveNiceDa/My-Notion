@@ -13,6 +13,8 @@ import { Toolbar } from "@/src/components/Toolbar";
 import { Cover } from "@/src/components/Cover";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ErrorModal } from "@/src/components/modals/error-modal";
+import Editor from "@/src/components/Editor";
+import { Room } from "@/src/components/Room";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -22,12 +24,7 @@ interface DocumentIdPageProps {
 
 export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
-  const t = useTranslations('Error');
-
-  const Editor = useMemo(
-    () => dynamic(() => import("@/src/components/Editor"), { ssr: false }),
-    [],
-  );
+  const t = useTranslations("Error");
 
   const document = useQuery(api.documents.getById, {
     documentId,
@@ -66,11 +63,11 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     e.preventDefault();
     e.stopPropagation(); // 阻止事件冒泡到编辑器
     // 检查是否是文档拖拽
-    const documentId = e.dataTransfer.getData('text/plain');
+    const documentId = e.dataTransfer.getData("text/plain");
     if (documentId) {
       // 显示错误提示，因为不能将文档移动到文档详情页
-      setErrorModalTitle(t('dragErrorTitle'));
-      setErrorModalDescription(t('dragErrorDescription'));
+      setErrorModalTitle(t("dragErrorTitle"));
+      setErrorModalDescription(t("dragErrorDescription"));
       setErrorModalOpen(true);
     }
   };
@@ -96,17 +93,19 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   }
 
   return (
-    <div 
-      className="pb-40"
-      onDragOver={handleDragOver}
-      onDrop={handleDrop}
-    >
+    <div className="pb-40" onDragOver={handleDragOver} onDrop={handleDrop}>
       <Cover url={document.coverImage} />
       <div className="md:max-w-3xl lg:md-max-w-4xl mx-auto">
         <Toolbar initialData={document} onEnter={handleEnter} />
-        <Editor ref={editorRef} onChange={onChange} initialContent={document.content} />
+        <Room>
+          <Editor
+            ref={editorRef}
+            onChange={onChange}
+            initialContent={document.content}
+          />
+        </Room>
       </div>
-      
+
       {/* 错误提示模态对话框 */}
       <ErrorModal
         open={errorModalOpen}
