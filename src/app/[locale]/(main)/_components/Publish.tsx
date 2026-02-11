@@ -49,17 +49,17 @@ export function Publish({ initialData }: PublishProps) {
 
     // 1分钟内
     if (minutes < 1) {
-      return t('justNow');
+      return t("justNow");
     }
 
     // 1小时内
     if (minutes < 60) {
-      return t('minutesAgo', { count: minutes });
+      return t("minutesAgo", { count: minutes });
     }
 
     // 1-24小时
     if (hours < 24) {
-      return t('hoursAgo', { count: hours });
+      return t("hoursAgo", { count: hours });
     }
 
     // 超过24小时，显示具体日期（xx年xx月xx日）
@@ -70,13 +70,17 @@ export function Publish({ initialData }: PublishProps) {
     return `${year}年${month}月${day}日`;
   };
 
-  const lastEditedTime = formatTime(initialData.lastEditedTime);
+  const lastEditedTime = formatTime(
+    initialData.lastEditedTime || initialData._creationTime,
+  );
   const createdTime = formatTime(initialData._creationTime);
 
   // 获取当前用户名（从Clerk获取）
   const getCurrentUserName = () => {
-    if (!isUserLoaded) return 'Loading...';
-    return user?.fullName || user?.emailAddresses?.[0]?.emailAddress || 'Unknown';
+    if (!isUserLoaded) return "Loading...";
+    return (
+      user?.fullName || user?.emailAddresses?.[0]?.emailAddress || "Unknown"
+    );
   };
 
   const creatorName = getCurrentUserName();
@@ -91,9 +95,9 @@ export function Publish({ initialData }: PublishProps) {
     }).finally(() => setIsSubmitting(false));
 
     toast.promise(promise, {
-      loading: t('publishing'),
-      success: t('notePublished'),
-      error: t('errorToPublishNote'),
+      loading: t("publishing"),
+      success: t("notePublished"),
+      error: t("errorToPublishNote"),
     });
   };
 
@@ -106,9 +110,9 @@ export function Publish({ initialData }: PublishProps) {
     }).finally(() => setIsSubmitting(false));
 
     toast.promise(promise, {
-      loading: t('unpublishing'),
-      success: t('noteUnpublished'),
-      error: t('errorToUnpublishNote'),
+      loading: t("unpublishing"),
+      success: t("noteUnpublished"),
+      error: t("errorToUnpublishNote"),
     });
   };
 
@@ -127,47 +131,55 @@ export function Publish({ initialData }: PublishProps) {
       <div className="flex items-center gap-x-2">
         {!isUserLoaded ? (
           <span className="text-xs text-muted-foreground px-2 py-1 rounded-md">
-            {t('loading')}...
+            {t("loading")}...
           </span>
         ) : lastEditedTime ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <span className="text-xs text-muted-foreground cursor-pointer px-2 py-1 rounded-md transition-colors hover:bg-muted">
-                {t('lastEdited')} {lastEditedTime}
+                {t("lastEdited")} {lastEditedTime}
               </span>
             </TooltipTrigger>
             <TooltipContent>
               <div className="space-y-1">
                 <p className="text-xs">
-                  {t('createdBy', { user: creatorName, time: createdTime ?? '' })}
+                  {t("createdBy", {
+                    user: creatorName,
+                    time: createdTime ?? "",
+                  })}
                 </p>
                 <p className="text-xs">
-                  {t('editedBy', { user: editorName, time: lastEditedTime })}
+                  {t("editedBy", { user: editorName, time: lastEditedTime })}
                 </p>
               </div>
             </TooltipContent>
           </Tooltip>
         ) : (
           <span className="text-xs text-muted-foreground px-2 py-1 rounded-md">
-            {t('loading')}...
+            {t("loading")}...
           </span>
         )}
         <Popover>
           <PopoverTrigger asChild>
             <Button size="sm" variant="ghost">
-              {t('publish')}
+              {t("publish")}
               {initialData.isPublished && (
                 <Globe className="text-sky-500 w-4 h-4 ml-2" />
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72" align="end" alignOffset={8} forceMount>
+          <PopoverContent
+            className="w-72"
+            align="end"
+            alignOffset={8}
+            forceMount
+          >
             {initialData.isPublished ? (
               <div className="space-y-4">
                 <div className="flex gap-x-2 items-center">
                   <Globe className="text-sky-500 animate-pulse w-4 h-4" />
                   <p className="text-xs font-medium text-sky-500">
-                    {t('thisNoteLiveOnWeb')}
+                    {t("thisNoteLiveOnWeb")}
                   </p>
                 </div>
                 <div className="flex items-center">
@@ -194,15 +206,17 @@ export function Publish({ initialData }: PublishProps) {
                   disabled={isSubmitting}
                   onClick={onUnPublish}
                 >
-                  {t('unpublish')}
+                  {t("unpublish")}
                 </Button>
               </div>
             ) : (
               <div className="flex flex-col justify-center items-center">
                 <Globe className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-sm font-medium mb-2">{t('publishThisNote')}</p>
+                <p className="text-sm font-medium mb-2">
+                  {t("publishThisNote")}
+                </p>
                 <span className="text-xs text-muted-foreground mb-4">
-                  {t('shareYourWorkWithOthers')}
+                  {t("shareYourWorkWithOthers")}
                 </span>
                 <Button
                   className="w-full text-xs"
@@ -210,7 +224,7 @@ export function Publish({ initialData }: PublishProps) {
                   disabled={isSubmitting}
                   onClick={onPublish}
                 >
-                  {t('publish')}
+                  {t("publish")}
                 </Button>
               </div>
             )}
