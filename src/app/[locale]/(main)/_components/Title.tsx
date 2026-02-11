@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
+import { useRouter } from "next/navigation";
 
 import { Doc } from "@/convex/_generated/dataModel";
 import { api } from "@/convex/_generated/api";
@@ -15,8 +16,12 @@ interface TitleProps {
 
 export function Title({ initialData }: TitleProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const update = useMutation(api.documents.update);
+  const documentPath = useQuery(api.documents.getDocumentPath, {
+    documentId: initialData._id,
+  });
 
   const [title, setTitle] = useState(initialData.title || "Untitled");
   const [isEditing, setIsEditing] = useState(false);
@@ -49,9 +54,41 @@ export function Title({ initialData }: TitleProps) {
     }
   };
 
+  const handleBreadcrumbClick = (documentId: string) => {
+    router.push(`/documents/${documentId}`);
+  };
+
   return (
     <div className="flex gap-x-1 items-center">
       {!!initialData.icon && <p>{initialData.icon}</p>}
+
+      {/* 面包屑导航 */}
+      {documentPath && documentPath.length > 1 && (
+        <div className="flex items-center gap-x-1 mr-2">
+          {documentPath.map((doc, index) => {
+            const isLast = index === documentPath.length - 1;
+            return (
+              <React.Fragment key={doc._id}>
+                {!isLast ? (
+                  <>
+                    <Button
+                      className="font-normal h-auto p-1 text-sm text-muted-foreground hover:text-foreground"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleBreadcrumbClick(doc._id)}
+                    >
+                      <span className="truncate max-w-[120px]">{doc.title}</span>
+                    </Button>
+                    <span className="text-muted-foreground">/</span>
+                  </>
+                ) : null}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+
+      {/* 当前文档标题 */}
       {isEditing ? (
         <Input
           className="h-7 px-2 focus-visible:ring-transparent"
@@ -69,7 +106,7 @@ export function Title({ initialData }: TitleProps) {
           size="sm"
           onClick={enableInput}
         >
-          <span className="truncate">{initialData?.title}</span>
+          <span className="truncate text-muted-foreground">{initialData?.title}</span>
         </Button>
       )}
     </div>
