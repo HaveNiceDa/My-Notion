@@ -9,18 +9,24 @@ import { useTranslations } from "next-intl";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/src/components/ui/button";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function DocumentsPage() {
   const { user } = useUser();
   const create = useMutation(api.documents.create);
   const t = useTranslations("Documents");
+  const router = useRouter();
 
   const onCreate = () => {
     const promise = create({ title: t("untitled") });
 
     toast.promise(promise, {
       loading: t("creatingNote"),
-      success: t("noteCreated"),
+      success: (data) => {
+        // 跳转到新创建的文档页面
+        router.push(`/documents/${data}`);
+        return t("noteCreated");
+      },
       error: t("failedToCreateNote"),
     });
   };
