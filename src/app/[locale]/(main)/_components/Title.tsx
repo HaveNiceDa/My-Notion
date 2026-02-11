@@ -150,7 +150,6 @@ export function Title({ initialData }: TitleProps) {
         <Input
           className="h-7 px-2 focus-visible:ring-transparent"
           ref={inputRef}
-          onClick={enableInput}
           onBlur={disableInput}
           value={title}
           onChange={onChange}
