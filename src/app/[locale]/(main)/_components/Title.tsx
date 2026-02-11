@@ -10,7 +10,11 @@ import { api } from "@/convex/_generated/api";
 import { Input } from "@/src/components/ui/input";
 import { Button } from "@/src/components/ui/button";
 import { Skeleton } from "@/src/components/ui/skeleton";
-import { Popover, PopoverContent, PopoverTrigger } from "@/src/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 
 interface TitleProps {
   initialData: Doc<"documents">;
@@ -28,6 +32,15 @@ export function Title({ initialData }: TitleProps) {
   const [title, setTitle] = useState(initialData.title || "Untitled");
   const [isEditing, setIsEditing] = useState(false);
   const [showMore, setShowMore] = useState(false);
+
+  if (documentPath === undefined) {
+    return (
+      <div className="flex gap-x-1 items-center">
+        {!!initialData.icon && <p>{initialData.icon}</p>}
+        <Title.Skeleton />
+      </div>
+    );
+  }
 
   const enableInput = () => {
     setTitle(initialData.title);
@@ -115,7 +128,9 @@ export function Title({ initialData }: TitleProps) {
                           title={doc.title}
                         >
                           {!isFirst && <CornerDownRight className="h-4 w-4" />}
-                          <span className="truncate max-w-[200px]">{doc.title}</span>
+                          <span className="truncate max-w-[200px]">
+                            {doc.title}
+                          </span>
                         </Button>
                       );
                     })}
@@ -163,7 +178,9 @@ export function Title({ initialData }: TitleProps) {
           onClick={enableInput}
           title={initialData?.title}
         >
-          <span className="truncate text-muted-foreground">{initialData?.title}</span>
+          <span className="truncate text-muted-foreground">
+            {initialData?.title}
+          </span>
         </Button>
       )}
     </div>
