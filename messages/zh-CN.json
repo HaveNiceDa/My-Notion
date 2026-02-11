@@ -61,7 +61,14 @@
     "errorToPublishNote": "发布笔记时出错。",
     "unpublishing": "正在取消发布...",
     "noteUnpublished": "笔记已取消发布",
-    "errorToUnpublishNote": "取消发布笔记时出错。"
+    "errorToUnpublishNote": "取消发布笔记时出错。",
+    "lastEdited": "上次编辑",
+    "loading": "加载中",
+    "justNow": "刚刚",
+    "minutesAgo": "{count}分钟前",
+    "hoursAgo": "{count}小时前",
+    "createdBy": "{user}于{time}创建",
+    "editedBy": "{user}于{time}修改"
   },
   "TrashBox": {
     "filterByPageTitle": "按页面标题过滤...",

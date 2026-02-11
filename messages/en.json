@@ -52,16 +52,23 @@
   },
   "Publish": {
     "publish": "Publish",
-    "thisNoteLiveOnWeb": "This note live on web",
+    "thisNoteLiveOnWeb": "This note is live on the web",
     "unpublish": "Unpublish",
     "publishThisNote": "Publish this note",
     "shareYourWorkWithOthers": "Share your work with others.",
     "publishing": "Publishing...",
     "notePublished": "Note published",
-    "errorToPublishNote": "Error to publish note.",
+    "errorToPublishNote": "Error publishing note.",
     "unpublishing": "Unpublishing...",
     "noteUnpublished": "Note unpublished",
-    "errorToUnpublishNote": "Error to unpublish note."
+    "errorToUnpublishNote": "Error unpublishing note.",
+    "lastEdited": "Last edited",
+    "loading": "Loading",
+    "justNow": "Just now",
+    "minutesAgo": "{count} minutes ago",
+    "hoursAgo": "{count} hours ago",
+    "createdBy": "Created by {user} on {time}",
+    "editedBy": "Edited by {user} on {time}"
   },
   "TrashBox": {
     "filterByPageTitle": "Filter by page title...",

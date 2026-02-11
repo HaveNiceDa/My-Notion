@@ -94,7 +94,8 @@ export const create = mutation({
       parentDocument:args.parentDocument,
       userId,
       isArchived:false,
-      isPublished:false
+      isPublished:false,
+      lastEditedTime:Date.now()
     })
 
     return document
@@ -288,7 +289,8 @@ export const update = mutation({
     }
 
     const document = await context.db.patch(args.id,{
-      ...rest
+      ...rest,
+      lastEditedTime: Date.now()
     })
 
     return document
