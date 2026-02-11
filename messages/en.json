@@ -136,5 +136,9 @@
     "message": "We noticed you're using {language}. Would you like to switch to this language?",
     "switch": "Switch",
     "dismiss": "Dismiss"
+  },
+  "common": {
+    "saved": "Saved successfully!",
+    "saving": "Saving..."
   }
 }

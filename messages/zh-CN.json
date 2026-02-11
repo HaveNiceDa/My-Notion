@@ -136,5 +136,9 @@
   "Toolbar": {
     "addIcon": "添加图标",
     "addCover": "添加封面"
+  },
+  "common": {
+    "saved": "保存成功！",
+    "saving": "保存中..."
   }
 }
