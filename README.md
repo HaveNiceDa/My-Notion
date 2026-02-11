@@ -116,15 +116,21 @@
 notion/
 ├── src/             # 源代码目录
 │   ├── app/         # Next.js 应用路由
-│   │   ├── (main)/      # 主应用布局
-│   │   ├── (marketing)/ # 营销页面
+│   │   ├── [locale]/    # 国际化路由
+│   │   │   ├── (main)/      # 主应用布局
+│   │   │   ├── (marketing)/ # 营销页面
+│   │   │   ├── (public)/    # 公共页面
+│   │   │   └── demo/        # 评论区演示页面，调试中
 │   │   └── api/         # API 路由
 │   ├── components/  # 可复用组件
-│   │   ├── Editor/      # 富文本编辑器
-│   │   ├── Toolbar/     # 工具栏
-│   │   ├── ui/          # UI 组件
-│   │   └── providers/   # 上下文提供者
+│   │   ├── modals/       # 模态框组件
+│   │   ├── providers/    # 上下文提供者
+│   │   ├── ui/           # UI 组件
+│   │   ├── Editor.tsx    # 富文本编辑器
+│   │   ├── Toolbar.tsx   # 工具栏
+│   │   └── Cover.tsx     # 封面组件
 │   ├── hooks/       # 自定义 Hooks
+│   ├── i18n/        # 国际化相关配置
 │   └── lib/         # 工具函数
 ├── convex/          # Convex 后端
 │   ├── _generated/  # 自动生成的代码
