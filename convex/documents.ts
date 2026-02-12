@@ -1,8 +1,16 @@
+/**
+ * 文档相关操作方法
+ */
 import {v} from 'convex/values'
 
 import {mutation,query} from './_generated/server'
 import {Doc,Id} from './_generated/dataModel'
 
+/**
+ * 归档文档（递归归档子文档）
+ * @param id 文档ID
+ * @returns 归档后的文档
+ */
 export const archive = mutation({
   args:{id:v.id("documents")},
   handler:async (context,args) => {
@@ -50,6 +58,11 @@ export const archive = mutation({
   }
 })
 
+/**
+ * 获取侧边栏文档列表
+ * @param parentDocument 可选，父文档ID，用于获取子文档
+ * @returns 文档列表，按创建时间倒序排列
+ */
 export const getSidebar = query({
   args:{
     parentDocument:v.optional(v.id("documents"))
@@ -75,6 +88,10 @@ export const getSidebar = query({
   }
 })
 
+/**
+ * 获取收藏的文档列表
+ * @returns 收藏的文档列表，按创建时间倒序排列
+ */
 export const getStarred = query({
   args:{},
   handler:async (context) => {
@@ -100,6 +117,12 @@ export const getStarred = query({
   }
 })
 
+/**
+ * 创建新文档
+ * @param title 文档标题
+ * @param parentDocument 可选，父文档ID
+ * @returns 创建的文档
+ */
 export const create = mutation({
   args:{
     title:v.string(),
@@ -128,6 +151,10 @@ export const create = mutation({
   }
 })
 
+/**
+ * 获取回收站文档列表
+ * @returns 已归档的文档列表，按创建时间倒序排列
+ */
 export const getTrash = query({
   handler:async (context) => {
     const identity = await context.auth.getUserIdentity()
@@ -148,6 +175,11 @@ export const getTrash = query({
   }
 })
 
+/**
+ * 恢复文档（递归恢复子文档）
+ * @param id 文档ID
+ * @returns 恢复后的文档
+ */
 export const restore = mutation({
   args:{id:v.id('documents')},
   handler: async (context,args) => {
@@ -205,6 +237,11 @@ export const restore = mutation({
 })
 
 
+/**
+ * 删除文档
+ * @param id 文档ID
+ * @returns 删除的文档
+ */
 export const remove = mutation({
   args:{id:v.id('documents')},
   handler:async (context,args) => {
@@ -233,6 +270,10 @@ export const remove = mutation({
   }
 })
 
+/**
+ * 获取搜索文档列表（未归档的文档）
+ * @returns 未归档的文档列表，按创建时间倒序排列
+ */
 export const getSearch = query({
   handler:async (context) => {
    
@@ -254,6 +295,11 @@ export const getSearch = query({
   }
 })
 
+/**
+ * 根据ID获取文档
+ * @param documentId 文档ID
+ * @returns 文档信息
+ */
 export const getById = query({
   args:{documentId:v.id('documents')},
   handler:async (context,args) => {
@@ -284,6 +330,17 @@ export const getById = query({
 })
 
 
+/**
+ * 更新文档信息
+ * @param id 文档ID
+ * @param title 可选，文档标题
+ * @param content 可选，文档内容
+ * @param coverImage 可选，封面图片URL
+ * @param icon 可选，文档图标
+ * @param isPublished 可选，是否发布
+ * @param isStarred 可选，是否收藏
+ * @returns 更新后的文档
+ */
 export const update = mutation({
   args:{
     id:v.id('documents'),
@@ -325,6 +382,11 @@ export const update = mutation({
 })
 
 
+/**
+ * 移除文档图标
+ * @param id 文档ID
+ * @returns 更新后的文档
+ */
 export const removeIcon = mutation({
   args:{id:v.id('documents')},
   handler:async (context,args) => {
@@ -354,6 +416,11 @@ export const removeIcon = mutation({
   } 
 })
 
+/**
+ * 移除文档封面图片
+ * @param id 文档ID
+ * @returns 更新后的文档
+ */
 export const removeCoverImage = mutation({
   args:{id:v.id('documents')},
   handler:async (context,args) => {
@@ -383,6 +450,12 @@ export const removeCoverImage = mutation({
   }
 })
 
+/**
+ * 移动文档（更改父文档）
+ * @param id 文档ID
+ * @param parentDocument 可选，新的父文档ID
+ * @returns 更新后的文档
+ */
 export const move = mutation({
   args:{
     id:v.id('documents'),
@@ -428,6 +501,11 @@ export const move = mutation({
   }
 })
 
+/**
+ * 获取文档路径（从根文档到当前文档的路径）
+ * @param documentId 文档ID
+ * @returns 文档路径数组，按从根到当前的顺序排列
+ */
 export const getDocumentPath = query({
   args:{documentId:v.id('documents')},
   handler:async (context,args) => {
@@ -464,6 +542,12 @@ export const getDocumentPath = query({
   }
 })
 
+/**
+ * 切换文档收藏状态
+ * @param id 文档ID
+ * @param isStarred 是否收藏
+ * @returns 更新后的文档
+ */
 export const toggleStar = mutation({
   args:{id:v.id('documents'),isStarred:v.boolean()},
   handler:async (context,args) => {
