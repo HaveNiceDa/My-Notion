@@ -229,9 +229,10 @@ export function Publish({ initialData }: PublishProps) {
           variant="ghost"
           disabled={isSubmitting}
           onClick={toggleStar}
+          className="flex items-center"
         >
           <Star
-            className={`w-4 h-4 ml-2 ${isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+            className={`w-4 h-4 ${isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
           />
         </Button>
       </div>

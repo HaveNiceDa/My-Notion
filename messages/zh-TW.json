@@ -65,7 +65,7 @@
     "lastEdited": "上次編輯",
     "loading": "載入中",
     "starredSuccess": "收藏成功",
-    "unstarredSuccess": "取消收藏成功",
+    "unstarredSuccess": "取消收藏",
     "errorToToggleStar": "切換收藏狀態失敗",
     "justNow": "剛剛",
     "minutesAgo": "{count}分鐘前",
