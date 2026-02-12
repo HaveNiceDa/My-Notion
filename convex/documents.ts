@@ -95,6 +95,7 @@ export const create = mutation({
       userId,
       isArchived:false,
       isPublished:false,
+      isStarred:false,
       lastEditedTime:Date.now()
     })
 
@@ -265,7 +266,8 @@ export const update = mutation({
     content:v.optional(v.string()),
     coverImage:v.optional(v.string()),
     icon:v.optional(v.string()),
-    isPublished:v.optional(v.boolean())
+    isPublished:v.optional(v.boolean()),
+    isStarred:v.optional(v.boolean())
   },
   handler:async (context,args) => {
     const identity = await context.auth.getUserIdentity()
@@ -434,5 +436,53 @@ export const getDocumentPath = query({
     }
 
     return path
+  }
+})
+
+export const toggleStar = mutation({
+  args:{id:v.id('documents'),isStarred:v.boolean()},
+  handler:async (context,args) => {
+    const identity = await context.auth.getUserIdentity()
+
+    if (!identity) {
+      throw new Error("Not authenticated")
+    }
+
+    const userId = identity.subject
+
+    const existingDocument = await context.db.get(args.id)
+
+    if (!existingDocument) {
+      throw new Error('Not found')
+    }
+
+    if (existingDocument.userId !== userId) {
+      throw new Error("Unauthorized")
+    }
+
+    const recursiveToggleStar = async (documentId:Id<'documents'>,isStarred:boolean) => {
+      const children = await context.db
+      .query('documents')
+      .withIndex("by_user_parent",q => (
+        q.eq("userId",userId).eq('parentDocument',documentId)
+      ))
+      .collect()
+    
+      for (const child of children) {
+        await context.db.patch(child._id,{
+          isStarred
+        })
+        await recursiveToggleStar(child._id,isStarred)
+      }
+    }
+
+    const document = await context.db.patch(args.id,{
+      isStarred:args.isStarred,
+      lastEditedTime:Date.now()
+    })
+
+    await recursiveToggleStar(args.id,args.isStarred)
+
+    return document
   }
 })

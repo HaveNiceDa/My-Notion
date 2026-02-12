@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "convex/react";
-import { Check, Copy, Globe } from "lucide-react";
+import { useMutation, useQuery } from "convex/react";
+import { Check, Copy, Globe, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/clerk-react";
@@ -31,11 +31,13 @@ interface PublishProps {
 export function Publish({ initialData }: PublishProps) {
   const origin = useOrigin();
   const update = useMutation(api.documents.update);
+  const toggleStarDoc = useMutation(api.documents.toggleStar);
   const t = useTranslations("Publish");
   const { user, isLoaded: isUserLoaded } = useUser();
 
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isStarred, setIsStarred] = useState(initialData.isStarred || false);
 
   const url = `${origin}/preview/${initialData._id}`;
 
@@ -96,6 +98,26 @@ export function Publish({ initialData }: PublishProps) {
     setTimeout(() => {
       setCopied(false);
     }, 1000);
+  };
+
+  const toggleStar = async () => {
+    setIsSubmitting(true);
+    try {
+      await toggleStarDoc({
+        id: initialData._id,
+        isStarred: !isStarred,
+      });
+      setIsStarred(!isStarred);
+      toast.success(
+        !isStarred
+          ? t('starredSuccess')
+          : t('unstarredSuccess')
+      );
+    } catch (error) {
+      toast.error(t('errorToToggleStar'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -202,6 +224,16 @@ export function Publish({ initialData }: PublishProps) {
             )}
           </PopoverContent>
         </Popover>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isSubmitting}
+          onClick={toggleStar}
+        >
+          <Star
+            className={`w-4 h-4 ml-2 ${isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+          />
+        </Button>
       </div>
     </TooltipProvider>
   );

@@ -11,6 +11,7 @@ export default defineSchema({
     coverImage:v.optional(v.string()),
     icon:v.optional(v.string()),
     isPublished:v.boolean(),
+    isStarred:v.optional(v.boolean()),
     lastEditedTime:v.optional(v.number())
   })
   .index('by_user',["userId"])
