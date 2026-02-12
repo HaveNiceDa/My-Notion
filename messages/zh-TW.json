@@ -86,6 +86,19 @@
   "DocumentList": {
     "noPagesAvailable": "沒有可用頁面"
   },
+  "Navigation": {
+    "favorites": "收藏夾",
+    "private": "私人",
+    "search": "搜索",
+    "settings": "設定",
+    "newPage": "新建頁面",
+    "addAPage": "添加頁面",
+    "trash": "回收站",
+    "creatingNewNote": "正在創建新筆記...",
+    "newNoteCreated": "新筆記已創建！",
+    "failedToCreateNote": "創建筆記失敗。",
+    "untitled": "新筆記"
+  },
   "Item": {
     "movingToTrash": "正在移至回收站...",
     "noteMovedToTrash": "筆記已移至回收站！",
@@ -100,17 +113,6 @@
     "untitled": "新筆記",
     "delete": "刪除",
     "lastEditedBy": "最後編輯者：{name}"
-  },
-  "Navigation": {
-    "search": "搜索",
-    "settings": "設定",
-    "newPage": "新建頁面",
-    "addAPage": "添加頁面",
-    "trash": "回收站",
-    "creatingNewNote": "正在創建新筆記...",
-    "newNoteCreated": "新筆記已創建！",
-    "failedToCreateNote": "創建筆記失敗。",
-    "untitled": "新筆記"
   },
   "Documents": {
     "welcome": "歡迎來到 {name} 的 Notion",

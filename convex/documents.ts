@@ -75,6 +75,31 @@ export const getSidebar = query({
   }
 })
 
+export const getStarred = query({
+  args:{},
+  handler:async (context) => {
+    const identity = await context.auth.getUserIdentity()
+
+    if (!identity) {
+      throw new Error("Not authenticated")
+    }
+
+    const userId = identity.subject
+
+    const documents = await context.db
+    .query("documents")
+    .withIndex("by_user", (q) => q.eq('userId', userId))
+    .filter(q => q.and(
+      q.eq(q.field("isArchived"), false),
+      q.eq(q.field("isStarred"), true)
+    ))
+    .order('desc')
+    .collect()
+
+    return documents
+  }
+})
+
 export const create = mutation({
   args:{
     title:v.string(),
@@ -460,28 +485,10 @@ export const toggleStar = mutation({
       throw new Error("Unauthorized")
     }
 
-    const recursiveToggleStar = async (documentId:Id<'documents'>,isStarred:boolean) => {
-      const children = await context.db
-      .query('documents')
-      .withIndex("by_user_parent",q => (
-        q.eq("userId",userId).eq('parentDocument',documentId)
-      ))
-      .collect()
-    
-      for (const child of children) {
-        await context.db.patch(child._id,{
-          isStarred
-        })
-        await recursiveToggleStar(child._id,isStarred)
-      }
-    }
-
     const document = await context.db.patch(args.id,{
-      isStarred:args.isStarred,
-      lastEditedTime:Date.now()
+      isStarred: args.isStarred,
+      lastEditedTime: Date.now()
     })
-
-    await recursiveToggleStar(args.id,args.isStarred)
 
     return document
   }

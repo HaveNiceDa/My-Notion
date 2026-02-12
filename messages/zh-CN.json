@@ -84,7 +84,20 @@
     "failedToDeleteNote": "删除笔记失败"
   },
   "DocumentList": {
-    "noPagesAvailable": "没有可用页面"
+    "noPagesAvailable": "暂无页面"
+  },
+  "Navigation": {
+    "favorites": "收藏夹",
+    "private": "私人",
+    "search": "搜索",
+    "settings": "设置",
+    "newPage": "新建页面",
+    "addAPage": "添加页面",
+    "trash": "回收站",
+    "creatingNewNote": "正在创建新笔记...",
+    "newNoteCreated": "新笔记已创建！",
+    "failedToCreateNote": "创建笔记失败。",
+    "untitled": "新笔记"
   },
   "Item": {
     "movingToTrash": "正在移至回收站...",
@@ -100,17 +113,6 @@
     "untitled": "新笔记",
     "delete": "删除",
     "lastEditedBy": "最后编辑者：{name}"
-  },
-  "Navigation": {
-    "search": "搜索",
-    "settings": "设置",
-    "newPage": "新建页面",
-    "addAPage": "添加页面",
-    "trash": "回收站",
-    "creatingNewNote": "正在创建新笔记...",
-    "newNoteCreated": "新笔记已创建！",
-    "failedToCreateNote": "创建笔记失败。",
-    "untitled": "新笔记"
   },
   "Documents": {
     "welcome": "欢迎来到 {name} 的 Notion",

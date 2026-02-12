@@ -86,6 +86,19 @@
   "DocumentList": {
     "noPagesAvailable": "No pages available"
   },
+  "Navigation": {
+    "favorites": "Favorites",
+    "private": "Private",
+    "search": "Search",
+    "settings": "Settings",
+    "newPage": "New page",
+    "addAPage": "Add a page",
+    "trash": "Trash",
+    "creatingNewNote": "Creating new note...",
+    "newNoteCreated": "New note created!",
+    "failedToCreateNote": "Failed to create note.",
+    "untitled": "New Note"
+  },
   "Item": {
     "movingToTrash": "Moving to trash...",
     "noteMovedToTrash": "Note moved to trash!",
@@ -100,17 +113,6 @@
     "untitled": "New Note",
     "delete": "Delete",
     "lastEditedBy": "Last edited by: {name}"
-  },
-  "Navigation": {
-    "search": "Search",
-    "settings": "Settings",
-    "newPage": "New page",
-    "addAPage": "Add a page",
-    "trash": "Trash",
-    "creatingNewNote": "Creating new note...",
-    "newNoteCreated": "New note created!",
-    "failedToCreateNote": "Failed to create note.",
-    "untitled": "New Note"
   },
   "Documents": {
     "welcome": "Welcome to {name}'s Notion",

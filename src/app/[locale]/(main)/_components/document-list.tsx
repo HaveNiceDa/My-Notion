@@ -15,16 +15,20 @@ interface DocumentListProps {
   parentDocumentId?: Id<"documents">;
   level?: number;
   data?: Doc<"documents">[];
+  isStarred?: boolean;
 }
 
 export function DocumentList({
   parentDocumentId,
   level = 0,
+  isStarred = false,
 }: DocumentListProps) {
   const params = useParams();
   const router = useRouter();
   const t = useTranslations("DocumentList");
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({
+    
+  });
 
   const onExpand = (documentId: string) => {
     setExpanded((prevExpanded) => ({
@@ -33,9 +37,15 @@ export function DocumentList({
     }));
   };
 
-  const documents = useQuery(api.documents.getSidebar, {
-    parentDocument: parentDocumentId,
-  });
+  const documents = isStarred
+    ? parentDocumentId
+      ? useQuery(api.documents.getSidebar, {
+          parentDocument: parentDocumentId,
+        })
+      : useQuery(api.documents.getStarred, {})
+    : useQuery(api.documents.getSidebar, {
+        parentDocument: parentDocumentId,
+      });
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);

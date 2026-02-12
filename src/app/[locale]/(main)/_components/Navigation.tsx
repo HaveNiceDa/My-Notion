@@ -4,6 +4,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useMutation } from "convex/react";
 import {
   ChevronsLeft,
+  ChevronsUp,
   MenuIcon,
   Plus,
   PlusCircle,
@@ -30,6 +31,39 @@ import { Item } from "./Item";
 import { DocumentList } from "./document-list";
 import { TrashBox } from "./trash-box";
 import { Navbar } from "./Navbar";
+
+interface CollapsibleSectionProps {
+  title: string;
+  defaultExpanded?: boolean;
+  children: React.ReactNode;
+}
+
+function CollapsibleSection({ title, defaultExpanded = false, children }: CollapsibleSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+
+  return (
+    <div className="w-full">
+      <div
+        className="flex items-center justify-between px-3 py-2 text-sm font-medium text-muted-foreground/80 cursor-pointer hover:bg-neutral-300 dark:hover:bg-neutral-600 rounded-sm"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <span>{title}</span>
+        <div className="flex items-center gap-x-2">
+          <div
+            className={`w-4 h-4 flex items-center justify-center transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          >
+            <ChevronsUp className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+      {isExpanded && (
+        <div className="mt-2 pl-3">
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Navigation() {
   const router = useRouter();
@@ -178,8 +212,24 @@ export function Navigation() {
             />
           </div>
           <div className="mt-4">
-            <DocumentList />
-            <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
+            {/* 收藏夹 */}
+            <CollapsibleSection
+              title={t("favorites")}
+              defaultExpanded={true}
+            >
+              <DocumentList isStarred={true} />
+              <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
+            </CollapsibleSection>
+
+            {/* 私人文件夹 */}
+            <CollapsibleSection
+              title={t("private")}
+              defaultExpanded={true}
+            >
+              <DocumentList isStarred={false} />
+              <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
+            </CollapsibleSection>
+
             <Popover>
               <PopoverTrigger className="w-full mt-4">
                 <Item label={t("trash")} icon={Trash} />
