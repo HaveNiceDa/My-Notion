@@ -62,7 +62,7 @@ function CollapsibleSection({ title, defaultExpanded = false, children }: Collap
         </div>
       </div>
       {isExpanded && (
-        <div className="mt-2 pl-3">
+        <div className="pl-3">
           {children}
         </div>
       )}
