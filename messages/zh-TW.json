@@ -120,6 +120,7 @@
     "creatingNote": "正在創建新筆記...",
     "noteCreated": "新筆記已創建",
     "failedToCreateNote": "創建新筆記失敗",
+    "noStarredPages": "快去收藏你喜好的文章吧～",
     "untitled": "新筆記"
   },
   "Modals": {

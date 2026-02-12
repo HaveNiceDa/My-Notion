@@ -226,7 +226,6 @@ export function Navigation() {
               defaultExpanded={hasStarredDocuments}
             >
               <DocumentList isStarred={true} />
-              <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
             </CollapsibleSection>
 
             {/* 私人文件夹 */}

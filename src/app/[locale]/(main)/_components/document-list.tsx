@@ -25,7 +25,7 @@ export function DocumentList({
 }: DocumentListProps) {
   const params = useParams();
   const router = useRouter();
-  const t = useTranslations("DocumentList");
+  const t = useTranslations();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({
     
   });
@@ -75,8 +75,13 @@ export function DocumentList({
         )}
         style={{ paddingLeft: level ? `${level * 12 + 25}px` : undefined }}
       >
-        {t('noPagesAvailable')}
+        {t('DocumentList.noPagesAvailable')}
       </p>
+      {isStarred && documents.length === 0 && (
+        <p className="text-sm font-medium text-muted-foreground/80 px-3 py-2">
+          {t('Documents.noStarredPages')}
+        </p>
+      )}
       {documents.map((document) => (
         <div key={document._id}>
           <Item

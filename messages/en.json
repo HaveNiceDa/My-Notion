@@ -120,7 +120,8 @@
     "creatingNote": "Creating a new note...",
     "noteCreated": "New note created",
     "failedToCreateNote": "Failed to create a new note",
-    "untitled": "New Note"
+    "untitled": "New Note",
+    "noStarredPages": "Go star your favorite articles!"
   },
   "Modals": {
     "settings": {
