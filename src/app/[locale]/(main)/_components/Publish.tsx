@@ -22,6 +22,7 @@ import {
 import { useOrigin } from "@/src/hooks/use-origin";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/src/components/ui/button";
+import { formatTime } from "@/src/lib/utils";
 
 interface PublishProps {
   initialData: Doc<"documents">;
@@ -38,42 +39,13 @@ export function Publish({ initialData }: PublishProps) {
 
   const url = `${origin}/preview/${initialData._id}`;
 
-  // 格式化时间：1分钟内"刚刚"，1小时内"xx分钟前"，1-24小时"xx小时前"，超过24小时显示具体日期
-  const formatTime = (timestamp: number | undefined) => {
-    if (!timestamp) return null;
 
-    const now = Date.now();
-    const diff = now - timestamp;
-    const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
-
-    // 1分钟内
-    if (minutes < 1) {
-      return t("justNow");
-    }
-
-    // 1小时内
-    if (minutes < 60) {
-      return t("minutesAgo", { count: minutes });
-    }
-
-    // 1-24小时
-    if (hours < 24) {
-      return t("hoursAgo", { count: hours });
-    }
-
-    // 超过24小时，显示具体日期（xx年xx月xx日）
-    const date = new Date(timestamp);
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return `${year}年${month}月${day}日`;
-  };
 
   const lastEditedTime = formatTime(
     initialData.lastEditedTime || initialData._creationTime,
+    t
   );
-  const createdTime = formatTime(initialData._creationTime);
+  const createdTime = formatTime(initialData._creationTime, t);
 
   // 获取当前用户名（从Clerk获取）
   const getCurrentUserName = () => {
