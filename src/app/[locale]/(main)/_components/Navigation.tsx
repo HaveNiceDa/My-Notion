@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import {
   ChevronsLeft,
   ChevronsUp,
@@ -41,6 +41,11 @@ interface CollapsibleSectionProps {
 function CollapsibleSection({ title, defaultExpanded = false, children }: CollapsibleSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
+  // 当defaultExpanded变化时更新展开状态
+  useEffect(() => {
+    setIsExpanded(defaultExpanded);
+  }, [defaultExpanded]);
+
   return (
     <div className="w-full">
       <div
@@ -73,7 +78,10 @@ export function Navigation() {
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width:768px)");
   const create = useMutation(api.documents.create);
+  const starredDocuments = useQuery(api.documents.getStarred, {});
   const t = useTranslations("Navigation");
+
+  const hasStarredDocuments = starredDocuments && starredDocuments.length > 0;
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -215,7 +223,7 @@ export function Navigation() {
             {/* 收藏夹 */}
             <CollapsibleSection
               title={t("favorites")}
-              defaultExpanded={true}
+              defaultExpanded={hasStarredDocuments}
             >
               <DocumentList isStarred={true} />
               <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
