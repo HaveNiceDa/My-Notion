@@ -25,5 +25,31 @@ export default defineSchema({
     lastEditedTime:v.optional(v.number())
   })
   .index('by_user',['userId'])
-  .index('by_user_parent',['userId','parentDocument'])
+  .index('by_user_parent',['userId','parentDocument']),
+  
+  ragConversations: defineTable({
+    /** 用户ID */
+    userId: v.string(),
+    /** 对话标题 */
+    title: v.string(),
+    /** 创建时间 */
+    createdAt: v.number(),
+    /** 更新时间 */
+    updatedAt: v.number(),
+  })
+  .index('by_user', ['userId']),
+  
+  ragMessages: defineTable({
+    /** 对话ID */
+    conversationId: v.id('ragConversations'),
+    /** 消息内容 */
+    content: v.string(),
+    /** 角色：user 或 assistant */
+    role: v.union(v.literal('user'), v.literal('assistant')),
+    /** 创建时间 */
+    createdAt: v.number(),
+    /** 关联的文档ID（可选） */
+    documentId: v.optional(v.id('documents')),
+  })
+  .index('by_conversation', ['conversationId']),
 })
