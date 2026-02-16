@@ -1,0 +1,42 @@
+"use client";
+
+import { Clock } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
+
+interface TopNavigationProps {
+  onShowHistory: () => void;
+  conversationHistoryText: string;
+}
+
+export const TopNavigation = ({
+  onShowHistory,
+  conversationHistoryText,
+}: TopNavigationProps) => {
+  return (
+    <div className="p-4 flex items-start">
+      <TooltipProvider delayDuration={100}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={onShowHistory}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100"
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="z-[100]">
+            <p>{conversationHistoryText}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+};

@@ -1,0 +1,135 @@
+"use client";
+
+import { MessageSquare, ChevronLeft, Plus, Trash2, Clock } from "lucide-react";
+import { Button } from "@/src/components/ui/button";
+import { Input } from "@/src/components/ui/input";
+import { cn } from "@/src/lib/utils";
+import { Id } from "@/convex/_generated/dataModel";
+
+interface Conversation {
+  _id: Id<"ragConversations">;
+  title: string;
+  updatedAt: number;
+}
+
+interface ConversationSidebarProps {
+  show: boolean;
+  conversations: Conversation[];
+  isLoading: boolean;
+  conversationHistoryText: string;
+  searchPlaceholder: string;
+  past30DaysText: string;
+  loadingText: string;
+  noConversationRecordsText: string;
+  onClose: () => void;
+  onNewConversation: () => void;
+  onSelectConversation: (convId: Id<"ragConversations">) => void;
+  onDeleteConversation: (convId: Id<"ragConversations">) => void;
+  currentConversationId: Id<"ragConversations"> | null;
+  formatRelativeTime: (timestamp: number) => string;
+}
+
+export const ConversationSidebar = ({
+  show,
+  conversations,
+  isLoading,
+  conversationHistoryText,
+  searchPlaceholder,
+  past30DaysText,
+  loadingText,
+  noConversationRecordsText,
+  onClose,
+  onNewConversation,
+  onSelectConversation,
+  onDeleteConversation,
+  currentConversationId,
+  formatRelativeTime,
+}: ConversationSidebarProps) => {
+  return (
+    <div
+      className={cn(
+        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-10 bg-white shadow-lg",
+        show ? "translate-x-0" : "-translate-x-full"
+      )}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+            <MessageSquare className="h-5 w-5" />
+            {conversationHistoryText}
+          </h2>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={onClose}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-gray-600"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={onNewConversation}
+              size="sm"
+              className="bg-gray-100 hover:bg-gray-200 text-gray-800"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <Input type="text" placeholder={searchPlaceholder} className="w-full" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-2">
+        <div className="text-xs text-gray-500 mb-2 px-2">
+          {past30DaysText}
+        </div>
+        {isLoading ? (
+          <div className="p-4 text-center text-gray-500">
+            {loadingText}
+          </div>
+        ) : conversations.length === 0 ? (
+          <div className="p-4 text-center text-gray-500">
+            {noConversationRecordsText}
+          </div>
+        ) : (
+          conversations.map((conversation) => (
+            <div
+              key={conversation._id}
+              className={cn(
+                "p-3 rounded-lg cursor-pointer mb-1 transition-colors",
+                currentConversationId === conversation._id
+                  ? "bg-purple-100"
+                  : "hover:bg-gray-100"
+              )}
+              onClick={() => onSelectConversation(conversation._id)}
+            >
+              <div className="flex justify-between items-start">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {conversation.title}
+                </p>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteConversation(conversation._id);
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                <Clock className="h-3 w-3 text-gray-400" />
+                <span className="text-xs text-gray-500">
+                  {formatRelativeTime(conversation.updatedAt)}
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+};
