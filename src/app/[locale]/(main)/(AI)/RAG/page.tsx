@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import {
   MessageSquare,
   Send,
@@ -9,10 +10,20 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  FileText,
+  Calendar,
+  Settings,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
@@ -28,22 +39,24 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 interface Message {
   id: string;
   content: string;
-  role: "user" | "assistant";
+  role: string;
   timestamp: Date;
 }
 
 const RAGPage = () => {
   const { user } = useUser();
   const t = useTranslations("RAG");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const router = useRouter();
+  const params = useParams();
   const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
     useState<Id<"ragConversations"> | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
-  const [showConversationList, setShowConversationList] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
+  const [showConversationList, setShowConversationList] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,47 +72,25 @@ const RAGPage = () => {
       if (!user) return;
 
       try {
-        // 加载所有对话
-        await loadConversations();
-
-        // 获取用户的最近对话
-        const conversations = await convex.query(
+        // 加载对话列表
+        const loadedConversations = await convex.query(
           api.documents.getConversations,
           {
             userId: user.id,
           },
         );
+        setConversations(loadedConversations);
 
-        let newConversationId;
-        if (conversations.length > 0) {
-          // 使用最近的对话
-          newConversationId = conversations[0]._id;
-          // 加载对话历史
-          const messages = await convex.query(api.documents.getMessages, {
-            conversationId: newConversationId,
-          });
+        // 检查URL中是否有对话ID
+        const urlParams = new URLSearchParams(window.location.search);
+        const conversationIdFromUrl = urlParams.get("id");
 
-          // 转换消息格式
-          const formattedMessages: Message[] = messages.map((msg: any) => ({
-            id: msg._id,
-            content: msg.content,
-            role: msg.role,
-            timestamp: new Date(msg.createdAt),
-          }));
-
-          setMessages(formattedMessages);
-        } else {
-          // 创建新对话
-          newConversationId = await convex.mutation(
-            api.documents.createConversation,
-            {
-              userId: user.id,
-              title: t("newConversation"),
-            },
+        if (conversationIdFromUrl) {
+          // 加载指定的对话
+          await loadConversation(
+            conversationIdFromUrl as Id<"ragConversations">,
           );
         }
-
-        setConversationId(newConversationId);
       } catch (error) {
         console.error("Error initializing conversation:", error);
       }
@@ -109,7 +100,32 @@ const RAGPage = () => {
   }, [user]);
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading || !user || !conversationId) return;
+    if (!input.trim() || isLoading || !user) return;
+
+    let currentConversationId = conversationId;
+
+    // 如果没有对话ID，创建新对话
+    if (!currentConversationId) {
+      try {
+        currentConversationId = await convex.mutation(
+          api.documents.createConversation,
+          {
+            userId: user.id,
+            title: t("newConversation"),
+          },
+        );
+        setConversationId(currentConversationId);
+
+        // 更新URL，添加对话ID
+        const url = new URL(window.location.href);
+        url.searchParams.set("id", currentConversationId);
+        window.history.pushState({}, "", url.toString());
+      } catch (error) {
+        console.error("Error creating conversation:", error);
+        toast.error("创建对话失败，请重试");
+        return;
+      }
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -136,7 +152,7 @@ const RAGPage = () => {
     try {
       // 保存用户消息到Convex
       await convex.mutation(api.documents.addMessage, {
-        conversationId,
+        conversationId: currentConversationId,
         content: input,
         role: "user" as "user" | "assistant",
       });
@@ -168,10 +184,19 @@ const RAGPage = () => {
         async () => {
           // 保存助手消息到Convex
           await convex.mutation(api.documents.addMessage, {
-            conversationId,
+            conversationId: currentConversationId,
             content: currentContent,
             role: "assistant" as "user" | "assistant",
           });
+
+          // 更新对话标题
+          await convex.mutation(api.documents.updateConversationTitle, {
+            conversationId: currentConversationId,
+            title: input.length > 50 ? input.substring(0, 50) + "..." : input,
+          });
+
+          // 重新加载对话列表
+          await loadConversations();
         },
         // onError - 错误处理
         (error) => {
@@ -217,24 +242,16 @@ const RAGPage = () => {
     }
   };
 
-  // 创建新对话
-  const createNewConversation = async () => {
-    if (!user) return;
+  // 创建新对话 - 跳转到RAG首页
+  const createNewConversation = () => {
+    // 清除URL中的对话ID，返回首页
+    const url = new URL(window.location.href);
+    url.searchParams.delete("id");
+    window.history.pushState({}, "", url.toString());
 
-    try {
-      const newConversationId = await convex.mutation(
-        api.documents.createConversation,
-        {
-          userId: user.id,
-          title: t("newConversation"),
-        },
-      );
-      setConversationId(newConversationId);
-      setMessages([]);
-      await loadConversations();
-    } catch (error) {
-      console.error("Error creating new conversation:", error);
-    }
+    // 重置状态
+    setConversationId(null);
+    setMessages([]);
   };
 
   // 加载特定对话
@@ -244,6 +261,11 @@ const RAGPage = () => {
     try {
       setIsLoading(true);
       setConversationId(convId);
+
+      // 更新URL，添加对话ID
+      const url = new URL(window.location.href);
+      url.searchParams.set("id", convId);
+      window.history.pushState({}, "", url.toString());
 
       // 加载对话历史
       const messages = await convex.query(api.documents.getMessages, {
@@ -259,6 +281,7 @@ const RAGPage = () => {
       }));
 
       setMessages(formattedMessages);
+      setShowConversationList(false);
     } catch (error) {
       console.error("Error loading conversation:", error);
     } finally {
@@ -309,32 +332,44 @@ const RAGPage = () => {
     );
   }
 
+  // 格式化当前日期
+  const formatCurrentDate = () => {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      month: "numeric",
+      day: "numeric",
+      weekday: "long",
+    };
+    return now.toLocaleDateString("zh-CN", options);
+  };
+
   return (
-    <div className="px-4 py-8 h-[90vh]">
-      <div className="h-full bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden flex">
-        {/* 对话记录侧边栏 */}
+    <div className="h-screen w-full">
+      <div className="h-full w-full bg-white overflow-hidden relative">
+        {/* 对话记录侧边栏 - 绝对定位从左侧滑出 */}
         <div
-          className={`w-72 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-all duration-300 ${showConversationList ? "block" : "hidden"}`}
+          className={`absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-10 bg-white shadow-lg ${showConversationList ? "translate-x-0" : "-translate-x-full"}`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                {t("aiConversation")}
+                {t("conversationHistory")}
               </h2>
               <div className="flex items-center gap-2">
                 <Button
                   onClick={() => setShowConversationList(false)}
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 text-gray-600 dark:text-gray-300"
+                  className="h-8 w-8 p-0 text-gray-600"
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <Button
                   onClick={createNewConversation}
                   size="sm"
-                  className="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200"
+                  className="bg-gray-100 hover:bg-gray-200 text-gray-800"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -348,7 +383,7 @@ const RAGPage = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-2">
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-2">
+            <div className="text-xs text-gray-500 mb-2 px-2">
               {t("past30Days")}
             </div>
             {isLoadingConversations ? (
@@ -363,11 +398,11 @@ const RAGPage = () => {
               conversations.map((conversation) => (
                 <div
                   key={conversation._id}
-                  className={`p-3 rounded-lg cursor-pointer mb-1 transition-colors ${conversationId === conversation._id ? "bg-purple-100 dark:bg-purple-900" : "hover:bg-gray-100 dark:hover:bg-gray-700"}`}
+                  className={`p-3 rounded-lg cursor-pointer mb-1 transition-colors ${conversationId === conversation._id ? "bg-purple-100" : "hover:bg-gray-100"}`}
                   onClick={() => loadConversation(conversation._id)}
                 >
                   <div className="flex justify-between items-start">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-medium text-gray-900 truncate">
                       {conversation.title}
                     </p>
                     <Button
@@ -384,7 +419,7 @@ const RAGPage = () => {
                   </div>
                   <div className="flex items-center gap-1 mt-1">
                     <Clock className="h-3 w-3 text-gray-400" />
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-gray-500">
                       {formatRelativeTime(conversation.updatedAt)}
                     </span>
                   </div>
@@ -394,79 +429,197 @@ const RAGPage = () => {
           </div>
         </div>
 
-        {/* 对话主区域 */}
-        <div className="flex-1 flex flex-col">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-6 flex items-center">
-            <Button
-              onClick={() => setShowConversationList(true)}
-              size="sm"
-              variant="ghost"
-              className="mr-2 text-white"
+        {/* 对话主区域 - 点击关闭侧边栏 */}
+        <div
+          className="h-full w-full flex flex-col"
+          onClick={() => showConversationList && setShowConversationList(false)}
+        >
+          {/* 新对话着陆页 */}
+          {messages.length === 0 && !isLoading ? (
+            <div
+              className="flex-1 flex flex-col bg-white px-8"
+              onClick={(e) => e.stopPropagation()}
             >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-6 w-6 text-white" />
-              <h1 className="text-xl font-semibold text-white">
-                {t("aiConversation")}
-              </h1>
-            </div>
-          </div>
+              {/* 顶部导航栏 - 只显示时钟图标 */}
+              <div className="p-4 flex items-start">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setShowConversationList(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="z-[100]">
+                      <p>{t("conversationHistory")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
 
-          <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "mb-4 flex",
-                  message.role === "user" ? "justify-end" : "justify-start",
+              {/* 主要内容 */}
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="text-center max-w-md">
+                  {/* Notion 图标 */}
+                  <div className="flex justify-center mb-6">
+                    <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center">
+                      <span className="text-white text-2xl font-bold">N</span>
+                    </div>
+                  </div>
+
+                  {/* 标题 */}
+                  <h1 className="text-2xl font-semibold text-gray-900 mb-8">
+                    {t("todayIWillHelp")}
+                  </h1>
+
+                  {/* 输入框 */}
+                  <div className="relative mb-6">
+                    <Input
+                      type="text"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={t("useAIToHandleTasks")}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    <Button
+                      onClick={handleSend}
+                      disabled={!input.trim()}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gray-200 hover:bg-gray-300 text-gray-800"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* 快捷操作 */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button
+                      variant="ghost"
+                      className="border border-gray-200 rounded-lg p-3 justify-start text-left"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      <span>{t("notionAI")}</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="border border-gray-200 rounded-lg p-3 justify-start text-left"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span>撰写会议议程</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="border border-gray-200 rounded-lg p-3 justify-start text-left"
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span>分析 PDF 或图片</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      className="border border-gray-200 rounded-lg p-3 justify-start text-left"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      <span>创建任务提醒器</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* 对话页面 */
+            <div
+              className="flex-1 flex flex-col"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 顶部导航栏 - 只显示时钟图标 */}
+              <div className="p-4 flex items-start">
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={() => setShowConversationList(true)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100"
+                      >
+                        <Clock className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="z-[100]">
+                      <p>{t("conversationHistory")}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+
+              {/* 对话内容 */}
+              <div className="flex-1 p-8 overflow-y-auto">
+                {messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={cn(
+                      "mb-8 max-w-3xl",
+                      message.role === "user" ? "ml-auto" : "",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "rounded-lg p-4",
+                        message.role === "user"
+                          ? "bg-gray-100 text-gray-900"
+                          : "bg-white text-gray-900 border border-gray-200",
+                      )}
+                    >
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                    </div>
+                  </div>
+                ))}
+
+                {isLoading && (
+                  <div className="mb-8 max-w-3xl">
+                    <div className="rounded-lg p-4 bg-white text-gray-900 border border-gray-200">
+                      <p>{t("thinking")}</p>
+                    </div>
+                  </div>
                 )}
-              >
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-lg p-3",
-                    message.role === "user"
-                      ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-white rounded-br-none"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700",
-                  )}
-                >
-                  <p className="text-sm whitespace-pre-wrap">
-                    {message.content}
-                  </p>
+
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* 输入区域 */}
+              <div className="p-4 border-t border-gray-200">
+                <div className="flex gap-2">
+                  <Input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={t("useAIToHandleTasks")}
+                    className="flex-1"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" className="text-gray-600">
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="text-gray-600">
+                      <Settings className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      onClick={handleSend}
+                      disabled={!input.trim() || isLoading}
+                      className="bg-gray-900 hover:bg-gray-800 text-white"
+                    >
+                      {t("auto")}
+                    </Button>
+                  </div>
                 </div>
               </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex justify-start mb-4">
-                <div className="max-w-[80%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700">
-                  <p className="text-sm">{t("thinking")}</p>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder={t("pleaseEnterYourQuestion")}
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={isLoading || !input.trim()}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </div>

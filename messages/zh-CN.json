@@ -167,6 +167,12 @@
     "noConversationRecords": "暂无对话记录",
     "newConversation": "新对话",
     "pleaseEnterYourQuestion": "请输入您的问题...",
-    "thinking": "思考中..."
+    "thinking": "思考中...",
+    "todayIWillHelp": "今日事，我来帮。",
+    "useAIToHandleTasks": "使用 AI 处理各种任务_",
+    "conversationHistory": "对话记录",
+    "history": "历史记录",
+    "notionAI": "Notion AI",
+    "auto": "自动"
   }
 }

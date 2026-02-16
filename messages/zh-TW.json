@@ -167,6 +167,12 @@
     "noConversationRecords": "暫無對話記錄",
     "newConversation": "新對話",
     "pleaseEnterYourQuestion": "請輸入您的問題...",
-    "thinking": "思考中..."
+    "thinking": "思考中...",
+    "todayIWillHelp": "今日事，我來幫。",
+    "useAIToHandleTasks": "使用 AI 處理各種任務_",
+    "conversationHistory": "對話記錄",
+    "history": "歷史記錄",
+    "notionAI": "Notion AI",
+    "auto": "自動"
   }
 }

@@ -167,6 +167,12 @@
     "noConversationRecords": "No conversation records",
     "newConversation": "New Conversation",
     "pleaseEnterYourQuestion": "Please enter your question...",
-    "thinking": "Thinking..."
+    "thinking": "Thinking...",
+    "todayIWillHelp": "Today's tasks, I'm here to help.",
+    "useAIToHandleTasks": "Use AI to handle various tasks_",
+    "conversationHistory": "Conversation History",
+    "history": "History",
+    "notionAI": "Notion AI",
+    "auto": "Auto"
   }
 }
