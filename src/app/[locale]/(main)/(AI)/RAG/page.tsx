@@ -325,6 +325,10 @@ const RAGPage = () => {
                 todayIWillHelpText={t("todayIWillHelp")}
                 useAIToHandleTasksText={t("useAIToHandleTasks")}
                 notionAIText={t("notionAI")}
+                writeMeetingAgendaText={t("writeMeetingAgenda")}
+                analyzePDFOrImageText={t("analyzePDFOrImage")}
+                createTaskReminderText={t("createTaskReminder")}
+                featureUnderDevelopmentText={t("featureUnderDevelopment")}
               />
             </div>
           ) : (

@@ -164,16 +164,20 @@
     "aiConversation": "AI對話",
     "searchOrStartNewConversation": "搜索或開始新的對話",
     "past30Days": "過去30天",
-    "loading": "載入中...",
+    "loading": "加載中...",
     "noConversationRecords": "暫無對話記錄",
     "newConversation": "新對話",
     "pleaseEnterYourQuestion": "請輸入您的問題...",
     "thinking": "思考中...",
     "todayIWillHelp": "今日事，我來幫。",
-    "useAIToHandleTasks": "使用 AI 處理各種任務_",
+    "useAIToHandleTasks": "使用 AI 處理各種任務",
     "conversationHistory": "對話記錄",
     "history": "歷史記錄",
     "notionAI": "Notion AI",
-    "auto": "自動"
+    "auto": "自動",
+    "writeMeetingAgenda": "撰寫會議議程",
+    "analyzePDFOrImage": "分析 PDF 或圖片",
+    "createTaskReminder": "創建任務提醒器",
+    "featureUnderDevelopment": "功能開發中，敬請期待！"
   }
 }

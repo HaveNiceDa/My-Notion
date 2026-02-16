@@ -156,24 +156,28 @@
     "saving": "Saving..."
   },
   "RAG": {
-    "cannotDeleteCurrentConversation": "Cannot delete current conversation",
+    "cannotDeleteCurrentConversation": "Current conversation cannot be deleted",
     "conversationDeleted": "Conversation deleted",
-    "deleteFailed": "Delete failed, please try again",
-    "pleaseLoginFirst": "Please login first",
-    "loginToUseAIConversation": "Login to use AI conversation feature",
+    "deleteFailed": "Deletion failed, please try again",
+    "pleaseLoginFirst": "Please log in first",
+    "loginToUseAIConversation": "Please log in to use AI conversation",
     "aiConversation": "AI Conversation",
-    "searchOrStartNewConversation": "Search or start new conversation",
+    "searchOrStartNewConversation": "Search or start a new conversation",
     "past30Days": "Past 30 days",
     "loading": "Loading...",
     "noConversationRecords": "No conversation records",
-    "newConversation": "New Conversation",
+    "newConversation": "New conversation",
     "pleaseEnterYourQuestion": "Please enter your question...",
     "thinking": "Thinking...",
     "todayIWillHelp": "Today's tasks, I'm here to help.",
-    "useAIToHandleTasks": "Use AI to handle various tasks_",
-    "conversationHistory": "Conversation History",
+    "useAIToHandleTasks": "Use AI to handle various tasks",
+    "conversationHistory": "Conversation history",
     "history": "History",
     "notionAI": "Notion AI",
-    "auto": "Auto"
+    "auto": "Auto",
+    "writeMeetingAgenda": "Write meeting agenda",
+    "analyzePDFOrImage": "Analyze PDF or image",
+    "createTaskReminder": "Create task reminder",
+    "featureUnderDevelopment": "Feature under development, coming soon!"
   }
 }

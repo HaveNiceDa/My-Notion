@@ -170,10 +170,14 @@
     "pleaseEnterYourQuestion": "请输入您的问题...",
     "thinking": "思考中...",
     "todayIWillHelp": "今日事，我来帮。",
-    "useAIToHandleTasks": "使用 AI 处理各种任务_",
+    "useAIToHandleTasks": "使用 AI 处理各种任务",
     "conversationHistory": "对话记录",
     "history": "历史记录",
     "notionAI": "Notion AI",
-    "auto": "自动"
+    "auto": "自动",
+    "writeMeetingAgenda": "撰写会议议程",
+    "analyzePDFOrImage": "分析 PDF 或图片",
+    "createTaskReminder": "创建任务提醒器",
+    "featureUnderDevelopment": "功能开发中，敬请期待！"
   }
 }
