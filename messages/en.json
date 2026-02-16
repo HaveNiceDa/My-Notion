@@ -91,13 +91,14 @@
     "private": "Private",
     "search": "Search",
     "settings": "Settings",
-    "newPage": "New page",
+    "newPage": "New Page",
     "addAPage": "Add a page",
     "trash": "Trash",
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note.",
-    "untitled": "New Note"
+    "untitled": "Untitled",
+    "aiConversation": "AI Conversation"
   },
   "Item": {
     "movingToTrash": "Moving to trash...",

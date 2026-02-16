@@ -215,7 +215,7 @@ export function Navigation() {
               onClick={settings.onOpen}
             />
             <Item
-              label={"AI对话"}
+              label={t("aiConversation")}
               icon={MessageSquare}
               onClick={() => router.push(`/RAG`)}
             />

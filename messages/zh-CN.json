@@ -97,7 +97,8 @@
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNote": "创建笔记失败。",
-    "untitled": "新笔记"
+    "untitled": "新笔记",
+    "aiConversation": "AI对话"
   },
   "Item": {
     "movingToTrash": "正在移至回收站...",
