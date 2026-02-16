@@ -236,6 +236,7 @@ export const runRAGQuery = async (
 export const runRAGQueryStream = async (
   userId: string,
   query: string,
+  conversationHistory: Array<{ role: string; content: string }>,
   onChunk: (chunk: string) => void,
   onComplete: () => void,
   onError: (error: Error) => void,
@@ -266,6 +267,19 @@ export const runRAGQueryStream = async (
     // 构建系统提示
     const systemPrompt = `请根据以下上下文回答用户问题：\n\n上下文：${context}\n\n`;
 
+    // 构建完整的消息数组
+    const messages = [
+      {
+        role: "system",
+        content: systemPrompt,
+      },
+      ...conversationHistory,
+      {
+        role: "user",
+        content: query,
+      },
+    ];
+
     // 调用API路由
     const response = await fetch("/api/chat", {
       method: "POST",
@@ -273,16 +287,7 @@ export const runRAGQueryStream = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: query,
-          },
-        ],
+        messages,
       }),
     });
 

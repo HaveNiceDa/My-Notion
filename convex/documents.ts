@@ -681,6 +681,27 @@ export const updateConversationTitle = mutation({
 export const deleteConversation = mutation({
   args: { conversationId: v.id("ragConversations") },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+
+    // 获取对话信息
+    const conversation = await ctx.db.get(args.conversationId);
+
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+
+    // 验证用户权限
+    if (conversation.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    // 删除对话的所有消息
     const messages = await ctx.db
       .query("ragMessages")
       .withIndex("by_conversation", (q) =>
@@ -692,6 +713,7 @@ export const deleteConversation = mutation({
       await ctx.db.delete(message._id);
     }
 
+    // 删除对话本身
     await ctx.db.delete(args.conversationId);
     return true;
   },
