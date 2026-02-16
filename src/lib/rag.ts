@@ -7,10 +7,11 @@ import { SimpleVectorStore } from "./simpleVectorStore";
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// 文档分割器
+// 文档分割器 - 优化配置以获得更好的检索效果
 const textSplitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 1000,
-  chunkOverlap: 200,
+  chunkSize: 500, // 减小chunk大小，提高检索精度
+  chunkOverlap: 100, // 保持适当的重叠，确保上下文连贯性
+  separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""], // 优先按段落和句子分割
 });
 
 // 向量存储缓存
@@ -124,19 +125,48 @@ export const initVectorStore = async (
 export const runRAGQuery = async (
   userId: string,
   query: string,
+  minScore: number = 0.7,
 ): Promise<string> => {
   try {
     // 初始化向量存储
     const vectorStore = await initVectorStore(userId);
 
-    // 检索相关文档
-    const relevantDocs = await vectorStore.similaritySearch(query, 3);
+    // 检索相关文档，设置相似度阈值
+    const searchResults = await vectorStore.similaritySearch(
+      query,
+      3,
+      minScore,
+    );
 
-    // 构建上下文
-    const context = relevantDocs.map((doc) => doc.pageContent).join("\n\n");
+    console.log(
+      `Found ${searchResults.length} relevant documents for query:`,
+      query,
+    );
+    searchResults.forEach((item, index) => {
+      console.log(
+        `  Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
+      );
+    });
+
+    // 构建上下文，不包含相似度信息
+    let context = "";
+    if (searchResults.length > 0) {
+      context = searchResults
+        .map((item) => item.document.pageContent)
+        .join("\n\n---\n\n");
+    }
 
     // 构建系统提示
-    const systemPrompt = `请根据以下上下文回答用户问题：\n\n上下文：${context}\n\n`;
+    const systemPrompt = context
+      ? `请根据以下上下文回答用户问题。如果上下文中没有相关信息，请明确说明。
+
+上下文：
+${context}
+
+问题：${query}`
+      : `请回答用户问题。
+
+问题：${query}`;
 
     // 调用API路由
     const response = await fetch("/api/chat", {
@@ -178,19 +208,48 @@ export const runRAGQueryStream = async (
   onChunk: (chunk: string) => void,
   onComplete: () => void,
   onError: (error: Error) => void,
+  minScore: number = 0.7,
 ): Promise<void> => {
   try {
     // 初始化向量存储
     const vectorStore = await initVectorStore(userId);
 
-    // 检索相关文档
-    const relevantDocs = await vectorStore.similaritySearch(query, 3);
+    // 检索相关文档，设置相似度阈值
+    const searchResults = await vectorStore.similaritySearch(
+      query,
+      3,
+      minScore,
+    );
 
-    // 构建上下文
-    const context = relevantDocs.map((doc) => doc.pageContent).join("\n\n");
+    console.log(
+      `Found ${searchResults.length} relevant documents for query:`,
+      query,
+    );
+    searchResults.forEach((item, index) => {
+      console.log(
+        `  Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
+      );
+    });
+
+    // 构建上下文，不包含相似度信息
+    let context = "";
+    if (searchResults.length > 0) {
+      context = searchResults
+        .map((item) => item.document.pageContent)
+        .join("\n\n---\n\n");
+    }
 
     // 构建系统提示
-    const systemPrompt = `请根据以下上下文回答用户问题：\n\n上下文：${context}\n\n`;
+    const systemPrompt = context
+      ? `请根据以下上下文回答用户问题。如果上下文中没有相关信息，请明确说明。
+
+上下文：
+${context}
+
+问题：${query}`
+      : `请回答用户问题。
+
+问题：${query}`;
 
     // 构建完整的消息数组
     const messages = [

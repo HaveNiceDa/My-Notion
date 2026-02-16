@@ -31,7 +31,11 @@ export class SimpleVectorStore {
     }
   }
 
-  async similaritySearch(query: string, k: number = 4): Promise<Document[]> {
+  async similaritySearch(
+    query: string,
+    k: number = 4,
+    minScore: number = 0,
+  ): Promise<{ document: Document; score: number }[]> {
     if (this.documents.length === 0) {
       return [];
     }
@@ -40,12 +44,15 @@ export class SimpleVectorStore {
 
     const similarities = this.documents.map((doc) => ({
       document: doc,
-      similarity: this.cosineSimilarity(queryEmbedding, doc.embedding),
+      score: this.cosineSimilarity(queryEmbedding, doc.embedding),
     }));
 
-    similarities.sort((a, b) => b.similarity - a.similarity);
+    similarities.sort((a, b) => b.score - a.score);
 
-    return similarities.slice(0, k).map((item) => item.document);
+    // 过滤掉低于阈值的结果
+    const filtered = similarities.filter((item) => item.score >= minScore);
+
+    return filtered.slice(0, k);
   }
 
   private cosineSimilarity(vecA: number[], vecB: number[]): number {
