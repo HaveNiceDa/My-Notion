@@ -16,8 +16,7 @@ export async function POST(req: NextRequest) {
     // 初始化通义千问模型
     const model = new ChatAlibabaTongyi({
       model: "qwen-max",
-      alibabaApiKey:
-        process.env.LLM_API_KEY || "sk-69c8bba23c1b4226b11d3d00c14a6f79",
+      alibabaApiKey: process.env.LLM_API_KEY,
     });
 
     // 创建流式响应
