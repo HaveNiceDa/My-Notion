@@ -153,5 +153,20 @@
   "common": {
     "saved": "保存成功！",
     "saving": "保存中..."
+  },
+  "RAG": {
+    "cannotDeleteCurrentConversation": "当前对话不能删除",
+    "conversationDeleted": "对话已删除",
+    "deleteFailed": "删除失败，请重试",
+    "pleaseLoginFirst": "请先登录",
+    "loginToUseAIConversation": "登录后才能使用AI对话功能",
+    "aiConversation": "AI对话",
+    "searchOrStartNewConversation": "搜索或开始新的对话",
+    "past30Days": "过去30天",
+    "loading": "加载中...",
+    "noConversationRecords": "暂无对话记录",
+    "newConversation": "新对话",
+    "pleaseEnterYourQuestion": "请输入您的问题...",
+    "thinking": "思考中..."
   }
 }

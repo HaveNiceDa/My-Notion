@@ -153,5 +153,20 @@
   "common": {
     "saved": "Saved successfully!",
     "saving": "Saving..."
+  },
+  "RAG": {
+    "cannotDeleteCurrentConversation": "Cannot delete current conversation",
+    "conversationDeleted": "Conversation deleted",
+    "deleteFailed": "Delete failed, please try again",
+    "pleaseLoginFirst": "Please login first",
+    "loginToUseAIConversation": "Login to use AI conversation feature",
+    "aiConversation": "AI Conversation",
+    "searchOrStartNewConversation": "Search or start new conversation",
+    "past30Days": "Past 30 days",
+    "loading": "Loading...",
+    "noConversationRecords": "No conversation records",
+    "newConversation": "New Conversation",
+    "pleaseEnterYourQuestion": "Please enter your question...",
+    "thinking": "Thinking..."
   }
 }

@@ -19,6 +19,8 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { runRAGQueryStream } from "@/src/lib/rag";
 import { formatRelativeTime } from "@/src/lib/timeUtils";
+import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -32,6 +34,7 @@ interface Message {
 
 const RAGPage = () => {
   const { user } = useUser();
+  const t = useTranslations("RAG");
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -91,7 +94,7 @@ const RAGPage = () => {
             api.documents.createConversation,
             {
               userId: user.id,
-              title: "新对话",
+              title: t("newConversation"),
             },
           );
         }
@@ -223,7 +226,7 @@ const RAGPage = () => {
         api.documents.createConversation,
         {
           userId: user.id,
-          title: "新对话",
+          title: t("newConversation"),
         },
       );
       setConversationId(newConversationId);
@@ -267,32 +270,25 @@ const RAGPage = () => {
   const deleteConversation = async (convId: Id<"ragConversations">) => {
     if (!user) return;
 
+    // 如果删除的是当前对话，显示提示并禁止删除
+    if (conversationId === convId) {
+      toast.error(t("cannotDeleteCurrentConversation"));
+      return;
+    }
+
     try {
       // 执行删除操作
       await convex.mutation(api.documents.deleteConversation, {
         conversationId: convId,
       });
 
-      // 等待一段时间确保Convex数据库完全同步
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 如果删除的是当前对话，创建新对话
-      if (conversationId === convId) {
-        const newConversationId = await convex.mutation(
-          api.documents.createConversation,
-          {
-            userId: user.id,
-            title: "新对话",
-          },
-        );
-        setConversationId(newConversationId);
-        setMessages([]);
-      }
-
       // 重新加载对话列表，确保数据同步
       await loadConversations();
+
+      toast.success(t("conversationDeleted"));
     } catch (error) {
       console.error("Error deleting conversation:", error);
+      toast.error(t("deleteFailed"));
       // 如果删除失败，重新加载对话列表恢复UI
       await loadConversations();
     }
@@ -303,10 +299,10 @@ const RAGPage = () => {
       <div className="px-4 py-8 flex items-center justify-center min-h-[80vh]">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden p-8 text-center max-w-md w-full">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            请先登录
+            {t("pleaseLoginFirst")}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            登录后才能使用AI对话功能
+            {t("loginToUseAIConversation")}
           </p>
         </div>
       </div>
@@ -324,7 +320,7 @@ const RAGPage = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                 <MessageSquare className="h-5 w-5" />
-                AI对话
+                {t("aiConversation")}
               </h2>
               <div className="flex items-center gap-2">
                 <Button
@@ -346,19 +342,23 @@ const RAGPage = () => {
             </div>
             <Input
               type="text"
-              placeholder="搜索或开始新的对话"
+              placeholder={t("searchOrStartNewConversation")}
               className="w-full"
             />
           </div>
 
           <div className="flex-1 overflow-y-auto p-2">
             <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 px-2">
-              过去30天
+              {t("past30Days")}
             </div>
             {isLoadingConversations ? (
-              <div className="p-4 text-center text-gray-500">加载中...</div>
+              <div className="p-4 text-center text-gray-500">
+                {t("loading")}
+              </div>
             ) : conversations.length === 0 ? (
-              <div className="p-4 text-center text-gray-500">暂无对话记录</div>
+              <div className="p-4 text-center text-gray-500">
+                {t("noConversationRecords")}
+              </div>
             ) : (
               conversations.map((conversation) => (
                 <div
@@ -407,7 +407,9 @@ const RAGPage = () => {
             </Button>
             <div className="flex items-center gap-2">
               <MessageSquare className="h-6 w-6 text-white" />
-              <h1 className="text-xl font-semibold text-white">AI对话</h1>
+              <h1 className="text-xl font-semibold text-white">
+                {t("aiConversation")}
+              </h1>
             </div>
           </div>
 
@@ -438,7 +440,7 @@ const RAGPage = () => {
             {isLoading && (
               <div className="flex justify-start mb-4">
                 <div className="max-w-[80%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700">
-                  <p className="text-sm">Thinking...</p>
+                  <p className="text-sm">{t("thinking")}</p>
                 </div>
               </div>
             )}
@@ -453,7 +455,7 @@ const RAGPage = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder="请输入您的问题..."
+                placeholder={t("pleaseEnterYourQuestion")}
                 className="flex-1"
               />
               <Button
