@@ -177,85 +177,79 @@ const RAGPage = () => {
 
   if (!user) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-b from-purple-900 to-indigo-900">
-        <div className="container mx-auto px-4 py-8 max-w-3xl flex items-center justify-center h-full">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden p-8 text-center">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-              请先登录
-            </h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              登录后才能使用智能客服功能
-            </p>
-          </div>
+      <div className="px-4 py-8 flex items-center justify-center min-h-[80vh]">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden p-8 text-center max-w-md w-full">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+            请先登录
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            登录后才能使用AI对话功能
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-b from-purple-900 to-indigo-900">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
-          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-6">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-6 w-6 text-white" />
-              <h1 className="text-xl font-semibold text-white">智能客服</h1>
-            </div>
+    <div className="px-4 py-8">
+      <div className="max-w-4xl mx-auto bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 py-4 px-6">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-6 w-6 text-white" />
+            <h1 className="text-xl font-semibold text-white">AI对话</h1>
           </div>
+        </div>
 
-          <div className="p-4 h-[600px] overflow-y-auto bg-gray-50 dark:bg-gray-900">
-            {messages.map((message) => (
+        <div className="p-4 h-[700px] overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={cn(
+                "mb-4 flex",
+                message.role === "user" ? "justify-end" : "justify-start",
+              )}
+            >
               <div
-                key={message.id}
                 className={cn(
-                  "mb-4 flex",
-                  message.role === "user" ? "justify-end" : "justify-start",
+                  "max-w-[80%] rounded-lg p-3",
+                  message.role === "user"
+                    ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-white rounded-br-none"
+                    : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700",
                 )}
               >
-                <div
-                  className={cn(
-                    "max-w-[80%] rounded-lg p-3",
-                    message.role === "user"
-                      ? "bg-purple-100 dark:bg-purple-900 text-purple-900 dark:text-white rounded-br-none"
-                      : "bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700",
-                  )}
-                >
-                  <p className="text-sm whitespace-pre-wrap">
-                    {message.content}
-                  </p>
-                </div>
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
-            ))}
-
-            {isLoading && (
-              <div className="flex justify-start mb-4">
-                <div className="max-w-[80%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700">
-                  <p className="text-sm">Thinking...</p>
-                </div>
-              </div>
-            )}
-
-            <div ref={messagesEndRef} />
-          </div>
-
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <div className="flex gap-2">
-              <Input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="请输入您的问题..."
-                className="flex-1"
-              />
-              <Button
-                onClick={handleSend}
-                disabled={isLoading || !input.trim()}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                <Send className="h-5 w-5" />
-              </Button>
             </div>
+          ))}
+
+          {isLoading && (
+            <div className="flex justify-start mb-4">
+              <div className="max-w-[80%] rounded-lg p-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-bl-none border border-gray-200 dark:border-gray-700">
+                <p className="text-sm">Thinking...</p>
+              </div>
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="请输入您的问题..."
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSend}
+              disabled={isLoading || !input.trim()}
+              className="bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <Send className="h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
   ChevronsLeft,
   ChevronsUp,
   MenuIcon,
+  MessageSquare,
   Plus,
   PlusCircle,
   Search,
@@ -38,7 +39,11 @@ interface CollapsibleSectionProps {
   children: React.ReactNode;
 }
 
-function CollapsibleSection({ title, defaultExpanded = false, children }: CollapsibleSectionProps) {
+function CollapsibleSection({
+  title,
+  defaultExpanded = false,
+  children,
+}: CollapsibleSectionProps) {
   const [isExpanded, setIsExpanded] = useState(defaultExpanded);
 
   // 当defaultExpanded变化时更新展开状态
@@ -55,17 +60,13 @@ function CollapsibleSection({ title, defaultExpanded = false, children }: Collap
         <span>{title}</span>
         <div className="flex items-center gap-x-2">
           <div
-            className={`w-4 h-4 flex items-center justify-center transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 flex items-center justify-center transition-transform ${isExpanded ? "rotate-180" : ""}`}
           >
             <ChevronsUp className="w-4 h-4" />
           </div>
         </div>
       </div>
-      {isExpanded && (
-        <div className="pl-3">
-          {children}
-        </div>
-      )}
+      {isExpanded && <div className="pl-3">{children}</div>}
     </div>
   );
 }
@@ -214,6 +215,11 @@ export function Navigation() {
               onClick={settings.onOpen}
             />
             <Item
+              label={"AI对话"}
+              icon={MessageSquare}
+              onClick={() => router.push(`/RAG`)}
+            />
+            <Item
               onClick={handleCreate}
               label={t("newPage")}
               icon={PlusCircle}
@@ -229,10 +235,7 @@ export function Navigation() {
             </CollapsibleSection>
 
             {/* 私人文件夹 */}
-            <CollapsibleSection
-              title={t("private")}
-              defaultExpanded={true}
-            >
+            <CollapsibleSection title={t("private")} defaultExpanded={true}>
               <DocumentList isStarred={false} />
               <Item onClick={handleCreate} icon={Plus} label={t("addAPage")} />
             </CollapsibleSection>
