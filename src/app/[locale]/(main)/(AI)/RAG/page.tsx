@@ -287,10 +287,7 @@ const RAGPage = () => {
           onClick={() => showConversationList && setShowConversationList(false)}
         >
           {messages.length === 0 && !isLoading ? (
-            <div
-              className="flex-1 flex flex-col bg-white px-8"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="flex-1 flex flex-col bg-white px-8">
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
               />
@@ -302,10 +299,7 @@ const RAGPage = () => {
               />
             </div>
           ) : (
-            <div
-              className="flex-1 flex flex-col h-full"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <div className="flex-1 flex flex-col h-full">
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
               />
