@@ -9,6 +9,7 @@ import { runRAGQueryStream } from "@/src/lib/rag";
 import { formatRelativeTime } from "@/src/lib/timeUtils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { TopNavigation } from "./components/TopNavigation";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -26,6 +27,9 @@ interface Message {
 
 const RAGPage = () => {
   const { user } = useUser();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
   const t = useTranslations("RAG");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -60,8 +64,7 @@ const RAGPage = () => {
         );
         setConversations(loadedConversations);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const conversationIdFromUrl = urlParams.get("id");
+        const conversationIdFromUrl = searchParams.get("id");
 
         if (conversationIdFromUrl) {
           await loadConversation(
@@ -93,9 +96,7 @@ const RAGPage = () => {
         setConversationId(currentConversationId);
         setConversationCreatedAt(new Date());
 
-        const url = new URL(window.location.href);
-        url.searchParams.set("id", currentConversationId);
-        window.history.pushState({}, "", url.toString());
+        router.push(`?id=${currentConversationId}`);
       } catch (error) {
         console.error("Error creating conversation:", error);
         toast.error("创建对话失败，请重试");
@@ -208,10 +209,7 @@ const RAGPage = () => {
   };
 
   const createNewConversation = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete("id");
-    window.history.pushState({}, "", url.toString());
-
+    router.push(pathname);
     setConversationId(null);
     setMessages([]);
     setConversationCreatedAt(null);
@@ -224,9 +222,7 @@ const RAGPage = () => {
       setIsLoading(true);
       setConversationId(convId);
 
-      const url = new URL(window.location.href);
-      url.searchParams.set("id", convId);
-      window.history.pushState({}, "", url.toString());
+      router.push(`?id=${convId}`);
 
       const messages = await convex.query(api.documents.getMessages, {
         conversationId: convId,
