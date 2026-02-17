@@ -2,6 +2,8 @@
 
 import { cn } from "@/src/lib/utils";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { Copy } from "lucide-react";
 
 interface Message {
   id: string;
@@ -36,7 +38,7 @@ export const MessageList = ({
 
   return (
     <div className="flex-1 flex justify-center p-8 overflow-y-auto min-h-0">
-      <div className="w-full max-w-[60%]">
+      <div className="w-full max-w-[50%]">
         {conversationCreatedAt && (
           <div className="mb-8 text-center">
             <div className="inline-block text-gray-600 px-4 py-1 rounded-full text-sm">
@@ -55,13 +57,47 @@ export const MessageList = ({
           >
             <div
               className={cn(
-                "rounded-lg p-4 max-w-[80%]",
-                message.role === "user"
-                  ? "bg-gray-100 text-gray-900"
-                  : "bg-white text-gray-900",
+                "relative group max-w-[80%]",
+                message.role === "user" ? "flex flex-col items-end" : "",
               )}
             >
-              <p className="whitespace-pre-wrap">{message.content}</p>
+              {/* 消息内容 */}
+              <div
+                className={cn(
+                  "rounded-lg p-4",
+                  message.role === "user"
+                    ? "bg-gray-100 text-gray-900"
+                    : "bg-white text-gray-900",
+                )}
+              >
+                <p className="whitespace-pre-wrap">{message.content}</p>
+              </div>
+
+              {/* 用户消息的 hover 效果 */}
+              {message.role === "user" && (
+                <div className="mt-1 flex gap-2 items-center justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* 底部日期显示 */}
+                  <div className="text-xs text-gray-500">
+                    {message.timestamp.toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+
+                  {/* 右侧复制按钮 */}
+                  <button
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      toast.success(t("copied"));
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}

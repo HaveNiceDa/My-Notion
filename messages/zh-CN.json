@@ -178,6 +178,7 @@
     "writeMeetingAgenda": "撰写会议议程",
     "analyzePDFOrImage": "分析 PDF 或图片",
     "createTaskReminder": "创建任务提醒器",
-    "featureUnderDevelopment": "功能开发中，敬请期待！"
+    "featureUnderDevelopment": "功能开发中，敬请期待！",
+    "copied": "已复制"
   }
 }

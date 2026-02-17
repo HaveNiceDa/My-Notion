@@ -156,11 +156,11 @@
     "saving": "Saving..."
   },
   "RAG": {
-    "cannotDeleteCurrentConversation": "Current conversation cannot be deleted",
+    "cannotDeleteCurrentConversation": "Cannot delete current conversation",
     "conversationDeleted": "Conversation deleted",
-    "deleteFailed": "Deletion failed, please try again",
-    "pleaseLoginFirst": "Please log in first",
-    "loginToUseAIConversation": "Please log in to use AI conversation",
+    "deleteFailed": "Delete failed, please try again",
+    "pleaseLoginFirst": "Please login first",
+    "loginToUseAIConversation": "Login to use AI conversation",
     "aiConversation": "AI Conversation",
     "searchOrStartNewConversation": "Search or start a new conversation",
     "past30Days": "Past 30 days",
@@ -169,8 +169,8 @@
     "newConversation": "New conversation",
     "pleaseEnterYourQuestion": "Please enter your question...",
     "thinking": "Thinking...",
-    "todayIWillHelp": "Today's tasks, I'm here to help.",
-    "useAIToHandleTasks": "Use AI to handle various tasks",
+    "todayIWillHelp": "Today I will help",
+    "useAIToHandleTasks": "Use AI to handle tasks",
     "conversationHistory": "Conversation history",
     "history": "History",
     "notionAI": "Notion AI",
@@ -178,6 +178,7 @@
     "writeMeetingAgenda": "Write meeting agenda",
     "analyzePDFOrImage": "Analyze PDF or image",
     "createTaskReminder": "Create task reminder",
-    "featureUnderDevelopment": "Feature under development, coming soon!"
+    "featureUnderDevelopment": "Feature under development, coming soon!",
+    "copied": "Copied"
   }
 }
