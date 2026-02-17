@@ -2,14 +2,14 @@
 
 import { Plus, Settings, Send } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 import { useTranslations } from "next-intl";
 
 interface MessageInputProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 export const MessageInput = ({
@@ -23,15 +23,14 @@ export const MessageInput = ({
   return (
     <div className="p-4 border-t border-gray-200">
       <div className="flex gap-2">
-        <Input
-          type="text"
+        <Textarea
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyPress={onKeyPress}
           placeholder={t("useAIToHandleTasks")}
-          className="flex-1"
+          className="flex-1 min-h-[80px] resize-none"
         />
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <Button variant="ghost" size="sm" className="text-gray-600">
             <Plus className="h-4 w-4" />
           </Button>

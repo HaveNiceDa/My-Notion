@@ -31,6 +31,8 @@ const RAGPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
     useState<Id<"ragConversations"> | null>(null);
+  const [conversationCreatedAt, setConversationCreatedAt] =
+    useState<Date | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
@@ -89,6 +91,7 @@ const RAGPage = () => {
           },
         );
         setConversationId(currentConversationId);
+        setConversationCreatedAt(new Date());
 
         const url = new URL(window.location.href);
         url.searchParams.set("id", currentConversationId);
@@ -181,7 +184,7 @@ const RAGPage = () => {
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -211,6 +214,7 @@ const RAGPage = () => {
 
     setConversationId(null);
     setMessages([]);
+    setConversationCreatedAt(null);
   };
 
   const loadConversation = async (convId: Id<"ragConversations">) => {
@@ -236,6 +240,12 @@ const RAGPage = () => {
       }));
 
       setMessages(formattedMessages);
+
+      const conversation = conversations.find((conv) => conv._id === convId);
+      if (conversation) {
+        setConversationCreatedAt(new Date(conversation.createdAt));
+      }
+
       setShowConversationList(false);
     } catch (error) {
       console.error("Error loading conversation:", error);
@@ -302,6 +312,7 @@ const RAGPage = () => {
                 messages={messages}
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
+                conversationCreatedAt={conversationCreatedAt}
               />
               <MessageInput
                 input={input}

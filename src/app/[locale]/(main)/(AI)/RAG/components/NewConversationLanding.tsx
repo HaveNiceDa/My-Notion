@@ -2,7 +2,7 @@
 
 import { MessageSquare, FileText, Calendar, Send, File } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Input } from "@/src/components/ui/input";
+import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -10,7 +10,7 @@ interface NewConversationLandingProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 export const NewConversationLanding = ({
@@ -40,13 +40,12 @@ export const NewConversationLanding = ({
           </h1>
 
           <div className="relative mb-6 w-full">
-            <Input
-              type="text"
+            <Textarea
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyPress={onKeyPress}
               placeholder={t("useAIToHandleTasks")}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent min-h-[80px] resize-none"
             />
             <Button
               onClick={onSend}

@@ -14,18 +14,37 @@ interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  conversationCreatedAt: Date | null;
 }
 
 export const MessageList = ({
   messages,
   isLoading,
   messagesEndRef,
+  conversationCreatedAt,
 }: MessageListProps) => {
   const t = useTranslations("RAG");
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "long",
+    });
+  };
 
   return (
     <div className="flex-1 flex justify-center p-8 overflow-y-auto min-h-0">
       <div className="w-full max-w-[60%]">
+        {conversationCreatedAt && (
+          <div className="mb-8 text-center">
+            <div className="inline-block text-gray-600 px-4 py-1 rounded-full text-sm">
+              {formatDate(conversationCreatedAt)} · Notion AI
+            </div>
+          </div>
+        )}
+
         {messages.map((message) => (
           <div
             key={message.id}
