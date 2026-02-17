@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
@@ -28,7 +27,6 @@ interface Message {
 const RAGPage = () => {
   const { user } = useUser();
   const t = useTranslations("RAG");
-  const router = useRouter();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -269,33 +267,13 @@ const RAGPage = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="px-4 py-8 flex items-center justify-center min-h-[80vh]">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl overflow-hidden p-8 text-center max-w-md w-full">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-            {t("pleaseLoginFirst")}
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t("loginToUseAIConversation")}
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="h-screen w-full">
+    <div className="min-h-screen w-full">
       <div className="h-full w-full bg-white overflow-hidden relative">
         <ConversationSidebar
           show={showConversationList}
           conversations={conversations}
           isLoading={isLoadingConversations}
-          conversationHistoryText={t("conversationHistory")}
-          searchPlaceholder={t("searchOrStartNewConversation")}
-          past30DaysText={t("past30Days")}
-          loadingText={t("loading")}
-          noConversationRecordsText={t("noConversationRecords")}
           onClose={() => setShowConversationList(false)}
           onNewConversation={createNewConversation}
           onSelectConversation={loadConversation}
@@ -315,20 +293,12 @@ const RAGPage = () => {
             >
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
-                conversationHistoryText={t("conversationHistory")}
               />
               <NewConversationLanding
                 input={input}
                 onInputChange={setInput}
                 onSend={handleSend}
                 onKeyPress={handleKeyPress}
-                todayIWillHelpText={t("todayIWillHelp")}
-                useAIToHandleTasksText={t("useAIToHandleTasks")}
-                notionAIText={t("notionAI")}
-                writeMeetingAgendaText={t("writeMeetingAgenda")}
-                analyzePDFOrImageText={t("analyzePDFOrImage")}
-                createTaskReminderText={t("createTaskReminder")}
-                featureUnderDevelopmentText={t("featureUnderDevelopment")}
               />
             </div>
           ) : (
@@ -338,12 +308,10 @@ const RAGPage = () => {
             >
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
-                conversationHistoryText={t("conversationHistory")}
               />
               <MessageList
                 messages={messages}
                 isLoading={isLoading}
-                thinkingText={t("thinking")}
                 messagesEndRef={messagesEndRef}
               />
               <MessageInput
@@ -351,8 +319,6 @@ const RAGPage = () => {
                 onInputChange={setInput}
                 onSend={handleSend}
                 onKeyPress={handleKeyPress}
-                useAIToHandleTasksText={t("useAIToHandleTasks")}
-                autoText={t("auto")}
               />
             </div>
           )}

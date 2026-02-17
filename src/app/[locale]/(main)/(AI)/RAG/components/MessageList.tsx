@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/src/lib/utils";
+import { useTranslations } from "next-intl";
 
 interface Message {
   id: string;
@@ -12,16 +13,16 @@ interface Message {
 interface MessageListProps {
   messages: Message[];
   isLoading: boolean;
-  thinkingText: string;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
 }
 
 export const MessageList = ({
   messages,
   isLoading,
-  thinkingText,
   messagesEndRef,
 }: MessageListProps) => {
+  const t = useTranslations("RAG");
+
   return (
     <div className="flex-1 p-8 overflow-y-auto">
       {messages.map((message) => (
@@ -48,7 +49,7 @@ export const MessageList = ({
       {isLoading && (
         <div className="mb-8 max-w-3xl">
           <div className="rounded-lg p-4 bg-white text-gray-900 border border-gray-200">
-            <p>{thinkingText}</p>
+            <p>{t("thinking")}</p>
           </div>
         </div>
       )}

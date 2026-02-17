@@ -4,19 +4,13 @@ import { MessageSquare, FileText, Calendar, Send, File } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface NewConversationLandingProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
-  todayIWillHelpText: string;
-  useAIToHandleTasksText: string;
-  notionAIText: string;
-  writeMeetingAgendaText: string;
-  analyzePDFOrImageText: string;
-  createTaskReminderText: string;
-  featureUnderDevelopmentText: string;
 }
 
 export const NewConversationLanding = ({
@@ -24,16 +18,11 @@ export const NewConversationLanding = ({
   onInputChange,
   onSend,
   onKeyPress,
-  todayIWillHelpText,
-  useAIToHandleTasksText,
-  notionAIText,
-  writeMeetingAgendaText,
-  analyzePDFOrImageText,
-  createTaskReminderText,
-  featureUnderDevelopmentText,
 }: NewConversationLandingProps) => {
+  const t = useTranslations("RAG");
+
   const handleFeatureClick = () => {
-    toast.info(featureUnderDevelopmentText);
+    toast.info(t("featureUnderDevelopment"));
   };
 
   return (
@@ -47,7 +36,7 @@ export const NewConversationLanding = ({
           </div>
 
           <h1 className="text-2xl font-semibold text-gray-900 mb-8">
-            {todayIWillHelpText}
+            {t("todayIWillHelp")}
           </h1>
 
           <div className="relative mb-6 w-full">
@@ -56,7 +45,7 @@ export const NewConversationLanding = ({
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
               onKeyPress={onKeyPress}
-              placeholder={useAIToHandleTasksText}
+              placeholder={t("useAIToHandleTasks")}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent pr-12"
             />
             <Button
@@ -75,7 +64,7 @@ export const NewConversationLanding = ({
               onClick={handleFeatureClick}
             >
               <MessageSquare className="h-4 w-4 mr-2" />
-              <span>{notionAIText}</span>
+              <span>{t("notionAI")}</span>
             </Button>
             <Button
               variant="ghost"
@@ -83,7 +72,7 @@ export const NewConversationLanding = ({
               onClick={handleFeatureClick}
             >
               <FileText className="h-4 w-4 mr-2" />
-              <span>{writeMeetingAgendaText}</span>
+              <span>{t("writeMeetingAgenda")}</span>
             </Button>
             <Button
               variant="ghost"
@@ -91,7 +80,7 @@ export const NewConversationLanding = ({
               onClick={handleFeatureClick}
             >
               <File className="h-4 w-4 mr-2" />
-              <span>{analyzePDFOrImageText}</span>
+              <span>{t("analyzePDFOrImage")}</span>
             </Button>
             <Button
               variant="ghost"
@@ -99,7 +88,7 @@ export const NewConversationLanding = ({
               onClick={handleFeatureClick}
             >
               <Calendar className="h-4 w-4 mr-2" />
-              <span>{createTaskReminderText}</span>
+              <span>{t("createTaskReminder")}</span>
             </Button>
           </div>
         </div>

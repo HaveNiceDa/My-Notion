@@ -8,16 +8,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
+import { useTranslations } from "next-intl";
 
 interface TopNavigationProps {
   onShowHistory: () => void;
-  conversationHistoryText: string;
 }
 
-export const TopNavigation = ({
-  onShowHistory,
-  conversationHistoryText,
-}: TopNavigationProps) => {
+export const TopNavigation = ({ onShowHistory }: TopNavigationProps) => {
+  const t = useTranslations("RAG");
+
   return (
     <div className="p-4 flex items-start">
       <TooltipProvider delayDuration={100}>
@@ -33,7 +32,7 @@ export const TopNavigation = ({
             </Button>
           </TooltipTrigger>
           <TooltipContent className="z-[100]">
-            <p>{conversationHistoryText}</p>
+            <p>{t("conversationHistory")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>

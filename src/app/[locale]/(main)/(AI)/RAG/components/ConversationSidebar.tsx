@@ -5,6 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
+import { useTranslations } from "next-intl";
 
 interface Conversation {
   _id: Id<"ragConversations">;
@@ -16,11 +17,6 @@ interface ConversationSidebarProps {
   show: boolean;
   conversations: Conversation[];
   isLoading: boolean;
-  conversationHistoryText: string;
-  searchPlaceholder: string;
-  past30DaysText: string;
-  loadingText: string;
-  noConversationRecordsText: string;
   onClose: () => void;
   onNewConversation: () => void;
   onSelectConversation: (convId: Id<"ragConversations">) => void;
@@ -33,11 +29,6 @@ export const ConversationSidebar = ({
   show,
   conversations,
   isLoading,
-  conversationHistoryText,
-  searchPlaceholder,
-  past30DaysText,
-  loadingText,
-  noConversationRecordsText,
   onClose,
   onNewConversation,
   onSelectConversation,
@@ -45,6 +36,8 @@ export const ConversationSidebar = ({
   currentConversationId,
   formatRelativeTime,
 }: ConversationSidebarProps) => {
+  const t = useTranslations("RAG");
+
   return (
     <div
       className={cn(
@@ -57,7 +50,7 @@ export const ConversationSidebar = ({
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
             <MessageSquare className="h-5 w-5" />
-            {conversationHistoryText}
+            {t("conversationHistory")}
           </h2>
           <div className="flex items-center gap-2">
             <Button
@@ -77,20 +70,20 @@ export const ConversationSidebar = ({
             </Button>
           </div>
         </div>
-        <Input type="text" placeholder={searchPlaceholder} className="w-full" />
+        <Input type="text" placeholder={t("searchOrStartNewConversation")} className="w-full" />
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
         <div className="text-xs text-gray-500 mb-2 px-2">
-          {past30DaysText}
+          {t("past30Days")}
         </div>
         {isLoading ? (
           <div className="p-4 text-center text-gray-500">
-            {loadingText}
+            {t("loading")}
           </div>
         ) : conversations.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
-            {noConversationRecordsText}
+            {t("noConversationRecords")}
           </div>
         ) : (
           conversations.map((conversation) => (
