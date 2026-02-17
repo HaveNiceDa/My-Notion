@@ -24,7 +24,7 @@ export const MessageList = ({
   const t = useTranslations("RAG");
 
   return (
-    <div className="flex-1 p-8 overflow-y-auto">
+    <div className="flex-1 p-8 overflow-y-auto min-h-0">
       {messages.map((message) => (
         <div
           key={message.id}

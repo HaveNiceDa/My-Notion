@@ -268,7 +268,7 @@ const RAGPage = () => {
   };
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="h-screen w-full">
       <div className="h-full w-full bg-white overflow-hidden relative">
         <ConversationSidebar
           show={showConversationList}
@@ -303,7 +303,7 @@ const RAGPage = () => {
             </div>
           ) : (
             <div
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col h-full"
               onClick={(e) => e.stopPropagation()}
             >
               <TopNavigation
