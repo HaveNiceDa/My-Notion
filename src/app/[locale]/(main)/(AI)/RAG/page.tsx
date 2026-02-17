@@ -296,9 +296,11 @@ const RAGPage = () => {
           className="h-full w-full flex flex-col"
           onClick={() => showConversationList && setShowConversationList(false)}
         >
-          <TopNavigation onShowHistory={() => setShowConversationList(true)} />
           {messages.length === 0 && !isLoading ? (
             <div className="flex-1 flex flex-col bg-white px-8">
+              <TopNavigation
+                onShowHistory={() => setShowConversationList(true)}
+              />
               <NewConversationLanding
                 input={input}
                 onInputChange={setInput}
@@ -308,6 +310,9 @@ const RAGPage = () => {
             </div>
           ) : (
             <div className="flex-1 flex flex-col h-full">
+              <TopNavigation
+                onShowHistory={() => setShowConversationList(true)}
+              />
               <MessageList
                 messages={messages}
                 isLoading={isLoading}
