@@ -41,8 +41,8 @@ export const ConversationSidebar = ({
   return (
     <div
       className={cn(
-        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-10 bg-white shadow-lg",
-        show ? "translate-x-0" : "-translate-x-full"
+        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-[100001] bg-white shadow-lg",
+        show ? "translate-x-0" : "-translate-x-full",
       )}
       onClick={(e) => e.stopPropagation()}
     >
@@ -70,17 +70,17 @@ export const ConversationSidebar = ({
             </Button>
           </div>
         </div>
-        <Input type="text" placeholder={t("searchOrStartNewConversation")} className="w-full" />
+        <Input
+          type="text"
+          placeholder={t("searchOrStartNewConversation")}
+          className="w-full"
+        />
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="text-xs text-gray-500 mb-2 px-2">
-          {t("past30Days")}
-        </div>
+        <div className="text-xs text-gray-500 mb-2 px-2">{t("past30Days")}</div>
         {isLoading ? (
-          <div className="p-4 text-center text-gray-500">
-            {t("loading")}
-          </div>
+          <div className="p-4 text-center text-gray-500">{t("loading")}</div>
         ) : conversations.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
             {t("noConversationRecords")}
@@ -93,7 +93,7 @@ export const ConversationSidebar = ({
                 "p-3 rounded-lg cursor-pointer mb-1 transition-colors",
                 currentConversationId === conversation._id
                   ? "bg-purple-100"
-                  : "hover:bg-gray-100"
+                  : "hover:bg-gray-100",
               )}
               onClick={() => onSelectConversation(conversation._id)}
             >
