@@ -292,7 +292,7 @@ const RAGPage = () => {
           className="h-full w-full flex flex-col"
           onClick={() => showConversationList && setShowConversationList(false)}
         >
-          {messages.length === 0 && !isLoading ? (
+          {!searchParams.get("id") ? (
             <div className="flex-1 flex flex-col bg-white">
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
