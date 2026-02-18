@@ -1,17 +1,17 @@
-const createNextIntlPlugin = require('next-intl/plugin');
- 
+const createNextIntlPlugin = require("next-intl/plugin");
+
 const withNextIntl = createNextIntlPlugin();
- 
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     domains: ["files.edgestore.dev"],
   },
   reactStrictMode: false,
+  outputFileTracing: false,
 };
- 
-module.exports = withNextIntl(nextConfig);
 
+module.exports = withNextIntl(nextConfig);
 
 // Injected content via Sentry wizard below
 
