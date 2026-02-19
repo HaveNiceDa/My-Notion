@@ -349,12 +349,16 @@ const RAGPage = () => {
                 messagesEndRef={messagesEndRef}
                 conversationCreatedAt={conversationCreatedAt}
               />
-              <MessageInput
-                input={input}
-                onInputChange={setInput}
-                onSend={handleSend}
-                onKeyPress={handleKeyPress}
-              />
+              <div className="w-full flex justify-center">
+                <div className="w-1/2">
+                  <MessageInput
+                    input={input}
+                    onInputChange={setInput}
+                    onSend={handleSend}
+                    onKeyPress={handleKeyPress}
+                  />
+                </div>
+              </div>
             </div>
           )}
         </div>
