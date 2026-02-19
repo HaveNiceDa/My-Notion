@@ -6,7 +6,7 @@ import {
   ChevronsLeft,
   ChevronsUp,
   MenuIcon,
-  MessageSquare,
+  Sparkles,
   Plus,
   PlusCircle,
   Search,
@@ -217,8 +217,8 @@ export function Navigation() {
               onClick={settings.onOpen}
             />
             <Item
-              label={t("aiConversation")}
-              icon={MessageSquare}
+              label="Notion AI"
+              icon={Sparkles}
               onClick={() => router.push(`/Chat`)}
             />
             <Item
