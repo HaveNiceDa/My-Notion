@@ -4,12 +4,15 @@ import { Plus, Settings, Send } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
+import { cn } from "@/src/lib/utils";
 
 interface MessageInputProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  className?: string;
 }
 
 export const MessageInput = ({
@@ -17,35 +20,36 @@ export const MessageInput = ({
   onInputChange,
   onSend,
   onKeyPress,
+  className,
 }: MessageInputProps) => {
   const t = useTranslations("RAG");
 
   return (
-    <div className="p-4 border-t border-gray-200">
-      <div className="flex gap-2">
-        <Textarea
-          value={input}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyPress={onKeyPress}
-          placeholder={t("useAIToHandleTasks")}
-          className="flex-1 min-h-[80px] resize-none"
-        />
-        <div className="flex items-end gap-2">
-          <Button variant="ghost" size="sm" className="text-gray-600">
-            <Plus className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" className="text-gray-600">
-            <Settings className="h-4 w-4" />
-          </Button>
-          <Button
-            onClick={onSend}
-            disabled={!input.trim()}
-            className="bg-gray-900 hover:bg-gray-800 text-white"
-          >
-            {t("auto")}
-          </Button>
-        </div>
-      </div>
+    <div className="relative">
+      <Textarea
+        value={input}
+        onChange={(e) => onInputChange(e.target.value)}
+        onKeyPress={onKeyPress}
+        placeholder={t("useAIToHandleTasks")}
+        className={cn(
+          "w-full px-5 py-4 pr-14 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
+          className,
+        )}
+      />
+      <Button
+        className="absolute left-2 bottom-1 bg-transparent hover:bg-gray-100 text-gray-800 rounded-full transition-all duration-200 p-3"
+        onClick={() => toast.info(t("featureUnderDevelopment"))}
+      >
+        <Plus className="h-5 w-5 rounded-full" />
+      </Button>
+
+      <Button
+        onClick={onSend}
+        disabled={!input.trim()}
+        className="absolute right-2 bottom-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+      >
+        <Send className="h-5 w-5 rounded-full" />
+      </Button>
     </div>
   );
 };

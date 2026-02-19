@@ -5,6 +5,7 @@ import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { MessageInput } from "./MessageInput";
 
 interface NewConversationLandingProps {
   input: string;
@@ -40,23 +41,12 @@ export const NewConversationLanding = ({
           </h1>
 
           <div className="relative mb-8 w-full">
-            <div className="relative">
-              <Textarea
-                value={input}
-                onChange={(e) => onInputChange(e.target.value)}
-                onKeyPress={onKeyPress}
-                placeholder={t("useAIToHandleTasks")}
-                className="w-full px-5 py-4 pr-14 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none"
-              />
-
-              <Button
-                onClick={onSend}
-                disabled={!input.trim()}
-                className="absolute right-2 bottom-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
-              >
-                <Send className="h-5 w-5 rounded-full" />
-              </Button>
-            </div>
+            <MessageInput
+              input={input}
+              onInputChange={onInputChange}
+              onSend={onSend}
+              onKeyPress={onKeyPress}
+            />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
