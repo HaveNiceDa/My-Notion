@@ -4,6 +4,8 @@ import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { SimpleVectorStore } from "./simpleVectorStore";
 
+type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
+
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -125,6 +127,7 @@ export const initVectorStore = async (
 export const runRAGQuery = async (
   userId: string,
   query: string,
+  model: AIModel = "qwen-max",
   minScore: number = 0.7,
 ): Promise<string> => {
   try {
@@ -175,6 +178,7 @@ ${context}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model,
         messages: [
           {
             role: "system",
@@ -208,6 +212,7 @@ export const runRAGQueryStream = async (
   onChunk: (chunk: string) => void,
   onComplete: () => void,
   onError: (error: Error) => void,
+  model: AIModel = "qwen-max",
   minScore: number = 0.7,
 ): Promise<void> => {
   try {
@@ -272,6 +277,7 @@ ${context}
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        model,
         messages,
       }),
     });

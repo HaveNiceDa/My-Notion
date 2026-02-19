@@ -10,6 +10,7 @@ import { formatRelativeTime } from "@/src/lib/timeUtils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { TopNavigation } from "./components/TopNavigation";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -31,6 +32,7 @@ const AIPage = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const t = useTranslations("AI");
+  const { model } = useAIModelStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -203,6 +205,7 @@ const AIPage = () => {
             ),
           );
         },
+        model,
       );
     } finally {
       setIsLoading(false);

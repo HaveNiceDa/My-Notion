@@ -1,11 +1,28 @@
 "use client";
 
-import { Plus, Settings, Send } from "lucide-react";
+import { Plus, Settings, Send, Bot, Check } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/src/components/ui/dropdown-menu";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
+import {
+  useAIModelStore,
+  AI_MODELS,
+  AIModel,
+} from "@/src/lib/store/use-ai-model-store";
+
+const displayNames: Record<AIModel, string> = {
+  "qwen-plus": "Qwen Plus",
+  "qwen-max": "Qwen Max",
+  "qwen3-coder-plus": "Qwen 3 Coder Plus",
+};
 
 interface MessageInputProps {
   input: string;
@@ -23,6 +40,11 @@ export const MessageInput = ({
   className,
 }: MessageInputProps) => {
   const t = useTranslations("AI");
+  const { model, setModel } = useAIModelStore();
+
+  const getModelDisplayName = (modelName: AIModel) => {
+    return displayNames[modelName] || modelName;
+  };
 
   return (
     <div className="relative">
@@ -32,7 +54,7 @@ export const MessageInput = ({
         onKeyPress={onKeyPress}
         placeholder={t("useAIToHandleTasks")}
         className={cn(
-          "w-full px-5 py-4 pr-14 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
+          "w-full px-5 py-4 pr-44 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
           className,
         )}
       />
@@ -48,6 +70,32 @@ export const MessageInput = ({
       >
         <Settings />
       </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            className="absolute right-14 bottom-1 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+            variant="ghost"
+          >
+            <Bot className="h-5 w-5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {AI_MODELS.map((m) => (
+            <DropdownMenuItem
+              key={m}
+              onClick={() => setModel(m)}
+              className={cn(
+                "cursor-pointer flex items-center justify-between",
+                model === m && "bg-gray-100 font-medium",
+              )}
+            >
+              <span>{getModelDisplayName(m)}</span>
+              {model === m && <Check className="h-4 w-4" />}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Button
         onClick={onSend}
