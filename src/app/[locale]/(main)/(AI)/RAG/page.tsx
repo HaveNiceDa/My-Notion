@@ -305,7 +305,7 @@ const RAGPage = () => {
               />
             </div>
           ) : (
-            <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 flex flex-col h-full pb-4">
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
               />

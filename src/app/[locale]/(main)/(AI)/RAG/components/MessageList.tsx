@@ -37,7 +37,7 @@ export const MessageList = ({
   };
 
   return (
-    <div className="flex-1 flex justify-center p-8 overflow-y-auto min-h-0">
+    <div className="flex-1 flex justify-center p-8 overflow-y-auto min-h-0 mb-10">
       <div className="w-full max-w-[50%]">
         {conversationCreatedAt && (
           <div className="mb-8 text-center">
@@ -63,10 +63,10 @@ export const MessageList = ({
             >
               <div
                 className={cn(
-                  "rounded-lg p-4 break-words",
+                  "p-4 break-words",
                   message.role === "user"
-                    ? "bg-gray-100 text-gray-900"
-                    : "bg-white text-gray-900 pb-1",
+                    ? "bg-gray-100 text-gray-900 rounded-3xl"
+                    : "bg-white text-gray-900 pb-1 rounded-lg",
                 )}
               >
                 <p className="whitespace-pre-wrap text-base break-all">
