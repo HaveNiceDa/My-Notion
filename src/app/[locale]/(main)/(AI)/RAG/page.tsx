@@ -96,6 +96,7 @@ const RAGPage = () => {
         setConversationId(currentConversationId);
         setConversationCreatedAt(new Date());
 
+        await loadConversations();
         router.push(`?id=${currentConversationId}`);
       } catch (error) {
         console.error("Error creating conversation:", error);
@@ -237,7 +238,17 @@ const RAGPage = () => {
 
       setMessages(formattedMessages);
 
-      const conversation = conversations.find((conv) => conv._id === convId);
+      let conversation = conversations.find((conv) => conv._id === convId);
+      if (!conversation) {
+        const loadedConversations = await convex.query(
+          api.documents.getConversations,
+          {
+            userId: user.id,
+          },
+        );
+        setConversations(loadedConversations);
+        conversation = loadedConversations.find((conv) => conv._id === convId);
+      }
       if (conversation) {
         setConversationCreatedAt(new Date(conversation.createdAt));
       }
