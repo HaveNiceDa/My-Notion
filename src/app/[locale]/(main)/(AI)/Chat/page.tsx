@@ -25,16 +25,16 @@ interface Message {
   timestamp: Date;
 }
 
-const RAGPage = () => {
+const AIPage = () => {
   const { user } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
-    useState<Id<"ragConversations"> | null>(null);
+    useState<Id<"aiConversations"> | null>(null);
   const [conversationCreatedAt, setConversationCreatedAt] =
     useState<Date | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
@@ -71,7 +71,7 @@ const RAGPage = () => {
 
         if (conversationIdFromUrl) {
           await loadConversation(
-            conversationIdFromUrl as Id<"ragConversations">,
+            conversationIdFromUrl as Id<"aiConversations">,
           );
         }
 
@@ -92,7 +92,7 @@ const RAGPage = () => {
       previousSearchParamsIdRef.current = currentId;
 
       if (currentId) {
-        loadConversation(currentId as Id<"ragConversations">);
+        loadConversation(currentId as Id<"aiConversations">);
       } else if (previousId) {
         setConversationId(null);
         setMessages([]);
@@ -241,7 +241,7 @@ const RAGPage = () => {
     setShowConversationList(false);
   };
 
-  const loadConversation = async (convId: Id<"ragConversations">) => {
+  const loadConversation = async (convId: Id<"aiConversations">) => {
     if (!user) return;
 
     try {
@@ -287,7 +287,7 @@ const RAGPage = () => {
     }
   };
 
-  const deleteConversation = async (convId: Id<"ragConversations">) => {
+  const deleteConversation = async (convId: Id<"aiConversations">) => {
     if (!user) return;
 
     if (conversationId === convId) {
@@ -379,4 +379,4 @@ const RAGPage = () => {
   );
 };
 
-export default RAGPage;
+export default AIPage;

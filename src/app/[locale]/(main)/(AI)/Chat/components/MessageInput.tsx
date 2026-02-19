@@ -22,7 +22,7 @@ export const MessageInput = ({
   onKeyPress,
   className,
 }: MessageInputProps) => {
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
 
   return (
     <div className="relative">

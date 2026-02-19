@@ -217,7 +217,7 @@ export function Navigation() {
             <Item
               label={t("aiConversation")}
               icon={MessageSquare}
-              onClick={() => router.push(`/RAG`)}
+              onClick={() => router.push(`/Chat`)}
             />
             <Item
               onClick={handleCreate}

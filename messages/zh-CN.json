@@ -155,7 +155,7 @@
     "saved": "保存成功！",
     "saving": "保存中..."
   },
-  "RAG": {
+  "AI": {
     "cannotDeleteCurrentConversation": "当前对话不能删除",
     "conversationDeleted": "对话已删除",
     "deleteFailed": "删除失败，请重试",

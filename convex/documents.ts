@@ -581,16 +581,16 @@ export const toggleStar = mutation({
   },
 });
 
-// RAG相关函数
+// AI相关函数
 
 /**
- * 获取用户的所有RAG对话
+ * 获取用户的所有AI对话
  */
 export const getConversations = query({
   args: { userId: v.string() },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("ragConversations")
+      .query("aiConversations")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .order("desc")
       .collect();
@@ -601,10 +601,10 @@ export const getConversations = query({
  * 获取对话的所有消息
  */
 export const getMessages = query({
-  args: { conversationId: v.id("ragConversations") },
+  args: { conversationId: v.id("aiConversations") },
   handler: async (ctx, args) => {
     return await ctx.db
-      .query("ragMessages")
+      .query("aiMessages")
       .withIndex("by_conversation", (q) =>
         q.eq("conversationId", args.conversationId),
       )
@@ -620,7 +620,7 @@ export const createConversation = mutation({
   args: { userId: v.string(), title: v.string() },
   handler: async (ctx, args) => {
     const now = Date.now();
-    return await ctx.db.insert("ragConversations", {
+    return await ctx.db.insert("aiConversations", {
       userId: args.userId,
       title: args.title,
       createdAt: now,
@@ -634,7 +634,7 @@ export const createConversation = mutation({
  */
 export const addMessage = mutation({
   args: {
-    conversationId: v.id("ragConversations"),
+    conversationId: v.id("aiConversations"),
     content: v.string(),
     role: v.union(v.literal("user"), v.literal("assistant")),
     documentId: v.optional(v.id("documents")),
@@ -642,7 +642,7 @@ export const addMessage = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
 
-    const messageId = await ctx.db.insert("ragMessages", {
+    const messageId = await ctx.db.insert("aiMessages", {
       conversationId: args.conversationId,
       content: args.content,
       role: args.role,
@@ -663,7 +663,7 @@ export const addMessage = mutation({
  */
 export const updateConversationTitle = mutation({
   args: {
-    conversationId: v.id("ragConversations"),
+    conversationId: v.id("aiConversations"),
     title: v.string(),
   },
   handler: async (ctx, args) => {
@@ -679,7 +679,7 @@ export const updateConversationTitle = mutation({
  * 删除对话
  */
 export const deleteConversation = mutation({
-  args: { conversationId: v.id("ragConversations"), userId: v.string() },
+  args: { conversationId: v.id("aiConversations"), userId: v.string() },
   handler: async (ctx, args) => {
     const userId = args.userId;
 
@@ -697,7 +697,7 @@ export const deleteConversation = mutation({
 
     // 删除对话的所有消息
     const messages = await ctx.db
-      .query("ragMessages")
+      .query("aiMessages")
       .withIndex("by_conversation", (q) =>
         q.eq("conversationId", args.conversationId),
       )

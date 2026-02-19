@@ -25,7 +25,7 @@ export const MessageList = ({
   messagesEndRef,
   conversationCreatedAt,
 }: MessageListProps) => {
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("zh-CN", {

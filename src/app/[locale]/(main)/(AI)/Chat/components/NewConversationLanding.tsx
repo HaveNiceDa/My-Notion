@@ -1,8 +1,7 @@
 "use client";
 
-import { MessageSquare, FileText, Calendar, Send, File } from "lucide-react";
+import { MessageSquare, FileText, Calendar, File } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
-import { Textarea } from "@/src/components/ui/textarea";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { MessageInput } from "./MessageInput";
@@ -20,7 +19,7 @@ export const NewConversationLanding = ({
   onSend,
   onKeyPress,
 }: NewConversationLandingProps) => {
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
 
   const handleFeatureClick = () => {
     toast.info(t("featureUnderDevelopment"));

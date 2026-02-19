@@ -19,7 +19,7 @@ import { useTranslations } from "next-intl";
 import { SidebarButton } from "./SidebarButton";
 
 interface Conversation {
-  _id: Id<"ragConversations">;
+  _id: Id<"aiConversations">;
   title: string;
   updatedAt: number;
 }
@@ -32,9 +32,9 @@ interface ConversationSidebarProps {
   onClose: () => void;
   onPin: () => void;
   onNewConversation: () => void;
-  onSelectConversation: (convId: Id<"ragConversations">) => void;
-  onDeleteConversation: (convId: Id<"ragConversations">) => void;
-  currentConversationId: Id<"ragConversations"> | null;
+  onSelectConversation: (convId: Id<"aiConversations">) => void;
+  onDeleteConversation: (convId: Id<"aiConversations">) => void;
+  currentConversationId: Id<"aiConversations"> | null;
   formatRelativeTime: (timestamp: number) => string;
 }
 
@@ -51,7 +51,7 @@ export const ConversationSidebar = ({
   currentConversationId,
   formatRelativeTime,
 }: ConversationSidebarProps) => {
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -83,7 +83,7 @@ export const ConversationSidebar = ({
           <div className="flex items-center gap-0.5">
             <SidebarButton
               onClick={() => {
-                router.push(`/RAG`);
+                router.push(`/Chat`);
                 onClose();
               }}
               tooltip={t("goHome")}

@@ -155,7 +155,7 @@
     "saved": "Saved successfully!",
     "saving": "Saving..."
   },
-  "RAG": {
+  "AI": {
     "cannotDeleteCurrentConversation": "Cannot delete current conversation",
     "conversationDeleted": "Conversation deleted",
     "deleteFailed": "Delete failed, please try again",

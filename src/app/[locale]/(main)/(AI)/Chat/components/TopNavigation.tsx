@@ -15,7 +15,7 @@ interface TopNavigationProps {
 }
 
 export const TopNavigation = ({ onShowHistory }: TopNavigationProps) => {
-  const t = useTranslations("RAG");
+  const t = useTranslations("AI");
 
   return (
     <div className="relative left-4 top-1 flex items-start z-[100000] w-full">
