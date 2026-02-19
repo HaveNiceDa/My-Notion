@@ -45,9 +45,13 @@
   },
   "Menu": {
     "delete": "Delete",
+    "rename": "Rename",
     "movingToTrash": "Moving to trash...",
     "noteMovedToTrash": "Note Moved to trash!",
     "failedToArchiveNote": "Failed to archive note.",
+    "renamingNote": "Renaming note...",
+    "noteRenamed": "Note renamed!",
+    "failedToRenameNote": "Failed to rename note.",
     "lastEditedBy": "Last edited by: {name}"
   },
   "Publish": {
@@ -113,6 +117,10 @@
     "cannotMoveIntoOwnSubtree": "Cannot move document into its own subtree",
     "untitled": "New Note",
     "delete": "Delete",
+    "rename": "Rename",
+    "renamingNote": "Renaming note...",
+    "noteRenamed": "Note renamed!",
+    "failedToRenameNote": "Failed to rename note",
     "lastEditedBy": "Last edited by: {name}"
   },
   "Documents": {
@@ -140,6 +148,14 @@
     },
     "coverImage": {
       "coverImage": "Cover Image"
+    },
+    "rename": {
+      "renameDocument": "Rename document",
+      "enterNewName": "Enter the new document name",
+      "documentName": "Document name",
+      "cancel": "Cancel",
+      "save": "Save",
+      "renaming": "Renaming..."
     }
   },
   "Toolbar": {

@@ -45,9 +45,13 @@
   },
   "Menu": {
     "delete": "刪除",
+    "rename": "重新命名",
     "movingToTrash": "正在移至回收站...",
     "noteMovedToTrash": "筆記已移至回收站！",
     "failedToArchiveNote": "歸檔筆記失敗。",
+    "renamingNote": "正在重新命名...",
+    "noteRenamed": "筆記已重新命名！",
+    "failedToRenameNote": "重新命名筆記失敗。",
     "lastEditedBy": "最後編輯者：{name}"
   },
   "Publish": {
@@ -113,6 +117,10 @@
     "cannotMoveIntoOwnSubtree": "不能將文檔移動到自己的子文檔中",
     "untitled": "新筆記",
     "delete": "刪除",
+    "rename": "重新命名",
+    "renamingNote": "正在重新命名...",
+    "noteRenamed": "筆記已重新命名！",
+    "failedToRenameNote": "重新命名筆記失敗",
     "lastEditedBy": "最後編輯者：{name}"
   },
   "Documents": {
@@ -121,12 +129,12 @@
     "creatingNote": "正在創建新筆記...",
     "noteCreated": "新筆記已創建",
     "failedToCreateNote": "創建新筆記失敗",
-    "noStarredPages": "快去收藏你喜好的文章吧～",
-    "untitled": "新筆記"
+    "untitled": "新筆記",
+    "noStarredPages": "快去收藏你喜好的文章吧～"
   },
   "Modals": {
     "settings": {
-      "mySettings": "我的設置",
+      "mySettings": "我的設定",
       "appearance": "外觀",
       "customizeHowNotionLooks": "自定義 Notion 的外觀",
       "language": "語言",
@@ -140,6 +148,14 @@
     },
     "coverImage": {
       "coverImage": "封面圖片"
+    },
+    "rename": {
+      "renameDocument": "重新命名文件",
+      "enterNewName": "請輸入新的文件名稱",
+      "documentName": "文件名稱",
+      "cancel": "取消",
+      "save": "保存",
+      "renaming": "重新命名中..."
     }
   },
   "LanguageDetector": {

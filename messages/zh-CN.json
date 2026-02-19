@@ -45,9 +45,13 @@
   },
   "Menu": {
     "delete": "删除",
+    "rename": "重命名",
     "movingToTrash": "正在移至回收站...",
     "noteMovedToTrash": "笔记已移至回收站！",
     "failedToArchiveNote": "归档笔记失败。",
+    "renamingNote": "正在重命名...",
+    "noteRenamed": "笔记已重命名！",
+    "failedToRenameNote": "重命名笔记失败。",
     "lastEditedBy": "最后编辑者：{name}"
   },
   "Publish": {
@@ -113,6 +117,10 @@
     "cannotMoveIntoOwnSubtree": "不能将文档移动到自己的子文档中",
     "untitled": "新笔记",
     "delete": "删除",
+    "rename": "重命名",
+    "renamingNote": "正在重命名...",
+    "noteRenamed": "笔记已重命名！",
+    "failedToRenameNote": "重命名笔记失败",
     "lastEditedBy": "最后编辑者：{name}"
   },
   "Documents": {
@@ -140,6 +148,14 @@
     },
     "coverImage": {
       "coverImage": "封面图片"
+    },
+    "rename": {
+      "renameDocument": "重命名文档",
+      "enterNewName": "请输入新的文档名称",
+      "documentName": "文档名称",
+      "cancel": "取消",
+      "save": "保存",
+      "renaming": "重命名中..."
     }
   },
   "LanguageDetector": {

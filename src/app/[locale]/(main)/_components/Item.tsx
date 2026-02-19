@@ -7,6 +7,7 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@/src/lib/utils";
+import { RenameModal } from "@/src/components/modals/rename-modal";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,6 +21,7 @@ import {
   ChevronRight,
   LucideIcon,
   MoreHorizontal,
+  Pencil,
   Plus,
   Trash,
 } from "lucide-react";
@@ -57,6 +59,8 @@ export function Item({
   const create = useMutation(api.documents.create);
   const archive = useMutation(api.documents.archive);
   const move = useMutation(api.documents.move);
+  const update = useMutation(api.documents.update);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const t = useTranslations("Item");
   const [isDragging, setIsDragging] = useState(false);
   const [isOver, setIsOver] = useState(false);
@@ -158,6 +162,19 @@ export function Item({
 
   const ChevronIcon = expanded ? ChevronDown : ChevronRight;
 
+  const handleRename = async (newTitle: string) => {
+    if (!id) return;
+    const promise = update({ id, title: newTitle });
+
+    toast.promise(promise, {
+      loading: t("renamingNote"),
+      success: t("noteRenamed"),
+      error: t("failedToRenameNote"),
+    });
+
+    await promise;
+  };
+
   return (
     <div
       className={cn(
@@ -219,6 +236,15 @@ export function Item({
               side="right"
               forceMount
             >
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsRenameModalOpen(true);
+                }}
+              >
+                <Pencil className="w-4 h-4 mr-2" />
+                {t("rename")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onArchive}>
                 <Trash className="w-4 h-4 mr-2" />
                 {t("delete")}
@@ -237,6 +263,14 @@ export function Item({
             <Plus className="w-4 h-4 text-muted-foreground" />
           </div>
         </div>
+      )}
+      {!!id && (
+        <RenameModal
+          isOpen={isRenameModalOpen}
+          onClose={() => setIsRenameModalOpen(false)}
+          currentTitle={label}
+          onRename={handleRename}
+        />
       )}
     </div>
   );
