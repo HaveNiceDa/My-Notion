@@ -42,6 +42,7 @@ const RAGPage = () => {
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const previousSearchParamsIdRef = useRef<string | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,6 +72,8 @@ const RAGPage = () => {
             conversationIdFromUrl as Id<"ragConversations">,
           );
         }
+
+        previousSearchParamsIdRef.current = conversationIdFromUrl;
       } catch (error) {
         console.error("Error initializing conversation:", error);
       }
@@ -78,6 +81,23 @@ const RAGPage = () => {
 
     initConversation();
   }, [user]);
+
+  useEffect(() => {
+    const currentId = searchParams.get("id");
+    const previousId = previousSearchParamsIdRef.current;
+
+    if (currentId !== previousId) {
+      previousSearchParamsIdRef.current = currentId;
+
+      if (currentId) {
+        loadConversation(currentId as Id<"ragConversations">);
+      } else if (previousId) {
+        setConversationId(null);
+        setMessages([]);
+        setConversationCreatedAt(null);
+      }
+    }
+  }, [searchParams.get("id")]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || !user) return;
@@ -95,6 +115,7 @@ const RAGPage = () => {
         );
         setConversationId(currentConversationId);
         setConversationCreatedAt(new Date());
+        previousSearchParamsIdRef.current = currentConversationId;
 
         await loadConversations();
         router.push(`?id=${currentConversationId}`);
@@ -214,6 +235,7 @@ const RAGPage = () => {
     setConversationId(null);
     setMessages([]);
     setConversationCreatedAt(null);
+    previousSearchParamsIdRef.current = null;
   };
 
   const loadConversation = async (convId: Id<"ragConversations">) => {
@@ -222,6 +244,7 @@ const RAGPage = () => {
     try {
       setIsLoading(true);
       setConversationId(convId);
+      previousSearchParamsIdRef.current = convId;
 
       router.push(`?id=${convId}`);
 
