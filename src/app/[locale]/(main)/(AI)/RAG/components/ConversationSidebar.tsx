@@ -46,10 +46,9 @@ export const ConversationSidebar = ({
       )}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <MessageSquare className="h-5 w-5" />
+      <div className="p-4 pb-0">
+        <div className="flex items-center justify-between ">
+          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             {t("conversationHistory")}
           </h2>
           <div className="flex items-center gap-2">
@@ -70,10 +69,12 @@ export const ConversationSidebar = ({
             </Button>
           </div>
         </div>
+      </div>
+      <div className="p-2 ">
         <Input
           type="text"
           placeholder={t("searchOrStartNewConversation")}
-          className="w-full"
+          className="w-full border border-gray-200 rounded-md shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent"
         />
       </div>
 
