@@ -295,6 +295,7 @@ const RAGPage = () => {
     try {
       await convex.mutation(api.documents.deleteConversation, {
         conversationId: convId,
+        userId: user.id,
       });
 
       await loadConversations();

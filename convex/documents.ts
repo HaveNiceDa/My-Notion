@@ -679,15 +679,9 @@ export const updateConversationTitle = mutation({
  * 删除对话
  */
 export const deleteConversation = mutation({
-  args: { conversationId: v.id("ragConversations") },
+  args: { conversationId: v.id("ragConversations"), userId: v.string() },
   handler: async (ctx, args) => {
-    const identity = await ctx.auth.getUserIdentity();
-
-    if (!identity) {
-      throw new Error("Not authenticated");
-    }
-
-    const userId = identity.subject;
+    const userId = args.userId;
 
     // 获取对话信息
     const conversation = await ctx.db.get(args.conversationId);
