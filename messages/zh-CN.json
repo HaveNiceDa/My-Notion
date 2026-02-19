@@ -185,6 +185,7 @@
     "closeSidebar": "关闭",
     "newAIConversation": "新建AI对话",
     "goHome": "回到首页",
-    "searchConversationHistory": "搜索历史对话"
+    "searchConversationHistory": "搜索历史对话",
+    "noMatchingConversations": "没有找到匹配的对话"
   }
 }

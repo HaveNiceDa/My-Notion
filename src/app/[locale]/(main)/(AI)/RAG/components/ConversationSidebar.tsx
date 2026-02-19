@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ChevronLeft,
@@ -52,6 +53,15 @@ export const ConversationSidebar = ({
 }: ConversationSidebarProps) => {
   const t = useTranslations("RAG");
   const router = useRouter();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredConversations = useMemo(
+    () =>
+      conversations.filter((conversation) =>
+        conversation.title.toLowerCase().includes(searchQuery.toLowerCase()),
+      ),
+    [conversations, searchQuery],
+  );
 
   return (
     <div
@@ -105,6 +115,8 @@ export const ConversationSidebar = ({
       <div className="p-2">
         <Input
           type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t("searchConversationHistory")}
           className="w-full border border-gray-200 rounded-md shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent"
         />
@@ -114,12 +126,14 @@ export const ConversationSidebar = ({
         <div className="text-xs text-gray-500 mb-2 px-2">{t("past30Days")}</div>
         {isLoading ? (
           <div className="p-4 text-center text-gray-500">{t("loading")}</div>
-        ) : conversations.length === 0 ? (
+        ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-gray-500">
-            {t("noConversationRecords")}
+            {searchQuery
+              ? t("noMatchingConversations")
+              : t("noConversationRecords")}
           </div>
         ) : (
-          conversations.map((conversation) => (
+          filteredConversations.map((conversation) => (
             <div
               key={conversation._id}
               className={cn(

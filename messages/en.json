@@ -185,6 +185,7 @@
     "closeSidebar": "Close",
     "newAIConversation": "New AI Conversation",
     "goHome": "Go to Home",
-    "searchConversationHistory": "Search conversation history"
+    "searchConversationHistory": "Search conversation history",
+    "noMatchingConversations": "No matching conversations found"
   }
 }
