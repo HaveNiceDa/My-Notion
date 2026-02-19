@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, ChevronLeft, Plus, Trash2, Clock } from "lucide-react";
+import { ChevronLeft, Plus, Trash2, Clock, Pin, PinOff } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
@@ -15,9 +15,11 @@ interface Conversation {
 
 interface ConversationSidebarProps {
   show: boolean;
+  isPinned: boolean;
   conversations: Conversation[];
   isLoading: boolean;
   onClose: () => void;
+  onPin: () => void;
   onNewConversation: () => void;
   onSelectConversation: (convId: Id<"ragConversations">) => void;
   onDeleteConversation: (convId: Id<"ragConversations">) => void;
@@ -27,9 +29,11 @@ interface ConversationSidebarProps {
 
 export const ConversationSidebar = ({
   show,
+  isPinned,
   conversations,
   isLoading,
   onClose,
+  onPin,
   onNewConversation,
   onSelectConversation,
   onDeleteConversation,
@@ -41,8 +45,12 @@ export const ConversationSidebar = ({
   return (
     <div
       className={cn(
-        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col transition-transform duration-300 ease-in-out z-[100001] bg-white shadow-lg",
-        show ? "translate-x-0" : "-translate-x-full",
+        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col z-[100001] bg-white",
+        isPinned
+          ? "translate-x-0 shadow-none"
+          : show
+            ? "translate-x-0 shadow-lg transition-transform duration-300 ease-in-out"
+            : "-translate-x-full transition-transform duration-300 ease-in-out",
       )}
       onClick={(e) => e.stopPropagation()}
     >
@@ -51,7 +59,19 @@ export const ConversationSidebar = ({
           <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
             {t("conversationHistory")}
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
+            <Button
+              onClick={onPin}
+              size="sm"
+              variant="ghost"
+              className="h-8 w-8 p-0 text-gray-600"
+            >
+              {isPinned ? (
+                <PinOff className="h-4 w-4" />
+              ) : (
+                <Pin className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               onClick={onClose}
               size="sm"
@@ -63,7 +83,8 @@ export const ConversationSidebar = ({
             <Button
               onClick={onNewConversation}
               size="sm"
-              className="bg-gray-100 hover:bg-gray-200 text-gray-800"
+              variant="ghost"
+              className="h-8 w-8 "
             >
               <Plus className="h-4 w-4" />
             </Button>

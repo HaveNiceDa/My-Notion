@@ -7,6 +7,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { runRAGQueryStream } from "@/src/lib/rag";
 import { formatRelativeTime } from "@/src/lib/timeUtils";
+import { cn } from "@/src/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -41,6 +42,8 @@ const RAGPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
+  const [isConversationListPinned, setIsConversationListPinned] =
+    useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousSearchParamsIdRef = useRef<string | null>(null);
 
@@ -312,10 +315,14 @@ const RAGPage = () => {
     <div className="h-screen w-full">
       <div className="h-full w-full bg-white overflow-hidden relative">
         <ConversationSidebar
-          show={showConversationList}
+          show={showConversationList || isConversationListPinned}
+          isPinned={isConversationListPinned}
           conversations={conversations}
           isLoading={isLoadingConversations}
-          onClose={() => setShowConversationList(false)}
+          onClose={() =>
+            !isConversationListPinned && setShowConversationList(false)
+          }
+          onPin={() => setIsConversationListPinned(!isConversationListPinned)}
           onNewConversation={createNewConversation}
           onSelectConversation={loadConversation}
           onDeleteConversation={deleteConversation}
@@ -325,7 +332,11 @@ const RAGPage = () => {
 
         <div
           className="h-full w-full flex flex-col"
-          onClick={() => showConversationList && setShowConversationList(false)}
+          onClick={() =>
+            !isConversationListPinned &&
+            showConversationList &&
+            setShowConversationList(false)
+          }
         >
           {!searchParams.get("id") ? (
             <div className="flex-1 flex flex-col bg-white">
