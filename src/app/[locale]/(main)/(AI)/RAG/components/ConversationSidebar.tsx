@@ -1,6 +1,15 @@
 "use client";
 
-import { ChevronLeft, Plus, Trash2, Clock, Pin, PinOff } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  ChevronLeft,
+  Plus,
+  Trash2,
+  Clock,
+  Pin,
+  PinOff,
+  Home,
+} from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
@@ -42,6 +51,7 @@ export const ConversationSidebar = ({
   formatRelativeTime,
 }: ConversationSidebarProps) => {
   const t = useTranslations("RAG");
+  const router = useRouter();
 
   return (
     <div
@@ -61,6 +71,15 @@ export const ConversationSidebar = ({
             {t("conversationHistory")}
           </h2>
           <div className="flex items-center gap-0.5">
+            <SidebarButton
+              onClick={() => {
+                router.push(`/RAG`);
+                onClose();
+              }}
+              tooltip={t("goHome")}
+            >
+              <Home className="h-4 w-4" />
+            </SidebarButton>
             <SidebarButton
               onClick={onPin}
               tooltip={isPinned ? t("unpinSidebar") : t("pinSidebar")}
@@ -86,7 +105,7 @@ export const ConversationSidebar = ({
       <div className="p-2">
         <Input
           type="text"
-          placeholder={t("searchOrStartNewConversation")}
+          placeholder={t("searchConversationHistory")}
           className="w-full border border-gray-200 rounded-md shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent"
         />
       </div>

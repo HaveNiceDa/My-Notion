@@ -183,6 +183,8 @@
     "pinSidebar": "Pin",
     "unpinSidebar": "Unpin",
     "closeSidebar": "Close",
-    "newAIConversation": "New AI Conversation"
+    "newAIConversation": "New AI Conversation",
+    "goHome": "Go to Home",
+    "searchConversationHistory": "Search conversation history"
   }
 }

@@ -183,6 +183,8 @@
     "pinSidebar": "固定",
     "unpinSidebar": "取消固定",
     "closeSidebar": "關閉",
-    "newAIConversation": "新建AI對話"
+    "newAIConversation": "新建AI對話",
+    "goHome": "回到首頁",
+    "searchConversationHistory": "搜索歷史對話"
   }
 }
