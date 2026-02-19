@@ -27,6 +27,7 @@ import {
 } from "@/src/components/ui/popover";
 import { useSearch } from "@/src/hooks/use-search";
 import { useSettings } from "@/src/hooks/use-settings";
+import { useNavigation } from "@/src/hooks/use-navigation";
 
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";
@@ -75,6 +76,7 @@ export function Navigation() {
   const router = useRouter();
   const settings = useSettings();
   const search = useSearch();
+  const navigation = useNavigation();
   const params = useParams();
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -88,7 +90,7 @@ export function Navigation() {
   const sidebarRef = useRef<HTMLDivElement>(null);
   const navbarRef = useRef<HTMLDivElement>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(isMobile);
+  const isCollapsed = navigation.isCollapsed;
 
   useEffect(() => {
     if (isMobile) {
@@ -140,7 +142,7 @@ export function Navigation() {
 
   const resetWidth = () => {
     if (sidebarRef.current && navbarRef.current) {
-      setIsCollapsed(false);
+      navigation.setIsCollapsed(false);
       setIsResetting(true);
 
       sidebarRef.current.style.width = isMobile ? "100%" : "240px";
@@ -157,7 +159,7 @@ export function Navigation() {
 
   const collapse = () => {
     if (sidebarRef.current && navbarRef.current) {
-      setIsCollapsed(true);
+      navigation.setIsCollapsed(true);
       setIsResetting(true);
 
       sidebarRef.current.style.width = "0";

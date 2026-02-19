@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { useTranslations } from "next-intl";
+import { useNavigation } from "@/src/hooks/use-navigation";
 
 interface TopNavigationProps {
   onShowHistory: () => void;
@@ -16,9 +17,12 @@ interface TopNavigationProps {
 
 export const TopNavigation = ({ onShowHistory }: TopNavigationProps) => {
   const t = useTranslations("AI");
+  const { isCollapsed } = useNavigation();
 
   return (
-    <div className="relative left-4 top-1 flex items-start z-[100000] w-full">
+    <div
+      className={`relative top-1 flex items-start z-[100000] w-full ${isCollapsed ? "left-10" : "left-4"}`}
+    >
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
