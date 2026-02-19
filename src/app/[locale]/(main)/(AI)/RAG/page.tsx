@@ -7,7 +7,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { runRAGQueryStream } from "@/src/lib/rag";
 import { formatRelativeTime } from "@/src/lib/timeUtils";
-import { cn } from "@/src/lib/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -239,6 +238,7 @@ const RAGPage = () => {
     setMessages([]);
     setConversationCreatedAt(null);
     previousSearchParamsIdRef.current = null;
+    setShowConversationList(false);
   };
 
   const loadConversation = async (convId: Id<"ragConversations">) => {

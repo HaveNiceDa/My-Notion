@@ -179,6 +179,10 @@
     "analyzePDFOrImage": "分析 PDF 或图片",
     "createTaskReminder": "创建任务提醒器",
     "featureUnderDevelopment": "功能开发中，敬请期待！",
-    "copied": "已复制"
+    "copied": "已复制",
+    "pinSidebar": "固定",
+    "unpinSidebar": "取消固定",
+    "closeSidebar": "关闭",
+    "newAIConversation": "新建AI对话"
   }
 }

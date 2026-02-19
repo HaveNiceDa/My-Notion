@@ -179,6 +179,10 @@
     "analyzePDFOrImage": "分析 PDF 或圖片",
     "createTaskReminder": "創建任務提醒器",
     "featureUnderDevelopment": "功能開發中，敬請期待！",
-    "copied": "已複製"
+    "copied": "已複製",
+    "pinSidebar": "固定",
+    "unpinSidebar": "取消固定",
+    "closeSidebar": "關閉",
+    "newAIConversation": "新建AI對話"
   }
 }

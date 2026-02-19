@@ -179,6 +179,10 @@
     "analyzePDFOrImage": "Analyze PDF or image",
     "createTaskReminder": "Create task reminder",
     "featureUnderDevelopment": "Feature under development, coming soon!",
-    "copied": "Copied"
+    "copied": "Copied",
+    "pinSidebar": "Pin",
+    "unpinSidebar": "Unpin",
+    "closeSidebar": "Close",
+    "newAIConversation": "New AI Conversation"
   }
 }

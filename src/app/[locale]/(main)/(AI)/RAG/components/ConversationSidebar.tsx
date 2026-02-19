@@ -6,6 +6,7 @@ import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
 import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
+import { SidebarButton } from "./SidebarButton";
 
 interface Conversation {
   _id: Id<"ragConversations">;
@@ -60,38 +61,29 @@ export const ConversationSidebar = ({
             {t("conversationHistory")}
           </h2>
           <div className="flex items-center gap-0.5">
-            <Button
+            <SidebarButton
               onClick={onPin}
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-gray-600"
+              tooltip={isPinned ? t("unpinSidebar") : t("pinSidebar")}
             >
               {isPinned ? (
                 <PinOff className="h-4 w-4" />
               ) : (
                 <Pin className="h-4 w-4" />
               )}
-            </Button>
-            <Button
-              onClick={onClose}
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 p-0 text-gray-600"
-            >
+            </SidebarButton>
+            <SidebarButton onClick={onClose} tooltip={t("closeSidebar")}>
               <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
+            </SidebarButton>
+            <SidebarButton
               onClick={onNewConversation}
-              size="sm"
-              variant="ghost"
-              className="h-8 w-8 "
+              tooltip={t("newAIConversation")}
             >
               <Plus className="h-4 w-4" />
-            </Button>
+            </SidebarButton>
           </div>
         </div>
       </div>
-      <div className="p-2 ">
+      <div className="p-2">
         <Input
           type="text"
           placeholder={t("searchOrStartNewConversation")}
