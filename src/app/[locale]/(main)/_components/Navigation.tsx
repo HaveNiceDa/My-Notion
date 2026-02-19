@@ -67,7 +67,7 @@ function CollapsibleSection({
           </div>
         </div>
       </div>
-      {isExpanded && <div className="pl-3">{children}</div>}
+      {isExpanded && <div className="pr-1">{children}</div>}
     </div>
   );
 }
@@ -185,7 +185,7 @@ export function Navigation() {
     <>
       <aside
         className={cn(
-          `group/sidebar h-full bg-secondary overflow-y-auto relative flex flex-col w-60 z-[99999]`,
+          `group/sidebar h-full bg-secondary overflow-y-auto relative flex flex-col w-60 z-[99999] px-1`,
           isResetting && "transition-all ease-in-out duration-300",
           isMobile && "w-0",
         )}
@@ -227,7 +227,7 @@ export function Navigation() {
               icon={PlusCircle}
             />
           </div>
-          <div className="mt-4">
+          <div className="mt-2">
             {/* 收藏夹 */}
             <CollapsibleSection
               title={t("favorites")}
@@ -243,7 +243,7 @@ export function Navigation() {
             </CollapsibleSection>
 
             <Popover>
-              <PopoverTrigger className="w-full mt-4">
+              <PopoverTrigger className="w-full mt-2">
                 <Item label={t("trash")} icon={Trash} />
               </PopoverTrigger>
               <PopoverContent

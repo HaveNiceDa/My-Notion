@@ -40,7 +40,18 @@ interface ItemProps {
   icon: LucideIcon;
 }
 
-export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isSearch, level = 0, onExpand, expanded, }: ItemProps) {
+export function Item({
+  id,
+  label,
+  onClick,
+  icon: Icon,
+  active,
+  documentIcon,
+  isSearch,
+  level = 0,
+  onExpand,
+  expanded,
+}: ItemProps) {
   const { user } = useUser();
   const router = useRouter();
   const create = useMutation(api.documents.create);
@@ -52,10 +63,10 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
 
   const onDragStart = (e: React.DragEvent) => {
     if (!id) return;
-    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.setData("text/plain", id);
     setIsDragging(true);
     // 设置拖拽效果
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const onDragEnd = () => {
@@ -67,7 +78,7 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     if (!id) return;
     // 防止默认行为，允许放置
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     setIsOver(true);
   };
 
@@ -78,28 +89,33 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
   const onDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsOver(false);
-    
+
     if (!id) return;
-    
-    const draggedDocumentId = e.dataTransfer.getData('text/plain');
+
+    const draggedDocumentId = e.dataTransfer.getData("text/plain");
     // 防止将文档拖放到自身
     if (draggedDocumentId === id) return;
-    
+
     // 执行移动操作
     try {
-      toast.loading(t('movingDocument'));
-      await move({ id: draggedDocumentId as Id<'documents'>, parentDocument: id });
-      toast.success(t('documentMoved'));
+      toast.loading(t("movingDocument"));
+      await move({
+        id: draggedDocumentId as Id<"documents">,
+        parentDocument: id,
+      });
+      toast.success(t("documentMoved"));
     } catch (error) {
       // 捕获并显示具体的错误原因
       if (error instanceof Error) {
-        if (error.message.includes('Cannot move document into its own subtree')) {
-          toast.error(t('cannotMoveIntoOwnSubtree'));
+        if (
+          error.message.includes("Cannot move document into its own subtree")
+        ) {
+          toast.error(t("cannotMoveIntoOwnSubtree"));
         } else {
           toast.error(error.message);
         }
       } else {
-        toast.error(t('failedToMoveDocument'));
+        toast.error(t("failedToMoveDocument"));
       }
     }
   };
@@ -110,9 +126,9 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     const promise = archive({ id }).then(() => router.push("/documents"));
 
     toast.promise(promise, {
-      loading: t('movingToTrash'),
-      success: t('noteMovedToTrash'),
-      error: t('failedToArchiveNote'),
+      loading: t("movingToTrash"),
+      success: t("noteMovedToTrash"),
+      error: t("failedToArchiveNote"),
     });
   };
 
@@ -124,7 +140,7 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
   const onCreate = (event: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     event.stopPropagation();
     if (!id) return;
-    const promise = create({ title: t('untitled'), parentDocument: id }).then(
+    const promise = create({ title: t("untitled"), parentDocument: id }).then(
       (documentId) => {
         if (!expanded) {
           onExpand?.();
@@ -134,9 +150,9 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
     );
 
     toast.promise(promise, {
-      loading: t('creatingNewNote'),
-      success: t('newNoteCreated'),
-      error: t('failedToCreateNewNote'),
+      loading: t("creatingNewNote"),
+      success: t("newNoteCreated"),
+      error: t("failedToCreateNewNote"),
     });
   };
 
@@ -145,7 +161,7 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
   return (
     <div
       className={cn(
-        `group min-h-[27px] text-sm py-1 pr-3 w-full hover:bg-primary/5
+        `group min-h-[30px] text-sm py-1 pr-3 w-full hover:bg-primary/5
     flex items-center text-muted-foreground font-medium transition-colors duration-200`,
         active && "bg-primary/5 text-primary",
         isDragging && "opacity-50",
@@ -205,11 +221,11 @@ export function Item({ id, label, onClick, icon: Icon, active, documentIcon, isS
             >
               <DropdownMenuItem onClick={onArchive}>
                 <Trash className="w-4 h-4 mr-2" />
-                {t('delete')}
+                {t("delete")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <div className="text-xs text-muted-foreground p-2">
-                {t('lastEditedBy', { name: user?.fullName ?? '' })}
+                {t("lastEditedBy", { name: user?.fullName ?? "" })}
               </div>
             </DropdownMenuContent>
           </DropdownMenu>
