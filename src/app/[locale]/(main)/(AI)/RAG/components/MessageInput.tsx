@@ -40,7 +40,13 @@ export const MessageInput = ({
         className="absolute left-2 bottom-1 bg-transparent hover:bg-gray-100 text-gray-800 rounded-full transition-all duration-200 p-3"
         onClick={() => toast.info(t("featureUnderDevelopment"))}
       >
-        <Plus className="h-5 w-5 rounded-full" />
+        <Plus />
+      </Button>
+      <Button
+        className="absolute left-10 bottom-1 bg-transparent hover:bg-gray-100 text-gray-800 rounded-full transition-all duration-200 p-3"
+        onClick={() => toast.info(t("featureUnderDevelopment"))}
+      >
+        <Settings />
       </Button>
 
       <Button
