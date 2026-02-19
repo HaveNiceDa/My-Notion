@@ -1,6 +1,5 @@
 import "./globals.css";
 import { Toaster } from "sonner";
-import { Inter } from "next/font/google";
 import type { Metadata } from "next";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -11,8 +10,6 @@ import { ThemeProvider } from "@/src/components/providers/theme-provider";
 import { ConvexClientProvider } from "@/src/components/providers/convex-provider";
 import { ModalProvider } from "@/src/components/providers/modal-provider";
 import { EdgeStoreProvider } from "@/src/lib/edgestore";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export async function generateMetadata({
   params,
@@ -65,7 +62,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning={true}>
+      <body suppressHydrationWarning={true}>
         <ConvexClientProvider>
           <EdgeStoreProvider>
             <ThemeProvider
