@@ -245,7 +245,12 @@ export function Item({
                 <Pencil className="w-4 h-4 mr-2" />
                 {t("rename")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={onArchive}>
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onArchive(e);
+                }}
+              >
                 <Trash className="w-4 h-4 mr-2" />
                 {t("delete")}
               </DropdownMenuItem>

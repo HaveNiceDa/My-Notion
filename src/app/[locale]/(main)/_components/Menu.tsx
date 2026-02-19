@@ -72,11 +72,21 @@ export function Menu({ documentId }: MenuProps) {
           alignOffset={8}
           forceMount
         >
-          <DropdownMenuItem onClick={() => setIsRenameModalOpen(true)}>
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsRenameModalOpen(true);
+            }}
+          >
             <Pencil className="w-4 h-4 mr-2" />
             {t("rename")}
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onArchive}>
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              onArchive();
+            }}
+          >
             <Trash className="w-4 h-4 mr-2" />
             {t("delete")}
           </DropdownMenuItem>
