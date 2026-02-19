@@ -61,22 +61,21 @@ export const MessageList = ({
                 message.role === "user" ? "flex flex-col items-end" : "",
               )}
             >
-              {/* 消息内容 */}
               <div
                 className={cn(
                   "rounded-lg p-4",
                   message.role === "user"
                     ? "bg-gray-100 text-gray-900"
-                    : "bg-white text-gray-900",
+                    : "bg-white text-gray-900 pb-1",
                 )}
               >
-                <p className="whitespace-pre-wrap">{message.content}</p>
+                <p className="whitespace-pre-wrap text-base">
+                  {message.content}
+                </p>
               </div>
 
-              {/* 用户消息的 hover 效果 */}
               {message.role === "user" && (
-                <div className="mt-1 flex gap-2 items-center justify-between w-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  {/* 底部日期显示 */}
+                <div className="mt-1 flex justify-end gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity">
                   <div className="text-xs text-gray-500">
                     {message.timestamp.toLocaleString("zh-CN", {
                       month: "numeric",
@@ -85,8 +84,28 @@ export const MessageList = ({
                       minute: "2-digit",
                     })}
                   </div>
+                  <button
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      toast.success(t("copied"));
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
 
-                  {/* 右侧复制按钮 */}
+              {message.role === "assistant" && (
+                <div className="flex justify-start gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity pl-4">
+                  <div className="text-xs text-gray-500">
+                    {message.timestamp.toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
                   <button
                     className="p-1 text-gray-400 hover:text-gray-600"
                     onClick={() => {
@@ -105,7 +124,7 @@ export const MessageList = ({
         {isLoading && (
           <div className="mb-8">
             <div className="rounded-lg p-4 bg-white text-gray-900">
-              <p>{t("thinking")}</p>
+              <p className="text-base">{t("thinking")}</p>
             </div>
           </div>
         )}
