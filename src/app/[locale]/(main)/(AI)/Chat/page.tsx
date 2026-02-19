@@ -5,7 +5,7 @@ import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { runRAGQueryStream } from "@/src/lib/rag";
+import { runRAGQueryStream } from "@/src/lib/rag/rag";
 import { formatRelativeTime } from "@/src/lib/timeUtils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -60,7 +60,7 @@ const AIPage = () => {
 
       try {
         const loadedConversations = await convex.query(
-          api.documents.getConversations,
+          api.aiChat.getConversations,
           {
             userId: user.id,
           },
@@ -109,7 +109,7 @@ const AIPage = () => {
     if (!currentConversationId) {
       try {
         currentConversationId = await convex.mutation(
-          api.documents.createConversation,
+          api.aiChat.createConversation,
           {
             userId: user.id,
             title: t("newConversation"),
@@ -150,7 +150,7 @@ const AIPage = () => {
     setMessages((prev) => [...prev, tempAssistantMessage]);
 
     try {
-      await convex.mutation(api.documents.addMessage, {
+      await convex.mutation(api.aiChat.addMessage, {
         conversationId: currentConversationId,
         content: input,
         role: "user" as "user" | "assistant",
@@ -177,13 +177,13 @@ const AIPage = () => {
           );
         },
         async () => {
-          await convex.mutation(api.documents.addMessage, {
+          await convex.mutation(api.aiChat.addMessage, {
             conversationId: currentConversationId,
             content: currentContent,
             role: "assistant" as "user" | "assistant",
           });
 
-          await convex.mutation(api.documents.updateConversationTitle, {
+          await convex.mutation(api.aiChat.updateConversationTitle, {
             conversationId: currentConversationId,
             title: input.length > 50 ? input.substring(0, 50) + "..." : input,
           });
@@ -221,7 +221,7 @@ const AIPage = () => {
 
     try {
       setIsLoadingConversations(true);
-      const result = await convex.query(api.documents.getConversations, {
+      const result = await convex.query(api.aiChat.getConversations, {
         userId: user.id,
       });
       setConversations(result);
@@ -251,7 +251,7 @@ const AIPage = () => {
 
       router.push(`?id=${convId}`);
 
-      const messages = await convex.query(api.documents.getMessages, {
+      const messages = await convex.query(api.aiChat.getMessages, {
         conversationId: convId,
       });
 
@@ -267,7 +267,7 @@ const AIPage = () => {
       let conversation = conversations.find((conv) => conv._id === convId);
       if (!conversation) {
         const loadedConversations = await convex.query(
-          api.documents.getConversations,
+          api.aiChat.getConversations,
           {
             userId: user.id,
           },
@@ -296,7 +296,7 @@ const AIPage = () => {
     }
 
     try {
-      await convex.mutation(api.documents.deleteConversation, {
+      await convex.mutation(api.aiChat.deleteConversation, {
         conversationId: convId,
         userId: user.id,
       });

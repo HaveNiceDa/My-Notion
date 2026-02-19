@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { ConvexHttpClient } from "convex/browser";
-import { api } from "../../convex/_generated/api";
+import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { SimpleVectorStore } from "./simpleVectorStore";
 
@@ -77,7 +77,7 @@ export const initVectorStore = async (
 
   try {
     // 获取用户文档
-    const documents = await convex.query(api.documents.getDocumentsForRAG, {
+    const documents = await convex.query(api.aiChat.getDocumentsForRAG, {
       userId,
     });
 
@@ -138,9 +138,9 @@ export const runRAGQuery = async (
       minScore,
     );
 
+    // 没找到文档,打日志,sentry todo
     console.log(
-      `Found ${searchResults.length} relevant documents for query:`,
-      query,
+      `Found ${searchResults.length} relevant documents for query: ${query}`,
     );
     searchResults.forEach((item, index) => {
       console.log(
@@ -221,6 +221,7 @@ export const runRAGQueryStream = async (
       minScore,
     );
 
+    // 没找到文档,打日志,sentry todo
     console.log(
       `Found ${searchResults.length} relevant documents for query:`,
       query,

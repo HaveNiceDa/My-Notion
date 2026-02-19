@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runRAGQuery } from "@/src/lib/rag";
+import { runRAGQuery } from "@/src/lib/rag/rag";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {
