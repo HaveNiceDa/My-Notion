@@ -63,13 +63,13 @@ export const MessageList = ({
             >
               <div
                 className={cn(
-                  "rounded-lg p-4",
+                  "rounded-lg p-4 break-words",
                   message.role === "user"
                     ? "bg-gray-100 text-gray-900"
                     : "bg-white text-gray-900 pb-1",
                 )}
               >
-                <p className="whitespace-pre-wrap text-base">
+                <p className="whitespace-pre-wrap text-base break-all">
                   {message.content}
                 </p>
               </div>

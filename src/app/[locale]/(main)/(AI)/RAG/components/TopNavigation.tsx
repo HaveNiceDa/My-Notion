@@ -18,7 +18,7 @@ export const TopNavigation = ({ onShowHistory }: TopNavigationProps) => {
   const t = useTranslations("RAG");
 
   return (
-    <div className="relative left-4 flex items-start z-[100000] w-full">
+    <div className="relative left-4 top-1 flex items-start z-[100000] w-full">
       <TooltipProvider delayDuration={100}>
         <Tooltip>
           <TooltipTrigger asChild>
