@@ -34,20 +34,21 @@ export function Publish({ initialData }: PublishProps) {
   const toggleStarDoc = useMutation(api.documents.toggleStar);
   const toggleKnowledgeBaseDoc = useMutation(api.documents.toggleKnowledgeBase);
   const t = useTranslations("Publish");
+  const tNav = useTranslations("Navigation");
   const { user, isLoaded: isUserLoaded } = useUser();
 
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isStarred, setIsStarred] = useState(initialData.isStarred || false);
-  const [isInKnowledgeBase, setIsInKnowledgeBase] = useState(initialData.isInKnowledgeBase || false);
+  const [isInKnowledgeBase, setIsInKnowledgeBase] = useState(
+    initialData.isInKnowledgeBase || false,
+  );
 
   const url = `${origin}/preview/${initialData._id}`;
 
-
-
   const lastEditedTime = formatTime(
     initialData.lastEditedTime || initialData._creationTime,
-    t
+    t,
   );
   const createdTime = formatTime(initialData._creationTime, t);
 
@@ -110,13 +111,9 @@ export function Publish({ initialData }: PublishProps) {
         isStarred: !isStarred,
       });
       setIsStarred(!isStarred);
-      toast.success(
-        !isStarred
-          ? t('starredSuccess')
-          : t('unstarredSuccess')
-      );
+      toast.success(!isStarred ? t("starredSuccess") : t("unstarredSuccess"));
     } catch (error) {
-      toast.error(t('errorToToggleStar'));
+      toast.error(t("errorToToggleStar"));
     } finally {
       setIsSubmitting(false);
     }
@@ -130,23 +127,19 @@ export function Publish({ initialData }: PublishProps) {
         isInKnowledgeBase: !isInKnowledgeBase,
       });
       setIsInKnowledgeBase(!isInKnowledgeBase);
-      toast.success(
-        !isInKnowledgeBase
-          ? '已添加到知识库'
-          : '已从知识库移除'
-      );
-      
+      toast.success(!isInKnowledgeBase ? "已添加到知识库" : "已从知识库移除");
+
       // 清除向量存储缓存，确保下次查询时重新加载
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         // 动态导入以避免SSR问题
-        import('@/src/lib/rag/rag').then(({ clearVectorStoreCache }) => {
+        import("@/src/lib/rag/rag").then(({ clearVectorStoreCache }) => {
           if (user?.id) {
             clearVectorStoreCache(user.id);
           }
         });
       }
     } catch (error) {
-      toast.error('切换知识库状态失败');
+      toast.error("切换知识库状态失败");
     } finally {
       setIsSubmitting(false);
     }
@@ -154,7 +147,7 @@ export function Publish({ initialData }: PublishProps) {
 
   return (
     <TooltipProvider delayDuration={100}>
-      <div className="flex items-center gap-x-2">
+      <div className="flex items-center gap-x-1">
         {!isUserLoaded ? (
           <span className="text-xs text-muted-foreground px-2 py-1 rounded-md">
             {t("loading")}...
@@ -256,28 +249,42 @@ export function Publish({ initialData }: PublishProps) {
             )}
           </PopoverContent>
         </Popover>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isSubmitting}
-          onClick={toggleStar}
-          className="flex items-center"
-        >
-          <Star
-            className={`w-4 h-4 ${isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
-          />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={isSubmitting}
-          onClick={toggleKnowledgeBase}
-          className="flex items-center"
-        >
-          <BookOpen
-            className={`w-4 h-4 ${isInKnowledgeBase ? 'text-blue-500 fill-blue-500' : 'text-muted-foreground'}`}
-          />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isSubmitting}
+              onClick={toggleKnowledgeBase}
+              className="flex items-center"
+            >
+              <BookOpen
+                className={`w-4 h-4 ${isInKnowledgeBase ? "text-blue-500 fill-blue-500" : "text-muted-foreground"}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tNav("knowledgeBase")}</p>
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={isSubmitting}
+              onClick={toggleStar}
+              className="flex items-center"
+            >
+              <Star
+                className={`w-4 h-4 ${isStarred ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground"}`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{tNav("favorites")}</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </TooltipProvider>
   );
