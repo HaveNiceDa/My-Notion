@@ -129,8 +129,8 @@ export class EmbeddingQueue {
       }
 
       const textSplitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 200,
-        chunkOverlap: 20,
+        chunkSize: 250,
+        chunkOverlap: 40,
         separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
       });
 

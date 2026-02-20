@@ -13,12 +13,12 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // 文档分割器 - 优化配置以获得更好的检索效果
 const textSplitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 200,
-  chunkOverlap: 20,
+  chunkSize: 250,
+  chunkOverlap: 40,
   separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
 });
 
-console.log(`[RAG System] 文本分割器配置: chunkSize=200, chunkOverlap=20`);
+console.log(`[RAG System] 文本分割器配置: chunkSize=250, chunkOverlap=40`);
 
 // 向量存储缓存 - 增加LRU缓存机制
 class LRUCache<K, V> {
@@ -64,7 +64,7 @@ class LRUCache<K, V> {
   }
 }
 
-const vectorStoreCache = new LRUCache<string, EnhancedVectorStore>(10);
+const vectorStoreCache = new LRUCache<string, EnhancedVectorStore>(30);
 
 // 提取文档文本内容 - 导出供其他模块使用
 export const extractTextFromDocument = (content: string): string => {

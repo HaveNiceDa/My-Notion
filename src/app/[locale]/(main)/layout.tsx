@@ -8,6 +8,8 @@ import { Navigation } from "./_components/Navigation";
 import { SearchCommand } from "@/src/components/search-command";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useUser } from "@clerk/clerk-react";
+import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 
 export default function MainLayout({
   children,
@@ -15,6 +17,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
+  const { user } = useUser();
+  const { setUserLoadingStatus, userLoadingStatus } = useVectorStoreStore();
   const t = useTranslations();
 
   useEffect(() => {
@@ -34,6 +38,39 @@ export default function MainLayout({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
+
+  // 提前加载向量存储
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
+    // Check if vector store is already loading or loaded for this user
+    const currentStatus = userLoadingStatus[user.id];
+    if (currentStatus === 'loading' || currentStatus === 'success') {
+      return;
+    }
+
+    const initializeVectorStore = async () => {
+      try {
+        setUserLoadingStatus(user.id, 'loading');
+        console.log(`[MainLayout] 开始提前加载向量存储: userId=${user.id}`);
+
+        // 动态导入 rag 模块
+        const { initVectorStore } = await import('@/src/lib/rag/rag');
+        
+        // 初始化向量存储（快速模式，跳过文档检查）
+        await initVectorStore(user.id, true);
+        
+        setUserLoadingStatus(user.id, 'success');
+        console.log(`[MainLayout] 向量存储提前加载完成: userId=${user.id}`);
+      } catch (error) {
+        console.error('[MainLayout] 向量存储提前加载失败:', error);
+        setUserLoadingStatus(user.id, 'error');
+      }
+    };
+
+    // 启动异步初始化
+    initializeVectorStore();
+  }, [isAuthenticated, user, userLoadingStatus, setUserLoadingStatus]);
 
   const handleSave = () => {
     // 显示保存中提示

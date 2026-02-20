@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
+import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 import { TopNavigation } from "./components/TopNavigation";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -33,6 +34,7 @@ const AIPage = () => {
   const pathname = usePathname();
   const t = useTranslations("AI");
   const { model } = useAIModelStore();
+  const { userLoadingStatus } = useVectorStoreStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -105,6 +107,13 @@ const AIPage = () => {
 
   const handleSend = async () => {
     if (!input.trim() || isLoading || !user) return;
+
+    // Check if vector store is still loading
+    const vectorStoreStatus = userLoadingStatus[user.id];
+    if (vectorStoreStatus === "loading") {
+      toast.info(t("knowledgeBaseInitializing"));
+      return;
+    }
 
     let currentConversationId = conversationId;
 
