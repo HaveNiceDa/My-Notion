@@ -38,7 +38,11 @@ export function DocumentList({
   };
 
   const documents = isInKnowledgeBase
-    ? useQuery(api.documents.getKnowledgeBaseDocuments, {})
+    ? parentDocumentId
+      ? useQuery(api.documents.getSidebar, {
+          parentDocument: parentDocumentId,
+        })
+      : useQuery(api.documents.getKnowledgeBaseDocuments, {})
     : isStarred
       ? parentDocumentId
         ? useQuery(api.documents.getSidebar, {
