@@ -2,7 +2,7 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
-import { SimpleVectorStore } from "./simpleVectorStore";
+import { EnhancedVectorStore } from "./enhancedVectorStore";
 
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
 
@@ -13,15 +13,15 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // 文档分割器 - 优化配置以获得更好的检索效果
 const textSplitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 300,
-  chunkOverlap: 30,
+  chunkSize: 200,
+  chunkOverlap: 20,
   separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
 });
 
-console.log(`[RAG System] 文本分割器配置: chunkSize=300, chunkOverlap=30`);
+console.log(`[RAG System] 文本分割器配置: chunkSize=200, chunkOverlap=20`);
 
 // 向量存储缓存
-const vectorStoreCache = new Map<string, SimpleVectorStore>();
+const vectorStoreCache = new Map<string, EnhancedVectorStore>();
 
 // 提取文档文本内容
 const extractTextFromDocument = (content: string): string => {
@@ -75,7 +75,7 @@ const extractTextFromDocument = (content: string): string => {
 // 初始化向量存储
 export const initVectorStore = async (
   userId: string,
-): Promise<SimpleVectorStore> => {
+): Promise<EnhancedVectorStore> => {
   console.log(`[RAG System] ===== 初始化向量存储 - 用户: ${userId} =====`);
 
   // 检查缓存
@@ -127,12 +127,56 @@ export const initVectorStore = async (
     }
     console.log(`[RAG System] 总共 ${allSplits.length} 个chunks`);
 
-    console.log(`[RAG System] 创建向量存储...`);
-    // 创建向量存储（使用简单内存存储，无需额外服务器）
-    const vectorStore = new SimpleVectorStore(new CustomEmbeddings());
-    console.log(`[RAG System] 开始添加文档到向量存储...`);
-    await vectorStore.addDocuments(allSplits);
-    console.log(`[RAG System] 文档添加完成`);
+    console.log(`[RAG System] 创建EnhancedVectorStore实例...`);
+    const vectorStore = new EnhancedVectorStore(
+      convex,
+      userId,
+      new CustomEmbeddings(),
+    );
+
+    console.log(`[RAG System] 从Convex加载向量数据...`);
+    await vectorStore.loadFromConvex();
+
+    console.log(`[RAG System] 检查文档是否需要更新...`);
+    for (const doc of documents) {
+      if (doc.content) {
+        console.log(`[RAG System] 检查文档: ${doc.title} (${doc._id})`);
+        const text = extractTextFromDocument(doc.content);
+        if (text) {
+          console.log(`[RAG System] 检查是否需要重新嵌入...`);
+          const needsReembed = await vectorStore.needsReembedding(
+            doc._id,
+            text,
+          );
+
+          if (needsReembed) {
+            console.log(`[RAG System] 文档需要重新嵌入，开始处理...`);
+
+            console.log(`[RAG System] 分割文档为chunks...`);
+            const splits = await textSplitter.splitText(text);
+            console.log(`[RAG System] 文档分割为 ${splits.length} 个chunks`);
+
+            console.log(`[RAG System] 生成embeddings...`);
+            const embeddings = await new CustomEmbeddings().embedDocuments(
+              splits,
+            );
+
+            const chunks = splits.map((split, index) => ({
+              chunkIndex: index,
+              pageContent: split,
+              metadata: { documentId: doc._id, title: doc.title },
+              embedding: embeddings[index],
+            }));
+
+            console.log(`[RAG System] 保存chunks到Convex...`);
+            await vectorStore.addDocumentChunks(userId, doc._id, chunks);
+            console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
+          } else {
+            console.log(`[RAG System] 文档无需重新嵌入: ${doc.title}`);
+          }
+        }
+      }
+    }
 
     // 缓存向量存储
     vectorStoreCache.set(userId, vectorStore);
