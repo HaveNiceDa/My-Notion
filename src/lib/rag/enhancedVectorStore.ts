@@ -39,7 +39,7 @@ export class EnhancedVectorStore {
   private convex: ConvexHttpClient;
   private userId: string;
   private embeddings: Embeddings;
-  private documents: InMemoryDocument[] = [];
+  public documents: InMemoryDocument[] = [];
   private isLoaded = false;
 
   constructor(
