@@ -51,13 +51,13 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   useEffect(() => {
     if (!user) return;
 
-    const watcher = getDocumentWatcher(3000, (docId, content, title) => {
+    const watcher = getDocumentWatcher(5000, (docId, content, title) => {
       triggerDocumentUpdate(user.id, docId, content, title);
     });
     watcherRef.current = watcher;
 
     return () => {
-      watcher.cancelWatch(documentId);
+      watcher.flush(documentId);
     };
   }, [user, documentId]);
 

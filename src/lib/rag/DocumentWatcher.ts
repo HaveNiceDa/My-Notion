@@ -6,10 +6,11 @@ type DocumentChangeCallback = (
 
 export class DocumentWatcher {
   private debounceTimers = new Map<string, NodeJS.Timeout>();
+  private pendingUpdates = new Map<string, { content: string; title: string }>();
   private debounceDelay: number;
   private callback: DocumentChangeCallback;
 
-  constructor(debounceDelay: number = 3000, callback: DocumentChangeCallback) {
+  constructor(debounceDelay: number = 5000, callback: DocumentChangeCallback) {
     this.debounceDelay = debounceDelay;
     this.callback = callback;
   }
@@ -23,6 +24,9 @@ export class DocumentWatcher {
       `[DocumentWatcher] 检测到文档变化: documentId=${documentId}, title=${title}`,
     );
 
+    // 保存最新的内容和标题
+    this.pendingUpdates.set(documentId, { content, title });
+
     if (this.debounceTimers.has(documentId)) {
       clearTimeout(this.debounceTimers.get(documentId)!);
     }
@@ -31,11 +35,25 @@ export class DocumentWatcher {
       console.log(
         `[DocumentWatcher] 防抖延迟结束，触发更新: documentId=${documentId}`,
       );
-      this.callback(documentId, content, title);
-      this.debounceTimers.delete(documentId);
+      this.flush(documentId);
     }, this.debounceDelay);
 
     this.debounceTimers.set(documentId, timer);
+  }
+
+  /**
+   * 立即触发文档更新，不等待防抖延迟
+   */
+  flush(documentId: string): void {
+    const pendingUpdate = this.pendingUpdates.get(documentId);
+    if (pendingUpdate) {
+      console.log(
+        `[DocumentWatcher] 立即触发文档更新: documentId=${documentId}, title=${pendingUpdate.title}`,
+      );
+      this.callback(documentId, pendingUpdate.content, pendingUpdate.title);
+      this.debounceTimers.delete(documentId);
+      this.pendingUpdates.delete(documentId);
+    }
   }
 
   cancelWatch(documentId: string): void {
