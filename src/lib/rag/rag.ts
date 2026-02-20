@@ -20,11 +20,54 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 
 console.log(`[RAG System] 文本分割器配置: chunkSize=200, chunkOverlap=20`);
 
-// 向量存储缓存
-const vectorStoreCache = new Map<string, EnhancedVectorStore>();
+// 向量存储缓存 - 增加LRU缓存机制
+class LRUCache<K, V> {
+  private cache = new Map<K, V>();
+  private maxSize: number;
 
-// 提取文档文本内容
-const extractTextFromDocument = (content: string): string => {
+  constructor(maxSize: number = 10) {
+    this.maxSize = maxSize;
+  }
+
+  get(key: K): V | undefined {
+    const value = this.cache.get(key);
+    if (value !== undefined) {
+      this.cache.delete(key);
+      this.cache.set(key, value);
+    }
+    return value;
+  }
+
+  set(key: K, value: V): void {
+    if (this.cache.has(key)) {
+      this.cache.delete(key);
+    }
+    if (this.cache.size >= this.maxSize) {
+      const firstKey = this.cache.keys().next().value;
+      if (firstKey !== undefined) {
+        this.cache.delete(firstKey);
+      }
+    }
+    this.cache.set(key, value);
+  }
+
+  delete(key: K): void {
+    this.cache.delete(key);
+  }
+
+  has(key: K): boolean {
+    return this.cache.has(key);
+  }
+
+  clear(): void {
+    this.cache.clear();
+  }
+}
+
+const vectorStoreCache = new LRUCache<string, EnhancedVectorStore>(10);
+
+// 提取文档文本内容 - 导出供其他模块使用
+export const extractTextFromDocument = (content: string): string => {
   try {
     const parsedContent = JSON.parse(content);
 
@@ -72,16 +115,18 @@ const extractTextFromDocument = (content: string): string => {
   }
 };
 
-// 初始化向量存储
+// 初始化向量存储 - 优化版
 export const initVectorStore = async (
   userId: string,
+  skipDocumentCheck: boolean = false,
 ): Promise<EnhancedVectorStore> => {
   console.log(`[RAG System] ===== 初始化向量存储 - 用户: ${userId} =====`);
 
   // 检查缓存
-  if (vectorStoreCache.has(userId)) {
+  const cachedVectorStore = vectorStoreCache.get(userId);
+  if (cachedVectorStore) {
     console.log(`[RAG System] 使用缓存的向量存储`);
-    return vectorStoreCache.get(userId)!;
+    return cachedVectorStore;
   }
 
   try {
@@ -137,42 +182,44 @@ export const initVectorStore = async (
     console.log(`[RAG System] 从Convex加载向量数据...`);
     await vectorStore.loadFromConvex();
 
-    console.log(`[RAG System] 检查文档是否需要更新...`);
-    for (const doc of documents) {
-      if (doc.content) {
-        console.log(`[RAG System] 检查文档: ${doc.title} (${doc._id})`);
-        const text = extractTextFromDocument(doc.content);
-        if (text) {
-          console.log(`[RAG System] 检查是否需要重新嵌入...`);
-          const needsReembed = await vectorStore.needsReembedding(
-            doc._id,
-            text,
-          );
-
-          if (needsReembed) {
-            console.log(`[RAG System] 文档需要重新嵌入，开始处理...`);
-
-            console.log(`[RAG System] 分割文档为chunks...`);
-            const splits = await textSplitter.splitText(text);
-            console.log(`[RAG System] 文档分割为 ${splits.length} 个chunks`);
-
-            console.log(`[RAG System] 生成embeddings...`);
-            const embeddings = await new CustomEmbeddings().embedDocuments(
-              splits,
+    if (!skipDocumentCheck) {
+      console.log(`[RAG System] 检查文档是否需要更新...`);
+      for (const doc of documents) {
+        if (doc.content) {
+          console.log(`[RAG System] 检查文档: ${doc.title} (${doc._id})`);
+          const text = extractTextFromDocument(doc.content);
+          if (text) {
+            console.log(`[RAG System] 检查是否需要重新嵌入...`);
+            const needsReembed = await vectorStore.needsReembedding(
+              doc._id,
+              text,
             );
 
-            const chunks = splits.map((split, index) => ({
-              chunkIndex: index,
-              pageContent: split,
-              metadata: { documentId: doc._id, title: doc.title },
-              embedding: embeddings[index],
-            }));
+            if (needsReembed) {
+              console.log(`[RAG System] 文档需要重新嵌入，开始处理...`);
 
-            console.log(`[RAG System] 保存chunks到Convex...`);
-            await vectorStore.addDocumentChunks(userId, doc._id, chunks);
-            console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
-          } else {
-            console.log(`[RAG System] 文档无需重新嵌入: ${doc.title}`);
+              console.log(`[RAG System] 分割文档为chunks...`);
+              const splits = await textSplitter.splitText(text);
+              console.log(`[RAG System] 文档分割为 ${splits.length} 个chunks`);
+
+              console.log(`[RAG System] 生成embeddings...`);
+              const embeddings = await new CustomEmbeddings().embedDocuments(
+                splits,
+              );
+
+              const chunks = splits.map((split, index) => ({
+                chunkIndex: index,
+                pageContent: split,
+                metadata: { documentId: doc._id, title: doc.title },
+                embedding: embeddings[index],
+              }));
+
+              console.log(`[RAG System] 保存chunks到Convex...`);
+              await vectorStore.addDocumentChunks(userId, doc._id, chunks);
+              console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
+            } else {
+              console.log(`[RAG System] 文档无需重新嵌入: ${doc.title}`);
+            }
           }
         }
       }
@@ -402,4 +449,30 @@ ${context}
 export const clearVectorStoreCache = (userId: string): void => {
   console.log(`[RAG System] 清除向量存储缓存 - 用户: ${userId}`);
   vectorStoreCache.delete(userId);
+};
+
+// 异步触发文档更新，不阻塞用户操作
+export const triggerDocumentUpdate = async (
+  userId: string,
+  documentId: string,
+  content: string,
+  title: string,
+): Promise<void> => {
+  console.log(
+    `[RAG System] 触发文档异步更新: documentId=${documentId}, title=${title}`,
+  );
+
+  try {
+    const vectorStore = await initVectorStore(userId, true);
+    await vectorStore.updateDocument(
+      userId,
+      documentId,
+      content,
+      title,
+      new CustomEmbeddings(),
+      textSplitter,
+    );
+  } catch (error) {
+    console.error("[RAG System] 异步更新文档时出错:", error);
+  }
 };

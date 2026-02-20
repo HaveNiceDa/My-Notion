@@ -7,7 +7,7 @@ const computeContentHash = (content: string): string => {
   let hash = 0;
   for (let i = 0; i < content.length; i++) {
     const char = content.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
+    hash = (hash << 5) - hash + char;
     hash = hash & hash;
   }
   return Math.abs(hash).toString(16);
@@ -41,7 +41,11 @@ export class EnhancedVectorStore {
   private documents: InMemoryDocument[] = [];
   private isLoaded = false;
 
-  constructor(convex: ConvexHttpClient, userId: string, embeddings: Embeddings) {
+  constructor(
+    convex: ConvexHttpClient,
+    userId: string,
+    embeddings: Embeddings,
+  ) {
     this.convex = convex;
     this.userId = userId;
     this.embeddings = embeddings;
@@ -100,7 +104,52 @@ export class EnhancedVectorStore {
     this.isLoaded = false;
     await this.loadFromConvex();
 
-    return result.chunkCount.toString().split("").map(() => "");
+    return result.chunkCount
+      .toString()
+      .split("")
+      .map(() => "");
+  }
+
+  async updateDocument(
+    userId: string,
+    documentId: string,
+    content: string,
+    title: string,
+    embeddings: Embeddings,
+    textSplitter: any,
+  ): Promise<void> {
+    console.log(
+      `[EnhancedVectorStore] 更新文档: documentId=${documentId}, title=${title}`,
+    );
+
+    const contentHash = computeContentHash(content);
+    const needsReembed = await this.needsReembedding(
+      documentId as any,
+      content,
+    );
+
+    if (!needsReembed) {
+      console.log(`[EnhancedVectorStore] 文档内容未变化，无需更新: ${title}`);
+      return;
+    }
+
+    console.log(`[EnhancedVectorStore] 开始重新嵌入文档: ${title}`);
+
+    const splits = await textSplitter.splitText(content);
+    console.log(
+      `[EnhancedVectorStore] 文档 "${title}" 分割为 ${splits.length} 个chunks`,
+    );
+
+    const embeddingResults = await embeddings.embedDocuments(splits);
+    const chunks = splits.map((split: string, index: number) => ({
+      chunkIndex: index,
+      pageContent: split,
+      metadata: { documentId, title },
+      embedding: embeddingResults[index],
+    }));
+
+    await this.addDocumentChunks(userId, documentId, chunks);
+    console.log(`[EnhancedVectorStore] 文档更新完成: ${title}`);
   }
 
   async similaritySearch(

@@ -2,10 +2,11 @@
 
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
-import { use, useMemo, useRef, useState } from "react";
+import { use, useMemo, useRef, useState, useEffect } from "react";
 import { useTitle } from "@/src/hooks/use-title";
 import { useTranslations } from "next-intl";
 import type { EditorRef } from "@/src/components/Editor";
+import { useUser } from "@clerk/clerk-react";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -15,6 +16,8 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { ErrorModal } from "@/src/components/modals/error-modal";
 import Editor from "@/src/components/Editor";
 import { Room } from "@/src/components/Room";
+import { getDocumentWatcher } from "@/src/lib/rag/DocumentWatcher";
+import { triggerDocumentUpdate } from "@/src/lib/rag/rag";
 
 interface DocumentIdPageProps {
   params: Promise<{
@@ -25,6 +28,7 @@ interface DocumentIdPageProps {
 export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
   const t = useTranslations("Error");
+  const { user } = useUser();
 
   const document = useQuery(api.documents.getById, {
     documentId,
@@ -33,6 +37,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const update = useMutation(api.documents.update);
 
   const editorRef = useRef<EditorRef>(null);
+  const watcherRef = useRef<any>(null);
 
   // 错误提示模态对话框状态
   const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -42,11 +47,30 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   // 将浏览器标题设置为文档标题
   useTitle(document?.title);
 
+  // 初始化 DocumentWatcher
+  useEffect(() => {
+    if (!user) return;
+
+    const watcher = getDocumentWatcher(3000, (docId, content, title) => {
+      triggerDocumentUpdate(user.id, docId, content, title);
+    });
+    watcherRef.current = watcher;
+
+    return () => {
+      watcher.cancelWatch(documentId);
+    };
+  }, [user, documentId]);
+
   const onChange = (content: string) => {
     update({
       id: documentId,
       content,
     });
+
+    // 触发 RAG 更新（防抖处理）
+    if (user && document) {
+      watcherRef.current?.onDocumentChange(documentId, content, document.title);
+    }
   };
 
   const handleEnter = () => {
