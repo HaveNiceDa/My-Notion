@@ -3,6 +3,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { EnhancedVectorStore } from "./enhancedVectorStore";
+import { ChunkManager } from "./chunkManager";
 
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
 
@@ -20,51 +21,11 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 
 console.log(`[RAG System] 文本分割器配置: chunkSize=250, chunkOverlap=40`);
 
-// 向量存储缓存 - 增加LRU缓存机制
-class LRUCache<K, V> {
-  private cache = new Map<K, V>();
-  private maxSize: number;
+// 初始化ChunkManager单例
+const chunkManager = ChunkManager.getInstance();
 
-  constructor(maxSize: number = 10) {
-    this.maxSize = maxSize;
-  }
-
-  get(key: K): V | undefined {
-    const value = this.cache.get(key);
-    if (value !== undefined) {
-      this.cache.delete(key);
-      this.cache.set(key, value);
-    }
-    return value;
-  }
-
-  set(key: K, value: V): void {
-    if (this.cache.has(key)) {
-      this.cache.delete(key);
-    }
-    if (this.cache.size >= this.maxSize) {
-      const firstKey = this.cache.keys().next().value;
-      if (firstKey !== undefined) {
-        this.cache.delete(firstKey);
-      }
-    }
-    this.cache.set(key, value);
-  }
-
-  delete(key: K): void {
-    this.cache.delete(key);
-  }
-
-  has(key: K): boolean {
-    return this.cache.has(key);
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-}
-
-const vectorStoreCache = new LRUCache<string, EnhancedVectorStore>(30);
+// EnhancedVectorStore缓存 - 用于常驻实例
+const vectorStoreCache = new Map<string, EnhancedVectorStore>(); // userId -> EnhancedVectorStore
 
 // 提取文档文本内容 - 导出供其他模块使用
 export const extractTextFromDocument = (content: string): string => {
@@ -125,11 +86,17 @@ export const initKnowledgeBaseVectorStore = async (
   );
 
   // 检查缓存
-  const cacheKey = `${userId}_knowledge_base`;
-  const cachedVectorStore = vectorStoreCache.get(cacheKey);
-  if (cachedVectorStore) {
-    console.log(`[RAG System] 使用缓存的知识库向量存储`);
-    return cachedVectorStore;
+  if (vectorStoreCache.has(userId)) {
+    console.log(`[RAG System] 使用缓存的EnhancedVectorStore实例`);
+    const cachedStore = vectorStoreCache.get(userId)!;
+
+    // 刷新内存中的chunk
+    console.log(`[RAG System] 刷新内存中的chunk...`);
+    const chunks = await chunkManager.loadChunksForUser(userId);
+    cachedStore.documents = chunks;
+
+    console.log(`[RAG System] ===== 向量存储初始化完成（使用缓存实例）=====`);
+    return cachedStore;
   }
 
   try {
@@ -149,41 +116,6 @@ export const initKnowledgeBaseVectorStore = async (
       `[RAG System] 知识库文档ID列表: ${knowledgeBaseDocumentIds.join(", ")}`,
     );
 
-    // 处理文档内容
-    const texts = [];
-    for (const doc of documents) {
-      if (doc.content) {
-        console.log(`[RAG System] 处理文档: ${doc.title} (${doc._id})`);
-        const text = extractTextFromDocument(doc.content);
-        if (text) {
-          console.log(`[RAG System] 文档文本长度: ${text.length} 字符`);
-          texts.push({
-            pageContent: text,
-            metadata: { documentId: doc._id, title: doc.title },
-          });
-        } else {
-          console.log(`[RAG System] 文档无内容，跳过: ${doc.title}`);
-        }
-      }
-    }
-
-    console.log(`[RAG System] 开始文本分割...`);
-    // 分割文本
-    const allSplits = [];
-    for (const item of texts) {
-      const splits = await textSplitter.splitText(item.pageContent);
-      console.log(
-        `[RAG System] 文档 "${item.metadata.title}" 分割为 ${splits.length} 个chunks`,
-      );
-      for (const split of splits) {
-        allSplits.push({
-          pageContent: split,
-          metadata: item.metadata,
-        });
-      }
-    }
-    console.log(`[RAG System] 总共 ${allSplits.length} 个chunks`);
-
     console.log(`[RAG System] 创建EnhancedVectorStore实例...`);
     const vectorStore = new EnhancedVectorStore(
       convex,
@@ -191,10 +123,12 @@ export const initKnowledgeBaseVectorStore = async (
       new CustomEmbeddings(),
     );
 
-    console.log(`[RAG System] 从Convex加载向量数据...`);
-    await vectorStore.loadFromConvex();
+    console.log(`[RAG System] 加载内存中的chunk...`);
+    // 从ChunkManager加载chunk
+    const chunks = await chunkManager.loadChunksForUser(userId);
+    vectorStore.documents = chunks;
     console.log(
-      `[RAG System] 加载向量数据完成，共 ${vectorStore.documents.length} 个向量`,
+      `[RAG System] 加载完成，共 ${vectorStore.documents.length} 个向量`,
     );
 
     // 过滤向量数据，只保留知识库文档的向量
@@ -241,6 +175,10 @@ export const initKnowledgeBaseVectorStore = async (
 
               console.log(`[RAG System] 保存chunks到Convex...`);
               await vectorStore.addDocumentChunks(userId, doc._id, chunks);
+
+              // 刷新内存中的chunk
+              await chunkManager.refreshChunksForUser(userId);
+
               console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
             } else {
               console.log(`[RAG System] 文档无需重新嵌入: ${doc.title}`);
@@ -250,9 +188,9 @@ export const initKnowledgeBaseVectorStore = async (
       }
     }
 
-    // 缓存向量存储
+    // 缓存向量存储实例
     vectorStoreCache.set(userId, vectorStore);
-    console.log(`[RAG System] ===== 向量存储初始化完成 =====`);
+    console.log(`[RAG System] ===== 向量存储初始化完成（新创建实例）=====`);
 
     return vectorStore;
   } catch (error) {
@@ -473,7 +411,10 @@ ${context}
 // 清除向量存储缓存
 export const clearVectorStoreCache = (userId: string): void => {
   console.log(`[RAG System] 清除向量存储缓存 - 用户: ${userId}`);
+  chunkManager.clearChunksForUser(userId);
+  // 同时清除EnhancedVectorStore实例缓存
   vectorStoreCache.delete(userId);
+  console.log(`[RAG System] 已清除EnhancedVectorStore实例缓存`);
 };
 
 // 异步触发文档更新，不阻塞用户操作
@@ -497,6 +438,9 @@ export const triggerDocumentUpdate = async (
       new CustomEmbeddings(),
       textSplitter,
     );
+
+    // 刷新内存中的chunk
+    await chunkManager.refreshChunksForUser(userId);
   } catch (error) {
     console.error("[RAG System] 异步更新文档时出错:", error);
   }

@@ -168,7 +168,8 @@ export class EnhancedVectorStore {
     k: number = 4,
     minScore: number = 0,
   ): Promise<Array<{ document: Document; score: number }>> {
-    await this.loadFromConvex();
+    // 直接使用内存中的chunk，不再从数据库加载
+    console.log(`[EnhancedVectorStore] 使用内存中的 ${this.documents.length} 个chunk进行相似度检索`);
 
     const queryEmbedding = await this.embeddings.embedQuery(query);
 
