@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
-import { Check, Copy, Globe, Star } from "lucide-react";
+import { Check, Copy, Globe, Star, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/clerk-react";
@@ -32,12 +32,14 @@ export function Publish({ initialData }: PublishProps) {
   const origin = useOrigin();
   const update = useMutation(api.documents.update);
   const toggleStarDoc = useMutation(api.documents.toggleStar);
+  const toggleKnowledgeBaseDoc = useMutation(api.documents.toggleKnowledgeBase);
   const t = useTranslations("Publish");
   const { user, isLoaded: isUserLoaded } = useUser();
 
   const [copied, setCopied] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isStarred, setIsStarred] = useState(initialData.isStarred || false);
+  const [isInKnowledgeBase, setIsInKnowledgeBase] = useState(initialData.isInKnowledgeBase || false);
 
   const url = `${origin}/preview/${initialData._id}`;
 
@@ -115,6 +117,36 @@ export function Publish({ initialData }: PublishProps) {
       );
     } catch (error) {
       toast.error(t('errorToToggleStar'));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const toggleKnowledgeBase = async () => {
+    setIsSubmitting(true);
+    try {
+      await toggleKnowledgeBaseDoc({
+        id: initialData._id,
+        isInKnowledgeBase: !isInKnowledgeBase,
+      });
+      setIsInKnowledgeBase(!isInKnowledgeBase);
+      toast.success(
+        !isInKnowledgeBase
+          ? '已添加到知识库'
+          : '已从知识库移除'
+      );
+      
+      // 清除向量存储缓存，确保下次查询时重新加载
+      if (typeof window !== 'undefined') {
+        // 动态导入以避免SSR问题
+        import('@/src/lib/rag/rag').then(({ clearVectorStoreCache }) => {
+          if (user?.id) {
+            clearVectorStoreCache(user.id);
+          }
+        });
+      }
+    } catch (error) {
+      toast.error('切换知识库状态失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -233,6 +265,17 @@ export function Publish({ initialData }: PublishProps) {
         >
           <Star
             className={`w-4 h-4 ${isStarred ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`}
+          />
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          disabled={isSubmitting}
+          onClick={toggleKnowledgeBase}
+          className="flex items-center"
+        >
+          <BookOpen
+            className={`w-4 h-4 ${isInKnowledgeBase ? 'text-blue-500 fill-blue-500' : 'text-muted-foreground'}`}
           />
         </Button>
       </div>

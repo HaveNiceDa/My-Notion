@@ -21,6 +21,8 @@ export default defineSchema({
     isPublished: v.boolean(),
     /** 是否收藏 */
     isStarred: v.optional(v.boolean()),
+    /** 是否在知识库中 */
+    isInKnowledgeBase: v.optional(v.boolean()),
     /** 最后编辑时间戳 */
     lastEditedTime: v.optional(v.number()),
   })

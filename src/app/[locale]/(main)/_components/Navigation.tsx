@@ -85,6 +85,12 @@ export function Navigation() {
   const t = useTranslations("Navigation");
 
   const hasStarredDocuments = starredDocuments && starredDocuments.length > 0;
+  const knowledgeBaseDocuments = useQuery(
+    api.documents.getKnowledgeBaseDocuments,
+    {},
+  );
+  const hasKnowledgeBaseDocuments =
+    knowledgeBaseDocuments && knowledgeBaseDocuments.length > 0;
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -228,6 +234,14 @@ export function Navigation() {
             />
           </div>
           <div className="mt-2">
+            {/* 知识库 */}
+            <CollapsibleSection
+              title={t("knowledgeBase")}
+              defaultExpanded={hasKnowledgeBaseDocuments}
+            >
+              <DocumentList isInKnowledgeBase={true} />
+            </CollapsibleSection>
+
             {/* 收藏夹 */}
             <CollapsibleSection
               title={t("favorites")}

@@ -55,10 +55,10 @@ export default function MainLayout({
         console.log(`[MainLayout] 开始提前加载向量存储: userId=${user.id}`);
 
         // 动态导入 rag 模块
-        const { initVectorStore } = await import('@/src/lib/rag/rag');
+        const { initKnowledgeBaseVectorStore } = await import('@/src/lib/rag/rag');
         
         // 初始化向量存储（快速模式，跳过文档检查）
-        await initVectorStore(user.id, true);
+        await initKnowledgeBaseVectorStore(user.id, true);
         
         setUserLoadingStatus(user.id, 'success');
         console.log(`[MainLayout] 向量存储提前加载完成: userId=${user.id}`);

@@ -96,8 +96,9 @@
     "search": "Search",
     "settings": "Settings",
     "newPage": "New Page",
-    "addAPage": "Add a page",
+    "addAPage": "Add a Page",
     "trash": "Trash",
+    "knowledgeBase": "Knowledge Base",
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note.",
@@ -130,7 +131,8 @@
     "noteCreated": "New note created",
     "failedToCreateNote": "Failed to create a new note",
     "untitled": "New Note",
-    "noStarredPages": "Go star your favorite articles!"
+    "noStarredPages": "Go star your favorite articles!",
+    "noKnowledgeBasePages": "No knowledge base pages yet"
   },
   "Modals": {
     "settings": {

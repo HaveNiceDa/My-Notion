@@ -115,27 +115,39 @@ export const extractTextFromDocument = (content: string): string => {
   }
 };
 
-// 初始化向量存储 - 优化版
-export const initVectorStore = async (
+// 初始化知识库向量存储
+export const initKnowledgeBaseVectorStore = async (
   userId: string,
   skipDocumentCheck: boolean = false,
 ): Promise<EnhancedVectorStore> => {
-  console.log(`[RAG System] ===== 初始化向量存储 - 用户: ${userId} =====`);
+  console.log(
+    `[RAG System] ===== 初始化知识库向量存储 - 用户: ${userId} =====`,
+  );
 
   // 检查缓存
-  const cachedVectorStore = vectorStoreCache.get(userId);
+  const cacheKey = `${userId}_knowledge_base`;
+  const cachedVectorStore = vectorStoreCache.get(cacheKey);
   if (cachedVectorStore) {
-    console.log(`[RAG System] 使用缓存的向量存储`);
+    console.log(`[RAG System] 使用缓存的知识库向量存储`);
     return cachedVectorStore;
   }
 
   try {
-    console.log(`[RAG System] 获取用户文档...`);
-    // 获取用户文档
-    const documents = await convex.query(api.aiChat.getDocumentsForRAG, {
-      userId,
-    });
-    console.log(`[RAG System] 找到 ${documents.length} 个文档`);
+    console.log(`[RAG System] 获取用户知识库文档...`);
+    // 获取用户知识库文档
+    const documents = await convex.query(
+      api.aiChat.getKnowledgeBaseDocumentsForRAG,
+      {
+        userId,
+      },
+    );
+    console.log(`[RAG System] 找到 ${documents.length} 个知识库文档`);
+
+    // 提取知识库文档ID列表
+    const knowledgeBaseDocumentIds = documents.map((doc) => doc._id);
+    console.log(
+      `[RAG System] 知识库文档ID列表: ${knowledgeBaseDocumentIds.join(", ")}`,
+    );
 
     // 处理文档内容
     const texts = [];
@@ -161,7 +173,7 @@ export const initVectorStore = async (
     for (const item of texts) {
       const splits = await textSplitter.splitText(item.pageContent);
       console.log(
-        `[RAG System] 文档 \"${item.metadata.title}\" 分割为 ${splits.length} 个chunks`,
+        `[RAG System] 文档 "${item.metadata.title}" 分割为 ${splits.length} 个chunks`,
       );
       for (const split of splits) {
         allSplits.push({
@@ -181,6 +193,19 @@ export const initVectorStore = async (
 
     console.log(`[RAG System] 从Convex加载向量数据...`);
     await vectorStore.loadFromConvex();
+    console.log(
+      `[RAG System] 加载向量数据完成，共 ${vectorStore.documents.length} 个向量`,
+    );
+
+    // 过滤向量数据，只保留知识库文档的向量
+    console.log(`[RAG System] 开始过滤向量数据...`);
+    vectorStore.documents = vectorStore.documents.filter((doc) => {
+      const documentId = doc.metadata?.documentId;
+      return knowledgeBaseDocumentIds.includes(documentId);
+    });
+    console.log(
+      `[RAG System] 过滤完成，保留 ${vectorStore.documents.length} 个知识库向量`,
+    );
 
     if (!skipDocumentCheck) {
       console.log(`[RAG System] 检查文档是否需要更新...`);
@@ -250,8 +275,8 @@ export const runRAGQuery = async (
   console.log(`[RAG System] 最小相似度: ${minScore}`);
 
   try {
-    // 初始化向量存储
-    const vectorStore = await initVectorStore(userId);
+    // 初始化知识库向量存储
+    const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
     console.log(`[RAG System] 执行相似度搜索...`);
     // 检索相关文档，设置相似度阈值
@@ -345,8 +370,8 @@ export const runRAGQueryStream = async (
   console.log(`[RAG System] 最小相似度: ${minScore}`);
 
   try {
-    // 初始化向量存储
-    const vectorStore = await initVectorStore(userId);
+    // 初始化知识库向量存储
+    const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
     console.log(`[RAG System] 执行相似度搜索...`);
     // 检索相关文档，设置相似度阈值
@@ -463,7 +488,7 @@ export const triggerDocumentUpdate = async (
   );
 
   try {
-    const vectorStore = await initVectorStore(userId, true);
+    const vectorStore = await initKnowledgeBaseVectorStore(userId, true);
     await vectorStore.updateDocument(
       userId,
       documentId,
