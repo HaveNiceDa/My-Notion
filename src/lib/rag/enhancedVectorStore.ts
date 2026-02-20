@@ -2,6 +2,7 @@ import { Embeddings } from "@langchain/core/embeddings";
 import { Document } from "@langchain/core/documents";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
+import { extractTextFromDocument } from "./rag";
 
 const computeContentHash = (content: string): string => {
   let hash = 0;
@@ -135,7 +136,17 @@ export class EnhancedVectorStore {
 
     console.log(`[EnhancedVectorStore] 开始重新嵌入文档: ${title}`);
 
-    const splits = await textSplitter.splitText(content);
+    // 提取明文内容
+    const plainTextContent = extractTextFromDocument(content);
+    if (!plainTextContent) {
+      console.log(`[EnhancedVectorStore] 文档无有效内容，跳过更新: ${title}`);
+      return;
+    }
+    console.log(
+      `[EnhancedVectorStore] 提取明文内容完成，长度: ${plainTextContent.length} 字符`,
+    );
+
+    const splits = await textSplitter.splitText(plainTextContent);
     console.log(
       `[EnhancedVectorStore] 文档 "${title}" 分割为 ${splits.length} 个chunks`,
     );
