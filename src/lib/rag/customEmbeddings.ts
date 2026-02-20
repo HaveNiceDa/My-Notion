@@ -6,22 +6,65 @@ import { AsyncCallerParams } from "@langchain/core/utils/async_caller";
  * 避免CORS错误
  */
 export class CustomEmbeddings extends Embeddings {
+  private embeddingCache = new Map<string, number[]>();
+
   constructor(params?: AsyncCallerParams) {
     super(params ?? {});
   }
 
+  /**
+   * 批量嵌入文档 - 使用批量API提高效率
+   */
   async embedDocuments(texts: string[]): Promise<number[][]> {
-    const embeddings: number[][] = [];
+    const uncachedTexts: string[] = [];
+    const uncachedIndices: number[] = [];
+    const result: number[][] = new Array(texts.length);
 
-    for (const text of texts) {
-      const embedding = await this.embedQuery(text);
-      embeddings.push(embedding);
+    texts.forEach((text, index) => {
+      const cached = this.embeddingCache.get(text);
+      if (cached) {
+        result[index] = cached;
+      } else {
+        uncachedTexts.push(text);
+        uncachedIndices.push(index);
+      }
+    });
+
+    if (uncachedTexts.length > 0) {
+      const response = await fetch("/api/embeddings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ inputs: uncachedTexts }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get embeddings: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const embeddings = data.embeddings;
+
+      embeddings.forEach((embedding: number[], i: number) => {
+        const originalIndex = uncachedIndices[i];
+        result[originalIndex] = embedding;
+        this.embeddingCache.set(uncachedTexts[i], embedding);
+      });
     }
 
-    return embeddings;
+    return result;
   }
 
+  /**
+   * 嵌入单个查询
+   */
   async embedQuery(text: string): Promise<number[]> {
+    const cached = this.embeddingCache.get(text);
+    if (cached) {
+      return cached;
+    }
+
     const response = await fetch("/api/embeddings", {
       method: "POST",
       headers: {
@@ -35,6 +78,15 @@ export class CustomEmbeddings extends Embeddings {
     }
 
     const data = await response.json();
-    return data.embedding;
+    const embedding = data.embedding;
+    this.embeddingCache.set(text, embedding);
+    return embedding;
+  }
+
+  /**
+   * 清除缓存
+   */
+  clearCache(): void {
+    this.embeddingCache.clear();
   }
 }

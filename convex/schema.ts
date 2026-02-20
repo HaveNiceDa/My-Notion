@@ -50,4 +50,54 @@ export default defineSchema({
     /** 关联的文档ID（可选） */
     documentId: v.optional(v.id("documents")),
   }).index("by_conversation", ["conversationId"]),
+
+  /** 文档向量chunks表 - 存储每个文档切分后的向量数据 */
+  documentChunks: defineTable({
+    /** 用户ID */
+    userId: v.string(),
+    /** 关联的文档ID */
+    documentId: v.id("documents"),
+    /** chunk在文档中的索引位置 */
+    chunkIndex: v.number(),
+    /** 1536维向量数组 */
+    embedding: v.array(v.number()),
+    /** chunk的原始文本内容 */
+    pageContent: v.string(),
+    /** 元数据（标题等） */
+    metadata: v.object({
+      title: v.string(),
+      documentId: v.string(),
+    }),
+    /** chunk内容的哈希值，用于检测变更 */
+    contentHash: v.string(),
+    /** 创建时间 */
+    createdAt: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_document", ["userId", "documentId"])
+    .index("by_document", ["documentId"]),
+
+  /** 文档embedding状态表 - 追踪每个文档的embedding状态 */
+  documentEmbeddingStatus: defineTable({
+    /** 用户ID */
+    userId: v.string(),
+    /** 关联的文档ID */
+    documentId: v.id("documents"),
+    /** 最后embedding时间 */
+    lastEmbeddedTime: v.number(),
+    /** 状态：pending, processing, completed, failed */
+    status: v.union(
+      v.literal("pending"),
+      v.literal("processing"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    /** 文档内容的哈希值，用于检测是否需要重新embedding */
+    contentHash: v.string(),
+    /** 错误信息（如果status为failed） */
+    errorMessage: v.optional(v.string()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_document", ["userId", "documentId"])
+    .index("by_document", ["documentId"]),
 });
