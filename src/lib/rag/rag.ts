@@ -288,7 +288,9 @@ export const runRAGQuery = async (
         conversationId,
         "start",
         "开始执行RAG查询",
-        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行文本embedding处理`,
+        knowledgeBaseEnabled
+          ? `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行文本embedding处理`
+          : `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
       );
     }
 
@@ -386,17 +388,6 @@ export const runRAGQuery = async (
         );
       });
     } else {
-      // 添加思考过程：检查知识库状态
-      if (conversationId) {
-        const { addStepToDatabase } = useThinkingProcessStore.getState();
-        await addStepToDatabase(
-          conversationId,
-          "knowledge-base",
-          "检查知识库状态",
-          "知识库已禁用，直接使用LLM原生能力",
-        );
-      }
-
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 
@@ -407,7 +398,9 @@ export const runRAGQuery = async (
         conversationId,
         "prompt",
         "生成动态提示词",
-        "基于检索结果生成结构化提示词",
+        knowledgeBaseEnabled
+          ? "基于检索结果生成结构化提示词"
+          : "基于用户查询生成提示词",
       );
     }
 
@@ -524,12 +517,14 @@ export const runRAGQueryStream = async (
           : "知识库已禁用，直接使用LLM原生能力",
       );
 
-      // 添加思考过程：开始执行流式RAG查询
+      // 添加思考过程：开始执行文本Embedding
       await addStepToDatabase(
         conversationId,
         "start",
-        "开始执行流式RAG查询",
-        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行文本embedding处理`,
+        "用户Query处理",
+        knowledgeBaseEnabled
+          ? `用户输入: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行query embedding处理`
+          : `用户输入: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
       );
     }
 
@@ -606,17 +601,6 @@ export const runRAGQueryStream = async (
         );
       });
     } else {
-      // 添加思考过程：检查知识库状态
-      if (conversationId) {
-        const { addStepToDatabase } = useThinkingProcessStore.getState();
-        await addStepToDatabase(
-          conversationId,
-          "knowledge-base",
-          "检查知识库状态",
-          "知识库已禁用，直接使用LLM原生能力",
-        );
-      }
-
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 
@@ -627,7 +611,9 @@ export const runRAGQueryStream = async (
         conversationId,
         "prompt",
         "生成动态提示词",
-        "基于检索结果生成结构化提示词",
+        knowledgeBaseEnabled
+          ? "基于检索结果生成结构化提示词"
+          : "基于用户查询生成提示词",
       );
     }
 

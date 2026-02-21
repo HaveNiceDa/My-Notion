@@ -199,6 +199,46 @@ export const MessageList = ({
                                     }
                                   })()}
                                 </>
+                              ) : step.type === "start" &&
+                                (step.details.includes(
+                                  "开始进行文本embedding处理",
+                                ) ||
+                                  step.details.includes(
+                                    "开始进行query embedding处理",
+                                  )) ? (
+                                <>
+                                  {(() => {
+                                    const parts = step.details.split("\n");
+                                    if (parts.length > 0) {
+                                      const queryPart = parts[0];
+                                      const embeddingPart = parts[1];
+                                      const queryMatch =
+                                        queryPart.match(/查询: (.*)/) ||
+                                        queryPart.match(/用户输入: (.*)/);
+                                      const label = queryPart.match(
+                                        /查询: (.*)/,
+                                      )
+                                        ? "查询"
+                                        : "用户输入";
+                                      return (
+                                        <>
+                                          {queryMatch && (
+                                            <p>
+                                              {label}:{" "}
+                                              <span className="text-blue-600 font-medium">
+                                                {queryMatch[1]}
+                                              </span>
+                                            </p>
+                                          )}
+                                          {embeddingPart && (
+                                            <p>{embeddingPart}</p>
+                                          )}
+                                        </>
+                                      );
+                                    }
+                                    return <p>{step.details}</p>;
+                                  })()}
+                                </>
                               ) : (
                                 <p>{step.details}</p>
                               )}

@@ -207,8 +207,8 @@
     "noMatchingConversations": "No matching conversations found",
     "knowledgeBaseInitializing": "Knowledge base is initializing, please try again later",
     "recentConversationThinking": "Recent Conversation Thinking Process",
-    "knowledgeBaseEnabled": "Knowledge base enabled",
-    "knowledgeBaseDisabled": "Knowledge base disabled",
+    "knowledgeBaseEnabled": "Knowledge base search enabled",
+    "knowledgeBaseDisabled": "Knowledge base search disabled",
     "knowledgeBaseTooltip": "RAG retrieval"
   }
 }
