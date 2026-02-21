@@ -272,27 +272,27 @@ export const runRAGQuery = async (
         console.error(`[RAG System] 清除本地状态时出错:`, error);
       }
 
-      // 添加思考过程：开始RAG查询
+      // 添加思考过程：检查知识库状态
       const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
+        conversationId,
+        "knowledge-base",
+        "检查知识库状态",
+        knowledgeBaseEnabled
+          ? "知识库已启用，准备执行RAG检索"
+          : "知识库已禁用，直接使用LLM原生能力",
+      );
+
+      // 添加思考过程：开始RAG查询
       await addStepToDatabase(
         conversationId,
         "start",
         "开始执行RAG查询",
-        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行文本embedding处理`,
       );
     }
 
     if (knowledgeBaseEnabled) {
-      // 添加思考过程：知识库状态检查
-      if (conversationId) {
-        const { addStepToDatabase } = useThinkingProcessStore.getState();
-        await addStepToDatabase(
-          conversationId,
-          "knowledge-base",
-          "检查知识库状态",
-          "知识库已启用，执行RAG检索",
-        );
-      }
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
@@ -304,7 +304,11 @@ export const runRAGQuery = async (
           conversationId,
           "retrieval",
           "执行混合检索策略",
-          `结合${retrievalStrategy}检索和关键词检索`,
+          retrievalStrategy === "hybrid"
+            ? "并行执行语义相似度检索和关键词检索，然后融合结果"
+            : retrievalStrategy === "semantic"
+              ? "执行语义相似度检索，基于向量空间距离计算相关性"
+              : "执行关键词检索，基于词频和匹配度计算相关性",
         );
       }
 
@@ -509,27 +513,27 @@ export const runRAGQueryStream = async (
         console.error(`[RAG System] 清除本地状态时出错:`, error);
       }
 
-      // 添加思考过程：开始执行流式RAG查询
+      // 添加思考过程：检查知识库状态
       const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
+        conversationId,
+        "knowledge-base",
+        "检查知识库状态",
+        knowledgeBaseEnabled
+          ? "知识库已启用，准备执行RAG检索"
+          : "知识库已禁用，直接使用LLM原生能力",
+      );
+
+      // 添加思考过程：开始执行流式RAG查询
       await addStepToDatabase(
         conversationId,
         "start",
         "开始执行流式RAG查询",
-        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}\n开始进行文本embedding处理`,
       );
     }
 
     if (knowledgeBaseEnabled) {
-      // 添加思考过程：检查知识库状态
-      if (conversationId) {
-        const { addStepToDatabase } = useThinkingProcessStore.getState();
-        await addStepToDatabase(
-          conversationId,
-          "knowledge-base",
-          "检查知识库状态",
-          "知识库已启用，执行RAG检索",
-        );
-      }
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
@@ -541,7 +545,11 @@ export const runRAGQueryStream = async (
           conversationId,
           "retrieval",
           "执行混合检索策略",
-          `结合${retrievalStrategy}检索和关键词检索`,
+          retrievalStrategy === "hybrid"
+            ? "并行执行语义相似度检索和关键词检索，然后融合结果"
+            : retrievalStrategy === "semantic"
+              ? "执行语义相似度检索，基于向量空间距离计算相关性"
+              : "执行关键词检索，基于词频和匹配度计算相关性",
         );
       }
 

@@ -300,6 +300,20 @@ export const MessageList = ({
             </div>
           ))}
 
+          {isLoading && (
+            <div className="flex justify-start mb-8">
+              <div className="max-w-[80%]">
+                <div className="p-4 break-words bg-white text-gray-900 pb-1 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm text-gray-500">
+                      正在生成响应...
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div ref={messagesEndRef} />
         </div>
       </div>
