@@ -221,6 +221,7 @@ const AIPage = () => {
         "hybrid",
         0.4,
         knowledgeBaseEnabled,
+        currentConversationId,
       );
     } finally {
       setIsLoading(false);
@@ -378,6 +379,7 @@ const AIPage = () => {
                 isLoading={isLoading}
                 messagesEndRef={messagesEndRef}
                 conversationCreatedAt={conversationCreatedAt}
+                conversationId={conversationId}
               />
               <div className="w-full flex justify-center">
                 <div className="w-1/2">
@@ -386,6 +388,7 @@ const AIPage = () => {
                     onInputChange={setInput}
                     onSend={handleSend}
                     onKeyPress={handleKeyPress}
+                    conversationId={conversationId}
                   />
                 </div>
               </div>

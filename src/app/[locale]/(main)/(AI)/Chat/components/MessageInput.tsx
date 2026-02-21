@@ -37,6 +37,7 @@ interface MessageInputProps {
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   className?: string;
+  conversationId?: string | null;
 }
 
 export const MessageInput = ({
@@ -45,11 +46,11 @@ export const MessageInput = ({
   onSend,
   onKeyPress,
   className,
+  conversationId,
 }: MessageInputProps) => {
   const t = useTranslations("AI");
   const { model, setModel } = useAIModelStore();
-  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } =
-    useKnowledgeBaseStore();
+  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
 
   const getModelDisplayName = (modelName: AIModel) => {
     return displayNames[modelName] || modelName;

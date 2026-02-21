@@ -169,3 +169,41 @@ export const getKnowledgeBaseDocumentsForRAG = query({
       .collect();
   },
 });
+
+/**
+ * 添加思考过程步骤
+ */
+export const addThinkingStep = mutation({
+  args: {
+    conversationId: v.id("aiConversations"),
+    messageId: v.optional(v.id("aiMessages")),
+    type: v.string(),
+    content: v.string(),
+    details: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    return await ctx.db.insert("aiThinkingSteps", {
+      conversationId: args.conversationId,
+      messageId: args.messageId,
+      type: args.type,
+      content: args.content,
+      details: args.details,
+      createdAt: now,
+    });
+  },
+});
+
+/**
+ * 获取对话的思考过程步骤
+ */
+export const getThinkingSteps = query({
+  args: { conversationId: v.id("aiConversations") },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("aiThinkingSteps")
+      .withIndex("by_conversation", (q) => q.eq("conversationId", args.conversationId))
+      .order("asc")
+      .collect();
+  },
+});

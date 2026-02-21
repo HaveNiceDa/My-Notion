@@ -3,7 +3,19 @@
 import { cn } from "@/src/lib/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy } from "lucide-react";
+import {
+  Copy,
+  ChevronDown,
+  ChevronUp,
+  Brain,
+  Database,
+  Search,
+  MessageSquare,
+  Zap,
+} from "lucide-react";
+import type { Id } from "@/convex/_generated/dataModel";
+import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
+import { useEffect } from "react";
 
 interface Message {
   id: string;
@@ -17,6 +29,7 @@ interface MessageListProps {
   isLoading: boolean;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
+  conversationId: Id<"aiConversations"> | null;
 }
 
 export const MessageList = ({
@@ -24,8 +37,51 @@ export const MessageList = ({
   isLoading,
   messagesEndRef,
   conversationCreatedAt,
+  conversationId,
 }: MessageListProps) => {
   const t = useTranslations("AI");
+  const {
+    steps,
+    isExpanded,
+    isVisible,
+    toggleExpanded,
+    loadSteps,
+    isLoading: isLoadingSteps,
+    isLoaded,
+  } = useThinkingProcessStore();
+
+  // 当conversationId变化时，加载思考过程
+  useEffect(() => {
+    if (conversationId) {
+      loadSteps(conversationId);
+    }
+  }, [conversationId, loadSteps]);
+
+  // 获取图标组件
+  const getStepIcon = (type: string) => {
+    switch (type) {
+      case "knowledge-base":
+        return <Database className="h-4 w-4 text-blue-500" />;
+      case "retrieval":
+      case "documents":
+        return <Search className="h-4 w-4 text-green-500" />;
+      case "query":
+        return <MessageSquare className="h-4 w-4 text-purple-500" />;
+      case "prompt":
+        return <Zap className="h-4 w-4 text-yellow-500" />;
+      default:
+        return <Brain className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  // 格式化时间
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("zh-CN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
 
   const formatDate = (date: Date) => {
     return date.toLocaleDateString("zh-CN", {
@@ -121,10 +177,76 @@ export const MessageList = ({
           </div>
         ))}
 
-        {isLoading && (
+        {/* 思考过程展示 */}
+        {(isLoading || isLoadingSteps || steps.length > 0) && (
           <div className="mb-8">
-            <div className="rounded-lg p-4 bg-white text-gray-900">
-              <p className="text-base">{t("thinking")}</p>
+            <div className="rounded-lg p-4 bg-white text-gray-900 border border-gray-200 shadow-sm overflow-hidden transition-all duration-300 ease-in-out">
+              {/* 思考过程标题栏 */}
+              <div
+                className="flex items-center justify-between cursor-pointer mb-2 group"
+                onClick={toggleExpanded}
+              >
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
+                    {isLoading ? (
+                      <Brain className="h-4 w-4 animate-pulse" />
+                    ) : (
+                      <Brain className="h-4 w-4" />
+                    )}
+                  </div>
+                  <p className="text-base font-medium">{t("thinking")}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-500">
+                    {steps.length} 步骤
+                  </span>
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                  )}
+                </div>
+              </div>
+
+              {/* 思考过程步骤列表 */}
+              {isExpanded && (
+                <div className="mt-4 space-y-3 animate-in fade-in duration-500">
+                  {isLoadingSteps ? (
+                    <div className="flex justify-center py-4">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : (
+                    steps.map((step, index) => (
+                      <div
+                        key={step.id}
+                        className="flex gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100 transition-all duration-300 hover:bg-gray-100 animate-in fade-in duration-500"
+                        style={{ animationDelay: `${index * 100}ms` }}
+                      >
+                        <div className="flex-shrink-0">
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gray-200 text-gray-600">
+                            {getStepIcon(step.type)}
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">
+                              {step.content}
+                            </p>
+                            <span className="text-xs text-gray-400">
+                              {formatTime(step.timestamp)}
+                            </span>
+                          </div>
+                          {step.details && (
+                            <p className="text-xs text-gray-600 mt-1">
+                              {step.details}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}

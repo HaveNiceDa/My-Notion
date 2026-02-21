@@ -2,17 +2,18 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { EnhancedVectorStore } from "./enhancedVectorStore";
 import { ChunkManager } from "./chunkManager";
 import { promptLoader } from "../prompt/promptLoader";
 
+// 初始化Convex客户端（用于添加思考过程步骤）
+const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
 
 console.log("[RAG System] 加载RAG模块...");
-
-// 初始化Convex客户端
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // 文档分割器 - 优化配置以获得更好的检索效果
 const textSplitter = new RecursiveCharacterTextSplitter({
@@ -238,6 +239,7 @@ export const runRAGQuery = async (
   semanticWeight: number = 0.4,
   conversationHistory: Array<{ role: string; content: string }> = [],
   knowledgeBaseEnabled: boolean = true,
+  conversationId?: Id<"aiConversations">,
 ): Promise<string> => {
   console.log(`[RAG System] ===== 执行RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -250,15 +252,56 @@ export const runRAGQuery = async (
   try {
     let searchResults: Array<{ document: Document; score: number }> = [];
 
+    // 添加思考过程：开始RAG查询
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "start",
+        content: "开始执行RAG查询",
+        details: `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+      });
+    }
+
     if (knowledgeBaseEnabled) {
+      // 添加思考过程：知识库状态检查
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "knowledge-base",
+          content: "检查知识库状态",
+          details: "知识库已启用，执行RAG检索",
+        });
+      }
+
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
+
+      // 添加思考过程：执行检索策略
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "retrieval",
+          content: "执行混合检索策略",
+          details: `结合${retrievalStrategy}检索和关键词检索`,
+        });
+      }
 
       console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
 
       // 构建上下文增强的查询
       const enhancedQuery = buildEnhancedQuery(query, conversationHistory);
+
+      // 添加思考过程：构建增强查询
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "query",
+          content: "构建增强查询",
+          details: `基于对话历史构建上下文增强的查询`,
+        });
+      }
+
       console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
 
       // 根据检索策略执行不同的检索方法
@@ -288,6 +331,20 @@ export const runRAGQuery = async (
           break;
       }
 
+      // 添加思考过程：检索相关文档
+      if (conversationId) {
+        const docDetails =
+          searchResults.length > 0
+            ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
+            : "未找到相关文档";
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "documents",
+          content: "检索相关文档",
+          details: docDetails,
+        });
+      }
+
       // 没找到文档,打日志,sentry todo
       console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
       searchResults.forEach((item, index) => {
@@ -296,7 +353,27 @@ export const runRAGQuery = async (
         );
       });
     } else {
+      // 添加思考过程：知识库状态检查
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "knowledge-base",
+          content: "检查知识库状态",
+          details: "知识库已禁用，直接使用LLM原生能力",
+        });
+      }
+
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
+    }
+
+    // 添加思考过程：生成动态提示词
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "prompt",
+        content: "生成动态提示词",
+        details: "基于检索结果生成结构化提示词",
+      });
     }
 
     console.log(`[RAG System] 生成动态prompt...`);
@@ -308,6 +385,16 @@ export const runRAGQuery = async (
 
     console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
     console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
+
+    // 添加思考过程：调用聊天API
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "api",
+        content: "调用聊天API",
+        details: `使用${model}模型生成响应`,
+      });
+    }
 
     console.log(`[RAG System] 调用聊天API...`);
     // 调用API路由
@@ -357,6 +444,7 @@ export const runRAGQueryStream = async (
   retrievalStrategy: RetrievalStrategy = "hybrid",
   semanticWeight: number = 0.4,
   knowledgeBaseEnabled: boolean = true,
+  conversationId?: Id<"aiConversations">,
 ): Promise<void> => {
   console.log(`[RAG System] ===== 执行流式RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -370,10 +458,40 @@ export const runRAGQueryStream = async (
   try {
     let searchResults: Array<{ document: Document; score: number }> = [];
 
+    // 添加思考过程：开始RAG查询
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "start",
+        content: "开始执行流式RAG查询",
+        details: `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+      });
+    }
+
     if (knowledgeBaseEnabled) {
+      // 添加思考过程：知识库状态检查
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "knowledge-base",
+          content: "检查知识库状态",
+          details: "知识库已启用，执行RAG检索",
+        });
+      }
+
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
+
+      // 添加思考过程：执行检索策略
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "retrieval",
+          content: "执行混合检索策略",
+          details: `结合${retrievalStrategy}检索和关键词检索`,
+        });
+      }
 
       console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
       // 根据检索策略执行不同的检索方法
@@ -399,6 +517,20 @@ export const runRAGQueryStream = async (
           break;
       }
 
+      // 添加思考过程：检索相关文档
+      if (conversationId) {
+        const docDetails =
+          searchResults.length > 0
+            ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
+            : "未找到相关文档";
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "documents",
+          content: "检索相关文档",
+          details: docDetails,
+        });
+      }
+
       // 没找到文档,打日志,sentry todo
       console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
       searchResults.forEach((item, index) => {
@@ -407,7 +539,27 @@ export const runRAGQueryStream = async (
         );
       });
     } else {
+      // 添加思考过程：知识库状态检查
+      if (conversationId) {
+        await convex.mutation(api.aiChat.addThinkingStep, {
+          conversationId,
+          type: "knowledge-base",
+          content: "检查知识库状态",
+          details: "知识库已禁用，直接使用LLM原生能力",
+        });
+      }
+
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
+    }
+
+    // 添加思考过程：生成动态提示词
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "prompt",
+        content: "生成动态提示词",
+        details: "基于检索结果生成结构化提示词",
+      });
     }
 
     console.log(`[RAG System] 生成动态prompt...`);
@@ -419,6 +571,16 @@ export const runRAGQueryStream = async (
 
     console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
     console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
+
+    // 添加思考过程：调用流式聊天API
+    if (conversationId) {
+      await convex.mutation(api.aiChat.addThinkingStep, {
+        conversationId,
+        type: "api",
+        content: "调用流式聊天API",
+        details: `使用${model}模型生成响应`,
+      });
+    }
 
     // 构建完整的消息数组
     const messages = [

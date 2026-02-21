@@ -102,4 +102,22 @@ export default defineSchema({
     .index("by_user", ["userId"])
     .index("by_user_document", ["userId", "documentId"])
     .index("by_document", ["documentId"]),
+
+  /** AI思考过程步骤表 - 存储模型的思考过程 */
+  aiThinkingSteps: defineTable({
+    /** 对话ID */
+    conversationId: v.id("aiConversations"),
+    /** 消息ID（可选，关联到assistant消息） */
+    messageId: v.optional(v.id("aiMessages")),
+    /** 步骤类型 */
+    type: v.string(),
+    /** 步骤内容 */
+    content: v.string(),
+    /** 步骤详情 */
+    details: v.optional(v.string()),
+    /** 创建时间 */
+    createdAt: v.number(),
+  })
+    .index("by_conversation", ["conversationId"])
+    .index("by_message", ["messageId"]),
 });
