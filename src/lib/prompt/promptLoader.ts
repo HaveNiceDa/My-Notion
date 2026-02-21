@@ -45,15 +45,23 @@ class PromptLoader {
   } {
     // 确保检索结果按相关性排序
     const sortedResults = [...searchResults].sort((a, b) => b.score - a.score);
+    
+    // 过滤掉相关性低于0.7的文档
+    const relevantResults = sortedResults.filter(result => result.score >= 0.7);
+    console.log(`[PromptLoader] 过滤后相关文档数量: ${relevantResults.length}`);
 
     // 构建上下文
-    const context = sortedResults
+    const context = relevantResults
       .map((result, index) => {
+        // 打印metadata信息用于调试
+        console.log(`[PromptLoader] 文档${index + 1} metadata:`, result.document.metadata);
         // 获取真实文档名字
-        const docTitle = result.document.metadata?.title || `文档 ${index + 1}`;
+        const docTitle = result.document.metadata?.title || result.document.metadata?.documentId || `文档 ${index + 1}`;
         return `#### ${docTitle} (相关性: ${(result.score * 100).toFixed(1)}%)\n${result.document.pageContent}`;
       })
-      .join("\n\n");
+      .join('\n\n');
+
+    console.log(`[PromptLoader] 构建的上下文长度: ${context.length} 字符`);
 
     // 生成system prompt
     const systemPrompt = this.config.prompts["with-rag"].system;
@@ -65,7 +73,7 @@ class PromptLoader {
 
     return {
       systemPrompt,
-      userPrompt,
+      userPrompt
     };
   }
 
@@ -87,7 +95,7 @@ class PromptLoader {
 
     return {
       systemPrompt,
-      userPrompt,
+      userPrompt
     };
   }
 
@@ -117,7 +125,7 @@ class PromptLoader {
   } {
     return {
       character: this.config.character,
-      style: this.config.style,
+      style: this.config.style
     };
   }
 }
