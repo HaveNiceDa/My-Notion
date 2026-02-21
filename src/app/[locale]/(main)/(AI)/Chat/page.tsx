@@ -1,11 +1,50 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { runRAGQueryStream } from "@/src/lib/rag/rag";
+// 动态导入 RAG 相关功能，实现代码分割
+type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
+type RetrievalStrategy = "semantic" | "keyword" | "hybrid";
+
+const runRAGQueryStream = async (
+  userId: string,
+  input: string,
+  conversationHistoryMessages: any[],
+  onChunk: (chunk: string) => void,
+  onComplete: () => Promise<void>,
+  onError: (error: any) => void,
+  model: AIModel,
+  temperature: number,
+  searchType: RetrievalStrategy,
+  k: number,
+  knowledgeBaseEnabled: boolean,
+  conversationId: string | Id<"aiConversations">,
+) => {
+  try {
+    const { runRAGQueryStream: actualRunRAGQueryStream } =
+      await import("@/src/lib/rag/rag");
+    return await actualRunRAGQueryStream(
+      userId,
+      input,
+      conversationHistoryMessages,
+      onChunk,
+      onComplete,
+      onError,
+      model,
+      temperature,
+      searchType,
+      k,
+      knowledgeBaseEnabled,
+      conversationId as Id<"aiConversations">,
+    );
+  } catch (error) {
+    console.error("Error loading RAG module:", error);
+    onError(error);
+  }
+};
 import { formatRelativeTime } from "@/src/lib/timeUtils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
@@ -14,13 +53,76 @@ import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
-import { TopNavigation } from "./components/TopNavigation";
-import { ConversationSidebar } from "./components/ConversationSidebar";
-import { NewConversationLanding } from "./components/NewConversationLanding";
-import { MessageList } from "./components/MessageList";
-import { MessageInput } from "./components/MessageInput";
+import dynamic from "next/dynamic";
+import { Skeleton } from "@/src/components/ui/skeleton";
+
+const TopNavigation = dynamic(
+  () =>
+    import("./components/TopNavigation").then((module) => ({
+      default: module.TopNavigation,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-16 w-full" />,
+  },
+);
+
+const ConversationSidebar = dynamic(
+  () =>
+    import("./components/ConversationSidebar").then((module) => ({
+      default: module.ConversationSidebar,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="w-80 h-full" />,
+  },
+);
+
+const NewConversationLanding = dynamic(
+  () =>
+    import("./components/NewConversationLanding").then((module) => ({
+      default: module.NewConversationLanding,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="flex-1 w-full" />,
+  },
+);
+
+const MessageList = dynamic(
+  () =>
+    import("./components/MessageList").then((module) => ({
+      default: module.MessageList,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="flex-1 w-full" />,
+  },
+);
+
+const MessageInput = dynamic(
+  () =>
+    import("./components/MessageInput").then((module) => ({
+      default: module.MessageInput,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="h-16 w-full" />,
+  },
+);
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+// 请求缓存
+interface RequestCache {
+  conversations: Map<string, any[]>;
+  messages: Map<string, any[]>;
+}
+
+const requestCache: RequestCache = {
+  conversations: new Map<string, any[]>(),
+  messages: new Map<string, any[]>(),
+};
 
 interface Message {
   id: string;
@@ -53,34 +155,43 @@ const AIPage = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousSearchParamsIdRef = useRef<string | null>(null);
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     const initConversation = async () => {
       if (!user) return;
 
       try {
-        const loadedConversations = await convex.query(
-          api.aiChat.getConversations,
-          {
-            userId: user.id,
-          },
-        );
-        setConversations(loadedConversations);
-
+        // 优先检查 URL 中是否有 conversationId
         const conversationIdFromUrl = searchParams.get("id");
 
         if (conversationIdFromUrl) {
+          // 优先加载当前对话数据
           await loadConversation(
             conversationIdFromUrl as Id<"aiConversations">,
           );
         }
+
+        // 延迟加载对话历史，非关键数据
+        setTimeout(async () => {
+          try {
+            const loadedConversations = await convex.query(
+              api.aiChat.getConversations,
+              {
+                userId: user.id,
+              },
+            );
+            setConversations(loadedConversations);
+          } catch (error) {
+            console.error("Error loading conversations:", error);
+          }
+        }, 500);
 
         previousSearchParamsIdRef.current = conversationIdFromUrl;
       } catch (error) {
@@ -108,7 +219,7 @@ const AIPage = () => {
     }
   }, [searchParams.get("id")]);
 
-  const handleSend = async () => {
+  const handleSend = useCallback(async () => {
     if (!input.trim() || isLoading || !user) return;
 
     // Check if vector store is still loading
@@ -227,7 +338,7 @@ const AIPage = () => {
         },
         model,
         0.5,
-        "hybrid",
+        "hybrid" as RetrievalStrategy,
         0.4,
         knowledgeBaseEnabled,
         currentConversationId,
@@ -235,109 +346,155 @@ const AIPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [
+    user,
+    input,
+    isLoading,
+    conversationId,
+    messages,
+    model,
+    knowledgeBaseEnabled,
+    userLoadingStatus,
+    t,
+    router,
+  ]);
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     if (!user) return;
 
     try {
+      // 检查缓存
+      const cacheKey = user.id;
+      if (requestCache.conversations.has(cacheKey)) {
+        const cachedData = requestCache.conversations.get(cacheKey);
+        if (cachedData) {
+          setConversations(cachedData);
+          return;
+        }
+      }
+
       setIsLoadingConversations(true);
       const result = await convex.query(api.aiChat.getConversations, {
         userId: user.id,
       });
+
+      // 缓存结果
+      requestCache.conversations.set(cacheKey, result);
       setConversations(result);
     } catch (error) {
       console.error("Error loading conversations:", error);
     } finally {
       setIsLoadingConversations(false);
     }
-  };
+  }, [user]);
 
-  const createNewConversation = () => {
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
+
+  const createNewConversation = useCallback(() => {
     router.push(pathname);
     setConversationId(null);
     setMessages([]);
     setConversationCreatedAt(null);
     previousSearchParamsIdRef.current = null;
     setShowConversationList(false);
-  };
+  }, [router, pathname]);
 
-  const loadConversation = async (convId: Id<"aiConversations">) => {
-    if (!user) return;
+  const loadConversation = useCallback(
+    async (convId: Id<"aiConversations">) => {
+      if (!user) return;
 
-    try {
-      setIsLoading(true);
-      setConversationId(convId);
-      previousSearchParamsIdRef.current = convId;
+      try {
+        setIsLoading(true);
+        setConversationId(convId);
+        previousSearchParamsIdRef.current = convId;
 
-      router.push(`?id=${convId}`);
+        router.push(`?id=${convId}`);
 
-      const messages = await convex.query(api.aiChat.getMessages, {
-        conversationId: convId,
-      });
+        // 检查缓存
+        const cacheKey = convId;
+        let messages: any[];
 
-      const formattedMessages: Message[] = messages.map((msg: any) => ({
-        id: msg._id,
-        content: msg.content,
-        role: msg.role,
-        timestamp: new Date(msg.createdAt),
-      }));
+        if (requestCache.messages.has(cacheKey)) {
+          const cachedMessages = requestCache.messages.get(cacheKey);
+          messages = cachedMessages || [];
+        } else {
+          messages = await convex.query(api.aiChat.getMessages, {
+            conversationId: convId,
+          });
+          // 缓存结果
+          requestCache.messages.set(cacheKey, messages);
+        }
 
-      setMessages(formattedMessages);
+        const formattedMessages: Message[] = messages.map((msg: any) => ({
+          id: msg._id,
+          content: msg.content,
+          role: msg.role,
+          timestamp: new Date(msg.createdAt),
+        }));
 
-      let conversation = conversations.find((conv) => conv._id === convId);
-      if (!conversation) {
-        const loadedConversations = await convex.query(
-          api.aiChat.getConversations,
-          {
-            userId: user.id,
-          },
-        );
-        setConversations(loadedConversations);
-        conversation = loadedConversations.find((conv) => conv._id === convId);
+        setMessages(formattedMessages);
+
+        let conversation = conversations.find((conv) => conv._id === convId);
+        if (!conversation) {
+          const loadedConversations = await convex.query(
+            api.aiChat.getConversations,
+            {
+              userId: user.id,
+            },
+          );
+          setConversations(loadedConversations);
+          conversation = loadedConversations.find(
+            (conv) => conv._id === convId,
+          );
+        }
+        if (conversation) {
+          setConversationCreatedAt(new Date(conversation.createdAt));
+        }
+
+        setShowConversationList(false);
+      } catch (error) {
+        console.error("Error loading conversation:", error);
+      } finally {
+        setIsLoading(false);
       }
-      if (conversation) {
-        setConversationCreatedAt(new Date(conversation.createdAt));
+    },
+    [user, conversations, router],
+  );
+
+  const deleteConversation = useCallback(
+    async (convId: Id<"aiConversations">) => {
+      if (!user) return;
+
+      if (conversationId === convId) {
+        toast.error(t("cannotDeleteCurrentConversation"));
+        return;
       }
 
-      setShowConversationList(false);
-    } catch (error) {
-      console.error("Error loading conversation:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      try {
+        await convex.mutation(api.aiChat.deleteConversation, {
+          conversationId: convId,
+          userId: user.id,
+        });
 
-  const deleteConversation = async (convId: Id<"aiConversations">) => {
-    if (!user) return;
+        await loadConversations();
 
-    if (conversationId === convId) {
-      toast.error(t("cannotDeleteCurrentConversation"));
-      return;
-    }
-
-    try {
-      await convex.mutation(api.aiChat.deleteConversation, {
-        conversationId: convId,
-        userId: user.id,
-      });
-
-      await loadConversations();
-
-      toast.success(t("conversationDeleted"));
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      toast.error(t("deleteFailed"));
-      await loadConversations();
-    }
-  };
+        toast.success(t("conversationDeleted"));
+      } catch (error) {
+        console.error("Error deleting conversation:", error);
+        toast.error(t("deleteFailed"));
+        await loadConversations();
+      }
+    },
+    [user, conversationId, t, loadConversations],
+  );
 
   return (
     <div className="h-screen w-full">

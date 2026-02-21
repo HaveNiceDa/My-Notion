@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
-import { use, useMemo, useRef, useState, useEffect } from "react";
+import React, { use, useMemo, useRef, useState, useEffect } from "react";
 import { useTitle } from "@/src/hooks/use-title";
 import { useTranslations } from "next-intl";
 import type { EditorRef } from "@/src/components/Editor";
@@ -14,16 +14,27 @@ import { Toolbar } from "@/src/components/Toolbar";
 import { Cover } from "@/src/components/Cover";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ErrorModal } from "@/src/components/modals/error-modal";
-import Editor from "@/src/components/Editor";
-import { Room } from "@/src/components/Room";
 import { getDocumentWatcher } from "@/src/lib/rag/DocumentWatcher";
 import { triggerDocumentUpdate } from "@/src/lib/rag/rag";
+
+const Editor = dynamic(() => import("@/src/components/Editor"), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
+
+const Room = dynamic(() => import("@/src/components/Room").then((module) => ({ default: module.Room })), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[400px] w-full" />,
+});
 
 interface DocumentIdPageProps {
   params: Promise<{
     documentId: Id<"documents">;
   }>;
 }
+
+// 简单的内存缓存
+const documentCache = new Map<string, any>();
 
 export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
@@ -33,6 +44,13 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const document = useQuery(api.documents.getById, {
     documentId,
   });
+
+  // 缓存文档数据
+  React.useMemo(() => {
+    if (document) {
+      documentCache.set(documentId, document);
+    }
+  }, [document, documentId]);
 
   const update = useMutation(api.documents.update);
 

@@ -57,6 +57,11 @@ export function DocumentList({
     router.push(`/documents/${documentId}`);
   };
 
+  const onMouseEnter = (documentId: string) => {
+    // 预加载页面
+    router.prefetch(`/documents/${documentId}`);
+  };
+
   if (documents === undefined) {
     return (
       <>
@@ -98,6 +103,7 @@ export function DocumentList({
           <Item
             id={document._id}
             onClick={() => onRedirect(document._id)}
+            onMouseEnter={() => onMouseEnter(document._id)}
             label={document.title}
             icon={FileIcon}
             documentIcon={document.icon}

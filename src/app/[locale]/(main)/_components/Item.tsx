@@ -37,6 +37,7 @@ interface ItemProps {
   isSearch?: boolean;
   level?: number;
   onExpand?: () => void;
+  onMouseEnter?: () => void;
   label: string;
   onClick?: () => void;
   icon: LucideIcon;
@@ -46,6 +47,7 @@ export function Item({
   id,
   label,
   onClick,
+  onMouseEnter,
   icon: Icon,
   active,
   documentIcon,
@@ -185,6 +187,7 @@ export function Item({
         isOver && "bg-primary/10 border-l-2 border-primary",
       )}
       onClick={onClick}
+      onMouseEnter={onMouseEnter}
       role="button"
       style={{ paddingLeft: level ? `${level * 12 + 12}px` : "12px" }}
       draggable={!!id}

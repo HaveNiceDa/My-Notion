@@ -8,7 +8,14 @@ const nextConfig = {
     domains: ["files.edgestore.dev"],
   },
   reactStrictMode: false,
-  outputFileTracing: false,
+  outputFileTracing: true,
+  swcMinify: true,
+  compress: true,
+  optimizeFonts: true,
+  productionBrowserSourceMaps: false,
+  experimental: {
+    optimizePackageImports: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine'],
+  },
 };
 
 module.exports = withNextIntl(nextConfig);
