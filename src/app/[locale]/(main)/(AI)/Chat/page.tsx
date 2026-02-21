@@ -391,7 +391,7 @@ const AIPage = () => {
                 conversationId={conversationId}
               />
               <div className="w-full flex justify-center">
-                <div className="w-1/2">
+                <div className="w-[60%]">
                   <MessageInput
                     input={input}
                     onInputChange={setInput}
