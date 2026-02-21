@@ -106,80 +106,6 @@ export const MessageList = ({
           </div>
         )}
 
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={cn(
-              "mb-8",
-              message.role === "user" ? "flex justify-end" : "",
-            )}
-          >
-            <div
-              className={cn(
-                "relative group max-w-[80%]",
-                message.role === "user" ? "flex flex-col items-end" : "",
-              )}
-            >
-              <div
-                className={cn(
-                  "p-4 break-words",
-                  message.role === "user"
-                    ? "bg-gray-100 text-gray-900 rounded-3xl"
-                    : "bg-white text-gray-900 pb-1 rounded-lg",
-                )}
-              >
-                <p className="whitespace-pre-wrap text-base break-all">
-                  {message.content}
-                </p>
-              </div>
-
-              {message.role === "user" && (
-                <div className="mt-1 flex justify-end gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="text-xs text-gray-500">
-                    {message.timestamp.toLocaleString("zh-CN", {
-                      month: "numeric",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                  <button
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                      toast.success(t("copied"));
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-
-              {message.role === "assistant" && (
-                <div className="flex justify-start gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity pl-4">
-                  <div className="text-xs text-gray-500">
-                    {message.timestamp.toLocaleString("zh-CN", {
-                      month: "numeric",
-                      day: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </div>
-                  <button
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                    onClick={() => {
-                      navigator.clipboard.writeText(message.content);
-                      toast.success(t("copied"));
-                    }}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
         {/* 思考过程展示 */}
         {(isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
           <div className="mb-8">
@@ -293,6 +219,80 @@ export const MessageList = ({
             </div>
           </div>
         )}
+
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={cn(
+              "mb-8",
+              message.role === "user" ? "flex justify-end" : "",
+            )}
+          >
+            <div
+              className={cn(
+                "relative group max-w-[80%]",
+                message.role === "user" ? "flex flex-col items-end" : "",
+              )}
+            >
+              <div
+                className={cn(
+                  "p-4 break-words",
+                  message.role === "user"
+                    ? "bg-gray-100 text-gray-900 rounded-3xl"
+                    : "bg-white text-gray-900 pb-1 rounded-lg",
+                )}
+              >
+                <p className="whitespace-pre-wrap text-base break-all">
+                  {message.content}
+                </p>
+              </div>
+
+              {message.role === "user" && (
+                <div className="mt-1 flex justify-end gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="text-xs text-gray-500">
+                    {message.timestamp.toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                  <button
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      toast.success(t("copied"));
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {message.role === "assistant" && (
+                <div className="flex justify-start gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity pl-4">
+                  <div className="text-xs text-gray-500">
+                    {message.timestamp.toLocaleString("zh-CN", {
+                      month: "numeric",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </div>
+                  <button
+                    className="p-1 text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      navigator.clipboard.writeText(message.content);
+                      toast.success(t("copied"));
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
 
         <div ref={messagesEndRef} />
       </div>

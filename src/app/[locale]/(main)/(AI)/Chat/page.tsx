@@ -175,6 +175,14 @@ const AIPage = () => {
         content: msg.content,
       }));
 
+      // 清空并重新加载思考过程步骤，确保在RAG查询开始前显示
+      if (currentConversationId) {
+        const { clearSteps, loadSteps } = useThinkingProcessStore.getState();
+        clearSteps();
+        // 立即开始加载思考过程，不等待完成
+        loadSteps(currentConversationId);
+      }
+
       let currentContent = "";
       await runRAGQueryStream(
         user.id,
@@ -201,12 +209,6 @@ const AIPage = () => {
             conversationId: currentConversationId,
             title: input.length > 50 ? input.substring(0, 50) + "..." : input,
           });
-
-          // 重新加载思考过程步骤，确保本地状态与数据库同步
-          if (currentConversationId) {
-            const { loadSteps } = useThinkingProcessStore.getState();
-            await loadSteps(currentConversationId);
-          }
 
           await loadConversations();
         },

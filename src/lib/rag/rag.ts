@@ -273,39 +273,20 @@ export const runRAGQuery = async (
       }
     }
 
-    // 添加思考过程：开始RAG查询
-    if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
-        conversationId,
-        type: "start",
-        content: "开始执行RAG查询",
-        details: `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
-      });
-    }
-
     if (knowledgeBaseEnabled) {
-      // 添加思考过程：知识库状态检查
-      if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
-          conversationId,
-          type: "knowledge-base",
-          content: "检查知识库状态",
-          details: "知识库已启用，执行RAG检索",
-        });
-      }
-
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
       // 添加思考过程：执行检索策略
       if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
           conversationId,
-          type: "retrieval",
-          content: "执行混合检索策略",
-          details: `结合${retrievalStrategy}检索和关键词检索`,
-        });
+          "retrieval",
+          "执行混合检索策略",
+          `结合${retrievalStrategy}检索和关键词检索`,
+        );
       }
 
       console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
@@ -315,12 +296,13 @@ export const runRAGQuery = async (
 
       // 添加思考过程：构建增强查询
       if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
           conversationId,
-          type: "query",
-          content: "构建增强查询",
-          details: `基于对话历史构建上下文增强的查询`,
-        });
+          "query",
+          "构建增强查询",
+          `基于对话历史构建上下文增强的查询`,
+        );
       }
 
       console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
@@ -363,12 +345,13 @@ export const runRAGQuery = async (
           title: r.document.metadata?.title || `文档 ${index + 1}`,
           score: r.score.toFixed(2),
         }));
-        await convex.mutation(api.aiChat.addThinkingStep, {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
           conversationId,
-          type: "documents",
-          content: "检索相关文档",
-          details: JSON.stringify({ text: docDetails, docs: docList }),
-        });
+          "documents",
+          "检索相关文档",
+          JSON.stringify({ text: docDetails, docs: docList }),
+        );
       }
 
       // 没找到文档,打日志,sentry todo
@@ -379,27 +362,18 @@ export const runRAGQuery = async (
         );
       });
     } else {
-      // 添加思考过程：知识库状态检查
-      if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
-          conversationId,
-          type: "knowledge-base",
-          content: "检查知识库状态",
-          details: "知识库已禁用，直接使用LLM原生能力",
-        });
-      }
-
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 
     // 添加思考过程：生成动态提示词
     if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
         conversationId,
-        type: "prompt",
-        content: "生成动态提示词",
-        details: "基于检索结果生成结构化提示词",
-      });
+        "prompt",
+        "生成动态提示词",
+        "基于检索结果生成结构化提示词",
+      );
     }
 
     console.log(`[RAG System] 生成动态prompt...`);
@@ -414,12 +388,13 @@ export const runRAGQuery = async (
 
     // 添加思考过程：调用聊天API
     if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
         conversationId,
-        type: "api",
-        content: "调用聊天API",
-        details: `使用${model}模型生成响应`,
-      });
+        "api",
+        "调用聊天API",
+        `使用${model}模型生成响应`,
+      );
     }
 
     console.log(`[RAG System] 调用聊天API...`);
@@ -504,39 +479,20 @@ export const runRAGQueryStream = async (
       }
     }
 
-    // 添加思考过程：开始RAG查询
-    if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
-        conversationId,
-        type: "start",
-        content: "开始执行流式RAG查询",
-        details: `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
-      });
-    }
-
     if (knowledgeBaseEnabled) {
-      // 添加思考过程：知识库状态检查
-      if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
-          conversationId,
-          type: "knowledge-base",
-          content: "检查知识库状态",
-          details: "知识库已启用，执行RAG检索",
-        });
-      }
-
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
       // 添加思考过程：执行检索策略
       if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
           conversationId,
-          type: "retrieval",
-          content: "执行混合检索策略",
-          details: `结合${retrievalStrategy}检索和关键词检索`,
-        });
+          "retrieval",
+          "执行混合检索策略",
+          `结合${retrievalStrategy}检索和关键词检索`,
+        );
       }
 
       console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
@@ -574,12 +530,13 @@ export const runRAGQueryStream = async (
           title: r.document.metadata?.title || `文档 ${index + 1}`,
           score: r.score.toFixed(2),
         }));
-        await convex.mutation(api.aiChat.addThinkingStep, {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
           conversationId,
-          type: "documents",
-          content: "检索相关文档",
-          details: JSON.stringify({ text: docDetails, docs: docList }),
-        });
+          "documents",
+          "检索相关文档",
+          JSON.stringify({ text: docDetails, docs: docList }),
+        );
       }
 
       // 没找到文档,打日志,sentry todo
@@ -590,27 +547,18 @@ export const runRAGQueryStream = async (
         );
       });
     } else {
-      // 添加思考过程：知识库状态检查
-      if (conversationId) {
-        await convex.mutation(api.aiChat.addThinkingStep, {
-          conversationId,
-          type: "knowledge-base",
-          content: "检查知识库状态",
-          details: "知识库已禁用，直接使用LLM原生能力",
-        });
-      }
-
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 
     // 添加思考过程：生成动态提示词
     if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
         conversationId,
-        type: "prompt",
-        content: "生成动态提示词",
-        details: "基于检索结果生成结构化提示词",
-      });
+        "prompt",
+        "生成动态提示词",
+        "基于检索结果生成结构化提示词",
+      );
     }
 
     console.log(`[RAG System] 生成动态prompt...`);
@@ -625,12 +573,13 @@ export const runRAGQueryStream = async (
 
     // 添加思考过程：调用流式聊天API
     if (conversationId) {
-      await convex.mutation(api.aiChat.addThinkingStep, {
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
         conversationId,
-        type: "api",
-        content: "调用流式聊天API",
-        details: `使用${model}模型生成响应`,
-      });
+        "api",
+        "调用流式聊天API",
+        `使用${model}模型生成响应`,
+      );
     }
 
     // 构建完整的消息数组
