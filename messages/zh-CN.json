@@ -206,6 +206,7 @@
     "searchConversationHistory": "搜索历史对话",
     "noMatchingConversations": "没有找到匹配的对话",
     "knowledgeBaseInitializing": "知识库正在初始化，请稍后再试",
+    "recentConversationThinking": "最近对话思考过程",
     "knowledgeBaseEnabled": "知识库已开启",
     "knowledgeBaseDisabled": "知识库已关闭",
     "knowledgeBaseTooltip": "RAG检索"

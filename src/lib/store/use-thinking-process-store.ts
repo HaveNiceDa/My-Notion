@@ -35,7 +35,7 @@ interface ThinkingProcessState {
 
 export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
   steps: [],
-  isExpanded: false,
+  isExpanded: true,
   isVisible: false,
   isLoading: false,
   isLoaded: false,
@@ -53,7 +53,7 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
     }));
   },
   clearSteps: () => {
-    set({ steps: [], isExpanded: false, isVisible: false, isLoaded: false });
+    set({ steps: [], isExpanded: true, isVisible: false, isLoaded: false });
   },
   toggleExpanded: () => {
     set((state) => ({ isExpanded: !state.isExpanded }));
