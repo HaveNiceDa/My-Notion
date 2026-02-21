@@ -12,6 +12,7 @@ interface PromptConfig {
     };
     "without-rag": {
       system: string;
+      user: string;
     };
   };
 }
@@ -85,13 +86,13 @@ class PromptLoader {
     userPrompt: string;
   } {
     // 生成system prompt
-    const systemPrompt = this.config.prompts["without-rag"].system.replace(
+    const systemPrompt = this.config.prompts["without-rag"].system;
+
+    // 生成user prompt
+    const userPrompt = this.config.prompts["without-rag"].user.replace(
       "{{query}}",
       query,
     );
-
-    // 生成user prompt
-    const userPrompt = query;
 
     return {
       systemPrompt,
