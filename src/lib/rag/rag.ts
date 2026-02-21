@@ -199,30 +199,85 @@ export const initKnowledgeBaseVectorStore = async (
   }
 };
 
+// 检索策略类型
+export type RetrievalStrategy = "semantic" | "keyword" | "hybrid";
+
+// 构建上下文增强的查询
+const buildEnhancedQuery = (
+  query: string,
+  conversationHistory: Array<{ role: string; content: string }> = [],
+): string => {
+  if (conversationHistory.length === 0) {
+    return query;
+  }
+  
+  // 提取最近的对话历史（最多3轮）
+  const recentHistory = conversationHistory.slice(-3);
+  
+  // 构建历史摘要
+  const historySummary = recentHistory
+    .map((msg) => `${msg.role === 'user' ? '用户' : '助手'}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`)
+    .join('\n');
+  
+  // 构建增强查询
+  return `基于之前的对话:\n${historySummary}\n\n当前问题: ${query}`;
+};
+
 // 执行RAG查询
 export const runRAGQuery = async (
   userId: string,
   query: string,
   model: AIModel = "qwen-max",
-  minScore: number = 0.7,
+  minScore: number = 0.5,
+  retrievalStrategy: RetrievalStrategy = "hybrid",
+  semanticWeight: number = 0.4,
+  conversationHistory: Array<{ role: string; content: string }> = [],
 ): Promise<string> => {
   console.log(`[RAG System] ===== 执行RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
   console.log(`[RAG System] 查询: ${query}`);
   console.log(`[RAG System] 模型: ${model}`);
   console.log(`[RAG System] 最小相似度: ${minScore}`);
+  console.log(`[RAG System] 检索策略: ${retrievalStrategy}`);
+  console.log(`[RAG System] 语义权重: ${semanticWeight}`);
 
   try {
     // 初始化知识库向量存储
     const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
-    console.log(`[RAG System] 执行相似度搜索...`);
-    // 检索相关文档，设置相似度阈值
-    const searchResults = await vectorStore.similaritySearch(
-      query,
-      3,
-      minScore,
-    );
+    console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
+    
+    // 构建上下文增强的查询
+    const enhancedQuery = buildEnhancedQuery(query, conversationHistory);
+    console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
+    
+    // 根据检索策略执行不同的检索方法
+    let searchResults;
+    switch (retrievalStrategy) {
+      case "semantic":
+        searchResults = await vectorStore.similaritySearch(
+          enhancedQuery,
+          3,
+          minScore,
+        );
+        break;
+      case "keyword":
+        searchResults = await vectorStore.keywordSearch(
+          enhancedQuery,
+          3,
+          minScore,
+        );
+        break;
+      case "hybrid":
+      default:
+        searchResults = await vectorStore.hybridSearch(
+          enhancedQuery,
+          3,
+          minScore,
+          semanticWeight,
+        );
+        break;
+    }
 
     // 没找到文档,打日志,sentry todo
     console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
@@ -298,7 +353,9 @@ export const runRAGQueryStream = async (
   onComplete: () => void,
   onError: (error: Error) => void,
   model: AIModel = "qwen-max",
-  minScore: number = 0.7,
+  minScore: number = 0.5,
+  retrievalStrategy: RetrievalStrategy = "hybrid",
+  semanticWeight: number = 0.4,
 ): Promise<void> => {
   console.log(`[RAG System] ===== 执行流式RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -306,18 +363,41 @@ export const runRAGQueryStream = async (
   console.log(`[RAG System] 对话历史长度: ${conversationHistory.length}`);
   console.log(`[RAG System] 模型: ${model}`);
   console.log(`[RAG System] 最小相似度: ${minScore}`);
+  console.log(`[RAG System] 检索策略: ${retrievalStrategy}`);
+  console.log(`[RAG System] 语义权重: ${semanticWeight}`);
 
   try {
     // 初始化知识库向量存储
     const vectorStore = await initKnowledgeBaseVectorStore(userId);
 
-    console.log(`[RAG System] 执行相似度搜索...`);
-    // 检索相关文档，设置相似度阈值
-    const searchResults = await vectorStore.similaritySearch(
-      query,
-      3,
-      minScore,
-    );
+    console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
+    // 根据检索策略执行不同的检索方法
+    let searchResults;
+    switch (retrievalStrategy) {
+      case "semantic":
+        searchResults = await vectorStore.similaritySearch(
+          query,
+          3,
+          minScore,
+        );
+        break;
+      case "keyword":
+        searchResults = await vectorStore.keywordSearch(
+          query,
+          3,
+          minScore,
+        );
+        break;
+      case "hybrid":
+      default:
+        searchResults = await vectorStore.hybridSearch(
+          query,
+          3,
+          minScore,
+          semanticWeight,
+        );
+        break;
+    }
 
     // 没找到文档,打日志,sentry todo
     console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
