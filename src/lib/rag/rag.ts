@@ -336,10 +336,11 @@ export const runRAGQuery = async (
 
       // 添加思考过程：检索相关文档
       if (conversationId) {
+        const totalDocs = vectorStore.documents.length;
         const docDetails =
           searchResults.length > 0
-            ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
-            : "未找到相关文档";
+            ? `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤并排序，得到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
+            : `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤，未找到相关文档`;
         const docList = searchResults.map((r, index) => ({
           id: r.document.metadata?.documentId,
           title: r.document.metadata?.title || `文档 ${index + 1}`,
@@ -521,10 +522,11 @@ export const runRAGQueryStream = async (
 
       // 添加思考过程：检索相关文档
       if (conversationId) {
+        const totalDocs = vectorStore.documents.length;
         const docDetails =
           searchResults.length > 0
-            ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
-            : "未找到相关文档";
+            ? `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤并排序，得到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
+            : `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤，未找到相关文档`;
         const docList = searchResults.map((r, index) => ({
           id: r.document.metadata?.documentId,
           title: r.document.metadata?.title || `文档 ${index + 1}`,

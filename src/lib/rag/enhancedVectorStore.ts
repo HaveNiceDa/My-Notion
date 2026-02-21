@@ -513,7 +513,7 @@ export class EnhancedVectorStore {
         });
       }
 
-      // 排序并返回前k个结果
+      // 排序并返回前k个结果，应用minScore阈值
       const sortedResults = titleSimilarResults.sort(
         (a, b) => b.score - a.score,
       );
@@ -525,7 +525,7 @@ export class EnhancedVectorStore {
         );
       });
 
-      return sortedResults.slice(0, k);
+      return sortedResults.filter((s) => s.score >= minScore).slice(0, k);
     }
 
     // 3. 如果没有标题相似度高的文档，使用常规的chunk检索
@@ -562,13 +562,12 @@ export class EnhancedVectorStore {
       );
     });
 
-    // 降低阈值，提高召回率
-    const adjustedMinScore = Math.max(0, minScore * 0.6);
+    // 应用原始minScore阈值
     console.log(
-      `[EnhancedVectorStore] 调整后的最小得分阈值: ${adjustedMinScore}`,
+      `[EnhancedVectorStore] 应用最小得分阈值: ${minScore}`,
     );
 
-    return sortedResults.filter((s) => s.score >= adjustedMinScore).slice(0, k);
+    return sortedResults.filter((s) => s.score >= minScore).slice(0, k);
   }
 
   // 结果融合方法
