@@ -76,7 +76,7 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
       }));
       set({
         steps: formattedSteps,
-        isVisible: formattedSteps.length > 0,
+        isVisible: true,
         isLoading: false,
         isLoaded: true,
       });

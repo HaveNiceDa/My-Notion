@@ -13,6 +13,7 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
+import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import { TopNavigation } from "./components/TopNavigation";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -200,6 +201,12 @@ const AIPage = () => {
             conversationId: currentConversationId,
             title: input.length > 50 ? input.substring(0, 50) + "..." : input,
           });
+
+          // 重新加载思考过程步骤，确保本地状态与数据库同步
+          if (currentConversationId) {
+            const { loadSteps } = useThinkingProcessStore.getState();
+            await loadSteps(currentConversationId);
+          }
 
           await loadConversations();
         },

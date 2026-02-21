@@ -46,16 +46,19 @@ export const MessageList = ({
     isVisible,
     toggleExpanded,
     loadSteps,
+    clearSteps,
     isLoading: isLoadingSteps,
     isLoaded,
   } = useThinkingProcessStore();
 
-  // 当conversationId变化时，加载思考过程
+  // 当conversationId变化时，加载思考过程或清除步骤
   useEffect(() => {
     if (conversationId) {
       loadSteps(conversationId);
+    } else {
+      clearSteps();
     }
-  }, [conversationId, loadSteps]);
+  }, [conversationId, loadSteps, clearSteps]);
 
   // 获取图标组件
   const getStepIcon = (type: string) => {
@@ -178,7 +181,7 @@ export const MessageList = ({
         ))}
 
         {/* 思考过程展示 */}
-        {(isLoading || isLoadingSteps || steps.length > 0) && (
+        {(isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
           <div className="mb-8">
             <div className="rounded-lg p-4 bg-white text-gray-900 border border-gray-200 shadow-sm overflow-hidden transition-all duration-300 ease-in-out">
               {/* 思考过程标题栏 */}
@@ -188,7 +191,7 @@ export const MessageList = ({
               >
                 <div className="flex items-center gap-2">
                   <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600">
-                    {isLoading ? (
+                    {isLoading || isLoadingSteps ? (
                       <Brain className="h-4 w-4 animate-pulse" />
                     ) : (
                       <Brain className="h-4 w-4" />
@@ -214,6 +217,10 @@ export const MessageList = ({
                   {isLoadingSteps ? (
                     <div className="flex justify-center py-4">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    </div>
+                  ) : steps.length === 0 ? (
+                    <div className="flex justify-center py-4 text-gray-500 text-sm">
+                      暂无思考过程
                     </div>
                   ) : (
                     steps.map((step, index) => (

@@ -7,6 +7,7 @@ import { CustomEmbeddings } from "./customEmbeddings";
 import { EnhancedVectorStore } from "./enhancedVectorStore";
 import { ChunkManager } from "./chunkManager";
 import { promptLoader } from "../prompt/promptLoader";
+import { useThinkingProcessStore } from "../store/use-thinking-process-store";
 
 // 初始化Convex客户端（用于添加思考过程步骤）
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -252,6 +253,26 @@ export const runRAGQuery = async (
   try {
     let searchResults: Array<{ document: Document; score: number }> = [];
 
+    // 先删除旧的思考过程步骤
+    if (conversationId) {
+      const deletedCount = await convex.mutation(
+        api.aiChat.deleteThinkingSteps,
+        {
+          conversationId,
+        },
+      );
+      console.log(`[RAG System] 删除了 ${deletedCount} 个旧的思考过程步骤`);
+
+      // 清除本地状态中的步骤
+      try {
+        const { clearSteps } = useThinkingProcessStore.getState();
+        clearSteps();
+        console.log(`[RAG System] 清除了本地状态中的思考过程步骤`);
+      } catch (error) {
+        console.error(`[RAG System] 清除本地状态时出错:`, error);
+      }
+    }
+
     // 添加思考过程：开始RAG查询
     if (conversationId) {
       await convex.mutation(api.aiChat.addThinkingStep, {
@@ -457,6 +478,26 @@ export const runRAGQueryStream = async (
 
   try {
     let searchResults: Array<{ document: Document; score: number }> = [];
+
+    // 先删除旧的思考过程步骤
+    if (conversationId) {
+      const deletedCount = await convex.mutation(
+        api.aiChat.deleteThinkingSteps,
+        {
+          conversationId,
+        },
+      );
+      console.log(`[RAG System] 删除了 ${deletedCount} 个旧的思考过程步骤`);
+
+      // 清除本地状态中的步骤
+      try {
+        const { clearSteps } = useThinkingProcessStore.getState();
+        clearSteps();
+        console.log(`[RAG System] 清除了本地状态中的思考过程步骤`);
+      } catch (error) {
+        console.error(`[RAG System] 清除本地状态时出错:`, error);
+      }
+    }
 
     // 添加思考过程：开始RAG查询
     if (conversationId) {
