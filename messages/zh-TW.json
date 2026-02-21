@@ -205,6 +205,9 @@
     "goHome": "回到首頁",
     "searchConversationHistory": "搜索歷史對話",
     "noMatchingConversations": "沒有找到匹配的對話",
-    "knowledgeBaseInitializing": "知識庫正在初始化，請稍後再試"
+    "knowledgeBaseInitializing": "知識庫正在初始化，請稍後再試",
+    "knowledgeBaseEnabled": "知識庫已開啟",
+    "knowledgeBaseDisabled": "知識庫已關閉",
+    "knowledgeBaseTooltip": "RAG檢索"
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Settings, Send, Bot, Check } from "lucide-react";
+import { Plus, Settings, Send, Bot, Check, Database } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
@@ -9,6 +9,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@/src/lib/utils";
@@ -17,6 +23,7 @@ import {
   AI_MODELS,
   AIModel,
 } from "@/src/lib/store/use-ai-model-store";
+import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 
 const displayNames: Record<AIModel, string> = {
   "qwen-plus": "Qwen Plus",
@@ -41,6 +48,8 @@ export const MessageInput = ({
 }: MessageInputProps) => {
   const t = useTranslations("AI");
   const { model, setModel } = useAIModelStore();
+  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } =
+    useKnowledgeBaseStore();
 
   const getModelDisplayName = (modelName: AIModel) => {
     return displayNames[modelName] || modelName;
@@ -71,10 +80,43 @@ export const MessageInput = ({
         <Settings />
       </Button>
 
+      <TooltipProvider>
+        <Tooltip delayDuration={1}>
+          <TooltipTrigger asChild>
+            <Button
+              className={cn(
+                "absolute right-24 bottom-1 rounded-full transition-all duration-200 p-3 bg-white",
+                knowledgeBaseEnabled
+                  ? "hover:bg-blue-200 text-blue-600"
+                  : " hover:bg-gray-200 text-gray-600",
+              )}
+              onClick={() => {
+                toggleKnowledgeBase();
+                toast.info(
+                  knowledgeBaseEnabled
+                    ? t("knowledgeBaseDisabled")
+                    : t("knowledgeBaseEnabled"),
+                );
+              }}
+              title={
+                knowledgeBaseEnabled
+                  ? t("knowledgeBaseEnabled")
+                  : t("knowledgeBaseDisabled")
+              }
+            >
+              <Database className="h-5 w-5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t("knowledgeBaseTooltip")}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="absolute right-14 bottom-1 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+            className="absolute right-12 bottom-1 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
             variant="ghost"
           >
             <Bot className="h-5 w-5" />
@@ -100,7 +142,7 @@ export const MessageInput = ({
       <Button
         onClick={onSend}
         disabled={!input.trim()}
-        className="absolute right-2 bottom-1 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+        className="absolute right-2 bottom-1 bg-white hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
       >
         <Send className="h-5 w-5 rounded-full" />
       </Button>

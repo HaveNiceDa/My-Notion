@@ -12,6 +12,7 @@ import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
+import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { TopNavigation } from "./components/TopNavigation";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -35,6 +36,7 @@ const AIPage = () => {
   const t = useTranslations("AI");
   const { model } = useAIModelStore();
   const { userLoadingStatus } = useVectorStoreStore();
+  const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -215,6 +217,10 @@ const AIPage = () => {
           );
         },
         model,
+        0.5,
+        "hybrid",
+        0.4,
+        knowledgeBaseEnabled,
       );
     } finally {
       setIsLoading(false);

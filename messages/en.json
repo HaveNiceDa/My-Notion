@@ -205,6 +205,9 @@
     "goHome": "Go Home",
     "searchConversationHistory": "Search conversation history",
     "noMatchingConversations": "No matching conversations found",
-    "knowledgeBaseInitializing": "Knowledge base is initializing, please try again later"
+    "knowledgeBaseInitializing": "Knowledge base is initializing, please try again later",
+    "knowledgeBaseEnabled": "Knowledge base enabled",
+    "knowledgeBaseDisabled": "Knowledge base disabled",
+    "knowledgeBaseTooltip": "RAG retrieval"
   }
 }

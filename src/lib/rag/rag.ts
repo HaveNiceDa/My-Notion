@@ -1,4 +1,5 @@
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
+import { Document } from "@langchain/core/documents";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
@@ -211,15 +212,18 @@ const buildEnhancedQuery = (
   if (conversationHistory.length === 0) {
     return query;
   }
-  
+
   // 提取最近的对话历史（最多3轮）
   const recentHistory = conversationHistory.slice(-3);
-  
+
   // 构建历史摘要
   const historySummary = recentHistory
-    .map((msg) => `${msg.role === 'user' ? '用户' : '助手'}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? '...' : ''}`)
-    .join('\n');
-  
+    .map(
+      (msg) =>
+        `${msg.role === "user" ? "用户" : "助手"}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
+    )
+    .join("\n");
+
   // 构建增强查询
   return `基于之前的对话:\n${historySummary}\n\n当前问题: ${query}`;
 };
@@ -233,6 +237,7 @@ export const runRAGQuery = async (
   retrievalStrategy: RetrievalStrategy = "hybrid",
   semanticWeight: number = 0.4,
   conversationHistory: Array<{ role: string; content: string }> = [],
+  knowledgeBaseEnabled: boolean = true,
 ): Promise<string> => {
   console.log(`[RAG System] ===== 执行RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -243,55 +248,64 @@ export const runRAGQuery = async (
   console.log(`[RAG System] 语义权重: ${semanticWeight}`);
 
   try {
-    // 初始化知识库向量存储
-    const vectorStore = await initKnowledgeBaseVectorStore(userId);
+    let searchResults: Array<{ document: Document; score: number }> = [];
 
-    console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
-    
-    // 构建上下文增强的查询
-    const enhancedQuery = buildEnhancedQuery(query, conversationHistory);
-    console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
-    
-    // 根据检索策略执行不同的检索方法
-    let searchResults;
-    switch (retrievalStrategy) {
-      case "semantic":
-        searchResults = await vectorStore.similaritySearch(
-          enhancedQuery,
-          3,
-          minScore,
+    if (knowledgeBaseEnabled) {
+      console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
+      // 初始化知识库向量存储
+      const vectorStore = await initKnowledgeBaseVectorStore(userId);
+
+      console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
+
+      // 构建上下文增强的查询
+      const enhancedQuery = buildEnhancedQuery(query, conversationHistory);
+      console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
+
+      // 根据检索策略执行不同的检索方法
+      switch (retrievalStrategy) {
+        case "semantic":
+          searchResults = await vectorStore.similaritySearch(
+            enhancedQuery,
+            3,
+            minScore,
+          );
+          break;
+        case "keyword":
+          searchResults = await vectorStore.keywordSearch(
+            enhancedQuery,
+            3,
+            minScore,
+          );
+          break;
+        case "hybrid":
+        default:
+          searchResults = await vectorStore.hybridSearch(
+            enhancedQuery,
+            3,
+            minScore,
+            semanticWeight,
+          );
+          break;
+      }
+
+      // 没找到文档,打日志,sentry todo
+      console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
+      searchResults.forEach((item, index) => {
+        console.log(
+          `[RAG System]   Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
         );
-        break;
-      case "keyword":
-        searchResults = await vectorStore.keywordSearch(
-          enhancedQuery,
-          3,
-          minScore,
-        );
-        break;
-      case "hybrid":
-      default:
-        searchResults = await vectorStore.hybridSearch(
-          enhancedQuery,
-          3,
-          minScore,
-          semanticWeight,
-        );
-        break;
+      });
+    } else {
+      console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
-
-    // 没找到文档,打日志,sentry todo
-    console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
-    searchResults.forEach((item, index) => {
-      console.log(
-        `[RAG System]   Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
-      );
-    });
 
     console.log(`[RAG System] 生成动态prompt...`);
     // 使用promptLoader生成动态prompt
-    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(searchResults, query);
-    
+    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(
+      searchResults,
+      query,
+    );
+
     console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
     console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
 
@@ -342,6 +356,7 @@ export const runRAGQueryStream = async (
   minScore: number = 0.5,
   retrievalStrategy: RetrievalStrategy = "hybrid",
   semanticWeight: number = 0.4,
+  knowledgeBaseEnabled: boolean = true,
 ): Promise<void> => {
   console.log(`[RAG System] ===== 执行流式RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -353,50 +368,55 @@ export const runRAGQueryStream = async (
   console.log(`[RAG System] 语义权重: ${semanticWeight}`);
 
   try {
-    // 初始化知识库向量存储
-    const vectorStore = await initKnowledgeBaseVectorStore(userId);
+    let searchResults: Array<{ document: Document; score: number }> = [];
 
-    console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
-    // 根据检索策略执行不同的检索方法
-    let searchResults;
-    switch (retrievalStrategy) {
-      case "semantic":
-        searchResults = await vectorStore.similaritySearch(
-          query,
-          3,
-          minScore,
+    if (knowledgeBaseEnabled) {
+      console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
+      // 初始化知识库向量存储
+      const vectorStore = await initKnowledgeBaseVectorStore(userId);
+
+      console.log(`[RAG System] 执行${retrievalStrategy}检索...`);
+      // 根据检索策略执行不同的检索方法
+      switch (retrievalStrategy) {
+        case "semantic":
+          searchResults = await vectorStore.similaritySearch(
+            query,
+            3,
+            minScore,
+          );
+          break;
+        case "keyword":
+          searchResults = await vectorStore.keywordSearch(query, 3, minScore);
+          break;
+        case "hybrid":
+        default:
+          searchResults = await vectorStore.hybridSearch(
+            query,
+            3,
+            minScore,
+            semanticWeight,
+          );
+          break;
+      }
+
+      // 没找到文档,打日志,sentry todo
+      console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
+      searchResults.forEach((item, index) => {
+        console.log(
+          `[RAG System]   Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
         );
-        break;
-      case "keyword":
-        searchResults = await vectorStore.keywordSearch(
-          query,
-          3,
-          minScore,
-        );
-        break;
-      case "hybrid":
-      default:
-        searchResults = await vectorStore.hybridSearch(
-          query,
-          3,
-          minScore,
-          semanticWeight,
-        );
-        break;
+      });
+    } else {
+      console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
-
-    // 没找到文档,打日志,sentry todo
-    console.log(`[RAG System] 找到 ${searchResults.length} 个相关文档`);
-    searchResults.forEach((item, index) => {
-      console.log(
-        `[RAG System]   Doc ${index + 1}: score=${(item.score * 100).toFixed(2)}%, title=${item.document.metadata?.title}`,
-      );
-    });
 
     console.log(`[RAG System] 生成动态prompt...`);
     // 使用promptLoader生成动态prompt
-    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(searchResults, query);
-    
+    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(
+      searchResults,
+      query,
+    );
+
     console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
     console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
 
@@ -469,9 +489,12 @@ export const clearVectorStoreCache = (userId: string): void => {
 };
 
 // 从知识库中移除文档并清除相关向量数据
-export const removeDocumentFromKnowledgeBase = async (userId: string, documentId: string): Promise<void> => {
+export const removeDocumentFromKnowledgeBase = async (
+  userId: string,
+  documentId: string,
+): Promise<void> => {
   console.log(`[RAG System] 从知识库中移除文档: ${documentId}`);
-  
+
   // 直接调用Convex API删除数据库中的chunks
   try {
     await convex.mutation(api.vectorStore.deleteDocumentChunks, {
@@ -481,13 +504,13 @@ export const removeDocumentFromKnowledgeBase = async (userId: string, documentId
   } catch (error) {
     console.error(`[RAG System] 删除文档 ${documentId} 的chunks时出错:`, error);
   }
-  
+
   // 刷新内存中的chunks
   await chunkManager.refreshChunksForUser(userId);
-  
+
   // 清除向量存储缓存
   clearVectorStoreCache(userId);
-  
+
   console.log(`[RAG System] 已清除文档 ${documentId} 的向量数据`);
 };
 
