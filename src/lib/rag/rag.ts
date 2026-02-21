@@ -4,6 +4,7 @@ import { api } from "../../../convex/_generated/api";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { EnhancedVectorStore } from "./enhancedVectorStore";
 import { ChunkManager } from "./chunkManager";
+import { promptLoader } from "../prompt/promptLoader";
 
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
 
@@ -287,27 +288,12 @@ export const runRAGQuery = async (
       );
     });
 
-    // 构建上下文，不包含相似度信息
-    let context = "";
-    if (searchResults.length > 0) {
-      context = searchResults
-        .map((item) => item.document.pageContent)
-        .join("\n\n---\n\n");
-      console.log(`[RAG System] 构建上下文完成，长度: ${context.length} 字符`);
-    }
-
-    console.log(`[RAG System] 构建系统提示...`);
-    // 构建系统提示
-    const systemPrompt = context
-      ? `请根据以下上下文回答用户问题。如果上下文中没有相关信息，请明确说明。
-
-上下文：
-${context}
-
-问题：${query}`
-      : `请回答用户问题。
-
-问题：${query}`;
+    console.log(`[RAG System] 生成动态prompt...`);
+    // 使用promptLoader生成动态prompt
+    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(searchResults, query);
+    
+    console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
+    console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
 
     console.log(`[RAG System] 调用聊天API...`);
     // 调用API路由
@@ -325,7 +311,7 @@ ${context}
           },
           {
             role: "user",
-            content: query,
+            content: userPrompt,
           },
         ],
       }),
@@ -407,27 +393,12 @@ export const runRAGQueryStream = async (
       );
     });
 
-    // 构建上下文，不包含相似度信息
-    let context = "";
-    if (searchResults.length > 0) {
-      context = searchResults
-        .map((item) => item.document.pageContent)
-        .join("\n\n---\n\n");
-      console.log(`[RAG System] 构建上下文完成，长度: ${context.length} 字符`);
-    }
-
-    console.log(`[RAG System] 构建系统提示...`);
-    // 构建系统提示
-    const systemPrompt = context
-      ? `请根据以下上下文回答用户问题。如果上下文中没有相关信息，请明确说明。
-
-上下文：
-${context}
-
-问题：${query}`
-      : `请回答用户问题。
-
-问题：${query}`;
+    console.log(`[RAG System] 生成动态prompt...`);
+    // 使用promptLoader生成动态prompt
+    const { systemPrompt, userPrompt } = promptLoader.generatePrompt(searchResults, query);
+    
+    console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
+    console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
 
     // 构建完整的消息数组
     const messages = [
@@ -438,7 +409,7 @@ ${context}
       ...conversationHistory,
       {
         role: "user",
-        content: query,
+        content: userPrompt,
       },
     ];
 
