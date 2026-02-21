@@ -129,11 +129,18 @@ export function Publish({ initialData }: PublishProps) {
       setIsInKnowledgeBase(!isInKnowledgeBase);
       toast.success(!isInKnowledgeBase ? "已添加到知识库" : "已从知识库移除");
 
-      // 清除向量存储缓存，确保下次查询时重新加载
+      // 处理向量数据
       if (typeof window !== "undefined") {
         // 动态导入以避免SSR问题
-        import("@/src/lib/rag/rag").then(({ clearVectorStoreCache }) => {
+        import("@/src/lib/rag/rag").then(({ clearVectorStoreCache, triggerDocumentUpdate, removeDocumentFromKnowledgeBase }) => {
           if (user?.id) {
+            if (!isInKnowledgeBase && initialData.content) {
+              // 添加到知识库，触发文档的向量嵌入
+              triggerDocumentUpdate(user.id, initialData._id, initialData.content, initialData.title);
+            } else {
+              // 从知识库移除，清除相关向量数据
+              removeDocumentFromKnowledgeBase(user.id, initialData._id);
+            }
             clearVectorStoreCache(user.id);
           }
         });

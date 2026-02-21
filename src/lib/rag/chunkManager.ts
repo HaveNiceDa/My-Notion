@@ -83,6 +83,14 @@ export class ChunkManager {
     );
   }
 
+  async removeChunksByDocumentIdAndRefresh(userId: string, documentId: string): Promise<void> {
+    this.removeChunksByDocumentId(userId, documentId);
+    await this.refreshChunksForUser(userId);
+    console.log(
+      `[ChunkManager] 为用户 ${userId} 删除了文档 ${documentId} 的chunk并刷新了数据`
+    );
+  }
+
   clearChunksForUser(userId: string): void {
     this.chunks.set(userId, []);
     this.isLoaded.set(userId, false);

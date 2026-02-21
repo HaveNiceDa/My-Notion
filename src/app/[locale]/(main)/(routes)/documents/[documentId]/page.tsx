@@ -67,8 +67,8 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
       content,
     });
 
-    // 触发 RAG 更新（防抖处理）
-    if (user && document) {
+    // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
+    if (user && document && document.isInKnowledgeBase) {
       watcherRef.current?.onDocumentChange(documentId, content, document.title);
     }
   };

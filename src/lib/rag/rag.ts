@@ -417,6 +417,29 @@ export const clearVectorStoreCache = (userId: string): void => {
   console.log(`[RAG System] 已清除EnhancedVectorStore实例缓存`);
 };
 
+// 从知识库中移除文档并清除相关向量数据
+export const removeDocumentFromKnowledgeBase = async (userId: string, documentId: string): Promise<void> => {
+  console.log(`[RAG System] 从知识库中移除文档: ${documentId}`);
+  
+  // 直接调用Convex API删除数据库中的chunks
+  try {
+    await convex.mutation(api.vectorStore.deleteDocumentChunks, {
+      documentId: documentId as any,
+    });
+    console.log(`[RAG System] 已从数据库中删除文档 ${documentId} 的chunks`);
+  } catch (error) {
+    console.error(`[RAG System] 删除文档 ${documentId} 的chunks时出错:`, error);
+  }
+  
+  // 刷新内存中的chunks
+  await chunkManager.refreshChunksForUser(userId);
+  
+  // 清除向量存储缓存
+  clearVectorStoreCache(userId);
+  
+  console.log(`[RAG System] 已清除文档 ${documentId} 的向量数据`);
+};
+
 // 异步触发文档更新，不阻塞用户操作
 export const triggerDocumentUpdate = async (
   userId: string,
