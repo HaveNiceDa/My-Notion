@@ -271,9 +271,28 @@ export const runRAGQuery = async (
       } catch (error) {
         console.error(`[RAG System] 清除本地状态时出错:`, error);
       }
+
+      // 添加思考过程：开始RAG查询
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
+        conversationId,
+        "start",
+        "开始执行RAG查询",
+        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+      );
     }
 
     if (knowledgeBaseEnabled) {
+      // 添加思考过程：知识库状态检查
+      if (conversationId) {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
+          conversationId,
+          "knowledge-base",
+          "检查知识库状态",
+          "知识库已启用，执行RAG检索",
+        );
+      }
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
@@ -363,6 +382,17 @@ export const runRAGQuery = async (
         );
       });
     } else {
+      // 添加思考过程：检查知识库状态
+      if (conversationId) {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
+          conversationId,
+          "knowledge-base",
+          "检查知识库状态",
+          "知识库已禁用，直接使用LLM原生能力",
+        );
+      }
+
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 
@@ -478,9 +508,28 @@ export const runRAGQueryStream = async (
       } catch (error) {
         console.error(`[RAG System] 清除本地状态时出错:`, error);
       }
+
+      // 添加思考过程：开始执行流式RAG查询
+      const { addStepToDatabase } = useThinkingProcessStore.getState();
+      await addStepToDatabase(
+        conversationId,
+        "start",
+        "开始执行流式RAG查询",
+        `查询: ${query.substring(0, 50)}${query.length > 50 ? "..." : ""}`,
+      );
     }
 
     if (knowledgeBaseEnabled) {
+      // 添加思考过程：检查知识库状态
+      if (conversationId) {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
+          conversationId,
+          "knowledge-base",
+          "检查知识库状态",
+          "知识库已启用，执行RAG检索",
+        );
+      }
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
       // 初始化知识库向量存储
       const vectorStore = await initKnowledgeBaseVectorStore(userId);
@@ -549,6 +598,17 @@ export const runRAGQueryStream = async (
         );
       });
     } else {
+      // 添加思考过程：检查知识库状态
+      if (conversationId) {
+        const { addStepToDatabase } = useThinkingProcessStore.getState();
+        await addStepToDatabase(
+          conversationId,
+          "knowledge-base",
+          "检查知识库状态",
+          "知识库已禁用，直接使用LLM原生能力",
+        );
+      }
+
       console.log(`[RAG System] 知识库已禁用，直接使用LLM原生能力...`);
     }
 

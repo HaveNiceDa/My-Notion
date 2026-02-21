@@ -206,6 +206,7 @@
     "searchConversationHistory": "Search conversation history",
     "noMatchingConversations": "No matching conversations found",
     "knowledgeBaseInitializing": "Knowledge base is initializing, please try again later",
+    "recentConversationThinking": "Recent Conversation Thinking Process",
     "knowledgeBaseEnabled": "Knowledge base enabled",
     "knowledgeBaseDisabled": "Knowledge base disabled",
     "knowledgeBaseTooltip": "RAG retrieval"
