@@ -244,9 +244,45 @@ export const MessageList = ({
                             </span>
                           </div>
                           {step.details && (
-                            <p className="text-xs text-gray-600 mt-1">
-                              {step.details}
-                            </p>
+                            <div className="text-xs text-gray-600 mt-1">
+                              {step.type === "documents" ? (
+                                <>
+                                  {(() => {
+                                    try {
+                                      const details = JSON.parse(step.details);
+                                      return (
+                                        <>
+                                          <p>{details.text}</p>
+                                          {details.docs &&
+                                            details.docs.length > 0 && (
+                                              <div className="mt-2 space-y-1">
+                                                {details.docs.map(
+                                                  (doc: any, index: number) => (
+                                                    <a
+                                                      key={index}
+                                                      href={`/documents/${doc.id}`}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="block text-blue-600 underline hover:text-blue-800 transition-colors"
+                                                    >
+                                                      {doc.title} (相关性:{" "}
+                                                      {doc.score})
+                                                    </a>
+                                                  ),
+                                                )}
+                                              </div>
+                                            )}
+                                        </>
+                                      );
+                                    } catch (e) {
+                                      return <p>{step.details}</p>;
+                                    }
+                                  })()}
+                                </>
+                              ) : (
+                                <p>{step.details}</p>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>

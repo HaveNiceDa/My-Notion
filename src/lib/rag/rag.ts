@@ -358,11 +358,16 @@ export const runRAGQuery = async (
           searchResults.length > 0
             ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
             : "未找到相关文档";
+        const docList = searchResults.map((r, index) => ({
+          id: r.document.metadata?.documentId,
+          title: r.document.metadata?.title || `文档 ${index + 1}`,
+          score: r.score.toFixed(2),
+        }));
         await convex.mutation(api.aiChat.addThinkingStep, {
           conversationId,
           type: "documents",
           content: "检索相关文档",
-          details: docDetails,
+          details: JSON.stringify({ text: docDetails, docs: docList }),
         });
       }
 
@@ -564,11 +569,16 @@ export const runRAGQueryStream = async (
           searchResults.length > 0
             ? `找到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
             : "未找到相关文档";
+        const docList = searchResults.map((r, index) => ({
+          id: r.document.metadata?.documentId,
+          title: r.document.metadata?.title || `文档 ${index + 1}`,
+          score: r.score.toFixed(2),
+        }));
         await convex.mutation(api.aiChat.addThinkingStep, {
           conversationId,
           type: "documents",
           content: "检索相关文档",
-          details: docDetails,
+          details: JSON.stringify({ text: docDetails, docs: docList }),
         });
       }
 
