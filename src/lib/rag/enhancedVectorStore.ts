@@ -248,7 +248,13 @@ export class EnhancedVectorStore {
         }
       }
 
-      // 简化的相似度得分计算
+      // 计算查询词在文档中的总出现次数（包括重复）
+      let totalMatches = 0;
+      for (const term of queryTermsArray) {
+        totalMatches += docTokens.filter((token) => token === term).length;
+      }
+
+      // 增强的相似度得分计算
       // 1. 基础Jaccard相似度
       const unionSize = queryTerms.size + docTerms.size - intersectionSize;
       const jaccardScore = unionSize > 0 ? intersectionSize / unionSize : 0;
@@ -257,7 +263,21 @@ export class EnhancedVectorStore {
       const overlapRatio =
         queryTerms.size > 0 ? intersectionSize / queryTerms.size : 0;
 
-      // 3. 数字匹配增强（降低数字匹配的权重）
+      // 3. 文档覆盖率（文档中包含的查询词比例）
+      const coverageRatio =
+        docTerms.size > 0 ? intersectionSize / docTerms.size : 0;
+
+      // 4. 关键词密度（查询词在文档中的出现频率）
+      const densityRatio =
+        docTokens.length > 0 ? totalMatches / docTokens.length : 0;
+
+      // 5. 查询长度与文档长度比例
+      const lengthRatio = Math.min(
+        1,
+        docTerms.size / Math.max(queryTerms.size, 1),
+      );
+
+      // 6. 数字匹配增强
       const queryHasNumbers = queryTermsArray.some((term) =>
         /^\d+$/.test(term),
       );
@@ -276,17 +296,24 @@ export class EnhancedVectorStore {
         const exactNumberMatches = queryNumbers.filter((num) =>
           docNumbers.includes(num),
         ).length;
-        numberMatchBonus = 0.1 + exactNumberMatches * 0.05; // 降低数字匹配权重
+        numberMatchBonus = 0.1 + exactNumberMatches * 0.05;
       }
 
-      // 综合得分 - 提高关键词匹配分数
-      const baseScore = 0.15; // 基础分数
+      // 7. 短文档奖励
+      const shortDocumentBonus = docTerms.size <= 5 ? 0.1 : 0;
+
+      // 综合得分 - 增强关键词匹配分数
+      const baseScore = 0.2; // 基础分数
       const score = Math.min(
         0.98, // 分数上限
         baseScore +
-          jaccardScore * 0.45 +
-          overlapRatio * 0.75 +
-          numberMatchBonus,
+          jaccardScore * 0.4 +
+          overlapRatio * 0.9 + // 增加overlapRatio权重
+          coverageRatio * 0.2 +
+          densityRatio * 0.1 +
+          lengthRatio * 0.1 +
+          numberMatchBonus +
+          shortDocumentBonus,
       );
 
       console.log(
