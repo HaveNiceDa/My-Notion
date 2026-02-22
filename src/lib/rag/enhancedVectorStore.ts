@@ -166,7 +166,7 @@ export class EnhancedVectorStore {
   async similaritySearch(
     query: string,
     k: number = 4,
-    minScore: number = 0,
+    minScore: number = 0.6,
   ): Promise<Array<{ document: Document; score: number }>> {
     // 直接使用内存中的chunk，不再从数据库加载
     console.log(
@@ -217,7 +217,7 @@ export class EnhancedVectorStore {
   async keywordSearch(
     query: string,
     k: number = 4,
-    minScore: number = 0,
+    minScore: number = 0.6,
   ): Promise<Array<{ document: Document; score: number }>> {
     console.log(`[EnhancedVectorStore] 执行关键词检索: ${query}`);
 
@@ -248,7 +248,7 @@ export class EnhancedVectorStore {
         }
       }
 
-      // 计算改进的相似度得分
+      // 简化的相似度得分计算
       // 1. 基础Jaccard相似度
       const unionSize = queryTerms.size + docTerms.size - intersectionSize;
       const jaccardScore = unionSize > 0 ? intersectionSize / unionSize : 0;
@@ -257,13 +257,7 @@ export class EnhancedVectorStore {
       const overlapRatio =
         queryTerms.size > 0 ? intersectionSize / queryTerms.size : 0;
 
-      // 3. 长度因子（对短文本友好，短文本权重更高）
-      const lengthFactor = Math.min(
-        1.2,
-        1 + 0.8 * (1 / Math.log(docTokens.length + 2)),
-      );
-
-      // 4. 数字匹配增强（更强的数字匹配权重）
+      // 3. 数字匹配增强（降低数字匹配的权重）
       const queryHasNumbers = queryTermsArray.some((term) =>
         /^\d+$/.test(term),
       );
@@ -282,37 +276,14 @@ export class EnhancedVectorStore {
         const exactNumberMatches = queryNumbers.filter((num) =>
           docNumbers.includes(num),
         ).length;
-        numberMatchBonus = 0.3 + exactNumberMatches * 0.2; // 基础数字匹配+精确数字匹配奖励
+        numberMatchBonus = 0.1 + exactNumberMatches * 0.05; // 降低数字匹配权重
       }
 
-      // 5. 短文本特殊处理
-      const shortTextBonus = docTokens.length <= 10 ? 0.1 : 0;
-
-      // 6. 重复内容处理（考虑文档中的重复词）
-      let repetitionBonus = 0;
-      if (docTokens.length > queryTokens.length) {
-        // 计算查询词在文档中的出现频率
-        let totalMatches = 0;
-        for (const term of queryTermsArray) {
-          totalMatches += docTokens.filter((token) => token === term).length;
-        }
-        if (totalMatches > intersectionSize) {
-          repetitionBonus = Math.min(
-            0.1,
-            (totalMatches - intersectionSize) * 0.05,
-          );
-        }
-      }
-
-      // 综合得分
-      const score =
-        (jaccardScore * 0.4 + overlapRatio * 0.6) * lengthFactor +
-        numberMatchBonus +
-        shortTextBonus +
-        repetitionBonus;
+      // 综合得分 - 简化公式
+      const score = jaccardScore * 0.4 + overlapRatio * 0.6 + numberMatchBonus;
 
       console.log(
-        `[EnhancedVectorStore] 文档得分: Jaccard=${jaccardScore}, Overlap=${overlapRatio}, Length=${lengthFactor}, NumberBonus=${numberMatchBonus}, ShortTextBonus=${shortTextBonus}, RepetitionBonus=${repetitionBonus}, Total=${score}`,
+        `[EnhancedVectorStore] 更新关键词结果: 得分=${score.toFixed(4)}, 内容=${doc.pageContent.substring(0, 50)}...`,
       );
 
       return {
@@ -347,48 +318,39 @@ export class EnhancedVectorStore {
     for (const part of parts) {
       if (!part) continue;
 
-      // 2. 检查是否全是中文或数字
-      if (/^[\u4e00-\u9fa50-9]+$/.test(part)) {
-        // 处理数字序列
-        const numberMatch = part.match(/\d+/g);
-        if (numberMatch) {
-          // 保留完整的数字序列
-          numberMatch.forEach((num) => tokens.push(num));
-        }
-
-        // 处理中文部分
-        const chinesePart = part.replace(/\d+/g, "");
-        if (chinesePart) {
+      // 2. 分别处理中文、数字和其他字符
+      // 提取中文部分
+      const chineseMatches = part.match(/[\u4e00-\u9fa5]+/g);
+      if (chineseMatches) {
+        for (const chineseMatch of chineseMatches) {
           // 中文按字符分割
-          for (const char of chinesePart) {
+          for (const char of chineseMatch) {
             tokens.push(char);
           }
         }
-      } else {
-        // 包含其他字符，按空白字符分割后再处理
-        // 过滤掉非字母数字字符
-        const cleaned = part.toLowerCase().replace(/[^\w\d]/g, "");
-        if (cleaned) {
-          tokens.push(cleaned);
+      }
+
+      // 提取数字部分
+      const numberMatches = part.match(/\d+/g);
+      if (numberMatches) {
+        numberMatches.forEach((num) => tokens.push(num));
+      }
+
+      // 提取英文部分
+      const englishMatches = part.match(/[a-zA-Z]+/g);
+      if (englishMatches) {
+        for (const englishMatch of englishMatches) {
+          const cleaned = englishMatch.toLowerCase();
+          if (cleaned.length > 1) {
+            // 英文至少2个字符
+            tokens.push(cleaned);
+          }
         }
       }
     }
 
-    // 3. 保留重要的单字符
-    // 对于中文，保留所有字符
-    // 对于英文，过滤掉单字符
-    return tokens.filter((token) => {
-      // 中文单字符保留
-      if (/^[\u4e00-\u9fa5]$/.test(token)) {
-        return true;
-      }
-      // 数字保留（任意长度）
-      if (/^\d+$/.test(token)) {
-        return true;
-      }
-      // 英文至少2个字符
-      return token.length > 1;
-    });
+    // 3. 过滤空token
+    return tokens.filter((token) => token.length > 0);
   }
 
   // 计算标题相似度
@@ -447,8 +409,8 @@ export class EnhancedVectorStore {
   async hybridSearch(
     query: string,
     k: number = 4,
-    minScore: number = 0,
-    semanticWeight: number = 0.4,
+    minScore: number = 0.6,
+    semanticWeight: number = 0.5,
   ): Promise<Array<{ document: Document; score: number }>> {
     console.log(`[EnhancedVectorStore] 执行混合检索: ${query}`);
     console.log(
@@ -509,7 +471,7 @@ export class EnhancedVectorStore {
         );
         titleSimilarResults.push({
           document: fullDocument,
-          score: docInfo.similarity,
+          score: Math.max(docInfo.similarity, 0.6), // 保底分数0.6
         });
       }
 
@@ -535,8 +497,8 @@ export class EnhancedVectorStore {
 
     // 并行执行两种检索
     const [semanticResults, keywordResults] = await Promise.all([
-      this.similaritySearch(query, k * 4, minScore * 0.2),
-      this.keywordSearch(query, k * 4, minScore * 0.2),
+      this.similaritySearch(query, k * 4, minScore * 0.8),
+      this.keywordSearch(query, k * 4, minScore * 0.8),
     ]);
 
     console.log(
@@ -582,13 +544,6 @@ export class EnhancedVectorStore {
     console.log(
       `[EnhancedVectorStore] 开始融合结果: 语义结果${semanticResults.length}个, 关键词结果${keywordResults.length}个`,
     );
-
-    // 计算最大得分用于归一化
-    const maxSemanticScore = Math.max(
-      ...semanticResults.map((r) => r.score),
-      1,
-    );
-    const maxKeywordScore = Math.max(...keywordResults.map((r) => r.score), 1);
 
     // 处理语义检索结果
     for (const result of semanticResults) {
@@ -636,24 +591,31 @@ export class EnhancedVectorStore {
 
     // 计算最终得分
     const fusedResults = Array.from(documentMap.values()).map((item) => {
-      // 归一化得分
-      const normalizedSemanticScore = item.semanticScore / maxSemanticScore;
-      const normalizedKeywordScore = item.keywordScore / maxKeywordScore;
+      // 直接使用原始得分，不再归一化
+      const semanticScore = item.semanticScore;
+      const keywordScore = item.keywordScore;
 
-      // 新的计算策略：语义相似度占100%，关键词权重按计算方法往上加
-      let score = normalizedSemanticScore;
+      // 检查是否有高相似度的结果，直接召回
+      if (semanticScore >= 0.6 || keywordScore >= 0.6) {
+        // 权重相加
+        let score =
+          semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
+        // 分数保底0.6
+        score = Math.max(score, 0.6);
 
-      // 关键词权重往上加
-      if (normalizedKeywordScore > 0) {
-        score += normalizedKeywordScore; // 关键词权重加成
-      }
-
-      // 整体超过0.7就算召回
-      if (score > 0.7) {
         console.log(
-          `[EnhancedVectorStore] 融合结果: 语义得分=${normalizedSemanticScore.toFixed(4)}, 关键词得分=${normalizedKeywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
+          `[EnhancedVectorStore] 融合结果: 语义得分=${semanticScore.toFixed(4)}, 关键词得分=${keywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
         );
+
+        return {
+          document: item.document,
+          score,
+        };
       }
+
+      // 对于低相似度的结果，仍然计算得分但不强制保底
+      let score =
+        semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
 
       return {
         document: item.document,
