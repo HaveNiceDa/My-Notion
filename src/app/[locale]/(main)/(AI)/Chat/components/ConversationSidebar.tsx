@@ -123,9 +123,13 @@ export const ConversationSidebar = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="text-xs text-muted-foreground mb-2 px-2">{t("past30Days")}</div>
+        <div className="text-xs text-muted-foreground mb-2 px-2">
+          {t("past30Days")}
+        </div>
         {isLoading ? (
-          <div className="p-4 text-center text-muted-foreground">{t("loading")}</div>
+          <div className="p-4 text-center text-muted-foreground">
+            {t("loading")}
+          </div>
         ) : filteredConversations.length === 0 ? (
           <div className="p-4 text-center text-muted-foreground">
             {searchQuery
@@ -139,7 +143,7 @@ export const ConversationSidebar = ({
               className={cn(
                 "p-3 rounded-lg cursor-pointer mb-1 transition-colors",
                 currentConversationId === conversation._id
-                  ? "bg-purple-100"
+                  ? "bg-purple-100 dark:bg-accent"
                   : "hover:bg-muted",
               )}
               onClick={() => onSelectConversation(conversation._id)}
