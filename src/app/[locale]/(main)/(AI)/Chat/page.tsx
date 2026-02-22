@@ -337,9 +337,9 @@ const AIPage = () => {
           );
         },
         model,
-        0.5,
+        0.6,
         "hybrid" as RetrievalStrategy,
-        0.4,
+        0.5,
         knowledgeBaseEnabled,
         currentConversationId,
       );

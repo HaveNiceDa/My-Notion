@@ -279,8 +279,15 @@ export class EnhancedVectorStore {
         numberMatchBonus = 0.1 + exactNumberMatches * 0.05; // 降低数字匹配权重
       }
 
-      // 综合得分 - 简化公式
-      const score = jaccardScore * 0.4 + overlapRatio * 0.6 + numberMatchBonus;
+      // 综合得分 - 提高关键词匹配分数
+      const baseScore = 0.15; // 基础分数
+      const score = Math.min(
+        0.98, // 分数上限
+        baseScore +
+          jaccardScore * 0.45 +
+          overlapRatio * 0.75 +
+          numberMatchBonus,
+      );
 
       console.log(
         `[EnhancedVectorStore] 更新关键词结果: 得分=${score.toFixed(4)}, 内容=${doc.pageContent.substring(0, 50)}...`,
@@ -602,6 +609,8 @@ export class EnhancedVectorStore {
           semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
         // 分数保底0.6
         score = Math.max(score, 0.6);
+        // 分数上限0.98
+        score = Math.min(score, 0.98);
 
         console.log(
           `[EnhancedVectorStore] 融合结果: 语义得分=${semanticScore.toFixed(4)}, 关键词得分=${keywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
