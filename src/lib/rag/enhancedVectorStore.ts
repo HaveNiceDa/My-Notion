@@ -307,8 +307,8 @@ export class EnhancedVectorStore {
       const score = Math.min(
         0.98, // 分数上限
         baseScore +
-          jaccardScore * 0.4 +
-          overlapRatio * 0.9 + // 增加overlapRatio权重
+          jaccardScore * 0.6 +
+          overlapRatio * 0.8 + // 调整overlapRatio权重
           coverageRatio * 0.2 +
           densityRatio * 0.1 +
           lengthRatio * 0.1 +
@@ -403,9 +403,22 @@ export class EnhancedVectorStore {
       }
     });
 
-    // 计算Jaccard相似度
-    const unionSize = querySet.size + titleSet.size - intersectionSize;
-    return unionSize > 0 ? intersectionSize / unionSize : 0;
+    // 计算标题覆盖率：标题词在查询中的比例
+    const titleCoverage =
+      titleTokens.length > 0 ? intersectionSize / titleTokens.length : 0;
+
+    // 计算查询覆盖率：查询词在标题中的比例
+    const queryCoverage =
+      queryTokens.length > 0 ? intersectionSize / queryTokens.length : 0;
+
+    // 综合得分：标题覆盖率更重要
+    const combinedScore = titleCoverage * 0.7 + queryCoverage * 0.3;
+
+    console.log(
+      `[EnhancedVectorStore] 标题相似度计算: 标题=${title}, 查询=${query}, 标题覆盖率=${titleCoverage.toFixed(4)}, 查询覆盖率=${queryCoverage.toFixed(4)}, 综合得分=${combinedScore.toFixed(4)}`,
+    );
+
+    return combinedScore;
   }
 
   // 获取文档的所有chunk并合并为完整内容
@@ -452,7 +465,7 @@ export class EnhancedVectorStore {
     );
 
     // 1. 标题相似度检测
-    const titleSimilarityThreshold = 0.8;
+    const titleSimilarityThreshold = 0.6;
     const documentTitles = new Map<
       string,
       { title: string; chunks: InMemoryDocument[] }
