@@ -443,12 +443,17 @@ const AIPage = () => {
           userId: user.id,
         });
 
+        // 清除对话列表缓存，确保获取最新数据
+        requestCache.conversations.delete(user.id);
+
         await loadConversations();
 
         toast.success(t("conversationDeleted"));
       } catch (error) {
         console.error("Error deleting conversation:", error);
         toast.error(t("deleteFailed"));
+        // 清除缓存并重新加载，确保数据一致性
+        requestCache.conversations.delete(user.id);
         await loadConversations();
       }
     },
