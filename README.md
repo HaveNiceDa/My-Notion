@@ -6,6 +6,29 @@
 
 基于现代前端与 AI 技术栈构建的个性化 Notion 应用，提供类似 Notion 的文档编辑和管理功能。核心特点包括富文本编辑、主题色切换、用户认证、实时数据同步、AI智能对话、响应式设计、多语言国际化等。
 
+## 📸 项目截图
+
+### 首页（亮色主题）
+
+![首页-亮色主题](public/screenshots/1.png)
+
+### 首页（暗黑主题）
+
+![首页-暗黑主题](public/screenshots/2.png)
+
+### 文档编辑页面
+
+![文档编辑页面](public/screenshots/3.png)
+
+### AI 聊天页面
+
+![AI 聊天页面](public/screenshots/4.png)
+
+### AI 思考过程可视化
+
+![AI 思考过程可视化](public/screenshots/5.png)
+![AI 思考过程可视化](public/screenshots/6.png)
+
 ## 功能特性
 
 - 📝 **富文本编辑器**：基于 BlockNote 的强大编辑器，支持多种内容格式
