@@ -98,7 +98,15 @@ export const MessageList = ({
   return (
     <div className="flex-1 flex p-8 overflow-hidden min-h-0 mb-10">
       {/* 左侧思考过程 */}
-      <div className="w-72 absolute top-40 left-4 overflow-y-auto">
+      <div
+        className="w-72 absolute top-40 left-4 overflow-y-auto hide-scrollbar"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
+        <style>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {(isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
           <div className="sticky top-0 bg-white pb-4">
             <div className="rounded-lg p-3 bg-white text-gray-900 border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
@@ -256,7 +264,10 @@ export const MessageList = ({
       </div>
 
       {/* 右侧消息列表 */}
-      <div className="flex-1 flex justify-center overflow-y-auto">
+      <div
+        className="flex-1 flex justify-center overflow-y-auto hide-scrollbar"
+        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+      >
         <div className="w-full max-w-[60%]">
           {conversationCreatedAt && (
             <div className="mb-8 text-center">
