@@ -318,7 +318,7 @@ export class EnhancedVectorStore {
       const shortDocumentBonus = docTerms.size <= 5 ? 0.1 : 0;
 
       // 综合得分 - 增强关键词匹配分数
-      const baseScore = 0.15; // 进一步降低基础分数
+      const baseScore = 0.2; // 进一步降低基础分数
 
       // 检查是否有实际的关键词匹配
       const hasSignificantMatch = jaccardScore > 0.1 || overlapRatio > 0.1;
@@ -423,17 +423,54 @@ export class EnhancedVectorStore {
     title: string,
   ): Promise<number> {
     try {
-      // 使用与内容块相同的语义检索方法
+      // 1. 语义检索
       const queryEmbedding = await this.embeddings.embedQuery(query);
       const titleEmbedding = await this.embeddings.embedQuery(title);
-
-      const similarity = this.cosineSimilarity(queryEmbedding, titleEmbedding);
-
-      console.log(
-        `[EnhancedVectorStore] 标题相似度计算: 标题=${title}, 查询=${query}, 语义相似度=${similarity.toFixed(4)}`,
+      const semanticSimilarity = this.cosineSimilarity(
+        queryEmbedding,
+        titleEmbedding,
       );
 
-      return similarity;
+      // 2. 关键词检索
+      const queryTokens = this.tokenize(query);
+      const titleTokens = this.tokenize(title);
+
+      const querySet = new Set(queryTokens);
+      const titleSet = new Set(titleTokens);
+
+      // 计算交集大小
+      let intersectionSize = 0;
+      Array.from(querySet).forEach((token) => {
+        if (titleSet.has(token)) {
+          intersectionSize++;
+        }
+      });
+
+      // 计算标题覆盖率：标题词在查询中的比例
+      const titleCoverage =
+        titleTokens.length > 0 ? intersectionSize / titleTokens.length : 0;
+
+      // 计算查询覆盖率：查询词在标题中的比例
+      const queryCoverage =
+        queryTokens.length > 0 ? intersectionSize / queryTokens.length : 0;
+
+      // 关键词综合得分（基础分数改为0.2）
+      const keywordScore = Math.max(
+        titleCoverage * 0.7 + queryCoverage * 0.3,
+        0.2,
+      );
+
+      // 3. 结果融合
+      const semanticWeight = 0.7;
+      const keywordWeight = 0.3;
+      let finalScore =
+        semanticSimilarity * semanticWeight + keywordScore * keywordWeight;
+
+      console.log(
+        `[EnhancedVectorStore] 标题相似度计算: 标题=${title}, 查询=${query}, 语义相似度=${semanticSimilarity.toFixed(4)}, 关键词得分=${keywordScore.toFixed(4)}, 最终得分=${finalScore.toFixed(4)}`,
+      );
+
+      return finalScore;
     } catch (error) {
       console.error(`[EnhancedVectorStore] 标题相似度计算错误:`, error);
       // 回退到词元匹配方法
@@ -568,7 +605,7 @@ export class EnhancedVectorStore {
         );
         titleSimilarResults.push({
           document: fullDocument,
-          score: Math.max(docInfo.similarity, 0.7), // 保底分数0.7
+          score: docInfo.similarity,
         });
         titleHitDocumentIds.add(docInfo.documentId);
       }
@@ -694,29 +731,11 @@ export class EnhancedVectorStore {
       const semanticScore = item.semanticScore;
       const keywordScore = item.keywordScore;
 
-      // 检查是否有高相似度的结果，直接召回
-      if (semanticScore >= 0.5 || keywordScore >= 0.55) {
-        // 权重相加
-        let score =
-          semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
-        // 分数保底0.6
-        score = Math.max(score, 0.6);
-        // 分数上限0.98
-        score = Math.min(score, 0.98);
-
-        console.log(
-          `[EnhancedVectorStore] 融合结果: 语义得分=${semanticScore.toFixed(4)}, 关键词得分=${keywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
-        );
-
-        return {
-          document: item.document,
-          score,
-        };
-      }
-
       // 对于低相似度的结果，仍然计算得分但不强制保底
       let score =
         semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
+
+      score = Math.min(score, 0.98);
 
       return {
         document: item.document,
