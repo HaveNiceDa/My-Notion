@@ -146,7 +146,7 @@ export const MessageList = ({
                     steps.map((step, index) => (
                       <div
                         key={step.id}
-                        className="flex gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 transition-all duration-300 hover:bg-gray-100 hover:shadow-sm animate-in fade-in duration-500"
+                        className="flex gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 transition-all  hover:bg-gray-100 hover:shadow-sm animate-in fade-in duration-500"
                         style={{ animationDelay: `${index * 100}ms` }}
                       >
                         <div className="flex-shrink-0">

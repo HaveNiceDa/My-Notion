@@ -58,9 +58,18 @@ import { Skeleton } from "@/src/components/ui/skeleton";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { TopNavigation } from "./components/TopNavigation";
 import { NewConversationLanding } from "./components/NewConversationLanding";
-import { MessageList } from "./components/MessageList";
-import { MessageInput } from "./components/MessageInput";
 
+import { MessageInput } from "./components/MessageInput";
+const MessageList = dynamic(
+  () =>
+    import("./components/MessageList").then((module) => ({
+      default: module.MessageList,
+    })),
+  {
+    ssr: false,
+    loading: () => <Skeleton className="flex-1 w-full" />,
+  },
+);
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 // 请求缓存
