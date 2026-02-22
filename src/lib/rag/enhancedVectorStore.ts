@@ -630,7 +630,7 @@ export class EnhancedVectorStore {
       const keywordScore = item.keywordScore;
 
       // 检查是否有高相似度的结果，直接召回
-      if (semanticScore >= 0.6 || keywordScore >= 0.6) {
+      if (semanticScore >= 0.5 || keywordScore >= 0.55) {
         // 权重相加
         let score =
           semanticScore * semanticWeight + keywordScore * (1 - semanticWeight);
