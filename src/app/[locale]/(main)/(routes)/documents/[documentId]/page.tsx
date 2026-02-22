@@ -19,12 +19,6 @@ import { triggerDocumentUpdate } from "@/src/lib/rag/rag";
 
 const Editor = dynamic(() => import("@/src/components/Editor"), {
   ssr: false,
-  loading: () => <Skeleton className="h-[400px] w-full" />,
-});
-
-const Room = dynamic(() => import("@/src/components/Room").then((module) => ({ default: module.Room })), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[400px] w-full" />,
 });
 
 interface DocumentIdPageProps {
@@ -145,14 +139,16 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     <div className="pb-40" onDragOver={handleDragOver} onDrop={handleDrop}>
       <Cover url={document.coverImage} />
       <div className="md:max-w-3xl lg:md-max-w-4xl mx-auto">
-        <Toolbar initialData={document} onEnter={handleEnter} onTitleChange={onTitleChange} />
-        <Room>
-          <Editor
-            ref={editorRef}
-            onChange={onChange}
-            initialContent={document.content}
-          />
-        </Room>
+        <Toolbar
+          initialData={document}
+          onEnter={handleEnter}
+          onTitleChange={onTitleChange}
+        />
+        <Editor
+          ref={editorRef}
+          onChange={onChange}
+          initialContent={document.content}
+        />
       </div>
 
       {/* 错误提示模态对话框 */}

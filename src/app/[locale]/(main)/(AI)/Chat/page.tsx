@@ -55,61 +55,11 @@ import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store"
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/src/components/ui/skeleton";
-
-const TopNavigation = dynamic(
-  () =>
-    import("./components/TopNavigation").then((module) => ({
-      default: module.TopNavigation,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-16 w-full" />,
-  },
-);
-
-const ConversationSidebar = dynamic(
-  () =>
-    import("./components/ConversationSidebar").then((module) => ({
-      default: module.ConversationSidebar,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="w-80 h-full" />,
-  },
-);
-
-const NewConversationLanding = dynamic(
-  () =>
-    import("./components/NewConversationLanding").then((module) => ({
-      default: module.NewConversationLanding,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="flex-1 w-full" />,
-  },
-);
-
-const MessageList = dynamic(
-  () =>
-    import("./components/MessageList").then((module) => ({
-      default: module.MessageList,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="flex-1 w-full" />,
-  },
-);
-
-const MessageInput = dynamic(
-  () =>
-    import("./components/MessageInput").then((module) => ({
-      default: module.MessageInput,
-    })),
-  {
-    ssr: false,
-    loading: () => <Skeleton className="h-16 w-full" />,
-  },
-);
+import { ConversationSidebar } from "./components/ConversationSidebar";
+import { TopNavigation } from "./components/TopNavigation";
+import { NewConversationLanding } from "./components/NewConversationLanding";
+import { MessageList } from "./components/MessageList";
+import { MessageInput } from "./components/MessageInput";
 
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
