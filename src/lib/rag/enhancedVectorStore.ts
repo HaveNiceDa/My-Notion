@@ -418,37 +418,56 @@ export class EnhancedVectorStore {
   }
 
   // 计算标题相似度
-  private calculateTitleSimilarity(query: string, title: string): number {
-    const queryTokens = this.tokenize(query);
-    const titleTokens = this.tokenize(title);
+  private async calculateTitleSimilarity(
+    query: string,
+    title: string,
+  ): Promise<number> {
+    try {
+      // 使用与内容块相同的语义检索方法
+      const queryEmbedding = await this.embeddings.embedQuery(query);
+      const titleEmbedding = await this.embeddings.embedQuery(title);
 
-    const querySet = new Set(queryTokens);
-    const titleSet = new Set(titleTokens);
+      const similarity = this.cosineSimilarity(queryEmbedding, titleEmbedding);
 
-    // 计算交集大小
-    let intersectionSize = 0;
-    Array.from(querySet).forEach((token) => {
-      if (titleSet.has(token)) {
-        intersectionSize++;
-      }
-    });
+      console.log(
+        `[EnhancedVectorStore] 标题相似度计算: 标题=${title}, 查询=${query}, 语义相似度=${similarity.toFixed(4)}`,
+      );
 
-    // 计算标题覆盖率：标题词在查询中的比例
-    const titleCoverage =
-      titleTokens.length > 0 ? intersectionSize / titleTokens.length : 0;
+      return similarity;
+    } catch (error) {
+      console.error(`[EnhancedVectorStore] 标题相似度计算错误:`, error);
+      // 回退到词元匹配方法
+      const queryTokens = this.tokenize(query);
+      const titleTokens = this.tokenize(title);
 
-    // 计算查询覆盖率：查询词在标题中的比例
-    const queryCoverage =
-      queryTokens.length > 0 ? intersectionSize / queryTokens.length : 0;
+      const querySet = new Set(queryTokens);
+      const titleSet = new Set(titleTokens);
 
-    // 综合得分：标题覆盖率更重要
-    const combinedScore = titleCoverage * 0.7 + queryCoverage * 0.3;
+      // 计算交集大小
+      let intersectionSize = 0;
+      Array.from(querySet).forEach((token) => {
+        if (titleSet.has(token)) {
+          intersectionSize++;
+        }
+      });
 
-    console.log(
-      `[EnhancedVectorStore] 标题相似度计算: 标题=${title}, 查询=${query}, 标题覆盖率=${titleCoverage.toFixed(4)}, 查询覆盖率=${queryCoverage.toFixed(4)}, 综合得分=${combinedScore.toFixed(4)}`,
-    );
+      // 计算标题覆盖率：标题词在查询中的比例
+      const titleCoverage =
+        titleTokens.length > 0 ? intersectionSize / titleTokens.length : 0;
 
-    return combinedScore;
+      // 计算查询覆盖率：查询词在标题中的比例
+      const queryCoverage =
+        queryTokens.length > 0 ? intersectionSize / queryTokens.length : 0;
+
+      // 综合得分：标题覆盖率更重要
+      const combinedScore = titleCoverage * 0.7 + queryCoverage * 0.3;
+
+      console.log(
+        `[EnhancedVectorStore] 标题相似度计算(回退): 标题=${title}, 查询=${query}, 综合得分=${combinedScore.toFixed(4)}`,
+      );
+
+      return combinedScore;
+    }
   }
 
   // 获取文档的所有chunk并合并为完整内容
@@ -519,8 +538,8 @@ export class EnhancedVectorStore {
       title: string;
       similarity: number;
     }> = [];
-    Array.from(documentTitles.entries()).forEach(([documentId, info]) => {
-      const similarity = this.calculateTitleSimilarity(query, info.title);
+    for (const [documentId, info] of Array.from(documentTitles.entries())) {
+      const similarity = await this.calculateTitleSimilarity(query, info.title);
       if (similarity >= titleSimilarityThreshold) {
         titleSimilarDocuments.push({
           documentId,
@@ -531,7 +550,7 @@ export class EnhancedVectorStore {
           `[EnhancedVectorStore] 标题相似度高: 文档=${info.title}, 相似度=${similarity.toFixed(4)}`,
         );
       }
-    });
+    }
 
     // 2. 获取标题相似度高的文档（完整内容）
     let titleSimilarResults: Array<{ document: Document; score: number }> = [];
