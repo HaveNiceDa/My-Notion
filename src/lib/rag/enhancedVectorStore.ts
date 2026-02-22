@@ -563,9 +563,7 @@ export class EnhancedVectorStore {
     });
 
     // 应用原始minScore阈值
-    console.log(
-      `[EnhancedVectorStore] 应用最小得分阈值: ${minScore}`,
-    );
+    console.log(`[EnhancedVectorStore] 应用最小得分阈值: ${minScore}`);
 
     return sortedResults.filter((s) => s.score >= minScore).slice(0, k);
   }
@@ -576,7 +574,6 @@ export class EnhancedVectorStore {
     keywordResults: Array<{ document: Document; score: number }>,
     semanticWeight: number,
   ): Array<{ document: Document; score: number }> {
-    const keywordWeight = 1 - semanticWeight;
     const documentMap = new Map<
       string,
       { document: Document; semanticScore: number; keywordScore: number }
@@ -643,51 +640,20 @@ export class EnhancedVectorStore {
       const normalizedSemanticScore = item.semanticScore / maxSemanticScore;
       const normalizedKeywordScore = item.keywordScore / maxKeywordScore;
 
-      // 计算基础加权得分
-      let baseScore =
-        normalizedSemanticScore * semanticWeight +
-        normalizedKeywordScore * keywordWeight;
+      // 新的计算策略：语义相似度占100%，关键词权重按计算方法往上加
+      let score = normalizedSemanticScore;
 
-      // 高得分兜底机制：如果任意一方得分超过0.7，确保最终得分至少是0.7
-      let score;
-      if (normalizedSemanticScore > 0.7 || normalizedKeywordScore > 0.7) {
-        // 如果任意一方得分超过0.7，确保最终得分至少是0.7
-        score = Math.max(baseScore, 0.7);
+      // 关键词权重往上加
+      if (normalizedKeywordScore > 0) {
+        score += normalizedKeywordScore; // 关键词权重加成
+      }
+
+      // 整体超过0.7就算召回
+      if (score > 0.7) {
         console.log(
-          `[EnhancedVectorStore] 高得分兜底: 语义得分=${normalizedSemanticScore.toFixed(4)}, 关键词得分=${normalizedKeywordScore.toFixed(4)}, 基础得分=${baseScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
+          `[EnhancedVectorStore] 融合结果: 语义得分=${normalizedSemanticScore.toFixed(4)}, 关键词得分=${normalizedKeywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
         );
-      } else {
-        // 正常情况使用基础得分
-        score = baseScore;
       }
-
-      // 增强机制：如果两种检索都找到了该文档，给予额外奖励
-      if (item.semanticScore > 0 && item.keywordScore > 0) {
-        score += 0.1; // 同时被两种检索找到的文档获得额外奖励
-      }
-
-      // 增强机制：对于包含数字的查询和文档，提高关键词得分的权重
-      const hasNumbers = /\d+/.test(item.document.pageContent);
-      if (hasNumbers) {
-        // 重新计算数字文档的加权得分
-        const numberAdjustedScore =
-          normalizedSemanticScore * (semanticWeight * 0.8) +
-          normalizedKeywordScore * (keywordWeight * 1.2);
-        // 如果是高得分文档，确保调整后的得分也至少是0.7
-        if (normalizedSemanticScore > 0.7 || normalizedKeywordScore > 0.7) {
-          score =
-            Math.max(numberAdjustedScore, 0.7) +
-            (item.semanticScore > 0 && item.keywordScore > 0 ? 0.1 : 0);
-        } else {
-          score =
-            numberAdjustedScore +
-            (item.semanticScore > 0 && item.keywordScore > 0 ? 0.1 : 0);
-        }
-      }
-
-      console.log(
-        `[EnhancedVectorStore] 融合结果: 语义得分=${normalizedSemanticScore.toFixed(4)}, 关键词得分=${normalizedKeywordScore.toFixed(4)}, 最终得分=${score.toFixed(4)}, 内容=${item.document.pageContent.substring(0, 50)}...`,
-      );
 
       return {
         document: item.document,

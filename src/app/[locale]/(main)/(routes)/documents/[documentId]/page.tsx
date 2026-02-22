@@ -91,6 +91,13 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     }
   };
 
+  const onTitleChange = (title: string) => {
+    // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
+    if (user && document && document.isInKnowledgeBase) {
+      watcherRef.current?.onDocumentChange(documentId, document.content, title);
+    }
+  };
+
   const handleEnter = () => {
     editorRef.current?.focus();
   };
@@ -138,7 +145,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     <div className="pb-40" onDragOver={handleDragOver} onDrop={handleDrop}>
       <Cover url={document.coverImage} />
       <div className="md:max-w-3xl lg:md-max-w-4xl mx-auto">
-        <Toolbar initialData={document} onEnter={handleEnter} />
+        <Toolbar initialData={document} onEnter={handleEnter} onTitleChange={onTitleChange} />
         <Room>
           <Editor
             ref={editorRef}

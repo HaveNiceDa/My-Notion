@@ -17,9 +17,10 @@ interface ToolbarProps {
   initialData: Doc<"documents">;
   preview?: boolean;
   onEnter?: () => void;
+  onTitleChange?: (title: string) => void;
 }
 
-export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
+export function Toolbar({ initialData, preview, onEnter, onTitleChange }: ToolbarProps) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -88,6 +89,7 @@ export function Toolbar({ initialData, preview, onEnter }: ToolbarProps) {
       id: initialData._id,
       title: value || "Untitled",
     });
+    onTitleChange?.(value || "Untitled");
   };
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
