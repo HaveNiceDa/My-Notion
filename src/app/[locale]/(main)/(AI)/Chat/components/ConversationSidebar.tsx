@@ -66,7 +66,7 @@ export const ConversationSidebar = ({
   return (
     <div
       className={cn(
-        "absolute top-0 left-0 w-72 h-full border-r border-gray-200 flex flex-col z-[100001] bg-white",
+        "absolute top-0 left-0 w-72 h-full border-r border-border flex flex-col z-[100001] bg-background",
         isPinned
           ? "translate-x-0 shadow-none"
           : show
@@ -77,7 +77,7 @@ export const ConversationSidebar = ({
     >
       <div className="p-4 pb-0">
         <div className="flex items-center justify-between ">
-          <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
             {t("conversationHistory")}
           </h2>
           <div className="flex items-center gap-0.5">
@@ -118,16 +118,16 @@ export const ConversationSidebar = ({
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder={t("searchConversationHistory")}
-          className="w-full border border-gray-200 rounded-md shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent"
+          className="w-full border border-border rounded-md shadow-sm focus:ring-2 focus:ring-ring focus:border-transparent"
         />
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
-        <div className="text-xs text-gray-500 mb-2 px-2">{t("past30Days")}</div>
+        <div className="text-xs text-muted-foreground mb-2 px-2">{t("past30Days")}</div>
         {isLoading ? (
-          <div className="p-4 text-center text-gray-500">{t("loading")}</div>
+          <div className="p-4 text-center text-muted-foreground">{t("loading")}</div>
         ) : filteredConversations.length === 0 ? (
-          <div className="p-4 text-center text-gray-500">
+          <div className="p-4 text-center text-muted-foreground">
             {searchQuery
               ? t("noMatchingConversations")
               : t("noConversationRecords")}
@@ -140,12 +140,12 @@ export const ConversationSidebar = ({
                 "p-3 rounded-lg cursor-pointer mb-1 transition-colors",
                 currentConversationId === conversation._id
                   ? "bg-purple-100"
-                  : "hover:bg-gray-100",
+                  : "hover:bg-muted",
               )}
               onClick={() => onSelectConversation(conversation._id)}
             >
               <div className="flex justify-between items-start">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {conversation.title}
                 </p>
                 <Button
@@ -155,14 +155,14 @@ export const ConversationSidebar = ({
                   }}
                   size="sm"
                   variant="ghost"
-                  className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-red-500"
                 >
                   <Trash2 className="h-3 w-3" />
                 </Button>
               </div>
               <div className="flex items-center gap-1 mt-1">
-                <Clock className="h-3 w-3 text-gray-400" />
-                <span className="text-xs text-gray-500">
+                <Clock className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">
                   {formatRelativeTime(conversation.updatedAt)}
                 </span>
               </div>

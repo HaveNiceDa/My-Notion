@@ -30,7 +30,7 @@ export const TopNavigation = ({ onShowHistory }: TopNavigationProps) => {
               onClick={onShowHistory}
               size="sm"
               variant="ghost"
-              className="h-8 w-8 p-0 text-gray-600 hover:bg-gray-100"
+              className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted"
             >
               <Clock className="h-4 w-4" />
             </Button>

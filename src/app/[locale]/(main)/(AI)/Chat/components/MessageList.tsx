@@ -108,8 +108,8 @@ export const MessageList = ({
           }
         `}</style>
         {(isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
-          <div className="sticky top-0 bg-white pb-4">
-            <div className="rounded-lg p-3 bg-white text-gray-900 border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
+          <div className="sticky top-0 bg-background pb-4">
+            <div className="rounded-lg p-3 bg-background text-foreground border border-border shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
               {/* 思考过程标题栏 */}
               <div
                 className="flex items-center justify-between cursor-pointer mb-2 group"
@@ -128,13 +128,13 @@ export const MessageList = ({
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-muted-foreground">
                     {steps.length} 步骤
                   </span>
                   {isExpanded ? (
-                    <ChevronUp className="h-3 w-3 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    <ChevronUp className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
                   ) : (
-                    <ChevronDown className="h-3 w-3 text-gray-500 group-hover:text-gray-700 transition-colors" />
+                    <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
                   )}
                 </div>
               </div>
@@ -147,18 +147,18 @@ export const MessageList = ({
                       <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                     </div>
                   ) : steps.length === 0 ? (
-                    <div className="flex justify-center py-4 text-gray-500 text-xs">
+                    <div className="flex justify-center py-4 text-muted-foreground text-xs">
                       暂无思考过程
                     </div>
                   ) : (
                     steps.map((step, index) => (
                       <div
                         key={step.id}
-                        className="flex gap-2 p-2 rounded-lg bg-gray-50 border border-gray-100 transition-all  hover:bg-gray-100 hover:shadow-sm animate-in fade-in duration-500"
+                        className="flex gap-2 p-2 rounded-lg bg-muted border border-border transition-all  hover:bg-accent hover:shadow-sm animate-in fade-in duration-500"
                         style={{ animationDelay: `${index * 100}ms` }}
                       >
                         <div className="flex-shrink-0">
-                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-gray-200 text-gray-600">
+                          <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground">
                             {getStepIcon(step.type)}
                           </div>
                         </div>
@@ -167,12 +167,12 @@ export const MessageList = ({
                             <p className="text-xs font-medium">
                               {step.content}
                             </p>
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs text-muted-foreground">
                               {formatTime(step.timestamp)}
                             </span>
                           </div>
                           {step.details && (
-                            <div className="text-xs text-gray-600 mt-1">
+                            <div className="text-xs text-muted-foreground mt-1">
                               {step.type === "documents" ? (
                                 <>
                                   {(() => {
@@ -271,7 +271,7 @@ export const MessageList = ({
         <div className="w-full max-w-[60%]">
           {conversationCreatedAt && (
             <div className="mb-8 text-center">
-              <div className="inline-block text-gray-600 px-4 py-1 rounded-full text-sm">
+              <div className="inline-block text-muted-foreground px-4 py-1 rounded-full text-sm">
                 {formatDate(conversationCreatedAt)} · Notion AI
               </div>
             </div>
@@ -295,8 +295,8 @@ export const MessageList = ({
                   className={cn(
                     "p-4 break-words",
                     message.role === "user"
-                      ? "bg-gray-100 text-gray-900 rounded-3xl"
-                      : "bg-white text-gray-900 pb-1 rounded-lg",
+                      ? "bg-muted text-foreground rounded-3xl"
+                      : "bg-background text-foreground pb-1 rounded-lg",
                   )}
                 >
                   <p className="whitespace-pre-wrap text-base break-all">
@@ -306,7 +306,7 @@ export const MessageList = ({
 
                 {message.role === "user" && (
                   <div className="mt-1 flex justify-end gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity">
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {message.timestamp.toLocaleString("zh-CN", {
                         month: "numeric",
                         day: "numeric",
@@ -315,7 +315,7 @@ export const MessageList = ({
                       })}
                     </div>
                     <button
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                      className="p-1 text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         navigator.clipboard.writeText(message.content);
                         toast.success(t("copied"));
@@ -328,7 +328,7 @@ export const MessageList = ({
 
                 {message.role === "assistant" && (
                   <div className="flex justify-start gap-2 items-center w-full opacity-0 group-hover:opacity-100 transition-opacity pl-4">
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {message.timestamp.toLocaleString("zh-CN", {
                         month: "numeric",
                         day: "numeric",
@@ -337,7 +337,7 @@ export const MessageList = ({
                       })}
                     </div>
                     <button
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                      className="p-1 text-muted-foreground hover:text-foreground"
                       onClick={() => {
                         navigator.clipboard.writeText(message.content);
                         toast.success(t("copied"));
@@ -354,10 +354,10 @@ export const MessageList = ({
           {isLoading && (
             <div className="flex justify-start mb-8">
               <div className="max-w-[80%]">
-                <div className="p-4 break-words bg-white text-gray-900 pb-1 rounded-lg">
+                <div className="p-4 break-words bg-background text-foreground pb-1 rounded-lg">
                   <div className="flex items-center gap-2">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-muted-foreground">
                       正在生成响应...
                     </span>
                   </div>

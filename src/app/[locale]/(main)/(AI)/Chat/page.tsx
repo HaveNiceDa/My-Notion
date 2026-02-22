@@ -457,7 +457,7 @@ const AIPage = () => {
 
   return (
     <div className="h-screen w-full">
-      <div className="h-full w-full bg-white overflow-hidden relative">
+      <div className="h-full w-full bg-background overflow-hidden relative">
         <ConversationSidebar
           show={showConversationList || isConversationListPinned}
           isPinned={isConversationListPinned}
@@ -483,7 +483,7 @@ const AIPage = () => {
           }
         >
           {!searchParams.get("id") ? (
-            <div className="flex-1 flex flex-col bg-white">
+            <div className="flex-1 flex flex-col bg-background">
               <TopNavigation
                 onShowHistory={() => setShowConversationList(true)}
               />

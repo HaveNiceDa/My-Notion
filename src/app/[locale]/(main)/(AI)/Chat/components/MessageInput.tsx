@@ -64,18 +64,18 @@ export const MessageInput = ({
         onKeyPress={onKeyPress}
         placeholder={t("useAIToHandleTasks")}
         className={cn(
-          "w-full px-5 py-4 pr-44 border border-gray-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-gray-200 focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
+          "w-full px-5 py-4 pr-44 border border-border rounded-2xl shadow-sm focus:ring-2 focus:ring-ring focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
           className,
         )}
       />
       <Button
-        className="absolute left-2 bottom-1 bg-transparent hover:bg-gray-100 text-gray-800 rounded-full transition-all duration-200 p-3"
+        className="absolute left-2 bottom-1 bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
         onClick={() => toast.info(t("featureUnderDevelopment"))}
       >
         <Plus />
       </Button>
       <Button
-        className="absolute left-10 bottom-1 bg-transparent hover:bg-gray-100 text-gray-800 rounded-full transition-all duration-200 p-3"
+        className="absolute left-10 bottom-1 bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
         onClick={() => toast.info(t("featureUnderDevelopment"))}
       >
         <Settings />
@@ -86,10 +86,10 @@ export const MessageInput = ({
           <TooltipTrigger asChild>
             <Button
               className={cn(
-                "absolute right-24 bottom-1 rounded-full transition-all duration-200 p-3 bg-white",
+                "absolute right-24 bottom-1 rounded-full transition-all duration-200 p-3 bg-background",
                 knowledgeBaseEnabled
                   ? "hover:bg-blue-200 text-blue-600"
-                  : " hover:bg-gray-200 text-gray-600",
+                  : " hover:bg-muted text-muted-foreground",
               )}
               onClick={() => {
                 toggleKnowledgeBase();
@@ -117,7 +117,7 @@ export const MessageInput = ({
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            className="absolute right-12 bottom-1 hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+            className="absolute right-12 bottom-1 hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
             variant="ghost"
           >
             <Bot className="h-5 w-5" />
@@ -130,7 +130,7 @@ export const MessageInput = ({
               onClick={() => setModel(m)}
               className={cn(
                 "cursor-pointer flex items-center justify-between",
-                model === m && "bg-gray-100 font-medium",
+                model === m && "bg-muted font-medium",
               )}
             >
               <span>{getModelDisplayName(m)}</span>
@@ -143,7 +143,7 @@ export const MessageInput = ({
       <Button
         onClick={onSend}
         disabled={!input.trim()}
-        className="absolute right-2 bottom-1 bg-white hover:bg-gray-200 text-gray-800 rounded-full transition-all duration-200 p-3"
+        className="absolute right-2 bottom-1 bg-background hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
       >
         <Send className="h-5 w-5 rounded-full" />
       </Button>
