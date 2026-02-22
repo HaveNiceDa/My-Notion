@@ -167,10 +167,17 @@ export class EnhancedVectorStore {
     query: string,
     k: number = 4,
     minScore: number = 0.6,
+    excludeDocumentIds?: Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
-    // 直接使用内存中的chunk，不再从数据库加载
+    // 过滤掉需要排除的文档
+    const filteredDocuments = excludeDocumentIds
+      ? this.documents.filter(
+          (doc) => !excludeDocumentIds.has(doc.metadata?.documentId || ""),
+        )
+      : this.documents;
+
     console.log(
-      `[EnhancedVectorStore] 使用内存中的 ${this.documents.length} 个chunk进行相似度检索`,
+      `[EnhancedVectorStore] 使用内存中的 ${filteredDocuments.length} 个chunk进行相似度检索`,
     );
     console.log(`[EnhancedVectorStore] 查询: ${query}`);
 
@@ -179,7 +186,7 @@ export class EnhancedVectorStore {
       `[EnhancedVectorStore] 查询嵌入向量维度: ${queryEmbedding.length}`,
     );
 
-    const similarities = this.documents.map((doc) => {
+    const similarities = filteredDocuments.map((doc) => {
       const score = this.cosineSimilarity(queryEmbedding, doc.embedding);
       console.log(
         `[EnhancedVectorStore] 文档得分: ${score.toFixed(4)}, 内容: ${doc.pageContent.substring(0, 50)}...`,
@@ -218,6 +225,7 @@ export class EnhancedVectorStore {
     query: string,
     k: number = 4,
     minScore: number = 0.6,
+    excludeDocumentIds?: Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
     console.log(`[EnhancedVectorStore] 执行关键词检索: ${query}`);
 
@@ -229,8 +237,15 @@ export class EnhancedVectorStore {
       `[EnhancedVectorStore] 查询分词结果: ${Array.from(queryTerms).join(", ")}`,
     );
 
+    // 过滤掉需要排除的文档
+    const filteredDocuments = excludeDocumentIds
+      ? this.documents.filter(
+          (doc) => !excludeDocumentIds.has(doc.metadata?.documentId || ""),
+        )
+      : this.documents;
+
     // 计算每个文档的关键词相似度
-    const similarities = this.documents.map((doc) => {
+    const similarities = filteredDocuments.map((doc) => {
       const docTokens = this.tokenize(doc.pageContent);
       const docTerms = new Set(docTokens);
 
@@ -303,12 +318,27 @@ export class EnhancedVectorStore {
       const shortDocumentBonus = docTerms.size <= 5 ? 0.1 : 0;
 
       // 综合得分 - 增强关键词匹配分数
-      const baseScore = 0.2; // 基础分数
+      const baseScore = 0.15; // 进一步降低基础分数
+
+      // 检查是否有实际的关键词匹配
+      const hasSignificantMatch = jaccardScore > 0.1 || overlapRatio > 0.1;
+
+      if (!hasSignificantMatch) {
+        // 没有显著匹配，直接返回低分
+        return {
+          document: new Document({
+            pageContent: doc.pageContent,
+            metadata: doc.metadata,
+          }),
+          score: 0.0,
+        };
+      }
+
       const score = Math.min(
         0.98, // 分数上限
         baseScore +
-          jaccardScore * 0.6 +
-          overlapRatio * 0.8 + // 调整overlapRatio权重
+          jaccardScore * 0.8 + // 提高核心相似度权重
+          overlapRatio * 0.6 + // 调整overlapRatio权重
           coverageRatio * 0.2 +
           densityRatio * 0.1 +
           lengthRatio * 0.1 +
@@ -503,14 +533,15 @@ export class EnhancedVectorStore {
       }
     });
 
-    // 2. 如果有标题相似度高的文档，直接使用完整文档内容
+    // 2. 获取标题相似度高的文档（完整内容）
+    let titleSimilarResults: Array<{ document: Document; score: number }> = [];
+    const titleHitDocumentIds = new Set<string>();
+
     if (titleSimilarDocuments.length > 0) {
       console.log(
         `[EnhancedVectorStore] 检测到标题相似度高的文档，使用完整文档内容`,
       );
 
-      const titleSimilarResults: Array<{ document: Document; score: number }> =
-        [];
       for (const docInfo of titleSimilarDocuments) {
         const fullDocument = this.mergeChunksToFullDocument(
           docInfo.documentId,
@@ -518,34 +549,26 @@ export class EnhancedVectorStore {
         );
         titleSimilarResults.push({
           document: fullDocument,
-          score: Math.max(docInfo.similarity, 0.6), // 保底分数0.6
+          score: Math.max(docInfo.similarity, 0.7), // 保底分数0.7
         });
+        titleHitDocumentIds.add(docInfo.documentId);
       }
 
-      // 排序并返回前k个结果，应用minScore阈值
-      const sortedResults = titleSimilarResults.sort(
-        (a, b) => b.score - a.score,
-      );
-
-      console.log(`[EnhancedVectorStore] 标题相关检索结果（前${k}个）:`);
-      sortedResults.slice(0, k).forEach((result, index) => {
+      console.log(`[EnhancedVectorStore] 标题相关检索结果:`);
+      titleSimilarResults.forEach((result, index) => {
         console.log(
           `[EnhancedVectorStore]   ${index + 1}. 得分: ${result.score.toFixed(4)}, 内容: ${result.document.pageContent.substring(0, 50)}...`,
         );
       });
-
-      return sortedResults.filter((s) => s.score >= minScore).slice(0, k);
     }
 
-    // 3. 如果没有标题相似度高的文档，使用常规的chunk检索
-    console.log(
-      `[EnhancedVectorStore] 未检测到标题相似度高的文档，使用常规chunk检索`,
-    );
+    // 3. 对没有命中标题的文档执行常规chunk检索
+    console.log(`[EnhancedVectorStore] 对未命中标题的文档执行常规chunk检索`);
 
     // 并行执行两种检索
     const [semanticResults, keywordResults] = await Promise.all([
-      this.similaritySearch(query, k * 4, minScore * 0.8),
-      this.keywordSearch(query, k * 4, minScore * 0.8),
+      this.similaritySearch(query, k * 4, minScore * 0.8, titleHitDocumentIds),
+      this.keywordSearch(query, k * 4, minScore * 0.8, titleHitDocumentIds),
     ]);
 
     console.log(
@@ -562,9 +585,19 @@ export class EnhancedVectorStore {
       semanticWeight,
     );
 
-    const sortedResults = fusedResults.sort((a, b) => b.score - a.score);
+    // 过滤掉已经在标题命中中的文档
+    const filteredChunkResults = fusedResults.filter((result) => {
+      const documentId = result.document.metadata?.documentId;
+      return documentId ? !titleHitDocumentIds.has(documentId) : true;
+    });
 
-    console.log(`[EnhancedVectorStore] 混合检索结果（前${k}个）:`);
+    // 合并标题结果和chunk检索结果
+    const allResults = [...titleSimilarResults, ...filteredChunkResults];
+
+    // 排序
+    const sortedResults = allResults.sort((a, b) => b.score - a.score);
+
+    console.log(`[EnhancedVectorStore] 综合检索结果（前${k}个）:`);
     sortedResults.slice(0, k).forEach((result, index) => {
       console.log(
         `[EnhancedVectorStore]   ${index + 1}. 得分: ${result.score.toFixed(4)}, 内容: ${result.document.pageContent.substring(0, 50)}...`,
