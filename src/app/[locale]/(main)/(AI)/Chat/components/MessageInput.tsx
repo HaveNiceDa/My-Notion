@@ -57,7 +57,7 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="border border-border rounded-2xl shadow-sm bg-background py-4 px-4">
+    <div className="border border-border rounded-2xl shadow-sm bg-background pt-4 px-4 pb-1">
       <Textarea
         value={input}
         onChange={(e) => onInputChange(e.target.value)}
@@ -68,19 +68,19 @@ export const MessageInput = ({
           className,
         )}
       />
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between -ml-2">
         <div className="flex items-center gap-1">
           <Button
-            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-2"
             onClick={() => toast.info(t("featureUnderDevelopment"))}
           >
-            <Plus />
+            <Plus className="h-5 w-5" />
           </Button>
           <Button
-            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-2"
             onClick={() => toast.info(t("featureUnderDevelopment"))}
           >
-            <Settings />
+            <Settings className="h-5 w-5" />
           </Button>
         </div>
         <div className="flex items-center gap-1">
@@ -89,7 +89,7 @@ export const MessageInput = ({
               <TooltipTrigger asChild>
                 <Button
                   className={cn(
-                    "rounded-full transition-all duration-200 p-3 bg-transparent",
+                    "rounded-full transition-all duration-200 p-2 bg-transparent",
                     knowledgeBaseEnabled
                       ? "hover:bg-blue-200 text-blue-600"
                       : "hover:bg-muted text-muted-foreground",
@@ -120,7 +120,7 @@ export const MessageInput = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                className="hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3 bg-transparent"
+                className="hover:bg-muted text-foreground rounded-full transition-all duration-200 p-2 bg-transparent"
                 variant="ghost"
               >
                 <Bot className="h-5 w-5" />
@@ -146,7 +146,7 @@ export const MessageInput = ({
           <Button
             onClick={onSend}
             disabled={!input.trim()}
-            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-2"
           >
             <Send className="h-5 w-5 rounded-full" />
           </Button>
