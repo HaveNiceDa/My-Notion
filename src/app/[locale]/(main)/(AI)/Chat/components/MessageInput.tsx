@@ -57,14 +57,14 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="border border-border rounded-2xl shadow-sm bg-background py-2 px-2">
+    <div className="border border-border rounded-2xl shadow-sm bg-background py-4 px-4">
       <Textarea
         value={input}
         onChange={(e) => onInputChange(e.target.value)}
         onKeyPress={onKeyPress}
         placeholder={t("useAIToHandleTasks")}
         className={cn(
-          "w-full px-0 py-0 border-0 rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none bg-transparent",
+          "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none bg-transparent",
           className,
         )}
       />
