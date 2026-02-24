@@ -347,16 +347,6 @@ const AIPage = () => {
     }
   }, [user]);
 
-  const handleKeyPress = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        handleSend();
-      }
-    },
-    [handleSend],
-  );
-
   const createNewConversation = useCallback(() => {
     router.push(pathname);
     setConversationId(null);
@@ -496,7 +486,6 @@ const AIPage = () => {
                 input={input}
                 onInputChange={setInput}
                 onSend={handleSend}
-                onKeyPress={handleKeyPress}
               />
             </div>
           ) : (
@@ -517,7 +506,6 @@ const AIPage = () => {
                     input={input}
                     onInputChange={setInput}
                     onSend={handleSend}
-                    onKeyPress={handleKeyPress}
                     conversationId={conversationId}
                   />
                 </div>

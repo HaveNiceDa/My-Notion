@@ -9,15 +9,13 @@ import { MessageInput } from "./MessageInput";
 interface NewConversationLandingProps {
   input: string;
   onInputChange: (value: string) => void;
-  onSend: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onSend: () => Promise<void>;
 }
 
 export const NewConversationLanding = ({
   input,
   onInputChange,
   onSend,
-  onKeyPress,
 }: NewConversationLandingProps) => {
   const t = useTranslations("AI");
 
@@ -44,7 +42,6 @@ export const NewConversationLanding = ({
               input={input}
               onInputChange={onInputChange}
               onSend={onSend}
-              onKeyPress={onKeyPress}
             />
           </div>
 

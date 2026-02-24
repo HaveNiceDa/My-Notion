@@ -24,6 +24,7 @@ import {
   AIModel,
 } from "@/src/lib/store/use-ai-model-store";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
+import { useState, useCallback } from "react";
 
 const displayNames: Record<AIModel, string> = {
   "qwen-plus": "Qwen Plus",
@@ -34,8 +35,7 @@ const displayNames: Record<AIModel, string> = {
 interface MessageInputProps {
   input: string;
   onInputChange: (value: string) => void;
-  onSend: () => void;
-  onKeyPress: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onSend: () => Promise<void>;
   className?: string;
   conversationId?: string | null;
 }
@@ -44,29 +44,47 @@ export const MessageInput = ({
   input,
   onInputChange,
   onSend,
-  onKeyPress,
   className,
   conversationId,
 }: MessageInputProps) => {
   const t = useTranslations("AI");
   const { model, setModel } = useAIModelStore();
   const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
+  const [isSending, setIsSending] = useState(false);
 
   const getModelDisplayName = (modelName: AIModel) => {
     return displayNames[modelName] || modelName;
   };
+
+  const handleSend = useCallback(async () => {
+    if (isSending || !input.trim()) return;
+    setIsSending(true);
+    try {
+      await onSend();
+    } finally {
+      setIsSending(false);
+    }
+  }, [isSending, input, onSend]);
+
+  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }, [handleSend]);
 
   return (
     <div className="border border-border rounded-2xl shadow-sm bg-background pt-4 px-4 pb-1">
       <Textarea
         value={input}
         onChange={(e) => onInputChange(e.target.value)}
-        onKeyPress={onKeyPress}
+        onKeyDown={handleKeyPress}
         placeholder={t("useAIToHandleTasks")}
+        disabled={isSending}
         className={cn(
-          "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none bg-transparent",
-          className,
-        )}
+            "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[80px] text-lg overflow-y-auto resize-none bg-transparent",
+            className,
+          )}
       />
       <div className="flex items-center justify-between -ml-2">
         <div className="flex items-center gap-1">
@@ -144,8 +162,8 @@ export const MessageInput = ({
           </DropdownMenu>
 
           <Button
-            onClick={onSend}
-            disabled={!input.trim()}
+            onClick={handleSend}
+            disabled={!input.trim() || isSending}
             className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0"
           >
             <Send className="h-5 w-5 rounded-full" />
