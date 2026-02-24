@@ -57,96 +57,101 @@ export const MessageInput = ({
   };
 
   return (
-    <div className="relative">
+    <div className="border border-border rounded-2xl shadow-sm bg-background py-2 px-2">
       <Textarea
         value={input}
         onChange={(e) => onInputChange(e.target.value)}
         onKeyPress={onKeyPress}
         placeholder={t("useAIToHandleTasks")}
         className={cn(
-          "w-full px-5 py-4 pr-44 border border-border rounded-2xl shadow-sm focus:ring-2 focus:ring-ring focus:border-transparent min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none",
+          "w-full px-0 py-0 border-0 rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[100px] max-h-[300px] text-lg overflow-y-auto resize-none bg-transparent",
           className,
         )}
       />
-      <Button
-        className="absolute left-2 bottom-1 bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
-        onClick={() => toast.info(t("featureUnderDevelopment"))}
-      >
-        <Plus />
-      </Button>
-      <Button
-        className="absolute left-10 bottom-1 bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
-        onClick={() => toast.info(t("featureUnderDevelopment"))}
-      >
-        <Settings />
-      </Button>
-
-      <TooltipProvider>
-        <Tooltip delayDuration={1}>
-          <TooltipTrigger asChild>
-            <Button
-              className={cn(
-                "absolute right-24 bottom-1 rounded-full transition-all duration-200 p-3 bg-background",
-                knowledgeBaseEnabled
-                  ? "hover:bg-blue-200 text-blue-600"
-                  : " hover:bg-muted text-muted-foreground",
-              )}
-              onClick={() => {
-                toggleKnowledgeBase();
-                toast.info(
-                  knowledgeBaseEnabled
-                    ? t("knowledgeBaseDisabled")
-                    : t("knowledgeBaseEnabled"),
-                );
-              }}
-              title={
-                knowledgeBaseEnabled
-                  ? t("knowledgeBaseEnabled")
-                  : t("knowledgeBaseDisabled")
-              }
-            >
-              <Database className="h-5 w-5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{t("knowledgeBaseTooltip")}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1">
           <Button
-            className="absolute right-12 bottom-1 hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
-            variant="ghost"
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+            onClick={() => toast.info(t("featureUnderDevelopment"))}
           >
-            <Bot className="h-5 w-5" />
+            <Plus />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          {AI_MODELS.map((m) => (
-            <DropdownMenuItem
-              key={m}
-              onClick={() => setModel(m)}
-              className={cn(
-                "cursor-pointer flex items-center justify-between",
-                model === m && "bg-muted font-medium",
-              )}
-            >
-              <span>{getModelDisplayName(m)}</span>
-              {model === m && <Check className="h-4 w-4" />}
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <Button
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+            onClick={() => toast.info(t("featureUnderDevelopment"))}
+          >
+            <Settings />
+          </Button>
+        </div>
+        <div className="flex items-center gap-1">
+          <TooltipProvider>
+            <Tooltip delayDuration={1}>
+              <TooltipTrigger asChild>
+                <Button
+                  className={cn(
+                    "rounded-full transition-all duration-200 p-3 bg-transparent",
+                    knowledgeBaseEnabled
+                      ? "hover:bg-blue-200 text-blue-600"
+                      : "hover:bg-muted text-muted-foreground",
+                  )}
+                  onClick={() => {
+                    toggleKnowledgeBase();
+                    toast.info(
+                      knowledgeBaseEnabled
+                        ? t("knowledgeBaseDisabled")
+                        : t("knowledgeBaseEnabled"),
+                    );
+                  }}
+                  title={
+                    knowledgeBaseEnabled
+                      ? t("knowledgeBaseEnabled")
+                      : t("knowledgeBaseDisabled")
+                  }
+                >
+                  <Database className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("knowledgeBaseTooltip")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
 
-      <Button
-        onClick={onSend}
-        disabled={!input.trim()}
-        className="absolute right-2 bottom-1 bg-background hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
-      >
-        <Send className="h-5 w-5 rounded-full" />
-      </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                className="hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3 bg-transparent"
+                variant="ghost"
+              >
+                <Bot className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {AI_MODELS.map((m) => (
+                <DropdownMenuItem
+                  key={m}
+                  onClick={() => setModel(m)}
+                  className={cn(
+                    "cursor-pointer flex items-center justify-between",
+                    model === m && "bg-muted font-medium",
+                  )}
+                >
+                  <span>{getModelDisplayName(m)}</span>
+                  {model === m && <Check className="h-4 w-4" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            onClick={onSend}
+            disabled={!input.trim()}
+            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 p-3"
+          >
+            <Send className="h-5 w-5 rounded-full" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
