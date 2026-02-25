@@ -173,7 +173,14 @@
   },
   "common": {
     "saved": "保存成功！",
-    "saving": "保存中..."
+    "saving": "保存中...",
+    "settings": "設定",
+    "userProfile": "用戶資料",
+    "changeAvatar": "更換頭像",
+    "fullName": "全名",
+    "enterFullName": "輸入全名",
+    "save": "保存",
+    "logOut": "退出登錄"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "目前對話不能刪除",

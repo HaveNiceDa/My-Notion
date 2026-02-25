@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronsLeftRight } from "lucide-react";
+import { ChevronsLeftRight, User, LogOut } from "lucide-react";
 
 import {
   DropdownMenu,
@@ -9,12 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { SignOutButton, useUser } from "@clerk/clerk-react";
+import { useUser, useClerk } from "@clerk/clerk-react";
 import { Avatar } from "@/src/components/ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
+import { useTranslations } from "next-intl";
 
 export function UserItem() {
   const { user } = useUser();
+  const { openUserProfile, signOut } = useClerk();
+  const t = useTranslations();
 
   return (
     <DropdownMenu>
@@ -59,10 +62,18 @@ export function UserItem() {
         </div>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          className="w-full cursor-pointer text-muted-foreground"
-          asChild
+          className="w-full cursor-pointer flex items-center"
+          onClick={() => openUserProfile()}
         >
-          <SignOutButton>Log out</SignOutButton>
+          <User className="w-4 h-4 mr-2" />
+          {t('common.userProfile')}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="w-full cursor-pointer flex items-center"
+          onClick={() => signOut()}
+        >
+          <LogOut className="w-4 h-4 mr-2" />
+          {t('common.logOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

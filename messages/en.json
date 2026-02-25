@@ -173,7 +173,14 @@
   },
   "common": {
     "saved": "Saved successfully!",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "settings": "Settings",
+    "userProfile": "User Profile",
+    "changeAvatar": "Change Avatar",
+    "fullName": "Full Name",
+    "enterFullName": "Enter full name",
+    "save": "Save",
+    "logOut": "Log out"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "You cannot delete the current conversation",

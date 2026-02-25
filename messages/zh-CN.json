@@ -173,7 +173,14 @@
   },
   "common": {
     "saved": "保存成功！",
-    "saving": "保存中..."
+    "saving": "保存中...",
+    "settings": "设置",
+    "userProfile": "用户资料",
+    "changeAvatar": "更换头像",
+    "fullName": "全名",
+    "enterFullName": "输入全名",
+    "save": "保存",
+    "logOut": "退出登录"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "当前对话不能删除",
