@@ -85,7 +85,9 @@
     "failedToRestoreNote": "Failed to restore note",
     "deletingNote": "Deleting note...",
     "noteDeleted": "Note deleted!",
-    "failedToDeleteNote": "Failed to delete note"
+    "failedToDeleteNote": "Failed to delete note",
+    "selected": "selected",
+    "batchDelete": "Batch delete"
   },
   "DocumentList": {
     "noPagesAvailable": "No pages available"

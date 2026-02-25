@@ -274,6 +274,36 @@ export const remove = mutation({
 });
 
 /**
+ * 批量删除文档
+ * @param ids 文档ID数组
+ * @returns 删除的文档数量
+ */
+export const batchRemove = mutation({
+  args: { ids: v.array(v.id("documents")) },
+  handler: async (context, args) => {
+    const identity = await context.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const userId = identity.subject;
+    let deletedCount = 0;
+
+    for (const id of args.ids) {
+      const existingDocument = await context.db.get(id);
+
+      if (existingDocument && existingDocument.userId === userId) {
+        await context.db.delete(id);
+        deletedCount++;
+      }
+    }
+
+    return deletedCount;
+  },
+});
+
+/**
  * 获取搜索文档列表（未归档的文档）
  * @returns 未归档的文档列表，按创建时间倒序排列
  */

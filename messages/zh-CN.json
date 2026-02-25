@@ -85,7 +85,9 @@
     "failedToRestoreNote": "恢复笔记失败",
     "deletingNote": "正在删除笔记...",
     "noteDeleted": "笔记已删除！",
-    "failedToDeleteNote": "删除笔记失败"
+    "failedToDeleteNote": "删除笔记失败",
+    "selected": "已选择",
+    "batchDelete": "批量删除"
   },
   "DocumentList": {
     "noPagesAvailable": "暂无页面"

@@ -85,7 +85,9 @@
     "failedToRestoreNote": "恢復筆記失敗",
     "deletingNote": "正在刪除筆記...",
     "noteDeleted": "筆記已刪除！",
-    "failedToDeleteNote": "刪除筆記失敗"
+    "failedToDeleteNote": "刪除筆記失敗",
+    "selected": "已選擇",
+    "batchDelete": "批量刪除"
   },
   "DocumentList": {
     "noPagesAvailable": "沒有可用頁面"
