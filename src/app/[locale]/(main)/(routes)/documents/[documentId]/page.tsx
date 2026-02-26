@@ -50,6 +50,40 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
 
   const editorRef = useRef<EditorRef>(null);
   const watcherRef = useRef<any>(null);
+  const updateDebounceRef = useRef<{ timer: NodeJS.Timeout | null; pendingUpdate: { id: Id<'documents'>; content: string } | null }>({ timer: null, pendingUpdate: null });
+
+  // 防抖处理的更新函数
+  const debouncedUpdate = (id: Id<'documents'>, content: string) => {
+    // 清除之前的定时器
+    if (updateDebounceRef.current.timer) {
+      clearTimeout(updateDebounceRef.current.timer);
+    }
+
+    // 保存待更新的数据
+    updateDebounceRef.current.pendingUpdate = { id, content };
+
+    // 设置新的定时器
+    updateDebounceRef.current.timer = setTimeout(() => {
+      if (updateDebounceRef.current.pendingUpdate) {
+        const { id, content } = updateDebounceRef.current.pendingUpdate;
+        update({ id, content });
+        updateDebounceRef.current.pendingUpdate = null;
+      }
+    }, 1000); // 1秒防抖
+  };
+
+  // 强制更新所有待处理的更新
+  const flushUpdates = () => {
+    if (updateDebounceRef.current.pendingUpdate) {
+      const { id, content } = updateDebounceRef.current.pendingUpdate;
+      update({ id, content });
+      updateDebounceRef.current.pendingUpdate = null;
+    }
+    if (updateDebounceRef.current.timer) {
+      clearTimeout(updateDebounceRef.current.timer);
+      updateDebounceRef.current.timer = null;
+    }
+  };
 
   // 错误提示模态对话框状态
   const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -70,14 +104,13 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
 
     return () => {
       watcher.flush(documentId);
+      flushUpdates(); // 组件卸载时强制更新
     };
   }, [user, documentId]);
 
   const onChange = (content: string) => {
-    update({
-      id: documentId,
-      content,
-    });
+    // 使用防抖更新
+    debouncedUpdate(documentId, content);
 
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
