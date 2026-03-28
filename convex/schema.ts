@@ -61,7 +61,7 @@ export default defineSchema({
     documentId: v.id("documents"),
     /** chunk在文档中的索引位置 */
     chunkIndex: v.number(),
-    /** 1536维向量数组 */
+    /** 1024维向量数组 */
     embedding: v.array(v.number()),
     /** chunk的原始文本内容 */
     pageContent: v.string(),

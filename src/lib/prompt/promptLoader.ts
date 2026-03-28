@@ -47,8 +47,8 @@ class PromptLoader {
     // 确保检索结果按相关性排序
     const sortedResults = [...searchResults].sort((a, b) => b.score - a.score);
     
-    // 过滤掉相关性低于0.7的文档
-    const relevantResults = sortedResults.filter(result => result.score >= 0.7);
+    // 过滤掉相关性低于0.6的文档
+    const relevantResults = sortedResults.filter(result => result.score >= 0.6);
     console.log(`[PromptLoader] 过滤后相关文档数量: ${relevantResults.length}`);
 
     // 构建上下文

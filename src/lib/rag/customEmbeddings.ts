@@ -1,5 +1,6 @@
 import { Embeddings } from "@langchain/core/embeddings";
 import { AsyncCallerParams } from "@langchain/core/utils/async_caller";
+import { AlibabaTongyiEmbeddings } from "@langchain/community/embeddings/alibaba_tongyi";
 
 /**
  * LRU缓存实现
@@ -44,14 +45,22 @@ class LRUCache<K, V> {
 }
 
 /**
- * 自定义Embeddings类，通过内部API路由调用embeddings服务
- * 避免CORS错误
+ * 自定义Embeddings类，根据环境选择不同的实现
+ * 在客户端通过API路由调用，在服务器端直接使用AlibabaTongyiEmbeddings
  */
 export class CustomEmbeddings extends Embeddings {
   private embeddingCache = new LRUCache<string, number[]>(100);
+  private alibabaEmbeddings?: AlibabaTongyiEmbeddings;
 
   constructor(params?: AsyncCallerParams) {
     super(params ?? {});
+    // 在服务器端初始化AlibabaTongyiEmbeddings
+    if (typeof window === 'undefined') {
+      this.alibabaEmbeddings = new AlibabaTongyiEmbeddings({
+        modelName: "text-embedding-v4",
+        apiKey: process.env.LLM_API_KEY,
+      });
+    }
   }
 
   /**
@@ -79,20 +88,28 @@ export class CustomEmbeddings extends Embeddings {
 
     if (uncachedTexts.length > 0) {
       console.log(`[CustomEmbeddings] 生成新的embeddings...`);
-      const response = await fetch("/api/embeddings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ inputs: uncachedTexts }),
-      });
+      let embeddings: number[][];
 
-      if (!response.ok) {
-        throw new Error(`Failed to get embeddings: ${response.statusText}`);
+      if (typeof window === 'undefined' && this.alibabaEmbeddings) {
+        // 服务器端直接使用AlibabaTongyiEmbeddings
+        embeddings = await this.alibabaEmbeddings.embedDocuments(uncachedTexts);
+      } else {
+        // 客户端通过API路由调用
+        const response = await fetch("/api/embeddings", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ inputs: uncachedTexts }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to get embeddings: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        embeddings = data.embeddings;
       }
-
-      const data = await response.json();
-      const embeddings = data.embeddings;
 
       embeddings.forEach((embedding: number[], i: number) => {
         const originalIndex = uncachedIndices[i];
@@ -116,20 +133,30 @@ export class CustomEmbeddings extends Embeddings {
     }
 
     console.log(`[CustomEmbeddings] 缓存未命中，生成新的embedding: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
-    const response = await fetch("/api/embeddings", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ input: text }),
-    });
+    let embedding: number[];
 
-    if (!response.ok) {
-      throw new Error(`Failed to get embedding: ${response.statusText}`);
+    if (typeof window === 'undefined' && this.alibabaEmbeddings) {
+      // 服务器端直接使用AlibabaTongyiEmbeddings
+      embedding = await this.alibabaEmbeddings.embedQuery(text);
+    } else {
+      // 客户端通过API路由调用
+      const response = await fetch("/api/embeddings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: text }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get embedding: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      embedding = data.embedding;
     }
 
-    const data = await response.json();
-    const embedding = data.embedding;
+    console.log(`[CustomEmbeddings] 生成的embedding维度: ${embedding.length}`);
     this.embeddingCache.set(text, embedding);
     console.log(`[CustomEmbeddings] 新embedding已缓存: ${text.substring(0, 50)}${text.length > 50 ? '...' : ''}`);
     return embedding;

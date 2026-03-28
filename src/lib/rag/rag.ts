@@ -4,8 +4,8 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { CustomEmbeddings } from "./customEmbeddings";
-import { EnhancedVectorStore } from "./enhancedVectorStore";
-import { ChunkManager } from "./chunkManager";
+import { QdrantVectorStoreWrapper } from "./qdrantVectorStore";
+import { QdrantVectorStoreClient } from "./qdrantVectorStoreClient";
 import { promptLoader } from "../prompt/promptLoader";
 import { useThinkingProcessStore } from "../store/use-thinking-process-store";
 
@@ -25,11 +25,8 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 
 console.log(`[RAG System] 文本分割器配置: chunkSize=250, chunkOverlap=40`);
 
-// 初始化ChunkManager单例
-const chunkManager = ChunkManager.getInstance();
-
-// EnhancedVectorStore缓存 - 用于常驻实例
-const vectorStoreCache = new Map<string, EnhancedVectorStore>(); // userId -> EnhancedVectorStore
+// QdrantVectorStore缓存 - 用于常驻实例
+const vectorStoreCache = new Map<string, any>(); // userId -> QdrantVectorStoreWrapper | QdrantVectorStoreClient
 
 // 提取文档文本内容 - 导出供其他模块使用
 export const extractTextFromDocument = (content: string): string => {
@@ -84,20 +81,15 @@ export const extractTextFromDocument = (content: string): string => {
 export const initKnowledgeBaseVectorStore = async (
   userId: string,
   skipDocumentCheck: boolean = false,
-): Promise<EnhancedVectorStore> => {
+): Promise<QdrantVectorStoreWrapper | QdrantVectorStoreClient> => {
   console.log(
     `[RAG System] ===== 初始化知识库向量存储 - 用户: ${userId} =====`,
   );
 
   // 检查缓存
   if (vectorStoreCache.has(userId)) {
-    console.log(`[RAG System] 使用缓存的EnhancedVectorStore实例`);
+    console.log(`[RAG System] 使用缓存的QdrantVectorStore实例`);
     const cachedStore = vectorStoreCache.get(userId)!;
-
-    // 刷新内存中的chunk
-    console.log(`[RAG System] 刷新内存中的chunk...`);
-    const chunks = await chunkManager.loadChunksForUser(userId);
-    cachedStore.documents = chunks;
 
     console.log(`[RAG System] ===== 向量存储初始化完成（使用缓存实例）=====`);
     return cachedStore;
@@ -114,36 +106,27 @@ export const initKnowledgeBaseVectorStore = async (
     );
     console.log(`[RAG System] 找到 ${documents.length} 个知识库文档`);
 
-    // 提取知识库文档ID列表
-    const knowledgeBaseDocumentIds = documents.map((doc) => doc._id);
-    console.log(
-      `[RAG System] 知识库文档ID列表: ${knowledgeBaseDocumentIds.join(", ")}`,
-    );
+    // 根据环境选择使用客户端或服务器端实现
+    let vectorStore;
+    if (typeof window === 'undefined') {
+      // 服务器端
+      console.log(`[RAG System] 创建QdrantVectorStoreWrapper实例...`);
+      vectorStore = new QdrantVectorStoreWrapper(
+        userId,
+        new CustomEmbeddings(),
+      );
+    } else {
+      // 客户端
+      console.log(`[RAG System] 创建QdrantVectorStoreClient实例...`);
+      vectorStore = new QdrantVectorStoreClient(
+        userId,
+        new CustomEmbeddings(),
+      );
+    }
 
-    console.log(`[RAG System] 创建EnhancedVectorStore实例...`);
-    const vectorStore = new EnhancedVectorStore(
-      convex,
-      userId,
-      new CustomEmbeddings(),
-    );
-
-    console.log(`[RAG System] 加载内存中的chunk...`);
-    // 从ChunkManager加载chunk
-    const chunks = await chunkManager.loadChunksForUser(userId);
-    vectorStore.documents = chunks;
-    console.log(
-      `[RAG System] 加载完成，共 ${vectorStore.documents.length} 个向量`,
-    );
-
-    // 过滤向量数据，只保留知识库文档的向量
-    console.log(`[RAG System] 开始过滤向量数据...`);
-    vectorStore.documents = vectorStore.documents.filter((doc) => {
-      const documentId = doc.metadata?.documentId;
-      return knowledgeBaseDocumentIds.includes(documentId);
-    });
-    console.log(
-      `[RAG System] 过滤完成，保留 ${vectorStore.documents.length} 个知识库向量`,
-    );
+    // 确保collection存在
+    await vectorStore.ensureCollectionExists();
+    console.log(`[RAG System] Qdrant collection 准备就绪`);
 
     if (!skipDocumentCheck) {
       console.log(`[RAG System] 检查文档是否需要更新...`);
@@ -177,11 +160,8 @@ export const initKnowledgeBaseVectorStore = async (
                 embedding: embeddings[index],
               }));
 
-              console.log(`[RAG System] 保存chunks到Convex...`);
+              console.log(`[RAG System] 保存chunks到Qdrant...`);
               await vectorStore.addDocumentChunks(userId, doc._id, chunks);
-
-              // 刷新内存中的chunk
-              await chunkManager.refreshChunksForUser(userId);
 
               console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
             } else {
@@ -193,7 +173,7 @@ export const initKnowledgeBaseVectorStore = async (
     }
 
     // 缓存向量存储实例
-    vectorStoreCache.set(userId, vectorStore);
+    vectorStoreCache.set(userId, vectorStore as any);
     console.log(`[RAG System] ===== 向量存储初始化完成（新创建实例）=====`);
 
     return vectorStore;
@@ -361,7 +341,7 @@ export const runRAGQuery = async (
 
       // 添加思考过程：检索相关文档
       if (conversationId) {
-        const totalDocs = vectorStore.documents.length;
+        const totalDocs = await vectorStore.getDocumentsCount();
         const docDetails =
           searchResults.length > 0
             ? `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤并排序，得到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
@@ -574,7 +554,7 @@ export const runRAGQueryStream = async (
 
       // 添加思考过程：检索相关文档
       if (conversationId) {
-        const totalDocs = vectorStore.documents.length;
+        const totalDocs = await vectorStore.getDocumentsCount();
         const docDetails =
           searchResults.length > 0
             ? `检索了${totalDocs}篇文档，根据${minScore}阈值筛选过滤并排序，得到${searchResults.length}个相关文档，相关性分数分别为${searchResults.map((r) => r.score.toFixed(2)).join(", ")}`
@@ -700,10 +680,9 @@ export const runRAGQueryStream = async (
 // 清除向量存储缓存
 export const clearVectorStoreCache = (userId: string): void => {
   console.log(`[RAG System] 清除向量存储缓存 - 用户: ${userId}`);
-  chunkManager.clearChunksForUser(userId);
-  // 同时清除EnhancedVectorStore实例缓存
+  // 清除QdrantVectorStore实例缓存
   vectorStoreCache.delete(userId);
-  console.log(`[RAG System] 已清除EnhancedVectorStore实例缓存`);
+  console.log(`[RAG System] 已清除QdrantVectorStore实例缓存`);
 };
 
 // 从知识库中移除文档并清除相关向量数据
@@ -713,18 +692,15 @@ export const removeDocumentFromKnowledgeBase = async (
 ): Promise<void> => {
   console.log(`[RAG System] 从知识库中移除文档: ${documentId}`);
 
-  // 直接调用Convex API删除数据库中的chunks
   try {
-    await convex.mutation(api.vectorStore.deleteDocumentChunks, {
-      documentId: documentId as any,
-    });
-    console.log(`[RAG System] 已从数据库中删除文档 ${documentId} 的chunks`);
+    // 初始化向量存储
+    const vectorStore = await initKnowledgeBaseVectorStore(userId, true);
+    // 使用 QdrantVectorStoreWrapper 的方法删除文档 chunks
+    await vectorStore.deleteDocumentChunks(documentId);
+    console.log(`[RAG System] 已从Qdrant中删除文档 ${documentId} 的chunks`);
   } catch (error) {
     console.error(`[RAG System] 删除文档 ${documentId} 的chunks时出错:`, error);
   }
-
-  // 刷新内存中的chunks
-  await chunkManager.refreshChunksForUser(userId);
 
   // 清除向量存储缓存
   clearVectorStoreCache(userId);
@@ -753,9 +729,6 @@ export const triggerDocumentUpdate = async (
       new CustomEmbeddings(),
       textSplitter,
     );
-
-    // 刷新内存中的chunk
-    await chunkManager.refreshChunksForUser(userId);
   } catch (error) {
     console.error("[RAG System] 异步更新文档时出错:", error);
   }

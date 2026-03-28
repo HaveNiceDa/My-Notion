@@ -295,18 +295,18 @@ notion/
 如果有任何问题或建议，欢迎联系项目维护者。
 
 Qdrant 向量数据库
-API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0._0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0
-Cluster Endpoint=https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io
+API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.\_0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0
+Cluster Endpoint=https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io:6333
 import {QdrantClient} from '@qdrant/js-client-rest';
 
 const client = new QdrantClient({
-    url: 'https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io:6333',
-    apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0._0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0',
+url: 'https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io:6333',
+apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.\_0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0',
 });
 
 try {
-    const result = await client.getCollections();
-    console.log('List of collections:', result.collections);
+const result = await client.getCollections();
+console.log('List of collections:', result.collections);
 } catch (err) {
-    console.error('Could not get collections:', err);
+console.error('Could not get collections:', err);
 }
