@@ -217,17 +217,66 @@ export class QdrantVectorStoreWrapper {
 
     console.log(`[QdrantVectorStore] 执行混合检索: ${query}`);
 
-    // 并行执行语义检索
-    const semanticResults = await this.similaritySearch(
-      query,
-      k * 4,
-      minScore * 0.8,
-    );
+    // 并行执行语义检索和关键词检索
+    const [semanticResults, keywordResults] = await Promise.all([
+      this.similaritySearch(query, k * 4, minScore * 0.8),
+      this.keywordSearch(query, k * 4, minScore * 0.8),
+    ]);
 
-    // 结果排序并限制数量
-    const sortedResults = semanticResults
-      .sort((a: any, b: any) => b.score - a.score)
-      .filter((s: any) => s.score >= minScore)
+    // 结果融合
+    const documentMap = new Map<
+      string,
+      { document: Document; semanticScore: number; keywordScore: number }
+    >();
+
+    // 处理语义检索结果
+    for (const result of semanticResults) {
+      const metadata = result.document.metadata || {};
+      const docKey =
+        (metadata.documentId || "") +
+        "_" +
+        result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
+      documentMap.set(docKey, {
+        document: result.document,
+        semanticScore: result.score,
+        keywordScore: 0,
+      });
+    }
+
+    // 处理关键词检索结果
+    for (const result of keywordResults) {
+      const metadata = result.document.metadata || {};
+      const docKey =
+        (metadata.documentId || "") +
+        "_" +
+        result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
+      if (documentMap.has(docKey)) {
+        const existing = documentMap.get(docKey)!;
+        existing.keywordScore = result.score;
+      } else {
+        documentMap.set(docKey, {
+          document: result.document,
+          semanticScore: 0,
+          keywordScore: result.score,
+        });
+      }
+    }
+
+    // 计算最终得分
+    const fusedResults = Array.from(documentMap.values()).map((item) => {
+      const score =
+        item.semanticScore * semanticWeight +
+        item.keywordScore * (1 - semanticWeight);
+      return {
+        document: item.document,
+        score,
+      };
+    });
+
+    // 排序并限制数量
+    const sortedResults = fusedResults
+      .sort((a, b) => b.score - a.score)
+      .filter((s) => s.score >= minScore)
       .slice(0, k);
 
     console.log(
@@ -299,8 +348,6 @@ export class QdrantVectorStoreWrapper {
     documentId: string,
     content: string,
     title: string,
-    embeddings: Embeddings,
-    textSplitter: RecursiveCharacterTextSplitter,
   ): Promise<void> {
     await this.ensureCollectionExists();
 
@@ -316,12 +363,19 @@ export class QdrantVectorStoreWrapper {
       return;
     }
 
+    // 创建文本分割器
+    const textSplitter = new RecursiveCharacterTextSplitter({
+      chunkSize: 250,
+      chunkOverlap: 40,
+      separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
+    });
+
     // 分割文档
     const splits = await textSplitter.splitText(plainTextContent);
     console.log(`[QdrantVectorStore] 文档分割为 ${splits.length} 个 chunks`);
 
     // 生成嵌入
-    const embeddingResults = await embeddings.embedDocuments(splits);
+    const embeddingResults = await this.embeddings.embedDocuments(splits);
 
     // 创建 chunks
     const chunks = splits.map((split, index) => ({

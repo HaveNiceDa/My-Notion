@@ -26,7 +26,10 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 console.log(`[RAG System] 文本分割器配置: chunkSize=250, chunkOverlap=40`);
 
 // QdrantVectorStore缓存 - 用于常驻实例
-const vectorStoreCache = new Map<string, any>(); // userId -> QdrantVectorStoreWrapper | QdrantVectorStoreClient
+const vectorStoreCache = new Map<
+  string,
+  QdrantVectorStoreWrapper | QdrantVectorStoreClient
+>(); // userId -> QdrantVectorStoreWrapper | QdrantVectorStoreClient
 
 // 提取文档文本内容 - 导出供其他模块使用
 export const extractTextFromDocument = (content: string): string => {
@@ -108,7 +111,7 @@ export const initKnowledgeBaseVectorStore = async (
 
     // 根据环境选择使用客户端或服务器端实现
     let vectorStore;
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       // 服务器端
       console.log(`[RAG System] 创建QdrantVectorStoreWrapper实例...`);
       vectorStore = new QdrantVectorStoreWrapper(
@@ -118,10 +121,7 @@ export const initKnowledgeBaseVectorStore = async (
     } else {
       // 客户端
       console.log(`[RAG System] 创建QdrantVectorStoreClient实例...`);
-      vectorStore = new QdrantVectorStoreClient(
-        userId,
-        new CustomEmbeddings(),
-      );
+      vectorStore = new QdrantVectorStoreClient(userId, new CustomEmbeddings());
     }
 
     // 确保collection存在
@@ -721,14 +721,7 @@ export const triggerDocumentUpdate = async (
 
   try {
     const vectorStore = await initKnowledgeBaseVectorStore(userId, true);
-    await vectorStore.updateDocument(
-      userId,
-      documentId,
-      content,
-      title,
-      new CustomEmbeddings(),
-      textSplitter,
-    );
+    await vectorStore.updateDocument(userId, documentId, content, title);
   } catch (error) {
     console.error("[RAG System] 异步更新文档时出错:", error);
   }

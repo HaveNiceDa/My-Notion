@@ -80,6 +80,11 @@ export async function POST(request: NextRequest) {
         );
         return NextResponse.json({ success: true, results: hybridResults });
 
+      case 'updateDocument':
+        const { documentId: updateDocId, content: docContent, title } = params;
+        await vectorStore.updateDocument(userId, updateDocId, docContent, title);
+        return NextResponse.json({ success: true });
+
       default:
         return NextResponse.json({ success: false, error: 'Invalid action' }, { status: 400 });
     }

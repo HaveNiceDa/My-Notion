@@ -137,41 +137,13 @@ export class QdrantVectorStoreClient {
     documentId: string,
     content: string,
     title: string,
-    embeddings: Embeddings,
-    textSplitter: RecursiveCharacterTextSplitter,
   ): Promise<void> {
-    // 在客户端处理文档更新
-    // 首先删除旧的文档 chunks
-    await this.deleteDocumentChunks(documentId);
-
-    // 提取明文内容
-    const plainTextContent = extractTextFromDocument(content);
-    if (!plainTextContent) {
-      console.log(
-        `[QdrantVectorStoreClient] 文档无有效内容，跳过更新: ${title}`,
-      );
-      return;
-    }
-
-    // 分割文档
-    const splits = await textSplitter.splitText(plainTextContent);
-    console.log(
-      `[QdrantVectorStoreClient] 文档分割为 ${splits.length} 个 chunks`,
-    );
-
-    // 生成嵌入
-    const embeddingResults = await embeddings.embedDocuments(splits);
-
-    // 创建 chunks
-    const chunks = splits.map((split, index) => ({
-      chunkIndex: index,
-      pageContent: split,
-      metadata: { documentId, title },
-      embedding: embeddingResults[index],
-    }));
-
-    // 添加新的 chunks
-    await this.addDocumentChunks(userId, documentId, chunks);
+    // 通过API调用在服务器端处理文档更新
+    await this.callApi("updateDocument", {
+      documentId,
+      content,
+      title,
+    });
     console.log(`[QdrantVectorStoreClient] 文档更新完成: ${title}`);
   }
 
