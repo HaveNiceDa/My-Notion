@@ -25,6 +25,15 @@ const runRAGQueryStream = async (
 ) => {
   try {
     console.log("[RAG System] 调用后端RAG流式API...");
+    
+    // 清除旧的思考过程步骤
+    if (conversationId) {
+      const { clearSteps } = useThinkingProcessStore.getState();
+      clearSteps();
+    }
+
+    // 不再显示加载中的思考过程，直接等待后端通过SSE推送标准的思考过程步骤
+
     // 调用后端API
     const response = await fetch("/api/rag-stream", {
       method: "POST",
@@ -55,6 +64,7 @@ const runRAGQueryStream = async (
     }
 
     const decoder = new TextDecoder();
+    let buffer = "";
 
     try {
       while (true) {
@@ -64,8 +74,63 @@ const runRAGQueryStream = async (
           await onComplete();
           break;
         }
+        
+        // 解码并处理响应
         const chunk = decoder.decode(value, { stream: true });
-        onChunk(chunk);
+        buffer += chunk;
+        
+        // 处理Server-Sent Events (SSE)
+        const lines = buffer.split('\n');
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line.startsWith('event: ')) {
+              const event = line.substring(7);
+              const dataLine = lines[i + 1];
+              if (dataLine && dataLine.startsWith('data: ')) {
+                const data = dataLine.substring(6);
+                
+                // 处理聊天响应
+                if (event === 'chatResponse') {
+                  // 这是聊天API的响应，直接传递给onChunk
+                  onChunk(data);
+                }
+                // 处理传统的无事件类型响应
+                else if (!event) {
+                  // 这是聊天API的响应，直接传递给onChunk
+                  onChunk(data);
+                }
+                // 处理其他事件，需要解析JSON
+                else {
+                  try {
+                    const parsedData = JSON.parse(data);
+                    
+                    // 处理思考过程步骤
+                    if (event === 'thinkingStep') {
+                      console.log("[RAG System] 接收到思考过程步骤:", parsedData);
+                      if (conversationId) {
+                        const { addStep } = useThinkingProcessStore.getState();
+                        addStep(parsedData.type, parsedData.content, parsedData.details);
+                      }
+                    }
+                    // 处理错误事件
+                    else if (event === 'error') {
+                      console.error("[RAG System] 接收到错误:", parsedData);
+                      onError(new Error(parsedData.message));
+                    }
+                    // 处理结束事件
+                    else if (event === 'end') {
+                      console.log("[RAG System] 接收到结束事件");
+                    }
+                  } catch (error) {
+                    console.error("[RAG System] 解析SSE数据出错:", error);
+                  }
+                }
+              }
+          }
+        }
+        
+        // 保留未处理的部分
+        buffer = lines[lines.length - 1];
       }
     } finally {
       reader.releaseLock();
@@ -266,12 +331,11 @@ const AIPage = () => {
         content: msg.content,
       }));
 
-      // 清空并重新加载思考过程步骤，确保在RAG查询开始前显示
+      // 清空思考过程步骤，等待后端通过SSE推送新的步骤
       if (currentConversationId) {
-        const { clearSteps, loadSteps } = useThinkingProcessStore.getState();
+        const { clearSteps } = useThinkingProcessStore.getState();
         clearSteps();
-        // 立即开始加载思考过程，不等待完成
-        loadSteps(currentConversationId);
+        // 不再立即加载思考过程，而是等待后端通过SSE推送新的步骤
       }
 
       let currentContent = "";

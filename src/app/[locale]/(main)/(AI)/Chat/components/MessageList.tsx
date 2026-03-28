@@ -65,13 +65,16 @@ export const MessageList = ({
     switch (type) {
       case "knowledge-base":
         return <Database className="h-4 w-4 text-blue-500" />;
+      case "query":
+        return <Brain className="h-4 w-4 text-purple-500" />;
       case "retrieval":
+        return <Search className="h-4 w-4 text-green-500" />;
       case "documents":
         return <Search className="h-4 w-4 text-green-500" />;
-      case "query":
-        return <MessageSquare className="h-4 w-4 text-purple-500" />;
       case "prompt":
         return <Zap className="h-4 w-4 text-yellow-500" />;
+      case "api":
+        return <Brain className="h-4 w-4 text-gray-500" />;
       default:
         return <Brain className="h-4 w-4 text-gray-500" />;
     }
@@ -177,6 +180,7 @@ export const MessageList = ({
                                 <>
                                   {(() => {
                                     try {
+                                      // 尝试解析详细信息
                                       const details = JSON.parse(step.details);
                                       return (
                                         <>
@@ -193,8 +197,9 @@ export const MessageList = ({
                                                       rel="noopener noreferrer"
                                                       className="block text-blue-600 underline hover:text-blue-800 transition-colors"
                                                     >
-                                                      {doc.title} (相关性:{" "}
-                                                      {doc.score})
+                                                      {doc.title} (相关性:{
+                                                        doc.score
+                                                      })
                                                     </a>
                                                   ),
                                                 )}
@@ -203,11 +208,12 @@ export const MessageList = ({
                                         </>
                                       );
                                     } catch (e) {
+                                      // 如果解析失败，直接显示详细信息
                                       return <p>{step.details}</p>;
                                     }
                                   })()}
                                 </>
-                              ) : step.type === "start" &&
+                              ) : step.type === "query" &&
                                 (step.details.includes(
                                   "开始进行文本embedding处理",
                                 ) ||

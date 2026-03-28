@@ -47,10 +47,13 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
       content,
       details,
     };
-    set((state) => ({
-      steps: [...state.steps, newStep],
-      isVisible: true,
-    }));
+    set((state) => {
+      const updatedSteps = [...state.steps, newStep].slice(0, 6); // 只保留前6个步骤
+      return {
+        steps: updatedSteps,
+        isVisible: true,
+      };
+    });
   },
   clearSteps: () => {
     set({ steps: [], isExpanded: true, isVisible: false, isLoaded: false });
@@ -62,7 +65,7 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
     set({ isVisible: visible });
   },
   loadSteps: async (conversationId: Id<"aiConversations">) => {
-    set({ isLoading: true });
+    set({ isLoading: true, steps: [] }); // 先清除旧的步骤
     try {
       const steps = await convex.query(api.aiChat.getThinkingSteps, {
         conversationId,
@@ -74,14 +77,16 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
         content: step.content,
         details: step.details,
       }));
+      // 只保留前6个思考过程步骤
+      const limitedSteps = formattedSteps.slice(0, 6);
       set({
-        steps: formattedSteps,
+        steps: limitedSteps,
         isVisible: true,
         isLoading: false,
         isLoaded: true,
       });
       console.log(
-        `[Thinking Process] 加载完成，找到 ${formattedSteps.length} 个思考过程步骤`,
+        `[Thinking Process] 加载完成，找到 ${formattedSteps.length} 个思考过程步骤，显示前6个`,
       );
     } catch (error) {
       console.error("Error loading thinking steps:", error);
@@ -109,10 +114,13 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
         content,
         details,
       };
-      set((state) => ({
-        steps: [...state.steps, newStep],
-        isVisible: true,
-      }));
+      set((state) => {
+        const updatedSteps = [...state.steps, newStep].slice(0, 6); // 只保留前6个步骤
+        return {
+          steps: updatedSteps,
+          isVisible: true,
+        };
+      });
     } catch (error) {
       console.error("Error adding thinking step to database:", error);
     }
