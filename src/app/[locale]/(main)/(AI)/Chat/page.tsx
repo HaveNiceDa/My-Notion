@@ -24,24 +24,54 @@ const runRAGQueryStream = async (
   conversationId: string | Id<"aiConversations">,
 ) => {
   try {
-    const { runRAGQueryStream: actualRunRAGQueryStream } =
-      await import("@/src/lib/rag/rag");
-    return await actualRunRAGQueryStream(
-      userId,
-      input,
-      conversationHistoryMessages,
-      onChunk,
-      onComplete,
-      onError,
-      model,
-      temperature,
-      searchType,
-      k,
-      knowledgeBaseEnabled,
-      conversationId as Id<"aiConversations">,
-    );
+    console.log("[RAG System] 调用后端RAG流式API...");
+    // 调用后端API
+    const response = await fetch("/api/rag-stream", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "runRAGQueryStream",
+        userId,
+        query: input,
+        conversationHistory: conversationHistoryMessages,
+        model,
+        minScore: temperature, // 这里temperature实际上是minScore
+        retrievalStrategy: searchType,
+        semanticWeight: 0.5,
+        knowledgeBaseEnabled,
+        conversationId,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to get RAG response: ${response.statusText}`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error("Response body is not readable");
+    }
+
+    const decoder = new TextDecoder();
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          console.log("[RAG System] 流式RAG查询完成");
+          await onComplete();
+          break;
+        }
+        const chunk = decoder.decode(value, { stream: true });
+        onChunk(chunk);
+      }
+    } finally {
+      reader.releaseLock();
+    }
   } catch (error) {
-    console.error("Error loading RAG module:", error);
+    console.error("Error in RAG API call:", error);
     onError(error);
   }
 };

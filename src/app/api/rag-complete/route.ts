@@ -252,24 +252,44 @@ const runRAGQuery = async (
 // 处理POST请求
 export async function POST(req: NextRequest) {
   try {
-    const { query, userId } = await req.json();
+    const body = await req.json();
+    const { action, ...params } = body;
 
-    if (!query || !userId) {
-      return NextResponse.json(
-        { error: "Missing query or userId" },
-        { status: 400 },
-      );
+    console.log(`[RAG API] 接收到请求: ${action}`);
+
+    switch (action) {
+      case "runRAGQuery":
+        const {
+          userId,
+          query,
+          model,
+          minScore,
+          retrievalStrategy,
+          semanticWeight,
+          conversationHistory,
+          knowledgeBaseEnabled,
+          conversationId,
+        } = params;
+
+        const answer = await runRAGQuery(
+          userId,
+          query,
+          model,
+          minScore,
+          retrievalStrategy,
+          semanticWeight,
+          conversationHistory,
+          knowledgeBaseEnabled,
+          conversationId,
+        );
+
+        return NextResponse.json({ success: true, answer });
+
+      default:
+        return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
     }
-
-    // 执行RAG查询
-    const answer = await runRAGQuery(userId, query);
-
-    return NextResponse.json({ answer });
-  } catch (error) {
-    console.error("Error in RAG API:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+  } catch (error: any) {
+    console.error("RAG API error:", error);
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

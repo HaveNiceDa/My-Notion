@@ -14,8 +14,37 @@ import { Toolbar } from "@/src/components/Toolbar";
 import { Cover } from "@/src/components/Cover";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ErrorModal } from "@/src/components/modals/error-modal";
-import { getDocumentWatcher } from "@/src/lib/rag/DocumentWatcher";
-import { triggerDocumentUpdate } from "@/src/lib/rag/rag";
+// 触发文档更新的API调用
+const triggerDocumentUpdate = async (
+  userId: string,
+  documentId: string,
+  content: string,
+  title: string,
+): Promise<void> => {
+  try {
+    const response = await fetch("/api/rag-documents", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action: "triggerDocumentUpdate",
+        userId,
+        documentId,
+        content,
+        title,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to trigger document update: ${response.statusText}`,
+      );
+    }
+  } catch (error) {
+    console.error("Error triggering document update:", error);
+  }
+};
 
 const Editor = dynamic(() => import("@/src/components/Editor"), {
   ssr: false,
@@ -49,11 +78,21 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const update = useMutation(api.documents.update);
 
   const editorRef = useRef<EditorRef>(null);
-  const watcherRef = useRef<any>(null);
-  const updateDebounceRef = useRef<{ timer: NodeJS.Timeout | null; pendingUpdate: { id: Id<'documents'>; content: string } | null }>({ timer: null, pendingUpdate: null });
+  const ragUpdateDebounceRef = useRef<{
+    timer: NodeJS.Timeout | null;
+    pendingUpdate: {
+      docId: Id<"documents">;
+      content: string;
+      title: string;
+    } | null;
+  }>({ timer: null, pendingUpdate: null });
+  const updateDebounceRef = useRef<{
+    timer: NodeJS.Timeout | null;
+    pendingUpdate: { id: Id<"documents">; content: string } | null;
+  }>({ timer: null, pendingUpdate: null });
 
   // 防抖处理的更新函数
-  const debouncedUpdate = (id: Id<'documents'>, content: string) => {
+  const debouncedUpdate = (id: Id<"documents">, content: string) => {
     // 清除之前的定时器
     if (updateDebounceRef.current.timer) {
       clearTimeout(updateDebounceRef.current.timer);
@@ -93,20 +132,52 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   // 将浏览器标题设置为文档标题
   useTitle(document?.title);
 
-  // 初始化 DocumentWatcher
-  useEffect(() => {
-    if (!user) return;
+  // 防抖处理的RAG更新函数
+  const debouncedRagUpdate = (
+    docId: Id<"documents">,
+    content: string,
+    title: string,
+  ) => {
+    // 清除之前的定时器
+    if (ragUpdateDebounceRef.current.timer) {
+      clearTimeout(ragUpdateDebounceRef.current.timer);
+    }
 
-    const watcher = getDocumentWatcher(5000, (docId, content, title) => {
+    // 保存待更新的数据
+    ragUpdateDebounceRef.current.pendingUpdate = { docId, content, title };
+
+    // 设置新的定时器
+    ragUpdateDebounceRef.current.timer = setTimeout(() => {
+      if (ragUpdateDebounceRef.current.pendingUpdate && user) {
+        const { docId, content, title } =
+          ragUpdateDebounceRef.current.pendingUpdate;
+        triggerDocumentUpdate(user.id, docId, content, title);
+        ragUpdateDebounceRef.current.pendingUpdate = null;
+      }
+    }, 5000); // 5秒防抖
+  };
+
+  // 强制更新所有待处理的RAG更新
+  const flushRagUpdates = () => {
+    if (ragUpdateDebounceRef.current.pendingUpdate && user) {
+      const { docId, content, title } =
+        ragUpdateDebounceRef.current.pendingUpdate;
       triggerDocumentUpdate(user.id, docId, content, title);
-    });
-    watcherRef.current = watcher;
+      ragUpdateDebounceRef.current.pendingUpdate = null;
+    }
+    if (ragUpdateDebounceRef.current.timer) {
+      clearTimeout(ragUpdateDebounceRef.current.timer);
+      ragUpdateDebounceRef.current.timer = null;
+    }
+  };
 
+  // 组件卸载时清理
+  useEffect(() => {
     return () => {
-      watcher.flush(documentId);
+      flushRagUpdates();
       flushUpdates(); // 组件卸载时强制更新
     };
-  }, [user, documentId]);
+  }, [documentId]);
 
   const onChange = (content: string) => {
     // 使用防抖更新
@@ -114,14 +185,14 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
 
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
-      watcherRef.current?.onDocumentChange(documentId, content, document.title);
+      debouncedRagUpdate(documentId, content, document.title);
     }
   };
 
   const onTitleChange = (title: string) => {
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
-      watcherRef.current?.onDocumentChange(documentId, document.content, title);
+      debouncedRagUpdate(documentId, document.content!, title);
     }
   };
 

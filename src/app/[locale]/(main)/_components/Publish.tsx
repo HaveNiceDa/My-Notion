@@ -130,20 +130,52 @@ export function Publish({ initialData }: PublishProps) {
       toast.success(!isInKnowledgeBase ? "已添加到知识库" : "已从知识库移除");
 
       // 处理向量数据
-      if (typeof window !== "undefined") {
-        // 动态导入以避免SSR问题
-        import("@/src/lib/rag/rag").then(({ clearVectorStoreCache, triggerDocumentUpdate, removeDocumentFromKnowledgeBase }) => {
-          if (user?.id) {
-            if (!isInKnowledgeBase && initialData.content) {
-              // 添加到知识库，触发文档的向量嵌入
-              triggerDocumentUpdate(user.id, initialData._id, initialData.content, initialData.title);
-            } else {
-              // 从知识库移除，清除相关向量数据
-              removeDocumentFromKnowledgeBase(user.id, initialData._id);
+      if (typeof window !== "undefined" && user?.id) {
+        if (!isInKnowledgeBase && initialData.content) {
+          // 添加到知识库，触发文档的向量嵌入
+          try {
+            const response = await fetch("/api/rag-documents", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                action: "triggerDocumentUpdate",
+                userId: user.id,
+                documentId: initialData._id,
+                content: initialData.content,
+                title: initialData.title,
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to add document to knowledge base: ${response.statusText}`);
             }
-            clearVectorStoreCache(user.id);
+          } catch (error) {
+            console.error("Error adding document to knowledge base:", error);
           }
-        });
+        } else {
+          // 从知识库移除，清除相关向量数据
+          try {
+            const response = await fetch("/api/rag-documents", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                action: "removeDocumentFromKnowledgeBase",
+                userId: user.id,
+                documentId: initialData._id,
+              }),
+            });
+            
+            if (!response.ok) {
+              throw new Error(`Failed to remove document from knowledge base: ${response.statusText}`);
+            }
+          } catch (error) {
+            console.error("Error removing document from knowledge base:", error);
+          }
+        }
       }
     } catch (error) {
       toast.error("切换知识库状态失败");

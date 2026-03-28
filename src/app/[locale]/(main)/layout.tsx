@@ -54,11 +54,21 @@ export default function MainLayout({
         setUserLoadingStatus(user.id, 'loading');
         console.log(`[MainLayout] 开始提前加载向量存储: userId=${user.id}`);
 
-        // 动态导入 rag 模块
-        const { initKnowledgeBaseVectorStore } = await import('@/src/lib/rag/rag');
+        // 调用后端API初始化知识库向量存储
+        const response = await fetch("/api/rag-documents", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            action: "initKnowledgeBaseVectorStore",
+            userId: user.id,
+          }),
+        });
         
-        // 初始化向量存储（快速模式，跳过文档检查）
-        await initKnowledgeBaseVectorStore(user.id, true);
+        if (!response.ok) {
+          throw new Error(`Failed to initialize knowledge base vector store: ${response.statusText}`);
+        }
         
         setUserLoadingStatus(user.id, 'success');
         console.log(`[MainLayout] 向量存储提前加载完成: userId=${user.id}`);

@@ -2,17 +2,8 @@ import { Embeddings } from "@langchain/core/embeddings";
 import { Document } from "@langchain/core/documents";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
-import { extractTextFromDocument } from "./rag";
 
-const computeContentHash = (content: string): string => {
-  let hash = 0;
-  for (let i = 0; i < content.length; i++) {
-    const char = content.charCodeAt(i);
-    hash = (hash << 5) - hash + char;
-    hash = hash & hash;
-  }
-  return Math.abs(hash).toString(16);
-};
+import { extractTextFromDocument } from "@/src/lib/utils/textExtractor";
 
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;
@@ -28,79 +19,105 @@ export class QdrantVectorStoreWrapper {
     this.collectionName = `user_${cleanUserId}_knowledge_base`;
 
     this.qdrantClient = new QdrantClient({
-      url: process.env.NEXT_PUBLIC_QDRANT_URL,
+      url: process.env.NEXT_PUBLIC_QDRANT_URL?.endsWith(":6333")
+        ? process.env.NEXT_PUBLIC_QDRANT_URL
+        : `${process.env.NEXT_PUBLIC_QDRANT_URL}:6333`,
       apiKey: process.env.NEXT_PUBLIC_QDRANT_API_KEY,
       checkCompatibility: false,
     });
   }
 
   async ensureCollectionExists(): Promise<void> {
-    try {
-      console.log(
-        `[QdrantVectorStore] 确保 collection 存在: ${this.collectionName}`,
-      );
-      console.log(
-        `[QdrantVectorStore] Qdrant URL: ${process.env.NEXT_PUBLIC_QDRANT_URL}`,
-      );
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2秒
 
-      // 验证 Qdrant 客户端配置
-      if (!process.env.NEXT_PUBLIC_QDRANT_URL) {
-        throw new Error("QDRANT_URL 环境变量未设置");
-      }
-
-      if (!process.env.NEXT_PUBLIC_QDRANT_API_KEY) {
-        throw new Error("QDRANT_API_KEY 环境变量未设置");
-      }
-
-      const collections = await this.qdrantClient.getCollections();
-      console.log(
-        `[QdrantVectorStore] 现有 collections: ${collections.collections.map((c) => c.name).join(", ")}`,
-      );
-
-      const exists = collections.collections.some(
-        (col) => col.name === this.collectionName,
-      );
-
-      if (!exists) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
         console.log(
-          `[QdrantVectorStore] 创建新的 collection: ${this.collectionName}`,
+          `[QdrantVectorStore] 确保 collection 存在: ${this.collectionName} (尝试 ${attempt}/${maxRetries})`,
         );
-        await this.qdrantClient.createCollection(this.collectionName, {
-          vectors: {
-            size: 1024, // 通义千问嵌入维度
-            distance: "Cosine",
-          },
-        });
-
-        // 为 metadata.documentId 创建关键字索引
-        await this.qdrantClient.createPayloadIndex(this.collectionName, {
-          field_name: "metadata.documentId",
-          field_schema: "keyword",
-        });
-
         console.log(
-          `[QdrantVectorStore] 创建了新的 collection: ${this.collectionName}，并为 metadata.documentId 创建了索引`,
-        );
-      } else {
-        console.log(
-          `[QdrantVectorStore] Collection 已存在: ${this.collectionName}`,
+          `[QdrantVectorStore] Qdrant URL: ${process.env.NEXT_PUBLIC_QDRANT_URL}`,
         );
 
-        // 尝试为已存在的 collection 添加索引（如果不存在）
-        try {
+        // 验证 Qdrant 客户端配置
+        if (!process.env.NEXT_PUBLIC_QDRANT_URL) {
+          throw new Error("QDRANT_URL 环境变量未设置");
+        }
+
+        if (!process.env.NEXT_PUBLIC_QDRANT_API_KEY) {
+          throw new Error("QDRANT_API_KEY 环境变量未设置");
+        }
+
+        const collections = await this.qdrantClient.getCollections();
+        console.log(
+          `[QdrantVectorStore] 现有 collections: ${collections.collections.map((c) => c.name).join(", ")}`,
+        );
+
+        const exists = collections.collections.some(
+          (col) => col.name === this.collectionName,
+        );
+
+        if (!exists) {
+          console.log(
+            `[QdrantVectorStore] 创建新的 collection: ${this.collectionName}`,
+          );
+          await this.qdrantClient.createCollection(this.collectionName, {
+            vectors: {
+              size: 1024, // 通义千问嵌入维度
+              distance: "Cosine",
+            },
+          });
+
+          // 为 metadata.documentId 创建关键字索引
           await this.qdrantClient.createPayloadIndex(this.collectionName, {
             field_name: "metadata.documentId",
             field_schema: "keyword",
           });
-          console.log(`[QdrantVectorStore] 为 metadata.documentId 创建了索引`);
-        } catch (error) {
-          // 索引可能已经存在，忽略错误
-          console.log(`[QdrantVectorStore] 索引可能已经存在，忽略错误:`, error);
+
+          console.log(
+            `[QdrantVectorStore] 创建了新的 collection: ${this.collectionName}，并为 metadata.documentId 创建了索引`,
+          );
+        } else {
+          console.log(
+            `[QdrantVectorStore] Collection 已存在: ${this.collectionName}`,
+          );
+
+          // 尝试为已存在的 collection 添加索引（如果不存在）
+          try {
+            await this.qdrantClient.createPayloadIndex(this.collectionName, {
+              field_name: "metadata.documentId",
+              field_schema: "keyword",
+            });
+            console.log(
+              `[QdrantVectorStore] 为 metadata.documentId 创建了索引`,
+            );
+          } catch (error) {
+            // 索引可能已经存在，忽略错误
+            console.log(
+              `[QdrantVectorStore] 索引可能已经存在，忽略错误:`,
+              error,
+            );
+          }
         }
+
+        // 成功完成，退出循环
+        return;
+      } catch (error) {
+        console.error(
+          `[QdrantVectorStore] 确保 collection 存在时出错 (尝试 ${attempt}/${maxRetries}):`,
+          error,
+        );
+
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // 否则，等待一段时间后重试
+        console.log(`[QdrantVectorStore] ${retryDelay}ms 后重试...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
-    } catch (error) {
-      console.error(`[QdrantVectorStore] 确保 collection 存在时出错:`, error);
-      throw error;
     }
   }
 
@@ -110,51 +127,79 @@ export class QdrantVectorStoreWrapper {
     minScore: number = 0.6,
     excludeDocumentIds?: Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
-    await this.ensureCollectionExists();
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2秒
 
-    console.log(`[QdrantVectorStore] 执行语义检索: ${query}`);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.ensureCollectionExists();
 
-    // 生成查询向量
-    const queryVector = await this.embeddings.embedQuery(query);
+        console.log(
+          `[QdrantVectorStore] 执行语义检索: ${query} (尝试 ${attempt}/${maxRetries})`,
+        );
 
-    // 构建过滤条件
-    const filter: any = {};
-    if (excludeDocumentIds && excludeDocumentIds.size > 0) {
-      filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
-        key: "metadata.documentId",
-        match: { value: id },
-      }));
+        // 生成查询向量
+        const queryVector = await this.embeddings.embedQuery(query);
+
+        // 构建过滤条件
+        const filter: any = {};
+        if (excludeDocumentIds && excludeDocumentIds.size > 0) {
+          filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
+            key: "metadata.documentId",
+            match: { value: id },
+          }));
+        }
+
+        // 使用 QdrantClient 进行搜索
+        const searchResults = await this.qdrantClient.search(
+          this.collectionName,
+          {
+            vector: queryVector,
+            limit: k * 2, // 获取更多结果以进行过滤
+            filter: filter.must_not ? filter : undefined,
+            params: {
+              hnsw_ef: 128,
+              exact: false,
+            },
+          },
+        );
+
+        // 转换结果
+        let filteredResults = searchResults.map((result: any) => ({
+          document: new Document({
+            pageContent: (result.payload?.pageContent as string) || "",
+            metadata: (result.payload?.metadata as any) || {},
+          }),
+          score: result.score || 0,
+        }));
+
+        // 应用最小得分阈值
+        filteredResults = filteredResults.filter(
+          (result: any) => result.score >= minScore,
+        );
+
+        console.log(
+          `[QdrantVectorStore] 语义检索找到 ${filteredResults.length} 个相关文档`,
+        );
+        return filteredResults;
+      } catch (error) {
+        console.error(
+          `[QdrantVectorStore] 执行语义检索时出错 (尝试 ${attempt}/${maxRetries}):`,
+          error,
+        );
+
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // 否则，等待一段时间后重试
+        console.log(`[QdrantVectorStore] ${retryDelay}ms 后重试...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
     }
-
-    // 使用 QdrantClient 进行搜索
-    const searchResults = await this.qdrantClient.search(this.collectionName, {
-      vector: queryVector,
-      limit: k * 2, // 获取更多结果以进行过滤
-      filter: filter.must_not ? filter : undefined,
-      params: {
-        hnsw_ef: 128,
-        exact: false,
-      },
-    });
-
-    // 转换结果
-    let filteredResults = searchResults.map((result: any) => ({
-      document: new Document({
-        pageContent: (result.payload?.pageContent as string) || "",
-        metadata: (result.payload?.metadata as any) || {},
-      }),
-      score: result.score || 0,
-    }));
-
-    // 应用最小得分阈值
-    filteredResults = filteredResults.filter(
-      (result: any) => result.score >= minScore,
-    );
-
-    console.log(
-      `[QdrantVectorStore] 语义检索找到 ${filteredResults.length} 个相关文档`,
-    );
-    return filteredResults;
+    // 确保函数总是返回一个数组
+    return [];
   }
 
   async keywordSearch(
@@ -163,48 +208,76 @@ export class QdrantVectorStoreWrapper {
     minScore: number = 0.6,
     excludeDocumentIds?: Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
-    await this.ensureCollectionExists();
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2秒
 
-    console.log(`[QdrantVectorStore] 执行关键词检索: ${query}`);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.ensureCollectionExists();
 
-    // 构建过滤条件
-    const filter: any = {};
-    if (excludeDocumentIds && excludeDocumentIds.size > 0) {
-      filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
-        key: "metadata.documentId",
-        match: { value: id },
-      }));
+        console.log(
+          `[QdrantVectorStore] 执行关键词检索: ${query} (尝试 ${attempt}/${maxRetries})`,
+        );
+
+        // 构建过滤条件
+        const filter: any = {};
+        if (excludeDocumentIds && excludeDocumentIds.size > 0) {
+          filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
+            key: "metadata.documentId",
+            match: { value: id },
+          }));
+        }
+
+        // 使用 Qdrant 的搜索功能（基于向量相似性）
+        // 注意：Qdrant 不直接支持纯关键词搜索，这里使用向量搜索作为替代
+        const queryVector = await this.embeddings.embedQuery(query);
+
+        const searchResults = await this.qdrantClient.search(
+          this.collectionName,
+          {
+            vector: queryVector,
+            limit: k * 2, // 获取更多结果以进行过滤
+            filter: filter.must_not ? filter : undefined,
+            params: {
+              hnsw_ef: 128,
+              exact: false,
+            },
+          },
+        );
+
+        let results = searchResults.map((result: any) => ({
+          document: new Document({
+            pageContent: (result.payload?.pageContent as string) || "",
+            metadata: (result.payload?.metadata as any) || {},
+          }),
+          score: result.score || 0,
+        }));
+
+        // 应用最小得分阈值
+        results = results.filter((result: any) => result.score >= minScore);
+
+        console.log(
+          `[QdrantVectorStore] 关键词检索找到 ${results.length} 个相关文档`,
+        );
+        return results;
+      } catch (error) {
+        console.error(
+          `[QdrantVectorStore] 执行关键词检索时出错 (尝试 ${attempt}/${maxRetries}):`,
+          error,
+        );
+
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // 否则，等待一段时间后重试
+        console.log(`[QdrantVectorStore] ${retryDelay}ms 后重试...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      }
     }
-
-    // 使用 Qdrant 的搜索功能（基于向量相似性）
-    // 注意：Qdrant 不直接支持纯关键词搜索，这里使用向量搜索作为替代
-    const queryVector = await this.embeddings.embedQuery(query);
-
-    const searchResults = await this.qdrantClient.search(this.collectionName, {
-      vector: queryVector,
-      limit: k * 2, // 获取更多结果以进行过滤
-      filter: filter.must_not ? filter : undefined,
-      params: {
-        hnsw_ef: 128,
-        exact: false,
-      },
-    });
-
-    let results = searchResults.map((result: any) => ({
-      document: new Document({
-        pageContent: (result.payload?.pageContent as string) || "",
-        metadata: (result.payload?.metadata as any) || {},
-      }),
-      score: result.score || 0,
-    }));
-
-    // 应用最小得分阈值
-    results = results.filter((result: any) => result.score >= minScore);
-
-    console.log(
-      `[QdrantVectorStore] 关键词检索找到 ${results.length} 个相关文档`,
-    );
-    return results;
+    // 确保函数总是返回一个数组
+    return [];
   }
 
   async hybridSearch(
@@ -213,76 +286,101 @@ export class QdrantVectorStoreWrapper {
     minScore: number = 0.6,
     semanticWeight: number = 0.5,
   ): Promise<Array<{ document: Document; score: number }>> {
-    await this.ensureCollectionExists();
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2秒
 
-    console.log(`[QdrantVectorStore] 执行混合检索: ${query}`);
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        await this.ensureCollectionExists();
 
-    // 并行执行语义检索和关键词检索
-    const [semanticResults, keywordResults] = await Promise.all([
-      this.similaritySearch(query, k * 4, minScore * 0.8),
-      this.keywordSearch(query, k * 4, minScore * 0.8),
-    ]);
+        console.log(
+          `[QdrantVectorStore] 执行混合检索: ${query} (尝试 ${attempt}/${maxRetries})`,
+        );
 
-    // 结果融合
-    const documentMap = new Map<
-      string,
-      { document: Document; semanticScore: number; keywordScore: number }
-    >();
+        // 并行执行语义检索和关键词检索
+        const [semanticResults, keywordResults] = await Promise.all([
+          this.similaritySearch(query, k * 4, minScore * 0.8),
+          this.keywordSearch(query, k * 4, minScore * 0.8),
+        ]);
 
-    // 处理语义检索结果
-    for (const result of semanticResults) {
-      const metadata = result.document.metadata || {};
-      const docKey =
-        (metadata.documentId || "") +
-        "_" +
-        result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
-      documentMap.set(docKey, {
-        document: result.document,
-        semanticScore: result.score,
-        keywordScore: 0,
-      });
-    }
+        // 结果融合
+        const documentMap = new Map<
+          string,
+          { document: Document; semanticScore: number; keywordScore: number }
+        >();
 
-    // 处理关键词检索结果
-    for (const result of keywordResults) {
-      const metadata = result.document.metadata || {};
-      const docKey =
-        (metadata.documentId || "") +
-        "_" +
-        result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
-      if (documentMap.has(docKey)) {
-        const existing = documentMap.get(docKey)!;
-        existing.keywordScore = result.score;
-      } else {
-        documentMap.set(docKey, {
-          document: result.document,
-          semanticScore: 0,
-          keywordScore: result.score,
+        // 处理语义检索结果
+        for (const result of semanticResults) {
+          const metadata = result.document.metadata || {};
+          const docKey =
+            (metadata.documentId || "") +
+            "_" +
+            result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
+          documentMap.set(docKey, {
+            document: result.document,
+            semanticScore: result.score,
+            keywordScore: 0,
+          });
+        }
+
+        // 处理关键词检索结果
+        for (const result of keywordResults) {
+          const metadata = result.document.metadata || {};
+          const docKey =
+            (metadata.documentId || "") +
+            "_" +
+            result.document.pageContent.substring(0, 150).replace(/\s+/g, "");
+          if (documentMap.has(docKey)) {
+            const existing = documentMap.get(docKey)!;
+            existing.keywordScore = result.score;
+          } else {
+            documentMap.set(docKey, {
+              document: result.document,
+              semanticScore: 0,
+              keywordScore: result.score,
+            });
+          }
+        }
+
+        // 计算最终得分
+        const fusedResults = Array.from(documentMap.values()).map((item) => {
+          const score =
+            item.semanticScore * semanticWeight +
+            item.keywordScore * (1 - semanticWeight);
+          return {
+            document: item.document,
+            score,
+          };
         });
+
+        // 排序并限制数量
+        const sortedResults = fusedResults
+          .sort((a, b) => b.score - a.score)
+          .filter((s) => s.score >= minScore)
+          .slice(0, k);
+
+        console.log(
+          `[QdrantVectorStore] 混合检索找到 ${sortedResults.length} 个相关文档`,
+        );
+        return sortedResults;
+      } catch (error) {
+        console.error(
+          `[QdrantVectorStore] 执行混合检索时出错 (尝试 ${attempt}/${maxRetries}):`,
+          error,
+        );
+
+        // 如果是最后一次尝试，抛出错误
+        if (attempt === maxRetries) {
+          throw error;
+        }
+
+        // 否则，等待一段时间后重试
+        console.log(`[QdrantVectorStore] ${retryDelay}ms 后重试...`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
       }
     }
-
-    // 计算最终得分
-    const fusedResults = Array.from(documentMap.values()).map((item) => {
-      const score =
-        item.semanticScore * semanticWeight +
-        item.keywordScore * (1 - semanticWeight);
-      return {
-        document: item.document,
-        score,
-      };
-    });
-
-    // 排序并限制数量
-    const sortedResults = fusedResults
-      .sort((a, b) => b.score - a.score)
-      .filter((s) => s.score >= minScore)
-      .slice(0, k);
-
-    console.log(
-      `[QdrantVectorStore] 混合检索找到 ${sortedResults.length} 个相关文档`,
-    );
-    return sortedResults;
+    // 确保函数总是返回一个数组
+    return [];
   }
 
   async addDocumentChunks(
