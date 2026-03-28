@@ -72,16 +72,7 @@ const MessageList = dynamic(
 );
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-// 请求缓存
-interface RequestCache {
-  conversations: Map<string, any[]>;
-  messages: Map<string, any[]>;
-}
 
-const requestCache: RequestCache = {
-  conversations: new Map<string, any[]>(),
-  messages: new Map<string, any[]>(),
-};
 
 interface Message {
   id: string;
@@ -322,23 +313,11 @@ const AIPage = () => {
     if (!user) return;
 
     try {
-      // 检查缓存
-      const cacheKey = user.id;
-      if (requestCache.conversations.has(cacheKey)) {
-        const cachedData = requestCache.conversations.get(cacheKey);
-        if (cachedData) {
-          setConversations(cachedData);
-          return;
-        }
-      }
-
       setIsLoadingConversations(true);
       const result = await convex.query(api.aiChat.getConversations, {
         userId: user.id,
       });
 
-      // 缓存结果
-      requestCache.conversations.set(cacheKey, result);
       setConversations(result);
     } catch (error) {
       console.error("Error loading conversations:", error);
@@ -367,20 +346,10 @@ const AIPage = () => {
 
         router.push(`?id=${convId}`);
 
-        // 检查缓存
-        const cacheKey = convId;
-        let messages: any[];
-
-        if (requestCache.messages.has(cacheKey)) {
-          const cachedMessages = requestCache.messages.get(cacheKey);
-          messages = cachedMessages || [];
-        } else {
-          messages = await convex.query(api.aiChat.getMessages, {
-            conversationId: convId,
-          });
-          // 缓存结果
-          requestCache.messages.set(cacheKey, messages);
-        }
+        // 直接从服务器获取消息
+        const messages = await convex.query(api.aiChat.getMessages, {
+          conversationId: convId,
+        });
 
         const formattedMessages: Message[] = messages.map((msg: any) => ({
           id: msg._id,
@@ -433,17 +402,12 @@ const AIPage = () => {
           userId: user.id,
         });
 
-        // 清除对话列表缓存，确保获取最新数据
-        requestCache.conversations.delete(user.id);
-
         await loadConversations();
 
         toast.success(t("conversationDeleted"));
       } catch (error) {
         console.error("Error deleting conversation:", error);
         toast.error(t("deleteFailed"));
-        // 清除缓存并重新加载，确保数据一致性
-        requestCache.conversations.delete(user.id);
         await loadConversations();
       }
     },

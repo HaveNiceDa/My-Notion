@@ -26,10 +26,14 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 console.log(`[RAG System] 文本分割器配置: chunkSize=250, chunkOverlap=40`);
 
 // QdrantVectorStore缓存 - 用于常驻实例
-const vectorStoreCache = new Map<
-  string,
-  QdrantVectorStoreWrapper | QdrantVectorStoreClient
->(); // userId -> QdrantVectorStoreWrapper | QdrantVectorStoreClient
+interface CachedVectorStore {
+  store: QdrantVectorStoreWrapper | QdrantVectorStoreClient;
+  timestamp: number;
+}
+
+const vectorStoreCache = new Map<string, CachedVectorStore>(); // userId -> CachedVectorStore
+const CACHE_MAX_AGE = 5 * 60 * 1000; // 5分钟
+const CACHE_MAX_SIZE = 10; // 最多缓存10个用户的向量存储
 
 // 提取文档文本内容 - 导出供其他模块使用
 export const extractTextFromDocument = (content: string): string => {
@@ -80,6 +84,42 @@ export const extractTextFromDocument = (content: string): string => {
   }
 };
 
+// 清理过期缓存
+const cleanupCache = () => {
+  const now = Date.now();
+  const toDelete: string[] = [];
+
+  // 找出过期的缓存项
+  vectorStoreCache.forEach((cached, userId) => {
+    if (now - cached.timestamp > CACHE_MAX_AGE) {
+      toDelete.push(userId);
+    }
+  });
+
+  // 删除过期缓存
+  for (let i = 0; i < toDelete.length; i++) {
+    const userId = toDelete[i];
+    vectorStoreCache.delete(userId);
+    console.log(`[RAG System] 清理过期缓存 - 用户: ${userId}`);
+  }
+
+  // 如果缓存大小超过限制，删除最旧的缓存项
+  if (vectorStoreCache.size > CACHE_MAX_SIZE) {
+    const sortedEntries: Array<[string, CachedVectorStore]> = [];
+    vectorStoreCache.forEach((cached, userId) => {
+      sortedEntries.push([userId, cached]);
+    });
+    sortedEntries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+
+    const excess = vectorStoreCache.size - CACHE_MAX_SIZE;
+    for (let i = 0; i < excess; i++) {
+      const userId = sortedEntries[i][0];
+      vectorStoreCache.delete(userId);
+      console.log(`[RAG System] 清理超出限制的缓存 - 用户: ${userId}`);
+    }
+  }
+};
+
 // 初始化知识库向量存储
 export const initKnowledgeBaseVectorStore = async (
   userId: string,
@@ -89,13 +129,18 @@ export const initKnowledgeBaseVectorStore = async (
     `[RAG System] ===== 初始化知识库向量存储 - 用户: ${userId} =====`,
   );
 
+  // 清理过期缓存
+  cleanupCache();
+
   // 检查缓存
   if (vectorStoreCache.has(userId)) {
     console.log(`[RAG System] 使用缓存的QdrantVectorStore实例`);
-    const cachedStore = vectorStoreCache.get(userId)!;
+    const cached = vectorStoreCache.get(userId)!;
+    // 更新缓存时间戳
+    cached.timestamp = Date.now();
 
     console.log(`[RAG System] ===== 向量存储初始化完成（使用缓存实例）=====`);
-    return cachedStore;
+    return cached.store;
   }
 
   try {
@@ -173,7 +218,10 @@ export const initKnowledgeBaseVectorStore = async (
     }
 
     // 缓存向量存储实例
-    vectorStoreCache.set(userId, vectorStore as any);
+    vectorStoreCache.set(userId, {
+      store: vectorStore as any,
+      timestamp: Date.now(),
+    });
     console.log(`[RAG System] ===== 向量存储初始化完成（新创建实例）=====`);
 
     return vectorStore;

@@ -428,15 +428,11 @@ export class QdrantVectorStoreWrapper {
     await this.ensureCollectionExists();
 
     try {
-      // 生成查询向量
-      const queryVector = await this.embeddings.embedQuery(
-        content.substring(0, 100),
-      );
-
+      // 直接查询是否存在该文档的任何向量
       const searchResults = await this.qdrantClient.search(
         this.collectionName,
         {
-          vector: queryVector,
+          vector: Array(1024).fill(0), // 使用零向量作为占位符
           limit: 1,
           filter: {
             must: [
