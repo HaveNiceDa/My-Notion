@@ -7,7 +7,6 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
-type RetrievalStrategy = "semantic" | "keyword" | "hybrid";
 
 const runRAGQueryStream = async (
   userId: string,
@@ -18,8 +17,6 @@ const runRAGQueryStream = async (
   onError: (error: any) => void,
   model: AIModel,
   temperature: number,
-  searchType: RetrievalStrategy,
-  k: number,
   knowledgeBaseEnabled: boolean,
   conversationId: string | Id<"aiConversations">,
 ) => {
@@ -47,8 +44,6 @@ const runRAGQueryStream = async (
         conversationHistory: conversationHistoryMessages,
         model,
         minScore: temperature, // 这里temperature实际上是minScore
-        retrievalStrategy: searchType,
-        semanticWeight: 0.5,
         knowledgeBaseEnabled,
         conversationId,
       }),
@@ -382,8 +377,6 @@ const AIPage = () => {
         },
         model,
         0.6,
-        "hybrid" as RetrievalStrategy,
-        0.5,
         knowledgeBaseEnabled,
         currentConversationId,
       );
