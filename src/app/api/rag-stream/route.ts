@@ -93,11 +93,14 @@ const runRAGQueryStream = async (
 
         // 步骤1: 检查知识库状态
         if (conversationId) {
+          const knowledgeBaseStatus = knowledgeBaseEnabled
+            ? `知识库已启用，准备执行RAG检索`
+            : `知识库已禁用，直接使用LLM原生能力`;
           await addThinkingStep(
             conversationId,
             "knowledge-base",
             "检查知识库状态",
-            `知识库已启用，准备执行RAG检索`,
+            knowledgeBaseStatus,
           );
           // 推送思考过程步骤到前端
           controller.enqueue(
@@ -105,7 +108,7 @@ const runRAGQueryStream = async (
               `event: thinkingStep\ndata: ${JSON.stringify({
                 type: "knowledge-base",
                 content: "检查知识库状态",
-                details: `知识库已启用，准备执行RAG检索`,
+                details: knowledgeBaseStatus,
               })}\n\n`,
             ),
           );
@@ -113,11 +116,14 @@ const runRAGQueryStream = async (
 
         // 步骤2: 用户Query处理
         if (conversationId) {
+          const queryProcessingDetails = knowledgeBaseEnabled
+            ? `用户输入: ${query}\n开始进行query embedding处理`
+            : `用户输入: ${query}`;
           await addThinkingStep(
             conversationId,
             "query",
             "用户Query处理",
-            `用户输入: ${query}\n开始进行query embedding处理`,
+            queryProcessingDetails,
           );
           // 推送思考过程步骤到前端
           controller.enqueue(
@@ -125,7 +131,7 @@ const runRAGQueryStream = async (
               `event: thinkingStep\ndata: ${JSON.stringify({
                 type: "query",
                 content: "用户Query处理",
-                details: `用户输入: ${query}\n开始进行query embedding处理`,
+                details: queryProcessingDetails,
               })}\n\n`,
             ),
           );
@@ -263,11 +269,14 @@ const runRAGQueryStream = async (
 
         // 步骤5: 生成动态提示词
         if (conversationId) {
+          const promptGenerationDetails = knowledgeBaseEnabled
+            ? "基于检索结果生成结构化提示词"
+            : "基于用户查询生成提示词";
           await addThinkingStep(
             conversationId,
             "prompt",
             "生成动态提示词",
-            "基于检索结果生成结构化提示词",
+            promptGenerationDetails,
           );
           // 推送思考过程步骤到前端
           controller.enqueue(
@@ -275,7 +284,7 @@ const runRAGQueryStream = async (
               `event: thinkingStep\ndata: ${JSON.stringify({
                 type: "prompt",
                 content: "生成动态提示词",
-                details: "基于检索结果生成结构化提示词",
+                details: promptGenerationDetails,
               })}\n\n`,
             ),
           );
