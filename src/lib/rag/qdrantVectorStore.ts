@@ -29,13 +29,6 @@ export class QdrantVectorStoreWrapper {
 
   async ensureCollectionExists(): Promise<void> {
     try {
-      console.log(
-        `[QdrantVectorStore] 确保 collection 存在: ${this.collectionName}`,
-      );
-      console.log(
-        `[QdrantVectorStore] Qdrant URL: ${process.env.NEXT_PUBLIC_QDRANT_URL}`,
-      );
-
       // 验证 Qdrant 客户端配置
       if (!process.env.NEXT_PUBLIC_QDRANT_URL) {
         throw new Error("QDRANT_URL 环境变量未设置");
@@ -46,18 +39,12 @@ export class QdrantVectorStoreWrapper {
       }
 
       const collections = await this.qdrantClient.getCollections();
-      console.log(
-        `[QdrantVectorStore] 现有 collections: ${collections.collections.map((c) => c.name).join(", ")}`,
-      );
 
       const exists = collections.collections.some(
         (col) => col.name === this.collectionName,
       );
 
       if (!exists) {
-        console.log(
-          `[QdrantVectorStore] 创建新的 collection: ${this.collectionName}`,
-        );
         await this.qdrantClient.createCollection(this.collectionName, {
           vectors: {
             size: 1024, // 通义千问嵌入维度
@@ -76,25 +63,15 @@ export class QdrantVectorStoreWrapper {
           field_name: "metadata.title",
           field_schema: "keyword",
         });
-
-        console.log(
-          `[QdrantVectorStore] 创建了新的 collection: ${this.collectionName}，并为 metadata.documentId 和 metadata.title 创建了索引`,
-        );
       } else {
-        console.log(
-          `[QdrantVectorStore] Collection 已存在: ${this.collectionName}`,
-        );
-
         // 尝试为已存在的 collection 添加索引（如果不存在）
         try {
           await this.qdrantClient.createPayloadIndex(this.collectionName, {
             field_name: "metadata.documentId",
             field_schema: "keyword",
           });
-          console.log(`[QdrantVectorStore] 为 metadata.documentId 创建了索引`);
-        } catch (error) {
+        } catch {
           // 索引可能已经存在，忽略错误
-          console.log(`[QdrantVectorStore] 索引可能已经存在，忽略错误:`, error);
         }
 
         // 尝试为已存在的 collection 添加 title 索引（如果不存在）
@@ -103,10 +80,8 @@ export class QdrantVectorStoreWrapper {
             field_name: "metadata.title",
             field_schema: "keyword",
           });
-          console.log(`[QdrantVectorStore] 为 metadata.title 创建了索引`);
-        } catch (error) {
+        } catch {
           // 索引可能已经存在，忽略错误
-          console.log(`[QdrantVectorStore] 索引可能已经存在，忽略错误:`, error);
         }
       }
     } catch (error) {
@@ -123,9 +98,6 @@ export class QdrantVectorStoreWrapper {
   ): Promise<Array<{ document: Document; score: number }>> {
     try {
       // 内部调用混合检索方法以提供更好的搜索结果
-      console.log(
-        `[QdrantVectorStore] similaritySearch 调用 hybridSearch: ${query}`,
-      );
       return await this.hybridSearch(query, k, minScore, excludeDocumentIds);
     } catch (error) {
       console.error(`[QdrantVectorStore] 执行语义检索时出错:`, error);
@@ -141,8 +113,6 @@ export class QdrantVectorStoreWrapper {
   ): Promise<Array<{ document: Document; score: number }>> {
     try {
       await this.ensureCollectionExists();
-
-      console.log(`[QdrantVectorStore] 执行语义检索: ${query}`);
 
       const queryVector = await this.embeddings.embedQuery(query);
 
@@ -190,7 +160,9 @@ export class QdrantVectorStoreWrapper {
             });
           }
         } else {
-          documentMap.set(`no_id_${Math.random()}`, {
+          // 使用时间戳和随机数组合避免 key 冲突
+          const uniqueKey = `no_id_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          documentMap.set(uniqueKey, {
             document,
             score: result.score || 0,
           });
@@ -202,9 +174,6 @@ export class QdrantVectorStoreWrapper {
         .sort((a, b) => b.score - a.score)
         .slice(0, k);
 
-      console.log(
-        `[QdrantVectorStore] 语义检索找到 ${filteredResults.length} 个相关文档`,
-      );
       return filteredResults;
     } catch (error) {
       console.error(`[QdrantVectorStore] 执行语义检索时出错:`, error);
@@ -221,10 +190,8 @@ export class QdrantVectorStoreWrapper {
       metadata: any;
       embedding: number[];
     }>,
-  ): Promise<string[]> {
+  ): Promise<void> {
     await this.ensureCollectionExists();
-
-    console.log(`[QdrantVectorStore] 添加文档 chunks: ${documentId}`);
 
     // 准备点数据
     const points = chunks.map((chunk, index) => ({
@@ -244,20 +211,10 @@ export class QdrantVectorStoreWrapper {
 
     // 批量上传点
     try {
-      console.log(
-        `[QdrantVectorStore] 上传 ${points.length} 个 chunks，第一个 chunk 的向量维度: ${points[0].vector.length}`,
-      );
-      console.log(`[QdrantVectorStore] 第一个 chunk 的 id: ${points[0].id}`);
-      console.log(
-        `[QdrantVectorStore] 第一个 chunk 的 pageContent 长度: ${points[0].payload.pageContent.length}`,
-      );
-
       await this.qdrantClient.upsert(this.collectionName, {
         wait: true,
         points,
       });
-
-      console.log(`[QdrantVectorStore] 成功添加 ${points.length} 个 chunks`);
     } catch (error: any) {
       console.error(`[QdrantVectorStore] 上传 chunks 时出错:`, error);
       console.error(
@@ -266,8 +223,6 @@ export class QdrantVectorStoreWrapper {
       );
       throw error;
     }
-
-    return points.map(() => "");
   }
 
   async updateDocument(
@@ -278,15 +233,12 @@ export class QdrantVectorStoreWrapper {
   ): Promise<void> {
     await this.ensureCollectionExists();
 
-    console.log(`[QdrantVectorStore] 更新文档: ${documentId}, ${title}`);
-
     // 首先删除旧的文档 chunks
     await this.deleteDocumentChunks(documentId);
 
     // 提取明文内容
     const plainTextContent = extractTextFromDocument(content);
     if (!plainTextContent) {
-      console.log(`[QdrantVectorStore] 文档无有效内容，跳过更新: ${title}`);
       return;
     }
 
@@ -299,7 +251,6 @@ export class QdrantVectorStoreWrapper {
 
     // 分割文档
     const splits = await textSplitter.splitText(plainTextContent);
-    console.log(`[QdrantVectorStore] 文档分割为 ${splits.length} 个 chunks`);
 
     // 生成嵌入
     const embeddingResults = await this.embeddings.embedDocuments(splits);
@@ -314,13 +265,10 @@ export class QdrantVectorStoreWrapper {
 
     // 添加新的 chunks
     await this.addDocumentChunks(userId, documentId, chunks);
-    console.log(`[QdrantVectorStore] 文档更新完成: ${title}`);
   }
 
   async deleteDocumentChunks(documentId: string): Promise<void> {
     await this.ensureCollectionExists();
-
-    console.log(`[QdrantVectorStore] 删除文档 chunks: ${documentId}`);
 
     try {
       // 使用正确的删除语法
@@ -337,7 +285,6 @@ export class QdrantVectorStoreWrapper {
         },
         wait: true,
       });
-      console.log(`[QdrantVectorStore] 成功删除文档 ${documentId} 的 chunks`);
     } catch (error: any) {
       console.error(`[QdrantVectorStore] 删除文档 chunks 时出错:`, error);
       console.error(
@@ -355,27 +302,22 @@ export class QdrantVectorStoreWrapper {
     await this.ensureCollectionExists();
 
     try {
-      // 直接查询是否存在该文档的任何向量
-      const searchResults = await this.qdrantClient.search(
-        this.collectionName,
-        {
-          vector: Array(1024).fill(0), // 使用零向量作为占位符
-          limit: 1,
-          filter: {
-            must: [
-              {
-                key: "metadata.documentId",
-                match: {
-                  value: documentId,
-                },
+      // 使用 count 方法检查文档是否存在
+      const countResult = await this.qdrantClient.count(this.collectionName, {
+        filter: {
+          must: [
+            {
+              key: "metadata.documentId",
+              match: {
+                value: documentId,
               },
-            ],
-          },
+            },
+          ],
         },
-      );
+      });
 
       // 如果没有找到文档，则需要重新嵌入
-      return searchResults.length === 0;
+      return countResult.count === 0;
     } catch (error) {
       console.error(`[QdrantVectorStore] 检查是否需要重新嵌入时出错:`, error);
       return true; // 出错时默认需要重新嵌入
