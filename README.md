@@ -35,8 +35,8 @@
 - 🔐 **用户认证**：使用 Clerk 实现安全的用户登录和注册
 - 🗄️ **数据存储**：使用 Convex 作为后端数据库，提供实时数据同步
 - 🤖 **AI 智能对话**：基于 RAG 技术的智能对话功能，利用用户文档作为知识库，提供精准的文档问答服务
-  - **已实现**：基于余弦相似度的向量检索 + 关键词检索的混合检索策略，动态提示词配置，AI思考过程可视化，用户隔离的持久化对话历史记录，流式响应体验，RAG动态增量更新
-  - **未来规划**：更高级的检索优化、多模态文档支持
+  - **已实现**：RAG 检索流程全部重构到后端，引入 Qdrant 向量数据库，基于余弦相似度的向量检索，动态提示词配置，AI思考过程可视化，用户隔离的持久化对话历史记录，流式响应体验，RAG动态增量更新
+  - **未来规划**：向量检索策略优化（分层和混合检索），支持多种格式文档检索（PDF、Markdown等），更高级的检索优化
 - 🎨 **响应式设计**：适配不同屏幕尺寸的现代 UI
 - 🌙 **主题色切换**：支持亮色和深色主题切换
 - 🌐 **全栈国际化架构**：Next.js 服务端渲染 + Clerk 鉴权认证 + Convex 实时数据 + Tailwind CSS + Shadcn 响应式设计，集成 next-intl 实现多语言支持（中、英、繁体已上线）
@@ -61,6 +61,7 @@
 
 - **Convex** - 实时后端数据库
 - **Edge Store** - 边缘存储服务
+- **Qdrant** - 向量数据库（用于 RAG 检索）
 
 ### AI/大语言模型
 
@@ -76,6 +77,7 @@
 - Convex 账号
 - Clerk 账号
 - Edge Store 账号
+- Qdrant 账号（用于向量数据库）
 
 ### 安装步骤
 
@@ -110,6 +112,10 @@
    EDGE_STORE_ACCESS_KEY=your-edge-store-access-key
    EDGE_STORE_SECRET_KEY=your-edge-store-secret-key
 
+   # Qdrant
+   NEXT_PUBLIC_QDRANT_URL=your-qdrant-url
+   NEXT_PUBLIC_QDRANT_API_KEY=your-qdrant-api-key
+
    # LLM (可选)
    LLM_API_KEY=your-llm-api-key
    ```
@@ -143,6 +149,11 @@
 
 - `EDGE_STORE_ACCESS_KEY` - Edge Store 访问密钥
 - `EDGE_STORE_SECRET_KEY` - Edge Store 密钥
+
+### Qdrant
+
+- `NEXT_PUBLIC_QDRANT_URL` - Qdrant 向量数据库 URL
+- `NEXT_PUBLIC_QDRANT_API_KEY` - Qdrant API 密钥
 
 ### LLM (可选)
 
@@ -214,10 +225,13 @@ notion/
 - **Clerk 配置**：确保在 Clerk 控制台中正确配置应用，特别是 JWT 颁发者域
 - **Convex 部署**：运行 `npx convex dev` 确保 Convex 后端正确部署
 - **Edge Store 配置**：确保 Edge Store 访问密钥和密钥正确配置
+- **Qdrant 配置**：确保 Qdrant 向量数据库 URL 和 API 密钥正确配置
 - **React 19/Next 16 严格模式**：BlockNote 目前尚不兼容 React 19 / Next 16 的 StrictMode 模式，请暂时禁用 StrictMode 模式
 
 ## 最近更新
 
+- **RAG 检索流程后端重构**：将 RAG 检索流程全部重构到后端，提高性能和可维护性
+- **Qdrant 向量数据库集成**：引入 Qdrant 向量数据库，提供更高效的向量检索能力
 - **RAG 动态增量更新机制**：成功实现了 RAG 知识库的动态增量更新功能，支持文档内容变更后自动更新向量索引，无需重建整个知识库，大幅提升了知识库更新效率
 - **RAG 和 LLM 链路打通**：成功实现了基于 RAG（检索增强生成）技术的智能对话功能，将用户个人文档作为知识库，在向大语言模型提问前先经过 RAG 进行相关文档检索，提供更准确的回答
   - 实现了文档内容提取和文本分割功能
@@ -244,16 +258,14 @@ notion/
 3. **检索策略升级**：从单一余弦相似度检索升级为关键词搜索+向量检索的多维度混合检索策略
 4. **动态提示词工程**：实现基于检索内容的智能动态提示词配置
 5. **思考结果可视化**：展示 AI 思考过程和推理路径的可视化界面
-6. **代码分割优化**：减少首屏加载时间，提升应用启动速度
-7. **页面切换流畅性提升**：优化路由切换动画，减少页面加载时间
-8. **更换文章标题图片时的骨架屏效果**：添加更美观的加载状态，提升用户体验
-9. **编辑器性能优化**：优化 BlockNote 编辑器的渲染性能，支持更大文档
-10. **响应式设计改进**：进一步优化移动设备上的用户体验
-11. **错误处理增强**：添加更友好的错误提示和恢复机制
-12. **修复文档拖拽 bug**：解决移动侧边栏文件到编辑区时 id 被带入编辑器的问题
+6. **RAG 检索流程后端重构**：将 RAG 检索流程全部重构到后端
+7. **Qdrant 向量数据库集成**：引入 Qdrant 向量数据库，提供更高效的向量检索能力
 
 🔄 **待完成：**
 
+- **向量检索策略优化**：实现分层和混合检索策略，提高检索准确性和效率
+- **多格式文档检索支持**：支持 PDF、Markdown 等多种格式文档的检索
+- **画板功能**：给 Notion 增加画板功能，支持绘图等创意表达
 - **监控系统完善**：实现完整的日志记录和监控系统
 - **多语言扩展**：支持更多语言翻译，如日语、韩语、法语等
 - **文章内部搜索替换功能**：支持在文章内部快速搜索和替换文本
@@ -293,20 +305,3 @@ notion/
 ## 联系方式
 
 如果有任何问题或建议，欢迎联系项目维护者。
-
-Qdrant 向量数据库
-API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.\_0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0
-Cluster Endpoint=https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io:6333
-import {QdrantClient} from '@qdrant/js-client-rest';
-
-const client = new QdrantClient({
-url: 'https://a2fb3513-7234-4019-bf3e-c210e9920d4d.us-east4-0.gcp.cloud.qdrant.io:6333',
-apiKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhY2Nlc3MiOiJtIn0.\_0VZy118P2yJR3w9yBXgZh56ChoCYpJ-6Dp6uNDqtF0',
-});
-
-try {
-const result = await client.getCollections();
-console.log('List of collections:', result.collections);
-} catch (err) {
-console.error('Could not get collections:', err);
-}
