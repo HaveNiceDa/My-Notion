@@ -355,7 +355,7 @@ export const runRAGQuery = async (
         const docs = searchResults.map((result) => ({
           id: result.document.metadata?.documentId || "",
           title: result.document.metadata?.title || "",
-          score: result.score.toFixed(3),
+          score: result.score.toFixed(2),
         }));
         const text = `检索了${docs.length}篇文档，根据${minScore}阈值筛选过滤并排序，得到${docs.length}个相关文档，相关性分数分别为${docs.map((d) => d.score).join(", ")}`;
         const details = JSON.stringify({ text, docs });

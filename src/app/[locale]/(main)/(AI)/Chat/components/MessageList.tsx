@@ -198,7 +198,7 @@ export const MessageList = ({
                                                       className="block text-blue-600 underline hover:text-blue-800 transition-colors"
                                                     >
                                                       {doc.title} (相关性:{
-                                                        doc.score
+                                                        parseFloat(doc.score).toFixed(2)
                                                       })
                                                     </a>
                                                   ),
