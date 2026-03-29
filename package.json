@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "pnpm run dev & npx convex dev",
+    "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
     "lint": "next lint",
     "clean": "rm -rf .next cache node_modules"
   },
@@ -68,6 +68,7 @@
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.0.1",
+    "concurrently": "^9.2.1",
     "eslint": "^9.39.2",
     "eslint-config-next": "^16.1.4",
     "postcss": "^8",

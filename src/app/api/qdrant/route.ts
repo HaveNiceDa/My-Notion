@@ -60,23 +60,13 @@ export async function POST(request: NextRequest) {
         );
         return NextResponse.json({ success: true, results: similarityResults });
 
-      case 'keywordSearch':
-        const { query: keywordQuery, k: keywordK, minScore: keywordMinScore, excludeDocumentIds: keywordExcludeIds } = params;
-        const keywordResults = await vectorStore.keywordSearch(
-          keywordQuery,
-          keywordK,
-          keywordMinScore,
-          keywordExcludeIds ? new Set(keywordExcludeIds) : undefined
-        );
-        return NextResponse.json({ success: true, results: keywordResults });
-
       case 'hybridSearch':
-        const { query: hybridQuery, k: hybridK, minScore: hybridMinScore, semanticWeight } = params;
+        const { query: hybridQuery, k: hybridK, minScore: hybridMinScore, excludeDocumentIds: hybridExcludeIds } = params;
         const hybridResults = await vectorStore.hybridSearch(
           hybridQuery,
           hybridK,
           hybridMinScore,
-          semanticWeight
+          hybridExcludeIds ? new Set(hybridExcludeIds) : undefined
         );
         return NextResponse.json({ success: true, results: hybridResults });
 
