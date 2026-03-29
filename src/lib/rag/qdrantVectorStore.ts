@@ -138,21 +138,14 @@ export class QdrantVectorStoreWrapper {
     k: number = 4,
     minScore: number = 0.6,
     excludeDocumentIds?: Set<string>,
-    titleBoost: number = 1.5,
   ): Promise<Array<{ document: Document; score: number }>> {
     try {
       await this.ensureCollectionExists();
 
-      console.log(`[QdrantVectorStore] 执行混合检索: ${query}`);
+      console.log(`[QdrantVectorStore] 执行语义检索: ${query}`);
 
-      // 生成查询向量
       const queryVector = await this.embeddings.embedQuery(query);
-      // 生成 title 专用查询向量（使用相同的查询文本，但在搜索时会优先匹配 title）
-      const titleQueryVector = await this.embeddings.embedQuery(
-        `title: ${query}`,
-      );
 
-      // 构建过滤条件
       const filter: any = {};
       if (excludeDocumentIds && excludeDocumentIds.size > 0) {
         filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
@@ -161,25 +154,10 @@ export class QdrantVectorStoreWrapper {
         }));
       }
 
-      // 1. 向量搜索 - 基础相关性（内容匹配）
-      const contentSearchResults = await this.qdrantClient.search(
+      const searchResults = await this.qdrantClient.search(
         this.collectionName,
         {
           vector: queryVector,
-          limit: k * 3, // 获取更多结果以进行混合
-          filter: filter.must_not ? filter : undefined,
-          params: {
-            hnsw_ef: 128,
-            exact: false,
-          },
-        },
-      );
-
-      // 2. Title 向量搜索 - 优先匹配标题
-      const titleSearchResults = await this.qdrantClient.search(
-        this.collectionName,
-        {
-          vector: titleQueryVector,
           limit: k * 3,
           filter: filter.must_not ? filter : undefined,
           params: {
@@ -189,169 +167,47 @@ export class QdrantVectorStoreWrapper {
         },
       );
 
-      // 3. 关键词搜索 - 精确匹配 title
-      const keywordSearchResults = await this.qdrantClient.search(
-        this.collectionName,
-        {
-          vector: queryVector,
-          limit: k * 3,
-          filter: {
-            ...(filter.must_not ? { must_not: filter.must_not } : {}),
-            must: [
-              {
-                key: "metadata.title",
-                match: {
-                  value: query,
-                },
-              },
-            ],
-          },
-          params: {
-            hnsw_ef: 128,
-            exact: false,
-          },
-        },
-      );
-
-      // 4. 合并结果并计算最终分数
-      const resultMap = new Map<
-        string,
-        { document: Document; score: number }
-      >();
-
-      // 处理内容搜索结果
-      contentSearchResults.forEach((result: any) => {
-        const id = result.id.toString();
-        const document = new Document({
-          pageContent: (result.payload?.pageContent as string) || "",
-          metadata: (result.payload?.metadata as any) || {},
-        });
-        resultMap.set(id, {
-          document,
-          score: result.score || 0,
-        });
-      });
-
-      // 处理 title 向量搜索结果（增强 title 相关性）
-      titleSearchResults.forEach((result: any) => {
-        const id = result.id.toString();
-        const document = new Document({
-          pageContent: (result.payload?.pageContent as string) || "",
-          metadata: (result.payload?.metadata as any) || {},
-        });
-
-        if (resultMap.has(id)) {
-          // 增强 title 匹配的分数
-          const existing = resultMap.get(id)!;
-          resultMap.set(id, {
-            document,
-            score: existing.score + (result.score || 0) * 0.5, // title 向量匹配的额外分数
-          });
-        } else {
-          // 新的结果，直接添加
-          resultMap.set(id, {
-            document,
-            score: (result.score || 0) * 0.8, // 纯 title 匹配的基础分数
-          });
-        }
-      });
-
-      // 处理关键词搜索结果（精确 title 匹配）
-      keywordSearchResults.forEach((result: any) => {
-        const id = result.id.toString();
-        const document = new Document({
-          pageContent: (result.payload?.pageContent as string) || "",
-          metadata: (result.payload?.metadata as any) || {},
-        });
-
-        if (resultMap.has(id)) {
-          // 大幅增强精确 title 匹配的分数
-          const existing = resultMap.get(id)!;
-          resultMap.set(id, {
-            document,
-            score: existing.score * titleBoost, // 精确 title 匹配的大幅增强
-          });
-        } else {
-          // 新的结果，直接添加
-          resultMap.set(id, {
-            document,
-            score: (result.score || 0) * titleBoost, // 纯精确 title 匹配的分数
-          });
-        }
-      });
-
-      // 5. 进一步优化：检查文档标题与查询的相似度
-      const finalResults = Array.from(resultMap.values()).map((item) => {
-        const document = item.document;
-        let finalScore = item.score;
-
-        // 如果文档有标题，进一步评估标题与查询的相关性
-        if (document.metadata?.title) {
-          const title = document.metadata.title.toLowerCase();
-          const queryLower = query.toLowerCase();
-
-          // 精确匹配标题
-          if (title === queryLower) {
-            finalScore *= 2.0; // 最高优先级
-          }
-          // 标题包含查询
-          else if (title.includes(queryLower)) {
-            finalScore *= 1.5; // 高优先级
-          }
-          // 查询包含标题关键词
-          else if (queryLower.includes(title)) {
-            finalScore *= 1.2; // 中等优先级
-          }
-        }
-
-        return {
-          document,
-          score: finalScore,
-        };
-      });
-
-      // 6. 按文档去重：每个文档只保留最高分的chunk
       const documentMap = new Map<
         string,
         { document: Document; score: number }
       >();
 
-      finalResults.forEach((result) => {
-        const documentId = result.document.metadata?.documentId;
+      searchResults.forEach((result: any) => {
+        const document = new Document({
+          pageContent: (result.payload?.pageContent as string) || "",
+          metadata: (result.payload?.metadata as any) || {},
+        });
+
+        const documentId = document.metadata?.documentId;
         if (documentId) {
           if (
             !documentMap.has(documentId) ||
             result.score > documentMap.get(documentId)!.score
           ) {
-            // 限制分数最高为0.99
-            const cappedScore = Math.min(result.score, 0.99);
             documentMap.set(documentId, {
-              document: result.document,
-              score: cappedScore,
+              document,
+              score: result.score || 0,
             });
           }
         } else {
-          // 没有documentId的结果直接保留
-          const cappedScore = Math.min(result.score, 0.99);
           documentMap.set(`no_id_${Math.random()}`, {
-            document: result.document,
-            score: cappedScore,
+            document,
+            score: result.score || 0,
           });
         }
       });
 
-      // 转换为数组并排序
       let filteredResults = Array.from(documentMap.values())
         .filter((result) => result.score >= minScore)
         .sort((a, b) => b.score - a.score)
         .slice(0, k);
 
       console.log(
-        `[QdrantVectorStore] 混合检索找到 ${filteredResults.length} 个相关文档`,
+        `[QdrantVectorStore] 语义检索找到 ${filteredResults.length} 个相关文档`,
       );
       return filteredResults;
     } catch (error) {
-      console.error(`[QdrantVectorStore] 执行混合检索时出错:`, error);
+      console.error(`[QdrantVectorStore] 执行语义检索时出错:`, error);
       throw error;
     }
   }
