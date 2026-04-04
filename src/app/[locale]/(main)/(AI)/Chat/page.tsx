@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
 import { type AIModel } from "@/src/lib/ai/config";
-
 
 const runRAGQueryStream = async (
   userId: string,
@@ -212,20 +212,23 @@ const AIPage = () => {
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [conversationId, setConversationId] = useState<Id<"aiConversations"> | null>(null);
-  const [conversationCreatedAt, setConversationCreatedAt] = useState<Date | null>(null);
+  const [conversationId, setConversationId] =
+    useState<Id<"aiConversations"> | null>(null);
+  const [conversationCreatedAt, setConversationCreatedAt] =
+    useState<Date | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
-  const [isConversationListPinned, setIsConversationListPinned] = useState(false);
+  const [isConversationListPinned, setIsConversationListPinned] =
+    useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousSearchParamsIdRef = useRef<string | null>(null);
 
-  const scrollToBottom = useCallback(() => {
+  const scrollToBottom = useMemoizedFn(() => {
     // 使用即时滚动而非平滑滚动，减少性能开销
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  }, []);
+  });
 
   useEffect(() => {
     // 节流处理滚动，避免过于频繁的滚动操作
@@ -237,9 +240,9 @@ const AIPage = () => {
   }, [messages, scrollToBottom]);
 
   // 缓存onInputChange函数
-  const handleInputChange = useCallback((value: string) => {
+  const handleInputChange = useMemoizedFn((value: string) => {
     setInput(value);
-  }, []);
+  });
 
   useEffect(() => {
     const initConversation = async () => {
@@ -297,7 +300,7 @@ const AIPage = () => {
     }
   }, [searchParams.get("id")]);
 
-  const handleSend = useCallback(async () => {
+  const handleSend = useMemoizedFn(async () => {
     if (!input.trim() || isLoading || !user) return;
 
     // Check if vector store is still loading
@@ -429,20 +432,9 @@ const AIPage = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    user,
-    input,
-    isLoading,
-    conversationId,
-    messages,
-    model,
-    knowledgeBaseEnabled,
-    userLoadingStatus,
-    t,
-    router,
-  ]);
+  });
 
-  const loadConversations = useCallback(async () => {
+  const loadConversations = useMemoizedFn(async () => {
     if (!user) return;
 
     try {
@@ -457,18 +449,18 @@ const AIPage = () => {
     } finally {
       setIsLoadingConversations(false);
     }
-  }, [user]);
+  });
 
-  const createNewConversation = useCallback(() => {
+  const createNewConversation = useMemoizedFn(() => {
     router.push(pathname);
     setConversationId(null);
     setMessages([]);
     setConversationCreatedAt(null);
     previousSearchParamsIdRef.current = null;
     setShowConversationList(false);
-  }, [router, pathname]);
+  });
 
-  const loadConversation = useCallback(
+  const loadConversation = useMemoizedFn(
     async (convId: Id<"aiConversations">) => {
       if (!user) return;
 
@@ -517,10 +509,9 @@ const AIPage = () => {
         setIsLoading(false);
       }
     },
-    [user, conversations, router],
   );
 
-  const deleteConversation = useCallback(
+  const deleteConversation = useMemoizedFn(
     async (convId: Id<"aiConversations">) => {
       if (!user) return;
 
@@ -544,7 +535,6 @@ const AIPage = () => {
         await loadConversations();
       }
     },
-    [user, conversationId, t, loadConversations],
   );
 
   return (

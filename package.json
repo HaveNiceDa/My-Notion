@@ -39,6 +39,7 @@
     "@radix-ui/react-slot": "^1.0.2",
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sentry/nextjs": "^10.39.0",
+    "ahooks": "^3.9.7",
     "antd": "^6.2.2",
     "chromadb": "^3.2.2",
     "class-variance-authority": "^0.7.0",
