@@ -218,6 +218,7 @@
     "recentConversationThinking": "最近对话思考过程",
     "knowledgeBaseEnabled": "知识库检索已开启",
     "knowledgeBaseDisabled": "知识库检索已关闭",
-    "knowledgeBaseTooltip": "RAG检索"
+    "knowledgeBaseTooltip": "RAG检索",
+    "messageSendingInProgress": "消息正在发送中，请稍候"
   }
 }

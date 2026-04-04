@@ -49,7 +49,8 @@ export const MessageInput = ({
 }: MessageInputProps) => {
   const t = useTranslations("AI");
   const { model, setModel } = useAIModelStore();
-  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
+  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } =
+    useKnowledgeBaseStore();
   const [isSending, setIsSending] = useState(false);
 
   const getModelDisplayName = (modelName: AIModel) => {
@@ -57,21 +58,29 @@ export const MessageInput = ({
   };
 
   const handleSend = useCallback(async () => {
-    if (isSending || !input.trim()) return;
+    if (isSending || !input.trim()) {
+      if (isSending) {
+        toast.info(t("messageSendingInProgress"));
+      }
+      return;
+    }
     setIsSending(true);
     try {
       await onSend();
     } finally {
       setIsSending(false);
     }
-  }, [isSending, input, onSend]);
+  }, [isSending, input, onSend, t]);
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, [handleSend]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
 
   return (
     <div className="border border-border rounded-2xl shadow-sm bg-background pt-4 px-4 pb-1">
@@ -80,12 +89,11 @@ export const MessageInput = ({
         onChange={(e) => onInputChange(e.target.value)}
         onKeyDown={handleKeyPress}
         placeholder={t("useAIToHandleTasks")}
-        disabled={isSending}
         className={cn(
-            "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[80px] text-lg overflow-y-auto resize-none bg-transparent",
-            isSending && "opacity-70",
-            className,
-          )}
+          "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[80px] text-lg overflow-y-auto resize-none bg-transparent",
+          isSending && "opacity-90",
+          className,
+        )}
       />
       <div className="flex items-center justify-between -ml-2">
         <div className="flex items-center gap-1">

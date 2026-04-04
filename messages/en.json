@@ -218,6 +218,7 @@
     "recentConversationThinking": "Recent Conversation Thinking Process",
     "knowledgeBaseEnabled": "Knowledge base search enabled",
     "knowledgeBaseDisabled": "Knowledge base search disabled",
-    "knowledgeBaseTooltip": "RAG retrieval"
+    "knowledgeBaseTooltip": "RAG retrieval",
+    "messageSendingInProgress": "Message is being sent, please wait"
   }
 }
