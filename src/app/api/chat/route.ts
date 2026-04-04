@@ -5,7 +5,7 @@ import {
   type AIModel,
   DEFAULT_MODEL,
   getActualModelId,
-} from "@/src/lib/ai/model-config";
+} from "@/src/lib/ai/config/model";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {

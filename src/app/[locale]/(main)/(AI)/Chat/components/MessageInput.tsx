@@ -23,7 +23,7 @@ import {
   AI_MODELS,
   AIModel,
 } from "@/src/lib/store/use-ai-model-store";
-import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/model-config";
+import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/config/model";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useState, useCallback } from "react";
 

@@ -4,7 +4,7 @@ import {
   AI_MODELS,
   type AIModel,
   DEFAULT_MODEL,
-} from "@/src/lib/ai/model-config";
+} from "@/src/lib/ai/config/model";
 
 export { AI_MODELS, type AIModel };
 
