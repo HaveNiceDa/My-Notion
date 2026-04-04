@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { ChatAlibabaTongyi } from "@langchain/community/chat_models/alibaba_tongyi";
-
-const AI_MODELS = ["qwen-plus", "qwen-max", "qwen3-coder-plus"] as const;
-
-type AIModel = (typeof AI_MODELS)[number];
+import {
+  AI_MODELS,
+  type AIModel,
+  DEFAULT_MODEL,
+  getActualModelId,
+} from "@/src/lib/ai/model-config";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {
@@ -21,11 +23,14 @@ export async function POST(req: NextRequest) {
       modelName,
     )
       ? (modelName as AIModel)
-      : "qwen-max";
+      : DEFAULT_MODEL;
+
+    // 将通用模型ID转换为实际模型ID
+    const actualModelId = getActualModelId(validatedModelName);
 
     // 初始化通义千问模型
     const model = new ChatAlibabaTongyi({
-      model: validatedModelName,
+      model: actualModelId,
       alibabaApiKey: process.env.LLM_API_KEY,
     });
 

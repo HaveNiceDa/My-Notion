@@ -1,9 +1,12 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import {
+  AI_MODELS,
+  type AIModel,
+  DEFAULT_MODEL,
+} from "@/src/lib/ai/model-config";
 
-export const AI_MODELS = ["qwen-plus", "qwen-max", "qwen3-coder-plus"] as const;
-
-export type AIModel = (typeof AI_MODELS)[number];
+export { AI_MODELS, type AIModel };
 
 interface AIModelStore {
   model: AIModel;
@@ -13,7 +16,7 @@ interface AIModelStore {
 export const useAIModelStore = create<AIModelStore>()(
   persist(
     (set) => ({
-      model: "qwen-max",
+      model: DEFAULT_MODEL,
       setModel: (model) => set({ model }),
     }),
     {

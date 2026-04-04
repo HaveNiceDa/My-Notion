@@ -6,11 +6,17 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { QdrantVectorStoreWrapper } from "./qdrantVectorStore";
 import { promptLoader } from "@/src/lib/prompt/promptLoader";
+import {
+  type AIModel,
+  DEFAULT_MODEL,
+  getActualModelId,
+  MODEL_DISPLAY_NAMES,
+} from "@/src/lib/ai/model-config";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
+export type { AIModel };
 
 // 文档分割器
 export const textSplitter = new RecursiveCharacterTextSplitter({
@@ -272,7 +278,7 @@ export const initKnowledgeBaseVectorStore = async (
 export const runRAGQuery = async (
   userId: string,
   query: string,
-  model: AIModel = "qwen-max",
+  model: AIModel = DEFAULT_MODEL,
   minScore: number = 0.6,
   conversationHistory: Array<{ role: string; content: string }> = [],
   knowledgeBaseEnabled: boolean = true,
@@ -394,12 +400,13 @@ export const runRAGQuery = async (
 
     // 步骤6: 调用流式聊天API
     console.log(`[RAG System] 调用聊天API...`);
+    const displayModelName = MODEL_DISPLAY_NAMES[model] || model;
     if (conversationId) {
       await addThinkingStep(
         conversationId,
         "api",
         "调用流式聊天API",
-        `使用${model}模型生成响应`,
+        `使用${displayModelName}模型生成响应`,
       );
     }
     // 调用API路由
@@ -412,7 +419,7 @@ export const runRAGQuery = async (
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model,
+        model: getActualModelId(model),
         messages: [
           {
             role: "system",

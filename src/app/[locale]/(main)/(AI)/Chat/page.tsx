@@ -1,17 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/clerk-react";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
-type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
+import { type AIModel } from "@/src/lib/ai/model-config";
 
 // 节流函数
 const throttle = <T extends (...args: any[]) => any>(
   func: T,
-  limit: number
+  limit: number,
 ): ((...args: Parameters<T>) => void) => {
   let inThrottle: boolean;
   return (...args: Parameters<T>) => {
@@ -37,7 +37,7 @@ const runRAGQueryStream = async (
 ) => {
   try {
     console.log("[RAG System] 调用后端RAG流式API...");
-    
+
     // 清除旧的思考过程步骤
     if (conversationId) {
       const { clearSteps } = useThinkingProcessStore.getState();
@@ -75,12 +75,14 @@ const runRAGQueryStream = async (
 
     const decoder = new TextDecoder();
     let buffer = "";
-    
+
     // 添加节流处理，减少思考过程步骤的更新频率
-    const throttledAddStep = conversationId ? throttle((type: string, content: string, details: string) => {
-      const { addStep } = useThinkingProcessStore.getState();
-      addStep(type, content, details);
-    }, 200) : undefined;
+    const throttledAddStep = conversationId
+      ? throttle((type: string, content: string, details: string) => {
+          const { addStep } = useThinkingProcessStore.getState();
+          addStep(type, content, details);
+        }, 200)
+      : undefined;
 
     try {
       while (true) {
@@ -90,61 +92,65 @@ const runRAGQueryStream = async (
           await onComplete();
           break;
         }
-        
+
         // 解码并处理响应
         const chunk = decoder.decode(value, { stream: true });
         buffer += chunk;
-        
+
         // 处理Server-Sent Events (SSE)
-        const lines = buffer.split('\n');
+        const lines = buffer.split("\n");
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
-          if (line.startsWith('event: ')) {
-              const event = line.substring(7);
-              const dataLine = lines[i + 1];
-              if (dataLine && dataLine.startsWith('data: ')) {
-                const data = dataLine.substring(6);
-                
-                // 处理聊天响应
-                if (event === 'chatResponse') {
-                  // 这是聊天API的响应，直接传递给onChunk
-                  onChunk(data);
-                }
-                // 处理传统的无事件类型响应
-                else if (!event) {
-                  // 这是聊天API的响应，直接传递给onChunk
-                  onChunk(data);
-                }
-                // 处理其他事件，需要解析JSON
-                else {
-                  try {
-                    const parsedData = JSON.parse(data);
-                    
-                    // 处理思考过程步骤
-                    if (event === 'thinkingStep') {
-                      console.log("[RAG System] 接收到思考过程步骤:", parsedData);
-                      if (conversationId && throttledAddStep) {
-                        // 使用节流处理，减少状态更新频率
-                        throttledAddStep(parsedData.type, parsedData.content, parsedData.details);
-                      }
+          if (line.startsWith("event: ")) {
+            const event = line.substring(7);
+            const dataLine = lines[i + 1];
+            if (dataLine && dataLine.startsWith("data: ")) {
+              const data = dataLine.substring(6);
+
+              // 处理聊天响应
+              if (event === "chatResponse") {
+                // 这是聊天API的响应，直接传递给onChunk
+                onChunk(data);
+              }
+              // 处理传统的无事件类型响应
+              else if (!event) {
+                // 这是聊天API的响应，直接传递给onChunk
+                onChunk(data);
+              }
+              // 处理其他事件，需要解析JSON
+              else {
+                try {
+                  const parsedData = JSON.parse(data);
+
+                  // 处理思考过程步骤
+                  if (event === "thinkingStep") {
+                    console.log("[RAG System] 接收到思考过程步骤:", parsedData);
+                    if (conversationId && throttledAddStep) {
+                      // 使用节流处理，减少状态更新频率
+                      throttledAddStep(
+                        parsedData.type,
+                        parsedData.content,
+                        parsedData.details,
+                      );
                     }
-                    // 处理错误事件
-                    else if (event === 'error') {
-                      console.error("[RAG System] 接收到错误:", parsedData);
-                      onError(new Error(parsedData.message));
-                    }
-                    // 处理结束事件
-                    else if (event === 'end') {
-                      console.log("[RAG System] 接收到结束事件");
-                    }
-                  } catch (error) {
-                    console.error("[RAG System] 解析SSE数据出错:", error);
                   }
+                  // 处理错误事件
+                  else if (event === "error") {
+                    console.error("[RAG System] 接收到错误:", parsedData);
+                    onError(new Error(parsedData.message));
+                  }
+                  // 处理结束事件
+                  else if (event === "end") {
+                    console.log("[RAG System] 接收到结束事件");
+                  }
+                } catch (error) {
+                  console.error("[RAG System] 解析SSE数据出错:", error);
                 }
               }
+            }
           }
         }
-        
+
         // 保留未处理的部分
         buffer = lines[lines.length - 1];
       }
@@ -188,24 +194,26 @@ const MessageList = dynamic(
 );
 
 // 预加载 MessageList 组件，减少首次加载延迟
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   // 当页面加载完成后预加载
-  window.addEventListener('load', () => {
-    import('./components/MessageList').catch(() => {
+  window.addEventListener("load", () => {
+    import("./components/MessageList").catch(() => {
       // 忽略加载错误
     });
   });
-  
+
   // 当用户开始输入时预加载
-  window.addEventListener('keydown', () => {
-    import('./components/MessageList').catch(() => {
-      // 忽略加载错误
-    });
-  }, { once: true });
+  window.addEventListener(
+    "keydown",
+    () => {
+      import("./components/MessageList").catch(() => {
+        // 忽略加载错误
+      });
+    },
+    { once: true },
+  );
 }
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
-
-
 
 interface Message {
   id: string;
@@ -248,7 +256,7 @@ const AIPage = () => {
     const timer = setTimeout(() => {
       scrollToBottom();
     }, 50);
-    
+
     return () => clearTimeout(timer);
   }, [messages, scrollToBottom]);
 
@@ -385,7 +393,7 @@ const AIPage = () => {
       let currentContent = "";
       let lastMessageUpdateTime = 0;
       const MESSAGE_UPDATE_THROTTLE = 100; // 100ms的消息更新节流
-      
+
       await runRAGQueryStream(
         user.id,
         input,

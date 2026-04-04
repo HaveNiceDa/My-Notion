@@ -23,14 +23,9 @@ import {
   AI_MODELS,
   AIModel,
 } from "@/src/lib/store/use-ai-model-store";
+import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/model-config";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useState, useCallback } from "react";
-
-const displayNames: Record<AIModel, string> = {
-  "qwen-plus": "Qwen Plus",
-  "qwen-max": "Qwen Max",
-  "qwen3-coder-plus": "Qwen 3 Coder Plus",
-};
 
 interface MessageInputProps {
   input: string;
@@ -54,7 +49,7 @@ export const MessageInput = ({
   const [isSending, setIsSending] = useState(false);
 
   const getModelDisplayName = (modelName: AIModel) => {
-    return displayNames[modelName] || modelName;
+    return MODEL_DISPLAY_NAMES[modelName] || modelName;
   };
 
   const handleSend = useCallback(async () => {

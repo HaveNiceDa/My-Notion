@@ -6,7 +6,13 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { CustomEmbeddings } from "@/src/lib/rag/customEmbeddings";
 import { QdrantVectorStoreWrapper } from "@/src/lib/rag/qdrantVectorStore";
 import { promptLoader } from "@/src/lib/prompt/promptLoader";
-import { addThinkingStep, type AIModel } from "@/src/lib/rag/ragUtils";
+import { addThinkingStep } from "@/src/lib/rag/ragUtils";
+import {
+  type AIModel,
+  DEFAULT_MODEL,
+  getActualModelId,
+  MODEL_DISPLAY_NAMES,
+} from "@/src/lib/ai/model-config";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
@@ -61,7 +67,7 @@ const runRAGQueryStream = async (
   userId: string,
   query: string,
   conversationHistory: Array<{ role: string; content: string }>,
-  model: AIModel = "qwen-max",
+  model: AIModel = DEFAULT_MODEL,
   minScore: number = 0.6,
   knowledgeBaseEnabled: boolean = true,
   conversationId?: Id<"aiConversations">,
@@ -312,12 +318,13 @@ const runRAGQueryStream = async (
 
         // 步骤6: 调用流式聊天API
         console.log(`[RAG System] 调用流式聊天API...`);
+        const displayModelName = MODEL_DISPLAY_NAMES[model] || model;
         if (conversationId) {
           await addThinkingStep(
             conversationId,
             "api",
             "调用流式聊天API",
-            `使用${model}模型生成响应`,
+            `使用${displayModelName}模型生成响应`,
           );
           // 推送思考过程步骤到前端
           controller.enqueue(
@@ -325,7 +332,7 @@ const runRAGQueryStream = async (
               `event: thinkingStep\ndata: ${JSON.stringify({
                 type: "api",
                 content: "调用流式聊天API",
-                details: `使用${model}模型生成响应`,
+                details: `使用${displayModelName}模型生成响应`,
               })}\n\n`,
             ),
           );
@@ -342,7 +349,7 @@ const runRAGQueryStream = async (
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              model,
+              model: getActualModelId(model),
               messages,
             }),
           });
