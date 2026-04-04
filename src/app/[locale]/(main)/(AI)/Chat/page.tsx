@@ -8,20 +8,6 @@ import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
 import { type AIModel } from "@/src/lib/ai/config";
 
-// 节流函数
-const throttle = <T extends (...args: any[]) => any>(
-  func: T,
-  limit: number,
-): ((...args: Parameters<T>) => void) => {
-  let inThrottle: boolean;
-  return (...args: Parameters<T>) => {
-    if (!inThrottle) {
-      func(...args);
-      inThrottle = true;
-      setTimeout(() => (inThrottle = false), limit);
-    }
-  };
-};
 
 const runRAGQueryStream = async (
   userId: string,
@@ -76,14 +62,6 @@ const runRAGQueryStream = async (
     const decoder = new TextDecoder();
     let buffer = "";
 
-    // 添加节流处理，减少思考过程步骤的更新频率
-    const throttledAddStep = conversationId
-      ? throttle((type: string, content: string, details: string) => {
-          const { addStep } = useThinkingProcessStore.getState();
-          addStep(type, content, details);
-        }, 200)
-      : undefined;
-
     try {
       while (true) {
         const { done, value } = await reader.read();
@@ -125,9 +103,10 @@ const runRAGQueryStream = async (
                   // 处理思考过程步骤
                   if (event === "thinkingStep") {
                     console.log("[RAG System] 接收到思考过程步骤:", parsedData);
-                    if (conversationId && throttledAddStep) {
-                      // 使用节流处理，减少状态更新频率
-                      throttledAddStep(
+                    if (conversationId) {
+                      // 直接添加步骤，移除节流以避免步骤丢失
+                      const { addStep } = useThinkingProcessStore.getState();
+                      addStep(
                         parsedData.type,
                         parsedData.content,
                         parsedData.details,
