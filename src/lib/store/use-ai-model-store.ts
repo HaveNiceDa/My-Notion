@@ -1,10 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import {
-  AI_MODELS,
-  type AIModel,
-  DEFAULT_MODEL,
-} from "@/src/lib/ai/config/model";
+import { AI_MODELS, type AIModel, DEFAULT_MODEL } from "@/src/lib/ai/config";
 
 export { AI_MODELS, type AIModel };
 

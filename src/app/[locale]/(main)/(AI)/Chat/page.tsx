@@ -6,7 +6,7 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
-import { type AIModel } from "@/src/lib/ai/config/model";
+import { type AIModel } from "@/src/lib/ai/config";
 
 // 节流函数
 const throttle = <T extends (...args: any[]) => any>(

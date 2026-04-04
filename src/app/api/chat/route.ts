@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
-import { ChatAlibabaTongyi } from "@langchain/community/chat_models/alibaba_tongyi";
+import OpenAI from "openai";
 import {
   AI_MODELS,
   type AIModel,
   DEFAULT_MODEL,
   getActualModelId,
-} from "@/src/lib/ai/config/model";
+  DASHSCOPE_BASE_URL,
+} from "@/src/lib/ai/config";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {
@@ -28,14 +29,18 @@ export async function POST(req: NextRequest) {
     // 将通用模型ID转换为实际模型ID
     const actualModelId = getActualModelId(validatedModelName);
 
-    // 初始化通义千问模型
-    const model = new ChatAlibabaTongyi({
-      model: actualModelId,
-      alibabaApiKey: process.env.LLM_API_KEY,
+    // 初始化OpenAI客户端（用于调用阿里云百炼API）
+    const openai = new OpenAI({
+      apiKey: process.env.LLM_API_KEY,
+      baseURL: DASHSCOPE_BASE_URL,
     });
 
     // 创建流式响应
-    const stream = await model.stream(messages);
+    const stream = await openai.chat.completions.create({
+      model: actualModelId,
+      messages: messages,
+      stream: true,
+    });
 
     // 创建可读流
     const encoder = new TextEncoder();
@@ -43,15 +48,9 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           for await (const chunk of stream) {
-            const text = chunk.content;
+            const text = chunk.choices[0]?.delta?.content;
             if (text) {
-              const encoded = encoder.encode(
-                Array.isArray(text)
-                  ? text
-                      .map((t) => (typeof t === "string" ? t : t.text || ""))
-                      .join("")
-                  : text,
-              );
+              const encoded = encoder.encode(text);
               controller.enqueue(encoded);
             }
           }

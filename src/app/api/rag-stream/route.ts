@@ -12,7 +12,7 @@ import {
   DEFAULT_MODEL,
   getActualModelId,
   MODEL_DISPLAY_NAMES,
-} from "@/src/lib/ai/config/model";
+} from "@/src/lib/ai/config";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
