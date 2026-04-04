@@ -25,7 +25,7 @@ import {
 } from "@/src/lib/store/use-ai-model-store";
 import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/config";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
-import { useState, useCallback } from "react";
+import { useState, useCallback, memo } from "react";
 
 interface MessageInputProps {
   input: string;
@@ -35,22 +35,20 @@ interface MessageInputProps {
   conversationId?: string | null;
 }
 
-export const MessageInput = ({
+const MessageInput = memo(({
   input,
   onInputChange,
   onSend,
   className,
-  conversationId,
 }: MessageInputProps) => {
   const t = useTranslations("AI");
   const { model, setModel } = useAIModelStore();
-  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } =
-    useKnowledgeBaseStore();
+  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
   const [isSending, setIsSending] = useState(false);
 
-  const getModelDisplayName = (modelName: AIModel) => {
+  const getModelDisplayName = useCallback((modelName: AIModel) => {
     return MODEL_DISPLAY_NAMES[modelName] || modelName;
-  };
+  }, []);
 
   const handleSend = useCallback(async () => {
     if (isSending || !input.trim()) {
@@ -77,11 +75,15 @@ export const MessageInput = ({
     [handleSend],
   );
 
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onInputChange(e.target.value);
+  }, [onInputChange]);
+
   return (
     <div className="border border-border rounded-2xl shadow-sm bg-background pt-4 px-4 pb-1">
       <Textarea
         value={input}
-        onChange={(e) => onInputChange(e.target.value)}
+        onChange={handleInputChange}
         onKeyDown={handleKeyPress}
         placeholder={t("useAIToHandleTasks")}
         className={cn(
@@ -190,4 +192,8 @@ export const MessageInput = ({
       </div>
     </div>
   );
-};
+});
+
+MessageInput.displayName = "MessageInput";
+
+export { MessageInput };

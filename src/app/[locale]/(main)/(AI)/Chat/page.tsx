@@ -233,16 +233,13 @@ const AIPage = () => {
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const [conversationId, setConversationId] =
-    useState<Id<"aiConversations"> | null>(null);
-  const [conversationCreatedAt, setConversationCreatedAt] =
-    useState<Date | null>(null);
+  const [conversationId, setConversationId] = useState<Id<"aiConversations"> | null>(null);
+  const [conversationCreatedAt, setConversationCreatedAt] = useState<Date | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [showConversationList, setShowConversationList] = useState(false);
-  const [isConversationListPinned, setIsConversationListPinned] =
-    useState(false);
+  const [isConversationListPinned, setIsConversationListPinned] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const previousSearchParamsIdRef = useRef<string | null>(null);
 
@@ -259,6 +256,11 @@ const AIPage = () => {
 
     return () => clearTimeout(timer);
   }, [messages, scrollToBottom]);
+
+  // 缓存onInputChange函数
+  const handleInputChange = useCallback((value: string) => {
+    setInput(value);
+  }, []);
 
   useEffect(() => {
     const initConversation = async () => {
@@ -600,7 +602,7 @@ const AIPage = () => {
               />
               <NewConversationLanding
                 input={input}
-                onInputChange={setInput}
+                onInputChange={handleInputChange}
                 onSend={handleSend}
               />
             </div>
@@ -620,7 +622,7 @@ const AIPage = () => {
                 <div className="w-[55%]">
                   <MessageInput
                     input={input}
-                    onInputChange={setInput}
+                    onInputChange={handleInputChange}
                     onSend={handleSend}
                     conversationId={conversationId}
                   />
