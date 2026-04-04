@@ -644,28 +644,6 @@ export const toggleKnowledgeBase = mutation({
       lastEditedTime: Date.now(),
     });
 
-    // 如果从知识库中移除，删除对应的向量数据
-    if (!args.isInKnowledgeBase) {
-      const chunks = await context.db
-        .query("documentChunks")
-        .withIndex("by_document", (q) => q.eq("documentId", args.id))
-        .collect();
-      
-      for (const chunk of chunks) {
-        await context.db.delete(chunk._id);
-      }
-      
-      // 同时删除嵌入状态记录
-      const embeddingStatus = await context.db
-        .query("documentEmbeddingStatus")
-        .withIndex("by_document", (q) => q.eq("documentId", args.id))
-        .first();
-      
-      if (embeddingStatus) {
-        await context.db.delete(embeddingStatus._id);
-      }
-    }
-
     return document;
   },
 });
