@@ -10,15 +10,15 @@ export const DEFAULT_MODEL: AIModel = "Model-1";
 // 模型实际映射（内部使用，修改这里即可切换底层模型）
 export const MODEL_ID_MAPPING: Record<AIModel, string> = {
   "Model-1": "qwen3.6-plus",
-  "Model-2": "qwen-plus",
-  "Model-3": "qwen3-coder-plus",
+  "Model-2": "qwen3.6-plus-2026-04-02",
+  "Model-3": "gui-plus-2026-02-26",
 };
 
 // 模型显示名称映射（对外展示，界面显示实际模型名称）
 export const MODEL_DISPLAY_NAMES: Record<AIModel, string> = {
   "Model-1": "Qwen 3.6 Plus",
-  "Model-2": "Qwen Plus",
-  "Model-3": "Qwen 3 Coder Plus",
+  "Model-2": "Qwen 3.6 Plus 2026-04-02",
+  "Model-3": "GUI Plus 2026-02-26",
 };
 
 // 获取实际模型ID的辅助函数
@@ -45,14 +45,14 @@ export const MODELS_CONFIG: ModelConfig[] = [
   },
   {
     id: "Model-2",
-    actualModelId: "qwen-plus",
-    displayName: "Qwen Plus",
+    actualModelId: "qwen3.6-plus-2026-04-02",
+    displayName: "Qwen 3.6 Plus 2026-04-02",
     enabled: true,
   },
   {
     id: "Model-3",
-    actualModelId: "qwen3-coder-plus",
-    displayName: "Qwen 3 Coder Plus",
+    actualModelId: "gui-plus-2026-02-26",
+    displayName: "GUI Plus 2026-02-26",
     enabled: true,
   },
 ];
