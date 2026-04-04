@@ -56,3 +56,8 @@ export const MODELS_CONFIG: ModelConfig[] = [
     enabled: true,
   },
 ];
+
+/**
+ * 嵌入模型ID
+ */
+export const EMB_MODEL = "text-embedding-v4";

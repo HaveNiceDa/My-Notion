@@ -1,41 +1,41 @@
 import { Embeddings } from "@langchain/core/embeddings";
-import { AlibabaTongyiEmbeddings } from "@langchain/community/embeddings/alibaba_tongyi";
+import OpenAI from "openai";
+import { EMB_MODEL, DASHSCOPE_BASE_URL } from "@/src/lib/ai/config";
 
 // 自定义Embeddings实现
 export class CustomEmbeddings extends Embeddings {
-  private embeddings: AlibabaTongyiEmbeddings;
+  private openai: OpenAI;
 
   constructor() {
     super({}); // 调用父类构造函数
-    // 初始化通义千问embeddings
-    this.embeddings = new AlibabaTongyiEmbeddings({
-      modelName: "text-embedding-v4",
+    // 初始化OpenAI客户端
+    this.openai = new OpenAI({
       apiKey: process.env.LLM_API_KEY,
+      baseURL: DASHSCOPE_BASE_URL,
     });
   }
 
   async embedDocuments(texts: string[]): Promise<number[][]> {
     console.log(`[CustomEmbeddings] 生成 ${texts.length} 个文档的嵌入...`);
     
-    const batchSize = 10;
-    const embeddingsList: number[][] = [];
+
+    const response = await this.openai.embeddings.create({
+      model: EMB_MODEL,
+      input: texts,
+    });
     
-    // 分批处理，每批不超过10个
-    for (let i = 0; i < texts.length; i += batchSize) {
-      const batch = texts.slice(i, i + batchSize);
-      console.log(`[CustomEmbeddings] 处理批次 ${Math.floor(i / batchSize) + 1}/${Math.ceil(texts.length / batchSize)}，大小: ${batch.length}`);
-      
-      const batchEmbeddings = await this.embeddings.embedDocuments(batch);
-      embeddingsList.push(...batchEmbeddings);
-    }
-    
+    const embeddingsList = response.data.map(item => item.embedding);
     return embeddingsList;
   }
 
   async embedQuery(text: string): Promise<number[]> {
     console.log(`[CustomEmbeddings] 生成查询的嵌入...`);
 
-    const embedding = await this.embeddings.embedQuery(text);
-    return embedding;
+    const response = await this.openai.embeddings.create({
+      model: EMB_MODEL,
+      input: text,
+    });
+    
+    return response.data[0].embedding;
   }
 }
