@@ -1,5 +1,6 @@
 import * as Dialog from "@radix-ui/react-dialog";
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+import { useMemoizedFn } from "ahooks";
 import Loading from "./loading";
 import {
   HistoryVersionSummaryList,
@@ -16,9 +17,9 @@ export default function VersionsDialog({
 }) {
   const [isOpen, setOpen] = useState(false);
 
-  const onVersionRestore = useCallback(() => {
+  const onVersionRestore = useMemoizedFn(() => {
     setOpen(false);
-  }, []);
+  });
 
   return (
     <Dialog.Root open={isOpen} onOpenChange={setOpen}>
