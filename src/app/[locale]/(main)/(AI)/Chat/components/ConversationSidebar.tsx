@@ -2,15 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  ChevronLeft,
-  Plus,
-  Trash2,
-  Clock,
-  Pin,
-  PinOff,
-  Home,
-} from "lucide-react";
+import { ChevronLeft, Trash2, Clock, Pin, PinOff, Home } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { cn } from "@/src/lib/utils";
@@ -102,12 +94,6 @@ export const ConversationSidebar = ({
             </SidebarButton>
             <SidebarButton onClick={onClose} tooltip={t("closeSidebar")}>
               <ChevronLeft className="h-4 w-4" />
-            </SidebarButton>
-            <SidebarButton
-              onClick={onNewConversation}
-              tooltip={t("newAIConversation")}
-            >
-              <Plus className="h-4 w-4" />
             </SidebarButton>
           </div>
         </div>
