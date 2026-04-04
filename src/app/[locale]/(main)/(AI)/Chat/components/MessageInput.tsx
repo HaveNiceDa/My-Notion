@@ -83,6 +83,7 @@ export const MessageInput = ({
         disabled={isSending}
         className={cn(
             "w-full px-0 py-0 !border-0 !shadow-none rounded-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[80px] text-lg overflow-y-auto resize-none bg-transparent",
+            isSending && "opacity-70",
             className,
           )}
       />
@@ -91,12 +92,14 @@ export const MessageInput = ({
           <Button
             className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0"
             onClick={() => toast.info(t("featureUnderDevelopment"))}
+            disabled={isSending}
           >
             <Plus className="h-5 w-5" />
           </Button>
           <Button
             className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0"
             onClick={() => toast.info(t("featureUnderDevelopment"))}
+            disabled={isSending}
           >
             <Settings className="h-5 w-5" />
           </Button>
@@ -111,20 +114,24 @@ export const MessageInput = ({
                     knowledgeBaseEnabled
                       ? "hover:bg-blue-200 text-blue-600"
                       : "hover:bg-muted text-muted-foreground",
+                    isSending && "opacity-50",
                   )}
                   onClick={() => {
-                    toggleKnowledgeBase();
-                    toast.info(
-                      knowledgeBaseEnabled
-                        ? t("knowledgeBaseDisabled")
-                        : t("knowledgeBaseEnabled"),
-                    );
+                    if (!isSending) {
+                      toggleKnowledgeBase();
+                      toast.info(
+                        knowledgeBaseEnabled
+                          ? t("knowledgeBaseDisabled")
+                          : t("knowledgeBaseEnabled"),
+                      );
+                    }
                   }}
                   title={
                     knowledgeBaseEnabled
                       ? t("knowledgeBaseEnabled")
                       : t("knowledgeBaseDisabled")
                   }
+                  disabled={isSending}
                 >
                   <Database className="h-5 w-5" />
                 </Button>
@@ -140,6 +147,7 @@ export const MessageInput = ({
               <Button
                 className="hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0 bg-transparent"
                 variant="ghost"
+                disabled={isSending}
               >
                 <Bot className="h-5 w-5" />
               </Button>
@@ -164,9 +172,16 @@ export const MessageInput = ({
           <Button
             onClick={handleSend}
             disabled={!input.trim() || isSending}
-            className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0"
+            className={cn(
+              "bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0",
+              isSending && "opacity-70",
+            )}
           >
-            <Send className="h-5 w-5 rounded-full" />
+            {isSending ? (
+              <div className="w-5 h-5 animate-spin rounded-full border-b-2 border-blue-600"></div>
+            ) : (
+              <Send className="h-5 w-5 rounded-full" />
+            )}
           </Button>
         </div>
       </div>

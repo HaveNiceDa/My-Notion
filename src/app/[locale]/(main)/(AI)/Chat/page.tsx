@@ -8,6 +8,21 @@ import { Id } from "@/convex/_generated/dataModel";
 // 动态导入 RAG 相关功能，实现代码分割
 type AIModel = "qwen-plus" | "qwen-max" | "qwen3-coder-plus";
 
+// 节流函数
+const throttle = <T extends (...args: any[]) => any>(
+  func: T,
+  limit: number
+): ((...args: Parameters<T>) => void) => {
+  let inThrottle: boolean;
+  return (...args: Parameters<T>) => {
+    if (!inThrottle) {
+      func(...args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+};
+
 const runRAGQueryStream = async (
   userId: string,
   input: string,
@@ -60,6 +75,12 @@ const runRAGQueryStream = async (
 
     const decoder = new TextDecoder();
     let buffer = "";
+    
+    // 添加节流处理，减少思考过程步骤的更新频率
+    const throttledAddStep = conversationId ? throttle((type: string, content: string, details: string) => {
+      const { addStep } = useThinkingProcessStore.getState();
+      addStep(type, content, details);
+    }, 200) : undefined;
 
     try {
       while (true) {
@@ -102,9 +123,9 @@ const runRAGQueryStream = async (
                     // 处理思考过程步骤
                     if (event === 'thinkingStep') {
                       console.log("[RAG System] 接收到思考过程步骤:", parsedData);
-                      if (conversationId) {
-                        const { addStep } = useThinkingProcessStore.getState();
-                        addStep(parsedData.type, parsedData.content, parsedData.details);
+                      if (conversationId && throttledAddStep) {
+                        // 使用节流处理，减少状态更新频率
+                        throttledAddStep(parsedData.type, parsedData.content, parsedData.details);
                       }
                     }
                     // 处理错误事件
@@ -150,6 +171,7 @@ import { TopNavigation } from "./components/TopNavigation";
 import { NewConversationLanding } from "./components/NewConversationLanding";
 
 import { MessageInput } from "./components/MessageInput";
+// 优化动态导入策略，添加预加载
 const MessageList = dynamic(
   () =>
     import("./components/MessageList").then((module) => ({
@@ -157,9 +179,30 @@ const MessageList = dynamic(
     })),
   {
     ssr: false,
-    loading: () => <Skeleton className="flex-1 w-full" />,
+    loading: () => (
+      <div className="flex-1 w-full flex items-center justify-center p-8">
+        <div className="w-8 h-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
+      </div>
+    ),
   },
 );
+
+// 预加载 MessageList 组件，减少首次加载延迟
+if (typeof window !== 'undefined') {
+  // 当页面加载完成后预加载
+  window.addEventListener('load', () => {
+    import('./components/MessageList').catch(() => {
+      // 忽略加载错误
+    });
+  });
+  
+  // 当用户开始输入时预加载
+  window.addEventListener('keydown', () => {
+    import('./components/MessageList').catch(() => {
+      // 忽略加载错误
+    });
+  }, { once: true });
+}
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 
@@ -196,11 +239,17 @@ const AIPage = () => {
   const previousSearchParamsIdRef = useRef<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // 使用即时滚动而非平滑滚动，减少性能开销
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, []);
 
   useEffect(() => {
-    scrollToBottom();
+    // 节流处理滚动，避免过于频繁的滚动操作
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 50);
+    
+    return () => clearTimeout(timer);
   }, [messages, scrollToBottom]);
 
   useEffect(() => {
@@ -334,19 +383,27 @@ const AIPage = () => {
       }
 
       let currentContent = "";
+      let lastMessageUpdateTime = 0;
+      const MESSAGE_UPDATE_THROTTLE = 100; // 100ms的消息更新节流
+      
       await runRAGQueryStream(
         user.id,
         input,
         conversationHistoryMessages,
         (chunk) => {
           currentContent += chunk;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: currentContent }
-                : msg,
-            ),
-          );
+          // 节流处理，避免过于频繁的消息更新
+          const now = Date.now();
+          if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: currentContent }
+                  : msg,
+              ),
+            );
+            lastMessageUpdateTime = now;
+          }
         },
         async () => {
           await convex.mutation(api.aiChat.addMessage, {
