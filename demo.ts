@@ -28,3 +28,28 @@ async function run() {
 
 // 执行函数
 run();
+
+/**
+async function main() {
+  const response = await openai.chat.completions.create({
+    model: "qwen3.6-plus",  // 此处以qwen3.6-plus为例，可按需更换模型名称。模型列表：https://help.aliyun.com/zh/model-studio/models
+    messages: [
+      {
+        role: "user",
+        content: [{
+            type: "image_url",
+            image_url: {
+              "url": "https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20241022/emyrja/dog_and_girl.jpeg"
+            }
+          },
+          {
+            type: "text",
+            text: "图中描绘的是什么景象?"
+          }
+        ]
+      }
+    ]
+  });
+  console.log(response.choices[0].message.content);
+}
+   */

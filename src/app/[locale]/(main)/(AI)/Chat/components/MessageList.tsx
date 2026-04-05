@@ -160,6 +160,52 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
     toast.success(t("copied"));
   };
 
+  const renderMessageContent = () => {
+    try {
+      const parsedContent = JSON.parse(message.content);
+      if (parsedContent.images && parsedContent.images.length > 0) {
+        return (
+          <div className="space-y-3">
+            {parsedContent.text && (
+              <p className="whitespace-pre-wrap text-base break-all">
+                {parsedContent.text}
+              </p>
+            )}
+            <div className="grid grid-cols-2 gap-2">
+              {parsedContent.images.map((image: string, index: number) => (
+                <div key={index} className="relative rounded-lg overflow-hidden border border-border">
+                  <img 
+                    src={image} 
+                    alt={`Image ${index + 1}`} 
+                    className="w-full h-auto max-h-48 object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      } else if (parsedContent.text) {
+        return (
+          <p className="whitespace-pre-wrap text-base break-all">
+            {parsedContent.text}
+          </p>
+        );
+      } else {
+        return (
+          <p className="whitespace-pre-wrap text-base break-all">
+            {message.content}
+          </p>
+        );
+      }
+    } catch {
+      return (
+        <p className="whitespace-pre-wrap text-base break-all">
+          {message.content}
+        </p>
+      );
+    }
+  };
+
   return (
     <div
       key={message.id}
@@ -182,9 +228,7 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
               : "bg-background text-foreground pb-1 rounded-lg",
           )}
         >
-          <p className="whitespace-pre-wrap text-base break-all">
-            {message.content}
-          </p>
+          {renderMessageContent()}
         </div>
 
         {message.role === "user" && (

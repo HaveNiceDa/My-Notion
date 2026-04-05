@@ -300,8 +300,14 @@ const AIPage = () => {
     }
   }, [searchParams.get("id")]);
 
-  const handleSend = useMemoizedFn(async () => {
-    if (!input.trim() || isLoading || !user) return;
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+
+  const handleGetImages = useMemoizedFn(() => {
+    return uploadedImages;
+  });
+
+  const handleSend = useMemoizedFn(async (images: string[] = []) => {
+    if ((!input.trim() && images.length === 0) || isLoading || !user) return;
 
     // Check if vector store is still loading
     const vectorStoreStatus = userLoadingStatus[user.id];
@@ -334,15 +340,22 @@ const AIPage = () => {
       }
     }
 
+    // 构建消息内容，包含文本和图片
+    const messageContent = {
+      text: input,
+      images,
+    };
+
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: input,
+      content: JSON.stringify(messageContent),
       role: "user",
       timestamp: new Date(),
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setUploadedImages([]);
     setIsLoading(true);
 
     const assistantMessageId = (Date.now() + 1).toString();
@@ -358,14 +371,41 @@ const AIPage = () => {
     try {
       await convex.mutation(api.aiChat.addMessage, {
         conversationId: currentConversationId,
-        content: input,
+        content: JSON.stringify(messageContent),
         role: "user" as "user" | "assistant",
       });
 
-      const conversationHistoryMessages = messages.map((msg) => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      const conversationHistoryMessages = messages.map((msg) => {
+        try {
+          const parsedContent = JSON.parse(msg.content);
+          if (parsedContent.images && parsedContent.images.length > 0) {
+            // 构建多模态消息格式
+            const content = [
+              { type: "text", text: parsedContent.text || "" },
+              ...parsedContent.images.map((image: string) => ({
+                type: "image_url",
+                image_url: { url: image },
+              })),
+            ];
+            return { role: msg.role, content };
+          } else {
+            return { role: msg.role, content: msg.content };
+          }
+        } catch {
+          return { role: msg.role, content: msg.content };
+        }
+      });
+
+      // 构建当前消息的多模态格式
+      const currentMessageContent = [
+        { type: "text", text: input || "" },
+        ...images.map((image) => ({
+          type: "image_url",
+          image_url: { url: image },
+        })),
+      ];
+
+      conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
       // 清空思考过程步骤，等待后端通过SSE推送新的步骤
       if (currentConversationId) {
@@ -406,7 +446,7 @@ const AIPage = () => {
 
           await convex.mutation(api.aiChat.updateConversationTitle, {
             conversationId: currentConversationId,
-            title: input.length > 50 ? input.substring(0, 50) + "..." : input,
+            title: input.length > 50 ? input.substring(0, 50) + "..." : input || "图片对话",
           });
 
           await loadConversations();
@@ -593,6 +633,7 @@ const AIPage = () => {
                     input={input}
                     onInputChange={handleInputChange}
                     onSend={handleSend}
+                    onGetImages={handleGetImages}
                     conversationId={conversationId}
                   />
                 </div>
