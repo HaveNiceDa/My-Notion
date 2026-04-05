@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, ReactNode } from "react";
+import React, { useEffect, useMemo, ReactNode, useState } from "react";
 import { cn } from "@/src/lib/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-st
 interface Message {
   id: string;
   content: string;
+  reasoningContent?: string;
   role: string;
   timestamp: Date;
 }
@@ -154,6 +155,7 @@ const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
 // 优化消息项组件
 const MessageItem = React.memo(({ message }: { message: Message }) => {
   const t = useTranslations("AI");
+  const [showThinking, setShowThinking] = useState(true);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.content);
@@ -220,6 +222,41 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
           message.role === "user" ? "flex flex-col items-end" : "",
         )}
       >
+        {/* 深度思考内容区域 - 仅在 assistant 消息且有 reasoningContent 时显示 */}
+        {message.role === "assistant" && message.reasoningContent && (
+          <div className="mb-3">
+            <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 border border-purple-200 dark:border-purple-800 rounded-xl overflow-hidden shadow-sm">
+              <button
+                onClick={() => setShowThinking(!showThinking)}
+                className="w-full flex items-center justify-between p-4 text-sm hover:bg-purple-100/50 dark:hover:bg-purple-900/20 transition-all duration-200"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/50">
+                    <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div className="text-left">
+                    <span className="font-semibold text-purple-700 dark:text-purple-300">{t("deepThinking")}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {showThinking ? (
+                    <ChevronUp className="h-5 w-5 text-purple-500 dark:text-purple-400 transition-transform" />
+                  ) : (
+                    <ChevronDown className="h-5 w-5 text-purple-500 dark:text-purple-400 transition-transform" />
+                  )}
+                </div>
+              </button>
+              {showThinking && (
+                <div className="px-4 pb-4 pt-2 text-sm text-gray-700 dark:text-gray-300 border-t border-purple-200 dark:border-purple-800/50">
+                  <div className="bg-white/70 dark:bg-gray-900/50 rounded-lg p-3 backdrop-blur-sm">
+                    <p className="whitespace-pre-wrap leading-relaxed">{message.reasoningContent}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
         <div
           className={cn(
             "p-4 break-words",

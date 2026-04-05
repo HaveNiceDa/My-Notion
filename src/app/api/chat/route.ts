@@ -11,7 +11,11 @@ import {
 // 处理POST请求
 export async function POST(req: NextRequest) {
   try {
-    const { messages, model: modelName } = await req.json();
+    const {
+      messages,
+      model: modelName,
+      enableThinking = false,
+    } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
@@ -35,22 +39,52 @@ export async function POST(req: NextRequest) {
       baseURL: DASHSCOPE_BASE_URL,
     });
 
-    // 创建流式响应
-    const stream = await openai.chat.completions.create({
+    // 构建请求参数
+    const requestParams: any = {
       model: actualModelId,
       messages: messages,
       stream: true,
-    });
+    };
+
+    // 如果启用深度思考，添加 extra_body 参数
+    if (enableThinking) {
+      requestParams.extra_body = {
+        enable_thinking: true,
+      };
+    }
+
+    // 创建流式响应
+    const stream = await openai.chat.completions.create(requestParams);
 
     // 创建可读流
     const encoder = new TextEncoder();
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
-          for await (const chunk of stream) {
-            const text = chunk.choices[0]?.delta?.content;
+          // 类型断言处理 stream
+          const streamIterator = stream as any;
+          for await (const chunk of streamIterator) {
+            const delta = chunk.choices[0]?.delta;
+
+            // 检查是否有 reasoning_content（深度思考内容）
+            const reasoningContent = (delta as any)?.reasoning_content;
+            // 检查是否有常规 content
+            const text = delta?.content;
+
+            // 构建响应数据
+            const responseData: any = {};
+            if (reasoningContent) {
+              responseData.reasoning_content = reasoningContent;
+            }
             if (text) {
-              const encoded = encoder.encode(text);
+              responseData.content = text;
+            }
+
+            // 只有当有内容时才发送
+            if (Object.keys(responseData).length > 0) {
+              const encoded = encoder.encode(
+                JSON.stringify(responseData) + "\n",
+              );
               controller.enqueue(encoded);
             }
           }
@@ -64,7 +98,7 @@ export async function POST(req: NextRequest) {
 
     return new Response(readableStream, {
       headers: {
-        "Content-Type": "text/plain",
+        "Content-Type": "application/x-ndjson",
         "Transfer-Encoding": "chunked",
       },
     });

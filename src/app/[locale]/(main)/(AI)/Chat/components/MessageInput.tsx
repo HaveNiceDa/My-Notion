@@ -2,13 +2,13 @@
 
 import {
   Plus,
-  Settings,
   Send,
   Bot,
   Check,
   Database,
   X,
   Image as ImageIcon,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -34,6 +34,7 @@ import {
 } from "@/src/lib/store/use-ai-model-store";
 import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/config";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
+import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import { useState, memo, useRef, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useImageUpload } from "@/src/hooks/use-image-upload";
@@ -59,6 +60,8 @@ const MessageInput = memo(
     const { model, setModel } = useAIModelStore();
     const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } =
       useKnowledgeBaseStore();
+    const { enabled: deepThinkingEnabled, toggle: toggleDeepThinking } =
+      useDeepThinkingStore();
     const [isSending, setIsSending] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
@@ -246,13 +249,42 @@ const MessageInput = memo(
             >
               <Plus className="h-5 w-5" />
             </Button>
-            <Button
-              className="bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0"
-              onClick={() => toast.info(t("featureUnderDevelopment"))}
-              disabled={isSending}
-            >
-              <Settings className="h-5 w-5" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip delayDuration={1}>
+                <TooltipTrigger asChild>
+                  <Button
+                    className={cn(
+                      "rounded-full transition-all duration-200 h-9 w-9 p-0 bg-transparent",
+                      deepThinkingEnabled
+                        ? "hover:bg-purple-200 text-purple-600"
+                        : "hover:bg-muted text-muted-foreground",
+                      isSending && "opacity-50",
+                    )}
+                    onClick={() => {
+                      if (!isSending) {
+                        toggleDeepThinking();
+                        toast.info(
+                          deepThinkingEnabled
+                            ? t("deepThinkingDisabled")
+                            : t("deepThinkingEnabled"),
+                        );
+                      }
+                    }}
+                    title={
+                      deepThinkingEnabled
+                        ? t("deepThinkingEnabled")
+                        : t("deepThinkingDisabled")
+                    }
+                    disabled={isSending}
+                  >
+                    <Brain className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("deepThinkingTooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           <div className="flex items-center gap-1">
             <TooltipProvider>

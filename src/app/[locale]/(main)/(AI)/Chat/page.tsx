@@ -14,12 +14,14 @@ const runRAGQueryStream = async (
   input: string,
   conversationHistoryMessages: any[],
   onChunk: (chunk: string) => void,
+  onReasoningChunk: (chunk: string) => void,
   onComplete: () => Promise<void>,
   onError: (error: any) => void,
   model: AIModel,
   temperature: number,
   knowledgeBaseEnabled: boolean,
   conversationId: string | Id<"aiConversations">,
+  enableThinking: boolean,
 ) => {
   try {
     console.log("[RAG System] 调用后端RAG流式API...");
@@ -47,6 +49,7 @@ const runRAGQueryStream = async (
         minScore: temperature, // 这里temperature实际上是minScore
         knowledgeBaseEnabled,
         conversationId,
+        enableThinking,
       }),
     });
 
@@ -87,8 +90,19 @@ const runRAGQueryStream = async (
 
               // 处理聊天响应
               if (event === "chatResponse") {
-                // 这是聊天API的响应，直接传递给onChunk
-                onChunk(data);
+                // 这是聊天API的响应，尝试解析JSON
+                try {
+                  const parsedData = JSON.parse(data);
+                  if (parsedData.reasoning_content) {
+                    onReasoningChunk(parsedData.reasoning_content);
+                  }
+                  if (parsedData.content) {
+                    onChunk(parsedData.content);
+                  }
+                } catch {
+                  // 如果不是JSON，当作纯文本处理
+                  onChunk(data);
+                }
               }
               // 处理传统的无事件类型响应
               else if (!event) {
@@ -149,6 +163,7 @@ import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
+import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import dynamic from "next/dynamic";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ConversationSidebar } from "./components/ConversationSidebar";
@@ -197,6 +212,7 @@ const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 interface Message {
   id: string;
   content: string;
+  reasoningContent?: string;
   role: string;
   timestamp: Date;
 }
@@ -210,6 +226,7 @@ const AIPage = () => {
   const { model } = useAIModelStore();
   const { userLoadingStatus } = useVectorStoreStore();
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
+  const { enabled: deepThinkingEnabled } = useDeepThinkingStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -405,7 +422,10 @@ const AIPage = () => {
         })),
       ];
 
-      conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
+      conversationHistoryMessages.push({
+        role: "user",
+        content: currentMessageContent,
+      });
 
       // 清空思考过程步骤，等待后端通过SSE推送新的步骤
       if (currentConversationId) {
@@ -415,6 +435,7 @@ const AIPage = () => {
       }
 
       let currentContent = "";
+      let currentReasoningContent = "";
       let lastMessageUpdateTime = 0;
       const MESSAGE_UPDATE_THROTTLE = 100; // 100ms的消息更新节流
 
@@ -430,7 +451,30 @@ const AIPage = () => {
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMessageId
-                  ? { ...msg, content: currentContent }
+                  ? {
+                      ...msg,
+                      content: currentContent,
+                      reasoningContent: currentReasoningContent,
+                    }
+                  : msg,
+              ),
+            );
+            lastMessageUpdateTime = now;
+          }
+        },
+        (chunk) => {
+          currentReasoningContent += chunk;
+          // 节流处理，避免过于频繁的消息更新
+          const now = Date.now();
+          if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? {
+                      ...msg,
+                      content: currentContent,
+                      reasoningContent: currentReasoningContent,
+                    }
                   : msg,
               ),
             );
@@ -438,15 +482,26 @@ const AIPage = () => {
           }
         },
         async () => {
+          // 保存消息到数据库，把 reasoningContent 也一起保存（可以作为 JSON 对象或者单独字段）
+          const messageData: any = {
+            content: currentContent,
+          };
+          if (currentReasoningContent) {
+            messageData.reasoningContent = currentReasoningContent;
+          }
+
           await convex.mutation(api.aiChat.addMessage, {
             conversationId: currentConversationId,
-            content: currentContent,
+            content: JSON.stringify(messageData),
             role: "assistant" as "user" | "assistant",
           });
 
           await convex.mutation(api.aiChat.updateConversationTitle, {
             conversationId: currentConversationId,
-            title: input.length > 50 ? input.substring(0, 50) + "..." : input || "图片对话",
+            title:
+              input.length > 50
+                ? input.substring(0, 50) + "..."
+                : input || "图片对话",
           });
 
           await loadConversations();
@@ -468,6 +523,7 @@ const AIPage = () => {
         0.6,
         knowledgeBaseEnabled,
         currentConversationId,
+        deepThinkingEnabled,
       );
     } finally {
       setIsLoading(false);
@@ -516,12 +572,29 @@ const AIPage = () => {
           conversationId: convId,
         });
 
-        const formattedMessages: Message[] = messages.map((msg: any) => ({
-          id: msg._id,
-          content: msg.content,
-          role: msg.role,
-          timestamp: new Date(msg.createdAt),
-        }));
+        const formattedMessages: Message[] = messages.map((msg: any) => {
+          let content = msg.content;
+          let reasoningContent: string | undefined;
+          
+          // 尝试解析JSON来获取 reasoningContent
+          try {
+            const parsedContent = JSON.parse(msg.content);
+            if (parsedContent.content !== undefined) {
+              content = parsedContent.content;
+              reasoningContent = parsedContent.reasoningContent;
+            }
+          } catch {
+            // 如果解析失败，当作纯文本处理
+          }
+          
+          return {
+            id: msg._id,
+            content,
+            reasoningContent,
+            role: msg.role,
+            timestamp: new Date(msg.createdAt),
+          };
+        });
 
         setMessages(formattedMessages);
 

@@ -219,6 +219,10 @@
     "knowledgeBaseEnabled": "知識庫检索已開啟",
     "knowledgeBaseDisabled": "知識庫检索已關閉",
     "knowledgeBaseTooltip": "RAG檢索",
-    "messageSendingInProgress": "訊息正在發送中，請稍候"
+    "messageSendingInProgress": "訊息正在發送中，請稍候",
+    "deepThinking": "深度思考",
+    "deepThinkingEnabled": "深度思考已開啟",
+    "deepThinkingDisabled": "深度思考已關閉",
+    "deepThinkingTooltip": "深度思考"
   }
 }
