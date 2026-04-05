@@ -463,30 +463,33 @@ const AIPage = () => {
           }
         },
         (chunk) => {
-          currentReasoningContent += chunk;
-          // 节流处理，避免过于频繁的消息更新
-          const now = Date.now();
-          if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? {
-                      ...msg,
-                      content: currentContent,
-                      reasoningContent: currentReasoningContent,
-                    }
-                  : msg,
-              ),
-            );
-            lastMessageUpdateTime = now;
+          // 只有在深度思考启用时才处理 reasoning content
+          if (deepThinkingEnabled) {
+            currentReasoningContent += chunk;
+            // 节流处理，避免过于频繁的消息更新
+            const now = Date.now();
+            if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? {
+                        ...msg,
+                        content: currentContent,
+                        reasoningContent: currentReasoningContent,
+                      }
+                    : msg,
+                ),
+              );
+              lastMessageUpdateTime = now;
+            }
           }
         },
         async () => {
-          // 保存消息到数据库，把 reasoningContent 也一起保存（可以作为 JSON 对象或者单独字段）
+          // 保存消息到数据库，只有在深度思考启用时才保存 reasoningContent
           const messageData: any = {
             content: currentContent,
           };
-          if (currentReasoningContent) {
+          if (deepThinkingEnabled && currentReasoningContent) {
             messageData.reasoningContent = currentReasoningContent;
           }
 
@@ -575,7 +578,7 @@ const AIPage = () => {
         const formattedMessages: Message[] = messages.map((msg: any) => {
           let content = msg.content;
           let reasoningContent: string | undefined;
-          
+
           // 尝试解析JSON来获取 reasoningContent
           try {
             const parsedContent = JSON.parse(msg.content);
@@ -586,7 +589,7 @@ const AIPage = () => {
           } catch {
             // 如果解析失败，当作纯文本处理
           }
-          
+
           return {
             id: msg._id,
             content,

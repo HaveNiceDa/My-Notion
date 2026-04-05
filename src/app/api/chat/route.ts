@@ -66,8 +66,10 @@ export async function POST(req: NextRequest) {
           for await (const chunk of streamIterator) {
             const delta = chunk.choices[0]?.delta;
 
-            // 检查是否有 reasoning_content（深度思考内容）
-            const reasoningContent = (delta as any)?.reasoning_content;
+            // 检查是否有 reasoning_content（深度思考内容）- 仅在 enableThinking 为 true 时才处理
+            const reasoningContent = enableThinking
+              ? (delta as any)?.reasoning_content
+              : undefined;
             // 检查是否有常规 content
             const text = delta?.content;
 
