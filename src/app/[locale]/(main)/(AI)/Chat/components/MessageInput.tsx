@@ -9,6 +9,7 @@ import {
   X,
   Image as ImageIcon,
   Brain,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -35,6 +36,7 @@ import {
 import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/config";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
+import { useWebSearchStore } from "@/src/lib/store/use-web-search-store";
 import { useState, memo, useRef, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useImageUpload } from "@/src/hooks/use-image-upload";
@@ -62,6 +64,8 @@ const MessageInput = memo(
       useKnowledgeBaseStore();
     const { enabled: deepThinkingEnabled, toggle: toggleDeepThinking } =
       useDeepThinkingStore();
+    const { enabled: webSearchEnabled, toggle: toggleWebSearch } =
+      useWebSearchStore();
     const [isSending, setIsSending] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
@@ -282,6 +286,42 @@ const MessageInput = memo(
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t("deepThinkingTooltip")}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip delayDuration={1}>
+                <TooltipTrigger asChild>
+                  <Button
+                    className={cn(
+                      "rounded-full transition-all duration-200 h-9 w-9 p-0 bg-transparent",
+                      webSearchEnabled
+                        ? "hover:bg-green-200 text-green-600"
+                        : "hover:bg-muted text-muted-foreground",
+                      isSending && "opacity-50",
+                    )}
+                    onClick={() => {
+                      if (!isSending) {
+                        toggleWebSearch();
+                        toast.info(
+                          webSearchEnabled
+                            ? t("webSearchDisabled")
+                            : t("webSearchEnabled"),
+                        );
+                      }
+                    }}
+                    title={
+                      webSearchEnabled
+                        ? t("webSearchEnabled")
+                        : t("webSearchDisabled")
+                    }
+                    disabled={isSending}
+                  >
+                    <Globe className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("webSearchTooltip")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

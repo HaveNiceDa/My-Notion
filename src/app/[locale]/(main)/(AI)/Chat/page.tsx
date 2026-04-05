@@ -22,6 +22,7 @@ const runRAGQueryStream = async (
   knowledgeBaseEnabled: boolean,
   conversationId: string | Id<"aiConversations">,
   enableThinking: boolean,
+  enableSearch: boolean,
 ) => {
   try {
     console.log("[RAG System] 调用后端RAG流式API...");
@@ -50,6 +51,7 @@ const runRAGQueryStream = async (
         knowledgeBaseEnabled,
         conversationId,
         enableThinking,
+        enableSearch,
       }),
     });
 
@@ -164,8 +166,8 @@ import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
+import { useWebSearchStore } from "@/src/lib/store/use-web-search-store";
 import dynamic from "next/dynamic";
-import { Skeleton } from "@/src/components/ui/skeleton";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { TopNavigation } from "./components/TopNavigation";
 import { NewConversationLanding } from "./components/NewConversationLanding";
@@ -227,6 +229,7 @@ const AIPage = () => {
   const { userLoadingStatus } = useVectorStoreStore();
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
   const { enabled: deepThinkingEnabled } = useDeepThinkingStore();
+  const { enabled: webSearchEnabled } = useWebSearchStore();
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationId, setConversationId] =
@@ -527,6 +530,7 @@ const AIPage = () => {
         knowledgeBaseEnabled,
         currentConversationId,
         deepThinkingEnabled,
+        webSearchEnabled,
       );
     } finally {
       setIsLoading(false);

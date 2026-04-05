@@ -15,6 +15,7 @@ export async function POST(req: NextRequest) {
       messages,
       model: modelName,
       enableThinking = false,
+      enableSearch = false,
     } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -46,11 +47,17 @@ export async function POST(req: NextRequest) {
       stream: true,
     };
 
-    // 如果启用深度思考，添加 extra_body 参数
+    // 如果启用深度思考或联网搜索，添加 extra_body 参数
+    requestParams.extra_body = {};
     if (enableThinking) {
-      requestParams.extra_body = {
-        enable_thinking: true,
-      };
+      requestParams.extra_body.enable_thinking = true;
+    }
+    if (enableSearch) {
+      requestParams.extra_body.enable_search = true;
+    }
+    // 如果 extra_body 为空，删除它
+    if (Object.keys(requestParams.extra_body).length === 0) {
+      delete requestParams.extra_body;
     }
 
     // 创建流式响应

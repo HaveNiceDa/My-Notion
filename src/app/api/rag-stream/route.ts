@@ -72,6 +72,7 @@ const runRAGQueryStream = async (
   knowledgeBaseEnabled: boolean = true,
   conversationId?: Id<"aiConversations">,
   enableThinking: boolean = false,
+  enableSearch: boolean = false,
 ): Promise<ReadableStream> => {
   console.log(`[RAG System] ===== 执行流式RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -353,6 +354,7 @@ const runRAGQueryStream = async (
               model: getActualModelId(model),
               messages,
               enableThinking,
+              enableSearch,
             }),
           });
 
@@ -456,6 +458,7 @@ export async function POST(req: NextRequest) {
           knowledgeBaseEnabled,
           conversationId,
           enableThinking = false,
+          enableSearch = false,
         } = params;
 
         const stream = await runRAGQueryStream(
@@ -467,6 +470,7 @@ export async function POST(req: NextRequest) {
           knowledgeBaseEnabled,
           conversationId,
           enableThinking,
+          enableSearch,
         );
 
         return new NextResponse(stream, {

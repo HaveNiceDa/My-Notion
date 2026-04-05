@@ -224,6 +224,10 @@
     "deepThinkingEnabled": "深度思考已開啟",
     "deepThinkingDisabled": "深度思考已關閉",
     "deepThinkingTooltip": "深度思考",
-    "modelSelect": "模型選擇"
+    "modelSelect": "模型選擇",
+    "webSearch": "聯網搜索",
+    "webSearchEnabled": "聯網搜索已開啟",
+    "webSearchDisabled": "聯網搜索已關閉",
+    "webSearchTooltip": "聯網搜索"
   }
 }
