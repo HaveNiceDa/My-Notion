@@ -158,8 +158,24 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
   const t = useTranslations("AI");
   const [showThinking, setShowThinking] = useState(true);
 
+  const getMessageText = () => {
+    try {
+      const parsedContent = JSON.parse(message.content);
+      if (parsedContent.text) {
+        return parsedContent.text;
+      }
+      if (parsedContent.content) {
+        return parsedContent.content;
+      }
+      return message.content;
+    } catch {
+      return message.content;
+    }
+  };
+
   const handleCopy = () => {
-    navigator.clipboard.writeText(message.content);
+    const textToCopy = getMessageText();
+    navigator.clipboard.writeText(textToCopy);
     toast.success(t("copied"));
   };
 
@@ -191,6 +207,12 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
         return (
           <p className="whitespace-pre-wrap text-base break-all">
             {parsedContent.text}
+          </p>
+        );
+      } else if (parsedContent.content) {
+        return (
+          <p className="whitespace-pre-wrap text-base break-all">
+            {parsedContent.content}
           </p>
         );
       } else {
