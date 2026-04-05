@@ -67,6 +67,7 @@ const MessageInput = memo(
     const { enabled: webSearchEnabled, toggle: toggleWebSearch } =
       useWebSearchStore();
     const [isSending, setIsSending] = useState(false);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const {
       uploadingFiles,
@@ -77,7 +78,6 @@ const MessageInput = memo(
       clearFiles,
     } = useImageUpload(t);
 
-    // 暴露获取已完成上传图片的方法给父组件
     useEffect(() => {
       if (onGetImages) {
         onGetImages();
@@ -88,10 +88,22 @@ const MessageInput = memo(
       return MODEL_DISPLAY_NAMES[modelName] || modelName;
     });
 
+    const hasAnyFiles = uploadingFiles.length > 0;
+    const hasUploadingFiles = uploadingFiles.some(
+      (f) => f.status === "uploading",
+    );
+
     const handleSend = useMemoizedFn(async () => {
-      if (isSending || (!input.trim() && getCompletedFiles().length === 0)) {
+      if (
+        isSending ||
+        hasUploadingFiles ||
+        (!input.trim() && getCompletedFiles().length === 0)
+      ) {
         if (isSending) {
           toast.info(t("messageSendingInProgress"));
+        }
+        if (hasUploadingFiles) {
+          toast.info(t("pleaseWaitForImageUpload"));
         }
         return;
       }
@@ -165,24 +177,53 @@ const MessageInput = memo(
       },
     );
 
-    const hasUploadingFiles = uploadingFiles.length > 0;
+    const renderImagePreview = () => {
+      if (!previewImageUrl) return null;
+
+      return (
+        <div
+          className="fixed inset-0 z-[99999] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setPreviewImageUrl(null)}
+        >
+          <button
+            onClick={() => setPreviewImageUrl(null)}
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+          >
+            <X className="h-8 w-8" />
+          </button>
+          <img
+            src={previewImageUrl}
+            alt="Preview"
+            className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      );
+    };
 
     return (
       <div className="border border-border rounded-2xl shadow-sm bg-background pt-4 px-4 pb-1">
-        {hasUploadingFiles && (
+        {hasAnyFiles && (
           <div className="mb-2 flex flex-wrap gap-2">
             {uploadingFiles.slice(0, 10).map((file) => (
               <div key={file.id} className="flex items-center">
                 {file.status === "uploading" && (
-                  <div className="relative w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-visible">
-                    <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                    <div className="absolute inset-0 rounded-md bg-black/30 flex items-center justify-center">
+                  <div className="relative w-12 h-12 rounded-md overflow-visible">
+                    <img
+                      src={file.previewUrl}
+                      alt={file.file.name}
+                      className="w-full h-full object-cover rounded-md"
+                    />
+                    <div className="absolute inset-0 rounded-md bg-black/40 flex flex-col items-center justify-center">
                       <span className="text-white text-sm font-medium">
                         {file.progress}%
                       </span>
                       <button
-                        onClick={() => handleCancelUpload(file.id)}
-                        className="absolute -top-2 -right-2 text-white hover:text-red-200 bg-black/50 rounded-full p-0.5 opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancelUpload(file.id);
+                        }}
+                        className="absolute -top-2 -right-2 text-white hover:text-red-200 bg-black/50 rounded-full p-0.5"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -190,26 +231,44 @@ const MessageInput = memo(
                   </div>
                 )}
                 {file.status === "completed" && (
-                  <div className="relative w-12 h-12 rounded-md overflow-visible group">
-                    <img
-                      src={file.url || ""}
-                      alt={file.file.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="relative w-12 h-12 rounded-md overflow-visible group cursor-pointer">
+                    <div
+                      className="w-full h-full"
+                      onClick={() => setPreviewImageUrl(file.previewUrl)}
+                    >
+                      <img
+                        src={file.previewUrl}
+                        alt={file.file.name}
+                        className="w-full h-full object-cover rounded-md"
+                      />
+                    </div>
                     <button
-                      onClick={() => handleRemoveFile(file.id)}
-                      className="absolute -top-2 -right-2 bg-black/50 text-white hover:bg-black/70 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(file.id);
+                      }}
+                      className="absolute -top-2 -right-2 bg-black/50 text-white hover:bg-black/70 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-20"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 )}
                 {file.status === "error" && (
-                  <div className="relative w-12 h-12 rounded-md bg-red-100 flex items-center justify-center overflow-visible group">
-                    <ImageIcon className="h-6 w-6 text-red-500" />
+                  <div className="relative w-12 h-12 rounded-md overflow-visible group">
+                    <img
+                      src={file.previewUrl}
+                      alt={file.file.name}
+                      className="w-full h-full object-cover rounded-md opacity-50"
+                    />
+                    <div className="absolute inset-0 rounded-md bg-red-500/30 flex items-center justify-center">
+                      <ImageIcon className="h-4 w-4 text-white" />
+                    </div>
                     <button
-                      onClick={() => handleRemoveFile(file.id)}
-                      className="absolute -top-2 -right-2 text-red-500 hover:text-red-700 bg-red-100 rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveFile(file.id);
+                      }}
+                      className="absolute -top-2 -right-2 text-red-500 hover:text-red-700 bg-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10"
                     >
                       <X className="h-3 w-3" />
                     </button>
@@ -403,11 +462,13 @@ const MessageInput = memo(
             <Button
               onClick={handleSend}
               disabled={
-                (!input.trim() && getCompletedFiles().length === 0) || isSending
+                (!input.trim() && getCompletedFiles().length === 0) ||
+                isSending ||
+                hasUploadingFiles
               }
               className={cn(
                 "bg-transparent hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0",
-                isSending && "opacity-70",
+                (isSending || hasUploadingFiles) && "opacity-70",
               )}
             >
               {isSending ? (
@@ -418,6 +479,7 @@ const MessageInput = memo(
             </Button>
           </div>
         </div>
+        {renderImagePreview()}
       </div>
     );
   },

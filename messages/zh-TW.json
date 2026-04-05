@@ -220,6 +220,7 @@
     "knowledgeBaseDisabled": "知識庫检索已關閉",
     "knowledgeBaseTooltip": "RAG檢索",
     "messageSendingInProgress": "訊息正在發送中，請稍候",
+    "pleaseWaitForImageUpload": "請等待圖片上傳完成",
     "deepThinking": "深度思考",
     "deepThinkingEnabled": "深度思考已開啟",
     "deepThinkingDisabled": "深度思考已關閉",

@@ -7,6 +7,7 @@ import { useEdgeStore } from "@/src/lib/edgestore";
 interface UploadingFile {
   id: string;
   file: File;
+  previewUrl: string;
   progress: number;
   url: string | null;
   error: string | null;
@@ -19,6 +20,18 @@ const useImageUpload = (
 ) => {
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { edgestore } = useEdgeStore();
+
+  // 生成文件预览URL
+  const createPreviewUrl = useMemoizedFn((file: File) => {
+    return URL.createObjectURL(file);
+  });
+
+  // 释放预览URL以避免内存泄漏
+  const revokePreviewUrl = useMemoizedFn((url: string) => {
+    if (url) {
+      URL.revokeObjectURL(url);
+    }
+  });
 
   // 翻译函数，默认返回原文
   const translate = (key: string, options?: Record<string, any>) => {
@@ -71,6 +84,7 @@ const useImageUpload = (
       const errorFile: UploadingFile = {
         id,
         file,
+        previewUrl: createPreviewUrl(file),
         progress: 0,
         url: null,
         error: validation.error || null,
@@ -84,6 +98,7 @@ const useImageUpload = (
     const newFile: UploadingFile = {
       id,
       file,
+      previewUrl: createPreviewUrl(file),
       progress: 0,
       url: null,
       error: null,
@@ -163,6 +178,9 @@ const useImageUpload = (
       if (fileToCancel?.abortController) {
         fileToCancel.abortController.abort();
       }
+      if (fileToCancel?.previewUrl) {
+        revokePreviewUrl(fileToCancel.previewUrl);
+      }
       return prev.filter((f) => f.id !== id);
     });
   });
@@ -181,6 +199,9 @@ const useImageUpload = (
           console.log("删除文件失败");
         });
       }
+      if (fileToRemove?.previewUrl) {
+        revokePreviewUrl(fileToRemove.previewUrl);
+      }
       return prev.filter((f) => f.id !== id);
     });
   });
@@ -193,7 +214,14 @@ const useImageUpload = (
   });
 
   const clearFiles = useMemoizedFn(() => {
-    setUploadingFiles([]);
+    setUploadingFiles((prev) => {
+      prev.forEach((file) => {
+        if (file.previewUrl) {
+          revokePreviewUrl(file.previewUrl);
+        }
+      });
+      return [];
+    });
   });
 
   return {
