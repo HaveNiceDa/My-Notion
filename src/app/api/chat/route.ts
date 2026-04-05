@@ -25,14 +25,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const validatedModelName = (AI_MODELS as readonly string[]).includes(
-      modelName,
-    )
-      ? (modelName as AIModel)
-      : DEFAULT_MODEL;
 
-    // 将通用模型ID转换为实际模型ID
-    const actualModelId = getActualModelId(validatedModelName);
+    // 如果 modelName 在 AI_MODELS 中，先转换为实际模型ID
+    let actualModelId: string;
+    if ((AI_MODELS as readonly string[]).includes(modelName)) {
+      actualModelId = getActualModelId(modelName as AIModel);
+    } else {
+      // 否则直接使用传入的 modelName（可能已经是实际模型ID）
+      actualModelId = modelName || getActualModelId(DEFAULT_MODEL);
+    }
 
     // 初始化OpenAI客户端（用于调用阿里云百炼API）
     const openai = new OpenAI({
@@ -54,17 +55,30 @@ export async function POST(req: NextRequest) {
     }
     if (enableSearch) {
       requestParams.extra_body.enable_search = true;
+      // 添加 search_options 来强制搜索（根据文档建议）
+      requestParams.extra_body.search_options = {
+        forced_search: true,
+      };
     }
     // 如果 extra_body 为空，删除它
     if (Object.keys(requestParams.extra_body).length === 0) {
       delete requestParams.extra_body;
     }
 
+    // 添加调试日志
+    console.log("[Chat API] Request params:", {
+      model: actualModelId,
+      enableThinking,
+      enableSearch,
+      extraBody: requestParams.extra_body,
+    });
+
     // 创建流式响应
     const stream = await openai.chat.completions.create(requestParams);
 
     // 创建可读流
     const encoder = new TextEncoder();
+    let firstChunk = true;
     const readableStream = new ReadableStream({
       async start(controller) {
         try {
@@ -72,6 +86,15 @@ export async function POST(req: NextRequest) {
           const streamIterator = stream as any;
           for await (const chunk of streamIterator) {
             const delta = chunk.choices[0]?.delta;
+
+            // 打印第一个 chunk 的完整结构用于调试
+            if (firstChunk) {
+              console.log(
+                "[Chat API] First chunk delta:",
+                JSON.stringify(delta, null, 2),
+              );
+              firstChunk = false;
+            }
 
             // 检查是否有 reasoning_content（深度思考内容）- 仅在 enableThinking 为 true 时才处理
             const reasoningContent = enableThinking
@@ -83,6 +106,10 @@ export async function POST(req: NextRequest) {
             // 构建响应数据
             const responseData: any = {};
             if (reasoningContent) {
+              console.log(
+                "[Chat API] Got reasoning_content:",
+                reasoningContent,
+              );
               responseData.reasoning_content = reasoningContent;
             }
             if (text) {

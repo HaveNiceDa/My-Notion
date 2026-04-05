@@ -87,8 +87,8 @@ const runRAGQueryStream = async (
       try {
         let searchResults: Array<{ document: Document; score: number }> = [];
 
-        // 先删除旧的思考过程步骤
-        if (conversationId) {
+        // 先删除旧的思考过程步骤（仅在知识库启用时）
+        if (conversationId && knowledgeBaseEnabled) {
           const deletedCount = await convex.mutation(
             api.aiChat.deleteThinkingSteps,
             {
@@ -99,11 +99,9 @@ const runRAGQueryStream = async (
           // 不添加删除步骤到思考过程
         }
 
-        // 步骤1: 检查知识库状态
-        if (conversationId) {
-          const knowledgeBaseStatus = knowledgeBaseEnabled
-            ? `知识库已启用，准备执行RAG检索`
-            : `知识库已禁用，直接使用LLM原生能力`;
+        // 步骤1: 检查知识库状态（仅在知识库启用时推送）
+        if (conversationId && knowledgeBaseEnabled) {
+          const knowledgeBaseStatus = `知识库已启用，准备执行RAG检索`;
           await addThinkingStep(
             conversationId,
             "knowledge-base",
@@ -122,11 +120,9 @@ const runRAGQueryStream = async (
           );
         }
 
-        // 步骤2: 用户Query处理
-        if (conversationId) {
-          const queryProcessingDetails = knowledgeBaseEnabled
-            ? `用户输入: ${query}\n开始进行query embedding处理`
-            : `用户输入: ${query}`;
+        // 步骤2: 用户Query处理（仅在知识库启用时推送）
+        if (conversationId && knowledgeBaseEnabled) {
+          const queryProcessingDetails = `用户输入: ${query}\n开始进行query embedding处理`;
           await addThinkingStep(
             conversationId,
             "query",
@@ -229,7 +225,7 @@ const runRAGQueryStream = async (
               }
             } catch (error) {
               console.error("[RAG System] 执行检索时出错:", error);
-              if (conversationId) {
+              if (conversationId && knowledgeBaseEnabled) {
                 await addThinkingStep(
                   conversationId,
                   "error",
@@ -252,7 +248,7 @@ const runRAGQueryStream = async (
             }
           } catch (error) {
             console.error("[RAG System] 知识库检索出错:", error);
-            if (conversationId) {
+            if (conversationId && knowledgeBaseEnabled) {
               await addThinkingStep(
                 conversationId,
                 "error",
@@ -275,11 +271,9 @@ const runRAGQueryStream = async (
           }
         }
 
-        // 步骤5: 生成动态提示词
-        if (conversationId) {
-          const promptGenerationDetails = knowledgeBaseEnabled
-            ? "基于检索结果生成结构化提示词"
-            : "基于用户查询生成提示词";
+        // 步骤5: 生成动态提示词（仅在知识库启用时推送）
+        if (conversationId && knowledgeBaseEnabled) {
+          const promptGenerationDetails = "基于检索结果生成结构化提示词";
           await addThinkingStep(
             conversationId,
             "prompt",
@@ -318,10 +312,10 @@ const runRAGQueryStream = async (
           },
         ];
 
-        // 步骤6: 调用流式聊天API
+        // 步骤6: 调用流式聊天API（仅在知识库启用时推送）
         console.log(`[RAG System] 调用流式聊天API...`);
         const displayModelName = MODEL_DISPLAY_NAMES[model] || model;
-        if (conversationId) {
+        if (conversationId && knowledgeBaseEnabled) {
           await addThinkingStep(
             conversationId,
             "api",
@@ -389,7 +383,7 @@ const runRAGQueryStream = async (
           reader.releaseLock();
         } catch (error) {
           console.error("[RAG System] 调用聊天API出错:", error);
-          if (conversationId) {
+          if (conversationId && knowledgeBaseEnabled) {
             await addThinkingStep(
               conversationId,
               "error",

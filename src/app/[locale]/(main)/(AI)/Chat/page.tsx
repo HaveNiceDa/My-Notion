@@ -488,6 +488,19 @@ const AIPage = () => {
           }
         },
         async () => {
+          // 最终更新前端消息，确保完整的 reasoningContent 被显示
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessageId
+                ? {
+                    ...msg,
+                    content: currentContent,
+                    reasoningContent: currentReasoningContent,
+                  }
+                : msg,
+            ),
+          );
+
           // 保存消息到数据库，只有在深度思考启用时才保存 reasoningContent
           const messageData: any = {
             content: currentContent,
@@ -706,6 +719,7 @@ const AIPage = () => {
                 messagesEndRef={messagesEndRef}
                 conversationCreatedAt={conversationCreatedAt}
                 conversationId={conversationId}
+                knowledgeBaseEnabled={knowledgeBaseEnabled}
               />
               <div className="w-full flex justify-center">
                 <div className="w-[55%]">

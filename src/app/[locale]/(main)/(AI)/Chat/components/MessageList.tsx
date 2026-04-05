@@ -31,6 +31,7 @@ interface MessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
   conversationId: Id<"aiConversations"> | null;
+  knowledgeBaseEnabled: boolean;
 }
 
 // 优化步骤项组件
@@ -316,6 +317,7 @@ export const MessageList = React.memo(({
   messagesEndRef,
   conversationCreatedAt,
   conversationId,
+  knowledgeBaseEnabled,
 }: MessageListProps) => {
   const t = useTranslations("AI");
   const {
@@ -391,7 +393,7 @@ export const MessageList = React.memo(({
             display: none;
           }
         `}</style>
-        {(isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
+        {knowledgeBaseEnabled && (isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
           <div className="sticky top-0 bg-background pb-4">
             <div className="rounded-lg p-3 bg-background text-foreground border border-border shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
               {/* 思考过程标题栏 */}
