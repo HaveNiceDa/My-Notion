@@ -221,6 +221,7 @@
     "knowledgeBaseTooltip": "RAG retrieval",
     "messageSendingInProgress": "Message is being sent, please wait",
     "pleaseWaitForImageUpload": "Please wait for image upload to complete",
+    "unsupportedFileType": "Only JPEG, PNG, GIF, and WebP images are supported",
     "deepThinking": "Deep Thinking",
     "deepThinkingEnabled": "Deep thinking enabled",
     "deepThinkingDisabled": "Deep thinking disabled",

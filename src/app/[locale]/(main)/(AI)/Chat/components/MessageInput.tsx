@@ -40,6 +40,7 @@ import { useWebSearchStore } from "@/src/lib/store/use-web-search-store";
 import { useState, memo, useRef, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useImageUpload } from "@/src/hooks/use-image-upload";
+import { validateFiles, validateImageFile } from "../utils";
 
 interface MessageInputProps {
   input: string;
@@ -140,7 +141,16 @@ const MessageInput = memo(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         if (files.length > 0) {
-          uploadFiles(files);
+          const { validFiles, invalidFiles } = validateFiles(
+            files,
+            t("unsupportedFileType"),
+          );
+          if (invalidFiles.length > 0) {
+            toast.error(t("unsupportedFileType"));
+          }
+          if (validFiles.length > 0) {
+            uploadFiles(validFiles);
+          }
           e.target.value = "";
         }
       },
@@ -165,7 +175,15 @@ const MessageInput = memo(
           if (item.type.startsWith("image/")) {
             const file = item.getAsFile();
             if (file) {
-              files.push(file);
+              const validation = validateImageFile(
+                file,
+                t("unsupportedFileType"),
+              );
+              if (validation.valid) {
+                files.push(file);
+              } else if (validation.error) {
+                toast.error(t("unsupportedFileType"));
+              }
             }
           }
         }
