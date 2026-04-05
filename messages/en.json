@@ -223,6 +223,7 @@
     "deepThinking": "Deep Thinking",
     "deepThinkingEnabled": "Deep thinking enabled",
     "deepThinkingDisabled": "Deep thinking disabled",
-    "deepThinkingTooltip": "Deep thinking"
+    "deepThinkingTooltip": "Deep thinking",
+    "modelSelect": "Select Model"
   }
 }

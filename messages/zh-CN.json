@@ -223,6 +223,7 @@
     "deepThinking": "深度思考",
     "deepThinkingEnabled": "深度思考已开启",
     "deepThinkingDisabled": "深度思考已关闭",
-    "deepThinkingTooltip": "深度思考"
+    "deepThinkingTooltip": "深度思考",
+    "modelSelect": "模型选择"
   }
 }

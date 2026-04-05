@@ -248,7 +248,7 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
               </button>
               {showThinking && (
                 <div className="px-4 pb-4 pt-2 text-sm text-gray-700 dark:text-gray-300 border-t border-purple-200 dark:border-purple-800/50">
-                  <div className="bg-white/70 dark:bg-gray-900/50 rounded-lg p-3 backdrop-blur-sm">
+                  <div className="bg-white/70 dark:bg-gray-900/50 rounded-lg p-3 backdrop-blur-sm max-h-64 overflow-y-auto">
                     <p className="whitespace-pre-wrap leading-relaxed">{message.reasoningContent}</p>
                   </div>
                 </div>

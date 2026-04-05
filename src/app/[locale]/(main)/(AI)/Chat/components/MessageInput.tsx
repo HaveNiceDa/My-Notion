@@ -325,15 +325,24 @@ const MessageInput = memo(
             </TooltipProvider>
 
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0 bg-transparent"
-                  variant="ghost"
-                  disabled={isSending}
-                >
-                  <Bot className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
+              <TooltipProvider>
+                <Tooltip delayDuration={1}>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        className="hover:bg-muted text-foreground rounded-full transition-all duration-200 h-9 w-9 p-0 bg-transparent"
+                        variant="ghost"
+                        disabled={isSending}
+                      >
+                        <Bot className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{t("modelSelect")}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <DropdownMenuContent align="end">
                 {AI_MODELS.map((m) => (
                   <DropdownMenuItem

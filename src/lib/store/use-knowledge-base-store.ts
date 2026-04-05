@@ -7,7 +7,7 @@ interface KnowledgeBaseState {
 }
 
 export const useKnowledgeBaseStore = create<KnowledgeBaseState>((set) => ({
-  enabled: true,
+  enabled: false,
   toggle: () => set((state) => ({ enabled: !state.enabled })),
   setEnabled: (enabled: boolean) => set({ enabled }),
 }));
