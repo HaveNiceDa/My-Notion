@@ -222,14 +222,10 @@
     "messageSendingInProgress": "Message is being sent, please wait",
     "pleaseWaitForImageUpload": "Please wait for image upload to complete",
     "unsupportedFileType": "Only JPEG, PNG, GIF, and WebP images are supported",
-    "deepThinking": "Deep Thinking",
+    "deepThinking": "Deep thinking",
     "deepThinkingEnabled": "Deep thinking enabled",
     "deepThinkingDisabled": "Deep thinking disabled",
     "deepThinkingTooltip": "Deep thinking",
-    "modelSelect": "Select Model",
-    "webSearch": "Web Search",
-    "webSearchEnabled": "Web search enabled",
-    "webSearchDisabled": "Web search disabled",
-    "webSearchTooltip": "Web search"
+    "modelSelect": "Model selection"
   }
 }

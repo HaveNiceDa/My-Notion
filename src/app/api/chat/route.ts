@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
       messages,
       model: modelName,
       enableThinking = false,
-      enableSearch = false,
     } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
@@ -43,7 +42,10 @@ export async function POST(req: NextRequest) {
 
     // 获取工具定义
     const tools = getToolDefinitions();
-    console.log("[Chat API] Available tools:", tools.map((t) => t.function.name));
+    console.log(
+      "[Chat API] Available tools:",
+      tools.map((t) => t.function.name),
+    );
 
     // 构建请求参数
     const requestParams: any = {
@@ -53,17 +55,10 @@ export async function POST(req: NextRequest) {
       stream: true,
     };
 
-    // 如果启用深度思考或联网搜索，添加 extra_body 参数
+    // 如果启用深度思考，添加 extra_body 参数
     requestParams.extra_body = {};
     if (enableThinking) {
       requestParams.extra_body.enable_thinking = true;
-    }
-    if (enableSearch) {
-      requestParams.extra_body.enable_search = true;
-      // 添加 search_options 来强制搜索（根据文档建议）
-      requestParams.extra_body.search_options = {
-        forced_search: true,
-      };
     }
     // 如果 extra_body 为空，删除它
     if (Object.keys(requestParams.extra_body).length === 0) {
@@ -74,7 +69,6 @@ export async function POST(req: NextRequest) {
     console.log("[Chat API] Request params:", {
       model: actualModelId,
       enableThinking,
-      enableSearch,
       extraBody: requestParams.extra_body,
       hasTools: tools.length > 0,
     });
@@ -92,7 +86,8 @@ export async function POST(req: NextRequest) {
           while (!toolCallHandled) {
             console.log("[Chat API] Calling model...");
 
-            const response = await openai.chat.completions.create(requestParams);
+            const response =
+              await openai.chat.completions.create(requestParams);
 
             // 处理响应
             let hasToolCalls = false;
@@ -118,8 +113,8 @@ export async function POST(req: NextRequest) {
                   } else {
                     if (toolCall.function?.arguments) {
                       assistantMessage.tool_calls[index].function.arguments =
-                        (assistantMessage.tool_calls[index].function.arguments || "") +
-                        toolCall.function.arguments;
+                        (assistantMessage.tool_calls[index].function
+                          .arguments || "") + toolCall.function.arguments;
                     }
                   }
                 });
@@ -129,7 +124,9 @@ export async function POST(req: NextRequest) {
                   type: "tool_call_start",
                   tool_calls: delta.tool_calls,
                 };
-                controller.enqueue(encoder.encode(JSON.stringify(toolCallEvent) + "\n"));
+                controller.enqueue(
+                  encoder.encode(JSON.stringify(toolCallEvent) + "\n"),
+                );
               }
 
               // 处理 reasoning_content
@@ -138,15 +135,21 @@ export async function POST(req: NextRequest) {
                 : undefined;
               if (reasoningContent) {
                 controller.enqueue(
-                  encoder.encode(JSON.stringify({ reasoning_content: reasoningContent }) + "\n"),
+                  encoder.encode(
+                    JSON.stringify({ reasoning_content: reasoningContent }) +
+                      "\n",
+                  ),
                 );
               }
 
               // 处理常规 content
               const text = delta?.content;
               if (text) {
-                assistantMessage.content = (assistantMessage.content || "") + text;
-                controller.enqueue(encoder.encode(JSON.stringify({ content: text }) + "\n"));
+                assistantMessage.content =
+                  (assistantMessage.content || "") + text;
+                controller.enqueue(
+                  encoder.encode(JSON.stringify({ content: text }) + "\n"),
+                );
               }
             }
 
@@ -172,7 +175,10 @@ export async function POST(req: NextRequest) {
                 toolArgs = {};
               }
 
-              console.log(`[Chat API] Calling tool: ${toolName} with args:`, toolArgs);
+              console.log(
+                `[Chat API] Calling tool: ${toolName} with args:`,
+                toolArgs,
+              );
 
               // 发送工具执行中事件
               const toolExecutingEvent = {
@@ -180,7 +186,9 @@ export async function POST(req: NextRequest) {
                 tool_name: toolName,
                 tool_args: toolArgs,
               };
-              controller.enqueue(encoder.encode(JSON.stringify(toolExecutingEvent) + "\n"));
+              controller.enqueue(
+                encoder.encode(JSON.stringify(toolExecutingEvent) + "\n"),
+              );
 
               // 执行工具
               let toolResult: string;
@@ -188,12 +196,18 @@ export async function POST(req: NextRequest) {
                 const tool = getToolByName(toolName);
                 if (tool) {
                   const result = await tool.execute(toolArgs);
-                  toolResult = typeof result === "string" ? result : JSON.stringify(result);
+                  toolResult =
+                    typeof result === "string"
+                      ? result
+                      : JSON.stringify(result);
                 } else {
                   toolResult = `Tool ${toolName} not found`;
                 }
               } catch (error) {
-                console.error(`[Chat API] Error executing tool ${toolName}:`, error);
+                console.error(
+                  `[Chat API] Error executing tool ${toolName}:`,
+                  error,
+                );
                 toolResult = `Error executing tool ${toolName}: ${error}`;
               }
 
@@ -205,7 +219,9 @@ export async function POST(req: NextRequest) {
                 tool_name: toolName,
                 result: toolResult,
               };
-              controller.enqueue(encoder.encode(JSON.stringify(toolResultEvent) + "\n"));
+              controller.enqueue(
+                encoder.encode(JSON.stringify(toolResultEvent) + "\n"),
+              );
 
               // 添加工具响应到消息
               currentMessages.push({
@@ -220,7 +236,9 @@ export async function POST(req: NextRequest) {
           }
 
           // 发送结束事件
-          controller.enqueue(encoder.encode(JSON.stringify({ type: "done" }) + "\n"));
+          controller.enqueue(
+            encoder.encode(JSON.stringify({ type: "done" }) + "\n"),
+          );
           controller.close();
         } catch (error) {
           console.error("[Chat API] Stream error:", error);

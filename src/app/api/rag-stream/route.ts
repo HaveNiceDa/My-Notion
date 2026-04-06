@@ -72,7 +72,6 @@ const runRAGQueryStream = async (
   knowledgeBaseEnabled: boolean = true,
   conversationId?: Id<"aiConversations">,
   enableThinking: boolean = false,
-  enableSearch: boolean = false,
 ): Promise<ReadableStream> => {
   console.log(`[RAG System] ===== 执行流式RAG查询 =====`);
   console.log(`[RAG System] 用户: ${userId}`);
@@ -348,7 +347,6 @@ const runRAGQueryStream = async (
               model: getActualModelId(model),
               messages,
               enableThinking,
-              enableSearch,
             }),
           });
 
@@ -368,24 +366,24 @@ const runRAGQueryStream = async (
           // 读取并转发聊天API的响应
           const decoder = new TextDecoder();
           let buffer = "";
-          
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
               console.log(`[RAG System] ===== 流式RAG查询完成 =====`);
               break;
             }
-            
+
             buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
-            
+
             for (let i = 0; i < lines.length - 1; i++) {
               const line = lines[i].trim();
               if (!line) continue;
-              
+
               try {
                 const data = JSON.parse(line);
-                
+
                 // 处理工具调用事件
                 if (data.type) {
                   console.log(`[RAG System] 接收到工具调用事件:`, data.type);
@@ -395,7 +393,7 @@ const runRAGQueryStream = async (
                     ),
                   );
                 }
-                
+
                 // 处理常规聊天响应
                 if (data.content || data.reasoning_content) {
                   controller.enqueue(
@@ -414,7 +412,7 @@ const runRAGQueryStream = async (
                 );
               }
             }
-            
+
             buffer = lines[lines.length - 1];
           }
 
@@ -490,7 +488,6 @@ export async function POST(req: NextRequest) {
           knowledgeBaseEnabled,
           conversationId,
           enableThinking = false,
-          enableSearch = false,
         } = params;
 
         const stream = await runRAGQueryStream(
@@ -502,7 +499,6 @@ export async function POST(req: NextRequest) {
           knowledgeBaseEnabled,
           conversationId,
           enableThinking,
-          enableSearch,
         );
 
         return new NextResponse(stream, {

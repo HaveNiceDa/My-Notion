@@ -226,10 +226,6 @@
     "deepThinkingEnabled": "深度思考已开启",
     "deepThinkingDisabled": "深度思考已关闭",
     "deepThinkingTooltip": "深度思考",
-    "modelSelect": "模型选择",
-    "webSearch": "联网搜索",
-    "webSearchEnabled": "联网搜索已开启",
-    "webSearchDisabled": "联网搜索已关闭",
-    "webSearchTooltip": "联网搜索"
+    "modelSelect": "模型选择"
   }
 }
