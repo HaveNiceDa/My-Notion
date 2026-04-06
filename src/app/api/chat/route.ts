@@ -59,6 +59,7 @@ export async function POST(req: NextRequest) {
     requestParams.extra_body = {};
     if (enableThinking) {
       requestParams.extra_body.enable_thinking = true;
+      requestParams.extra_body.thinking_budget = 50; // 设置最大推理过程链
     }
     // 如果 extra_body 为空，删除它
     if (Object.keys(requestParams.extra_body).length === 0) {
