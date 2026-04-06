@@ -366,18 +366,56 @@ const runRAGQueryStream = async (
           }
 
           // 读取并转发聊天API的响应
+          const decoder = new TextDecoder();
+          let buffer = "";
+          
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
               console.log(`[RAG System] ===== 流式RAG查询完成 =====`);
               break;
             }
-            // 推送聊天API的响应到前端，使用SSE格式
-            controller.enqueue(
-              new TextEncoder().encode(
-                `event: chatResponse\ndata: ${new TextDecoder().decode(value)}\n\n`,
-              ),
-            );
+            
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            
+            for (let i = 0; i < lines.length - 1; i++) {
+              const line = lines[i].trim();
+              if (!line) continue;
+              
+              try {
+                const data = JSON.parse(line);
+                
+                // 处理工具调用事件
+                if (data.type) {
+                  console.log(`[RAG System] 接收到工具调用事件:`, data.type);
+                  controller.enqueue(
+                    new TextEncoder().encode(
+                      `event: toolCall\ndata: ${JSON.stringify(data)}\n\n`,
+                    ),
+                  );
+                }
+                
+                // 处理常规聊天响应
+                if (data.content || data.reasoning_content) {
+                  controller.enqueue(
+                    new TextEncoder().encode(
+                      `event: chatResponse\ndata: ${JSON.stringify(data)}\n\n`,
+                    ),
+                  );
+                }
+              } catch (e) {
+                console.error(`[RAG System] 解析聊天响应出错:`, e);
+                // 如果解析失败，当作纯文本处理
+                controller.enqueue(
+                  new TextEncoder().encode(
+                    `event: chatResponse\ndata: ${JSON.stringify({ content: line })}\n\n`,
+                  ),
+                );
+              }
+            }
+            
+            buffer = lines[lines.length - 1];
           }
 
           reader.releaseLock();

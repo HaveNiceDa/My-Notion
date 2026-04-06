@@ -11,7 +11,6 @@ import {
   Brain,
   Database,
   Search,
-  MessageSquare,
   Zap,
 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -37,7 +36,7 @@ interface MessageListProps {
 // 优化步骤项组件
 const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
   const t = useTranslations("AI");
-  
+
   // 获取图标组件
   const getStepIcon = (type: string): ReactNode => {
     switch (type) {
@@ -97,21 +96,24 @@ const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
       } catch (e) {
         return <p>{step.details}</p>;
       }
-    } else if (step.type === "query" && 
-      (step.details.includes("开始进行文本embedding处理") || 
-       step.details.includes("开始进行query embedding处理"))) {
+    } else if (
+      step.type === "query" &&
+      (step.details.includes("开始进行文本embedding处理") ||
+        step.details.includes("开始进行query embedding处理"))
+    ) {
       const parts = step.details.split("\n");
       if (parts.length > 0) {
         const queryPart = parts[0];
         const embeddingPart = parts[1];
-        const queryMatch = queryPart.match(/查询: (.*)/) || 
-          queryPart.match(/用户输入: (.*)/);
+        const queryMatch =
+          queryPart.match(/查询: (.*)/) || queryPart.match(/用户输入: (.*)/);
         const label = queryPart.match(/查询: (.*)/) ? "查询" : "用户输入";
         return (
           <>
             {queryMatch && (
               <p>
-                {label}: <span className="text-blue-600 font-medium">
+                {label}:{" "}
+                <span className="text-blue-600 font-medium">
                   {queryMatch[1]}
                 </span>
               </p>
@@ -192,10 +194,13 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
             )}
             <div className="grid grid-cols-2 gap-2">
               {parsedContent.images.map((image: string, index: number) => (
-                <div key={index} className="relative rounded-lg overflow-hidden border border-border">
-                  <img 
-                    src={image} 
-                    alt={`Image ${index + 1}`} 
+                <div
+                  key={index}
+                  className="relative rounded-lg overflow-hidden border border-border"
+                >
+                  <img
+                    src={image}
+                    alt={`Image ${index + 1}`}
                     className="w-full h-auto max-h-48 object-cover"
                   />
                 </div>
@@ -234,10 +239,7 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
   return (
     <div
       key={message.id}
-      className={cn(
-        "mb-8",
-        message.role === "user" ? "flex justify-end" : "",
-      )}
+      className={cn("mb-8", message.role === "user" ? "flex justify-end" : "")}
     >
       <div
         className={cn(
@@ -258,7 +260,9 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
                     <Brain className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div className="text-left">
-                    <span className="font-semibold text-purple-700 dark:text-purple-300">{t("deepThinking")}</span>
+                    <span className="font-semibold text-purple-700 dark:text-purple-300">
+                      {t("deepThinking")}
+                    </span>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -272,14 +276,16 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
               {showThinking && (
                 <div className="px-4 pb-4 pt-2 text-sm text-gray-700 dark:text-gray-300 border-t border-purple-200 dark:border-purple-800/50">
                   <div className="bg-white/70 dark:bg-gray-900/50 rounded-lg p-3 backdrop-blur-sm max-h-64 overflow-y-auto">
-                    <p className="whitespace-pre-wrap leading-relaxed">{message.reasoningContent}</p>
+                    <p className="whitespace-pre-wrap leading-relaxed">
+                      {message.reasoningContent}
+                    </p>
                   </div>
                 </div>
               )}
             </div>
           </div>
         )}
-        
+
         <div
           className={cn(
             "p-4 break-words",
@@ -333,168 +339,169 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
   );
 });
 
-export const MessageList = React.memo(({
-  messages,
-  isLoading,
-  messagesEndRef,
-  conversationCreatedAt,
-  conversationId,
-  knowledgeBaseEnabled,
-}: MessageListProps) => {
-  const t = useTranslations("AI");
-  const {
-    steps,
-    isExpanded,
-    isVisible,
-    toggleExpanded,
-    loadSteps,
-    clearSteps,
-    isLoading: isLoadingSteps,
-    isLoaded,
-  } = useThinkingProcessStore();
+export const MessageList = React.memo(
+  ({
+    messages,
+    isLoading,
+    messagesEndRef,
+    conversationCreatedAt,
+    conversationId,
+    knowledgeBaseEnabled,
+  }: MessageListProps) => {
+    const t = useTranslations("AI");
+    const {
+      steps,
+      isExpanded,
+      isVisible,
+      toggleExpanded,
+      loadSteps,
+      clearSteps,
+      isLoading: isLoadingSteps,
+      isLoaded,
+    } = useThinkingProcessStore();
 
-  // 当conversationId变化时，加载思考过程或清除步骤
-  useEffect(() => {
-    if (conversationId) {
-      loadSteps(conversationId);
-    } else {
-      clearSteps();
-    }
-  }, [conversationId, loadSteps, clearSteps]);
+    // 当conversationId变化时，加载思考过程或清除步骤
+    useEffect(() => {
+      if (conversationId) {
+        loadSteps(conversationId);
+      } else {
+        clearSteps();
+      }
+    }, [conversationId, loadSteps, clearSteps]);
 
-  // 格式化日期
-  const formatDate = useMemo(() => {
-    if (!conversationCreatedAt) return null;
-    return conversationCreatedAt.toLocaleDateString("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long",
-    });
-  }, [conversationCreatedAt]);
+    // 格式化日期
+    const formatDate = useMemo(() => {
+      if (!conversationCreatedAt) return null;
+      return conversationCreatedAt.toLocaleDateString("zh-CN", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long",
+      });
+    }, [conversationCreatedAt]);
 
-  // 渲染思考过程步骤
-  const renderThinkingSteps = useMemo(() => {
-    if (isLoadingSteps) {
-      return (
-        <div className="flex justify-center py-4">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-        </div>
-      );
-    }
+    // 渲染思考过程步骤
+    const renderThinkingSteps = useMemo(() => {
+      if (isLoadingSteps) {
+        return (
+          <div className="flex justify-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+          </div>
+        );
+      }
 
-    if (steps.length === 0) {
-      return (
-        <div className="flex justify-center py-4 text-muted-foreground text-xs">
-          暂无思考过程
-        </div>
-      );
-    }
+      if (steps.length === 0) {
+        return (
+          <div className="flex justify-center py-4 text-muted-foreground text-xs">
+            暂无思考过程
+          </div>
+        );
+      }
 
-    return steps.map((step, index) => (
-      <StepItem key={step.id} step={step} index={index} />
-    ));
-  }, [steps, isLoadingSteps]);
+      return steps.map((step, index) => (
+        <StepItem key={step.id} step={step} index={index} />
+      ));
+    }, [steps, isLoadingSteps]);
 
-  // 渲染消息列表
-  const renderMessages = useMemo(() => {
-    return messages.map((message) => (
-      <MessageItem key={message.id} message={message} />
-    ));
-  }, [messages]);
+    // 渲染消息列表
+    const renderMessages = useMemo(() => {
+      return messages.map((message) => (
+        <MessageItem key={message.id} message={message} />
+      ));
+    }, [messages]);
 
-  return (
-    <div className="flex-1 flex p-8 overflow-hidden min-h-0 mb-10">
-      {/* 左侧思考过程 */}
-      <div
-        className="w-72 absolute top-40 left-4 overflow-y-auto hide-scrollbar"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <style>{`
+    return (
+      <div className="flex-1 flex p-8 overflow-hidden min-h-0 mb-10">
+        {/* 左侧思考过程 */}
+        <div
+          className="w-72 absolute top-40 left-4 overflow-y-auto hide-scrollbar"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <style>{`
           .hide-scrollbar::-webkit-scrollbar {
             display: none;
           }
         `}</style>
-        {knowledgeBaseEnabled && (isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
-          <div className="sticky top-0 bg-background pb-4">
-            <div className="rounded-lg p-3 bg-background text-foreground border border-border shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
-              {/* 思考过程标题栏 */}
-              <div
-                className="flex items-center justify-between cursor-pointer mb-2 group"
-                onClick={toggleExpanded}
-              >
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600">
-                    {isLoading || isLoadingSteps ? (
-                      <Brain className="h-3 w-3 animate-pulse" />
-                    ) : (
-                      <Brain className="h-3 w-3" />
-                    )}
+          {knowledgeBaseEnabled &&
+            (isLoading || isLoadingSteps || isVisible || steps.length > 0) && (
+              <div className="sticky top-0 bg-background pb-4">
+                <div className="rounded-lg p-3 bg-background text-foreground border border-border shadow-sm overflow-hidden transition-all duration-300 ease-in-out hover:shadow-md">
+                  {/* 思考过程标题栏 */}
+                  <div
+                    className="flex items-center justify-between cursor-pointer mb-2 group"
+                    onClick={toggleExpanded}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-100 text-blue-600">
+                        {isLoading || isLoadingSteps ? (
+                          <Brain className="h-3 w-3 animate-pulse" />
+                        ) : (
+                          <Brain className="h-3 w-3" />
+                        )}
+                      </div>
+                      <p className="text-sm font-medium">
+                        {t("recentConversationThinking")}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        {steps.length} 步骤
+                      </span>
+                      {isExpanded ? (
+                        <ChevronUp className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+                      )}
+                    </div>
                   </div>
-                  <p className="text-sm font-medium">
-                    {t("recentConversationThinking")}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">
-                    {steps.length} 步骤
-                  </span>
-                  {isExpanded ? (
-                    <ChevronUp className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
-                  ) : (
-                    <ChevronDown className="h-3 w-3 text-muted-foreground group-hover:text-foreground transition-colors" />
+
+                  {/* 思考过程步骤列表 */}
+                  {isExpanded && (
+                    <div className="mt-3 space-y-2">{renderThinkingSteps}</div>
                   )}
                 </div>
               </div>
+            )}
+        </div>
 
-              {/* 思考过程步骤列表 */}
-              {isExpanded && (
-                <div className="mt-3 space-y-2">
-                  {renderThinkingSteps}
+        {/* 右侧消息列表 */}
+        <div
+          className="flex-1 flex justify-center overflow-y-auto hide-scrollbar"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          <div className="w-full max-w-[60%]">
+            {conversationCreatedAt && (
+              <div className="mb-8 text-center">
+                <div className="inline-block text-muted-foreground px-4 py-1 rounded-full text-sm">
+                  {formatDate} · Notion AI
                 </div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 右侧消息列表 */}
-      <div
-        className="flex-1 flex justify-center overflow-y-auto hide-scrollbar"
-        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-      >
-        <div className="w-full max-w-[60%]">
-          {conversationCreatedAt && (
-            <div className="mb-8 text-center">
-              <div className="inline-block text-muted-foreground px-4 py-1 rounded-full text-sm">
-                {formatDate} · Notion AI
               </div>
-            </div>
-          )}
+            )}
 
-          {renderMessages}
+            {renderMessages}
 
-          {isLoading && (
-            <div className="flex justify-start mb-8">
-              <div className="max-w-[80%]">
-                <div className="p-4 break-words bg-background text-foreground pb-1 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                    <span className="text-sm text-muted-foreground">
-                      正在生成响应...
-                    </span>
+            {isLoading && (
+              <div className="flex justify-start mb-8">
+                <div className="max-w-[80%]">
+                  <div className="p-4 break-words bg-background text-foreground pb-1 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                      <span className="text-sm text-muted-foreground">
+                        正在生成响应...
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
+            )}
+            <div ref={messagesEndRef} />
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
-MessageList.displayName = 'MessageList';
-StepItem.displayName = 'StepItem';
-MessageItem.displayName = 'MessageItem';
+MessageList.displayName = "MessageList";
+StepItem.displayName = "StepItem";
+MessageItem.displayName = "MessageItem";

@@ -1,9 +1,12 @@
 import { z } from "zod";
 
 export interface ToolDefinition {
-  name: string;
-  description: string;
-  parameters: any;
+  type: "function";
+  function: {
+    name: string;
+    description: string;
+    parameters: any;
+  };
 }
 
 export abstract class BaseTool<
@@ -16,9 +19,12 @@ export abstract class BaseTool<
 
   get definition(): ToolDefinition {
     return {
-      name: this.name,
-      description: this.description,
-      parameters: this.inputSchemaToJsonSchema(),
+      type: "function",
+      function: {
+        name: this.name,
+        description: this.description,
+        parameters: this.inputSchemaToJsonSchema(),
+      },
     };
   }
 

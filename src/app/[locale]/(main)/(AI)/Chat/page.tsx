@@ -15,6 +15,7 @@ const runRAGQueryStream = async (
   conversationHistoryMessages: any[],
   onChunk: (chunk: string) => void,
   onReasoningChunk: (chunk: string) => void,
+  onToolCall: (data: any) => void,
   onComplete: () => Promise<void>,
   onError: (error: any) => void,
   model: AIModel,
@@ -132,7 +133,18 @@ const runRAGQueryStream = async (
                   // 处理错误事件
                   else if (event === "error") {
                     console.error("[RAG System] 接收到错误:", parsedData);
-                    onError(new Error(parsedData.message));
+                    // 检查错误消息是否为 "terminated"，如果是则视为正常终止
+                    if (parsedData.message === "terminated") {
+                      console.log("[RAG System] 连接正常终止");
+                      // 不抛出错误，视为正常结束
+                    } else {
+                      onError(new Error(parsedData.message));
+                    }
+                  }
+                  // 处理工具调用事件 - 暂时不处理，因为用户觉得太乱
+                  else if (event === "toolCall") {
+                    console.log("[RAG System] 接收到工具调用事件:", parsedData);
+                    // 不调用 onToolCall，避免显示工具调用
                   }
                   // 处理结束事件
                   else if (event === "end") {
@@ -140,6 +152,7 @@ const runRAGQueryStream = async (
                   }
                 } catch (error) {
                   console.error("[RAG System] 解析SSE数据出错:", error);
+                  // 忽略解析错误，继续处理其他事件
                 }
               }
             }
@@ -167,6 +180,7 @@ import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store"
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import { useWebSearchStore } from "@/src/lib/store/use-web-search-store";
+import { useToolCallStore } from "@/src/lib/store/use-tool-call-store";
 import dynamic from "next/dynamic";
 import { ConversationSidebar } from "./components/ConversationSidebar";
 import { TopNavigation } from "./components/TopNavigation";
@@ -487,6 +501,75 @@ const AIPage = () => {
             }
           }
         },
+        (data: any) => {
+          // 检查 data 是否存在
+          if (!data) {
+            console.log("[RAG System] 接收到空的工具调用数据");
+            return;
+          }
+
+          const { addToolCall, setToolCallResult, setToolCallError } =
+            useToolCallStore.getState();
+
+          // 检查 data.type 是否存在
+          if (!data.type) {
+            console.log("[RAG System] 接收到没有 type 的工具调用数据:", data);
+            return;
+          }
+
+          switch (data.type) {
+            case "tool_call_start":
+              // 处理工具调用开始事件，data.tool_calls 是数组
+              if (data.tool_calls && Array.isArray(data.tool_calls)) {
+                data.tool_calls.forEach((toolCall: any) => {
+                  const toolCallId =
+                    toolCall.id ||
+                    `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                  addToolCall({
+                    id: toolCallId,
+                    name: toolCall.function?.name || "unknown",
+                    parameters: toolCall.function?.arguments
+                      ? JSON.parse(toolCall.function.arguments)
+                      : {},
+                    status: "calling",
+                  });
+                });
+              }
+              break;
+            case "tool_executing":
+              // 处理工具执行中事件
+              const executingToolCallId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              addToolCall({
+                id: executingToolCallId,
+                name: data.tool_name || "unknown",
+                parameters: data.tool_args || {},
+                status: "executing",
+              });
+              break;
+            case "tool_result":
+              // 处理工具结果事件
+              const resultToolCallId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              addToolCall({
+                id: resultToolCallId,
+                name: data.tool_name || "unknown",
+                parameters: {},
+                status: "completed",
+              });
+              setToolCallResult(resultToolCallId, data.result);
+              break;
+            case "tool_error":
+              // 处理工具错误事件
+              const errorToolCallId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+              addToolCall({
+                id: errorToolCallId,
+                name: data.tool_name || "unknown",
+                parameters: {},
+                status: "error",
+              });
+              setToolCallError(errorToolCallId, data.error);
+              break;
+          }
+        },
         async () => {
           // 最终更新前端消息，确保完整的 reasoningContent 被显示
           setMessages((prev) =>
@@ -525,7 +608,7 @@ const AIPage = () => {
 
           await loadConversations();
         },
-        (error) => {
+        (error: any) => {
           console.error("Error in RAG stream:", error);
           setMessages((prev) =>
             prev.map((msg) =>
