@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatTime(timestamp: number | undefined) {
+export function formatTime(timestamp: number | undefined, t: (key: string, params?: any) => string) {
   if (!timestamp) return null;
 
   const now = Date.now();
@@ -13,18 +13,22 @@ export function formatTime(timestamp: number | undefined) {
   const minutes = Math.floor(diff / (1000 * 60));
   const hours = Math.floor(diff / (1000 * 60 * 60));
 
+  // 1分钟内
   if (minutes < 1) {
-    return "justNow";
+    return t("justNow");
   }
 
+  // 1小时内
   if (minutes < 60) {
-    return { key: "minutesAgo", params: { count: minutes } };
+    return t("minutesAgo", { count: minutes });
   }
 
+  // 1-24小时
   if (hours < 24) {
-    return { key: "hoursAgo", params: { count: hours } };
+    return t("hoursAgo", { count: hours });
   }
 
+  // 超过24小时，显示具体日期（xx年xx月xx日）
   const date = new Date(timestamp);
   const year = date.getFullYear();
   const month = date.getMonth() + 1;

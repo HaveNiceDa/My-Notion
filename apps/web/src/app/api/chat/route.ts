@@ -6,8 +6,8 @@ import {
   DEFAULT_MODEL,
   getActualModelId,
   DASHSCOPE_BASE_URL,
-} from "@/src/lib/ai/config";
-import { getToolDefinitions, getToolByName } from "@/src/lib/ai/tools";
+} from "@notion/ai/config";
+import { getToolDefinitions, getToolByName } from "@notion/ai/tools";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {

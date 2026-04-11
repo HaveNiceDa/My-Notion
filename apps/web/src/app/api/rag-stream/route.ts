@@ -3,16 +3,16 @@ import { Document } from "@langchain/core/documents";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { CustomEmbeddings } from "@/src/lib/rag/customEmbeddings";
-import { QdrantVectorStoreWrapper } from "@/src/lib/rag/qdrantVectorStore";
-import { promptLoader } from "@/src/lib/prompt/promptLoader";
+import { CustomEmbeddings } from "@notion/ai/embeddings";
+import { QdrantVectorStoreWrapper } from "@notion/ai/rag";
+import { promptLoader } from "@notion/ai/prompts";
 import { addThinkingStep } from "@/src/lib/rag/ragUtils";
 import {
   type AIModel,
   DEFAULT_MODEL,
   getActualModelId,
   MODEL_DISPLAY_NAMES,
-} from "@/src/lib/ai/config";
+} from "@notion/ai/config";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);

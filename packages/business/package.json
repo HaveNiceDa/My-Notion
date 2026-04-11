@@ -1,5 +1,5 @@
 {
-  "name": "notion-business",
+  "name": "@notion/business",
   "version": "1.0.0",
   "description": "Shared business logic for My-Notion",
   "main": "index.ts",
