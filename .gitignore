@@ -1,9 +1,8 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-# 包含子包的node_modules
-**/node_modules
 /node_modules
+**/node_modules
 /test
 /Agent
 /.pnp
@@ -42,8 +41,3 @@ next-env.d.ts
 
 # Sentry Config File
 .env.sentry-build-plugin
-
-/apps/web/.next
-/apps/web/.vercel
-/apps/web/.env
-/apps/web/.env.local

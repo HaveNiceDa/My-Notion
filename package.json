@@ -11,7 +11,7 @@
     "dev": "pnpm run dev --filter 'apps/*'",
     "start:web": "pnpm --filter notion-web start",
     "start:mobile": "pnpm --filter notion-mobile start",
-    "clean": "npx rimraf .next cache node_modules"
+    "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "engines": {
     "node": ">=18"
