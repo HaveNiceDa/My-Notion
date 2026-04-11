@@ -6,17 +6,19 @@
     "packages/business/*"
   ],
   "scripts": {
-    "build": "pnpm run build --filter 'apps/*'",
+    "build:web": "pnpm --filter notion-web build",
+    "build:mobile": "pnpm --filter notion-mobile build",
     "dev": "pnpm run dev --filter 'apps/*'",
-    "start:web": "pnpm --filter notion-web dev",
-    "start:convex": "npx convex dev --dir services/convex",
-    "clean": "pnpm -r exec rm -rf node_modules"
+    "start:web": "pnpm --filter notion-web start",
+    "start:mobile": "pnpm --filter notion-mobile start",
+    "clean": "npx rimraf .next cache node_modules"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "^9.2.1",
+    "rimraf": "^6.1.3"
   },
   "resolutions": {
     "prosemirror-view": "^1.31.4"
