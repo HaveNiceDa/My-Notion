@@ -1,0 +1,35 @@
+{
+  "name": "notion-ai",
+  "version": "1.0.0",
+  "description": "AI kit for My-Notion",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./prompts": "./prompts/index.ts",
+    "./config": "./config/index.ts",
+    "./tools": "./tools/index.ts",
+    "./embeddings": "./embeddings/index.ts",
+    "./rag": "./rag/index.ts",
+    "./utils": "./utils/index.ts"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.28.1",
+  "dependencies": {
+    "@langchain/core": "^1.1.18",
+    "@langchain/textsplitters": "^1.0.1",
+    "@qdrant/js-client-rest": "^1.17.0",
+    "openai": "^6.33.0",
+    "serpapi": "^2.2.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
