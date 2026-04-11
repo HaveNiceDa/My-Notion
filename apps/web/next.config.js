@@ -5,16 +5,24 @@ const withNextIntl = createNextIntlPlugin();
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["files.edgestore.dev"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "files.edgestore.dev",
+        port: "",
+        pathname: "**",
+      },
+    ],
   },
   reactStrictMode: false,
-  outputFileTracing: true,
-  swcMinify: true,
   compress: true,
-  optimizeFonts: true,
   productionBrowserSourceMaps: false,
   experimental: {
-    optimizePackageImports: ['@blocknote/core', '@blocknote/react', '@blocknote/mantine'],
+    optimizePackageImports: [
+      "@blocknote/core",
+      "@blocknote/react",
+      "@blocknote/mantine",
+    ],
   },
 };
 
