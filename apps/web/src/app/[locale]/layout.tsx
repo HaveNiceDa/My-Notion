@@ -58,7 +58,7 @@ export default async function RootLayout({
   }
 
   // Load messages for the current locale
-  const messages = await import(`../../../messages/${locale}.json`);
+  const messages = await import(`@notion-i18n/${locale}.json`);
 
   return (
     <html lang={locale} suppressHydrationWarning>
