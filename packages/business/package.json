@@ -1,13 +1,28 @@
 {
   "name": "notion-business",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Shared business logic for My-Notion",
+  "main": "index.ts",
+  "types": "index.ts",
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./types/index.ts",
+    "./utils": "./utils/index.ts",
+    "./schemas": "./schemas/index.ts",
+    "./i18n/*": "./i18n/*.json"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.28.1"
+  "dependencies": {
+    "zod": "^3.22.4",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^1.14.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
 }

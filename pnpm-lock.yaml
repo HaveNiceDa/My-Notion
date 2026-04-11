@@ -205,7 +205,21 @@ importers:
         specifier: ^5
         version: 5.9.3
 
-  packages/business: {}
+  packages/business:
+    dependencies:
+      clsx:
+        specifier: ^2.0.0
+        version: 2.1.1
+      tailwind-merge:
+        specifier: ^1.14.0
+        version: 1.14.0
+      zod:
+        specifier: ^3.22.4
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
 
 packages:
 
