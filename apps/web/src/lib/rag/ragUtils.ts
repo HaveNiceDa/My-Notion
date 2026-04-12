@@ -5,51 +5,21 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { CustomEmbeddings } from "./customEmbeddings";
 import { QdrantVectorStoreWrapper } from "./qdrantVectorStore";
-import { promptLoader } from "@/src/lib/prompt/promptLoader";
+import { promptLoader } from "@notion/ai/prompts";
 import {
   type AIModel,
   DEFAULT_MODEL,
   getActualModelId,
   MODEL_DISPLAY_NAMES,
-} from "@/src/lib/ai/config";
+} from "@notion/ai/config";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export type { AIModel };
 
-// 文档分割器
-export const textSplitter = new RecursiveCharacterTextSplitter({
-  chunkSize: 250,
-  chunkOverlap: 40,
-  separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
-});
-
-import { extractTextFromDocument } from "@/src/lib/utils/textExtractor";
-
-// 构建上下文增强的查询
-export const buildEnhancedQuery = (
-  query: string,
-  conversationHistory: Array<{ role: string; content: string }> = [],
-): string => {
-  if (conversationHistory.length === 0) {
-    return query;
-  }
-
-  // 提取最近的对话历史（最多3轮）
-  const recentHistory = conversationHistory.slice(-3);
-
-  // 构建历史摘要
-  const historySummary = recentHistory
-    .map(
-      (msg) =>
-        `${msg.role === "user" ? "用户" : "助手"}: ${msg.content.substring(0, 100)}${msg.content.length > 100 ? "..." : ""}`,
-    )
-    .join("\n");
-
-  // 构建增强查询
-  return `基于之前的对话:\n${historySummary}\n\n当前问题: ${query}`;
-};
+import { textSplitter, buildEnhancedQuery } from "@notion/ai/rag";
+import { extractTextFromDocument } from "@notion/ai/utils";
 
 // 添加思考过程到数据库
 export async function addThinkingStep(

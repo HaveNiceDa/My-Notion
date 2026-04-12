@@ -7,7 +7,7 @@ import { useTranslations } from "next-intl";
 import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { Item } from "./Item";
 import { FileIcon } from "lucide-react";
 

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronLeft, Trash2, Clock, Pin, PinOff, Home } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { SidebarButton } from "./SidebarButton";

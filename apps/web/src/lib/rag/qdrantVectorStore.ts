@@ -3,7 +3,7 @@ import { Document } from "@langchain/core/documents";
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
-import { extractTextFromDocument } from "@/src/lib/utils/textExtractor";
+import { extractTextFromDocument } from "@notion/ai/utils";
 
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;

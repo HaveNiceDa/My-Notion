@@ -2,7 +2,7 @@
 
 import { useConvexAuth } from "convex/react";
 import { useScrollTop } from "@/src/hooks/use-scroll-top";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { Logo } from "./Logo";
 import { ModeToggle } from "@/src/components/mode-toggle";
 import { LanguageToggle } from "@/src/components/language-toggle";

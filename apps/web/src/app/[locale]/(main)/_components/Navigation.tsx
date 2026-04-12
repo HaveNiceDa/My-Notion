@@ -17,7 +17,7 @@ import { useMediaQuery } from "usehooks-ts";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { UserItem } from "./user-item";
 import { api } from "@/convex/_generated/api";
 import {

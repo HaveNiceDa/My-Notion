@@ -1,6 +1,6 @@
 import { Embeddings } from "@langchain/core/embeddings";
 import OpenAI from "openai";
-import { EMB_MODEL, DASHSCOPE_BASE_URL } from "@/src/lib/ai/config";
+import { EMB_MODEL, DASHSCOPE_BASE_URL } from "@notion/ai/config";
 
 // 自定义Embeddings实现
 export class CustomEmbeddings extends Embeddings {

@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 
 interface SidebarButtonProps {
   onClick: () => void;

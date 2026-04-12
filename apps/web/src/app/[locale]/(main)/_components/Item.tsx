@@ -6,7 +6,7 @@ import { useState } from "react";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { RenameModal } from "@/src/components/modals/rename-modal";
 import {
   DropdownMenu,

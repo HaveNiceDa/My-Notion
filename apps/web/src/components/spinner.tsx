@@ -2,7 +2,7 @@ import { Loader } from "lucide-react";
 
 import { cva, type VariantProps } from "class-variance-authority";
 
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 
 const spinnerVariants = cva("text-muted-foreground animate-spin", {
   variants: {

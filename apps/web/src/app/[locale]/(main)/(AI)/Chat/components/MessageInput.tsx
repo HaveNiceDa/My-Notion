@@ -26,13 +26,13 @@ import {
 } from "@/src/components/ui/tooltip";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import {
   useAIModelStore,
   AI_MODELS,
   AIModel,
 } from "@/src/lib/store/use-ai-model-store";
-import { MODEL_DISPLAY_NAMES } from "@/src/lib/ai/config";
+import { MODEL_DISPLAY_NAMES } from "@notion/ai/config";
 import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import { useState, memo, useRef, useEffect } from "react";

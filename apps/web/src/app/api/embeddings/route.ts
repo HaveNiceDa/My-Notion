@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
-import { EMB_MODEL, DASHSCOPE_BASE_URL } from "@/src/lib/ai/config";
+import { EMB_MODEL, DASHSCOPE_BASE_URL } from "@notion/ai/config";
 
 // 处理POST请求
 export async function POST(req: NextRequest) {

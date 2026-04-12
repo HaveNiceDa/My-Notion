@@ -22,7 +22,7 @@ import {
 import { useOrigin } from "@/src/hooks/use-origin";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/src/components/ui/button";
-import { formatTime } from "@/src/lib/utils";
+import { formatTime } from "@notion/business/utils";
 
 interface PublishProps {
   initialData: Doc<"documents">;

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
-import { CustomEmbeddings } from "@/src/lib/rag/customEmbeddings";
-import { QdrantVectorStoreWrapper } from "@/src/lib/rag/qdrantVectorStore";
+import { CustomEmbeddings } from "@notion/ai/embeddings";
+import { QdrantVectorStoreWrapper } from "@notion/ai/rag";
 
 // 初始化Convex客户端
 const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);

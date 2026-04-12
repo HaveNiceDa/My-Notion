@@ -6,7 +6,7 @@ import { ImageIcon, X } from "lucide-react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { Button } from "@/src/components/ui/button";
 import { useConverImage } from "@/src/hooks/use-cover-image";
 import { api } from "@/convex/_generated/api";

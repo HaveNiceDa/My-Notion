@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, ReactNode, useState } from "react";
-import { cn } from "@/src/lib/utils";
+import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
