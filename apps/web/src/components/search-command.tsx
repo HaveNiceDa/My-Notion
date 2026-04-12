@@ -3,7 +3,7 @@
 import { File } from "lucide-react";
 import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 
 import {
@@ -23,7 +23,7 @@ export function SearchCommand() {
   const router = useRouter();
   const documents = useQuery(api.documents.getSearch);
   const [isMounted, setIsMounted] = useState(false);
-  const t = useTranslations('SearchCommand');
+  const t = useTranslations("SearchCommand");
 
   const toggle = useSearch((store) => store.toggle);
   const isOpen = useSearch((store) => store.isOpen);
@@ -50,10 +50,12 @@ export function SearchCommand() {
 
   return (
     <CommandDialog open={isOpen} onOpenChange={onClose}>
-      <CommandInput placeholder={t('placeholder', { name: user?.fullName || 'your' })} />
+      <CommandInput
+        placeholder={t("placeholder", { name: user?.fullName || "your" })}
+      />
       <CommandList>
-        <CommandEmpty>{t('empty')}</CommandEmpty>
-        <CommandGroup heading={t('documents')}>
+        <CommandEmpty>{t("empty")}</CommandEmpty>
+        <CommandGroup heading={t("documents")}>
           {documents?.map((document) => (
             <CommandItem
               key={document._id}

@@ -6,7 +6,7 @@ import { cn } from "@notion/business/utils";
 import { Logo } from "./Logo";
 import { ModeToggle } from "@/src/components/mode-toggle";
 import { LanguageToggle } from "@/src/components/language-toggle";
-import { SignInButton, UserButton } from "@clerk/clerk-react";
+import { SignInButton, UserButton } from "@clerk/nextjs";
 import { Button } from "@/src/components/ui/button";
 import { Spinner } from "@/src/components/spinner";
 import Link from "next/link";
@@ -31,20 +31,20 @@ export function Navbar() {
           <>
             <SignInButton mode="modal">
               <Button variant="ghost" size="sm">
-                {t('login')}
+                {t("login")}
               </Button>
             </SignInButton>
             <SignInButton mode="modal">
-              <Button size="sm">{t('getNotionFree')}</Button>
+              <Button size="sm">{t("getNotionFree")}</Button>
             </SignInButton>
           </>
         )}
         {isAuthenticated && !isLoading && (
           <>
             <Button variant="ghost" size="sm" asChild>
-              <Link href="/documents">{t('enterNotion')}</Link>
+              <Link href="/documents">{t("enterNotion")}</Link>
             </Button>
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </>
         )}
         <ModeToggle />

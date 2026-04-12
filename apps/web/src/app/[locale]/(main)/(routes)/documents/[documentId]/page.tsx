@@ -6,7 +6,7 @@ import React, { use, useMemo, useRef, useState, useEffect } from "react";
 import { useTitle } from "@/src/hooks/use-title";
 import { useTranslations } from "next-intl";
 import type { EditorRef } from "@/src/components/Editor";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";

@@ -5,7 +5,7 @@ import { Heroes } from "./Heroes";
 import { useConvexAuth } from "convex/react";
 import { Spinner } from "@/src/components/spinner";
 import Link from "next/link";
-import { SignInButton } from "@clerk/clerk-react";
+import { SignInButton } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 
 export default function Heading() {

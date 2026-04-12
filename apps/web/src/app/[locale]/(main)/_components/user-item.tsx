@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/src/components/ui/dropdown-menu";
-import { useUser, useClerk } from "@clerk/clerk-react";
+import { useUser, useClerk } from "@clerk/nextjs";
 import { Avatar } from "@/src/components/ui/avatar";
 import { AvatarImage } from "@radix-ui/react-avatar";
 import { useTranslations } from "next-intl";

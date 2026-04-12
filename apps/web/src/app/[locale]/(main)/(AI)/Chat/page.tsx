@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";

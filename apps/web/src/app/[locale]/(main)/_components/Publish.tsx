@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import { Check, Copy, Globe, Star, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 
 import { Doc } from "@/convex/_generated/dataModel";
 import {

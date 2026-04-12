@@ -8,7 +8,7 @@ import { Navigation } from "./_components/Navigation";
 import { SearchCommand } from "@/src/components/search-command";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@clerk/nextjs";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
 
 export default function MainLayout({
