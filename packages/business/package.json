@@ -8,7 +8,6 @@
     ".": "./index.ts",
     "./types": "./types/index.ts",
     "./utils": "./utils/index.ts",
-    "./schemas": "./schemas/index.ts",
     "./i18n/*": "./i18n/*.json"
   },
   "scripts": {

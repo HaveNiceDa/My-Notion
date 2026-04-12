@@ -4,6 +4,7 @@ import { aiConversationsTable } from "./aiConversations";
 import { aiMessagesTable } from "./aiMessages";
 import { aiThinkingStepsTable } from "./aiThinkingSteps";
 
+/** 数据库模式 */
 export default defineSchema({
   documents: documentTable,
   aiConversations: aiConversationsTable,
