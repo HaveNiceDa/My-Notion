@@ -6,7 +6,9 @@
   "types": "index.ts",
   "exports": {
     ".": "./index.ts",
-    "./schemas": "./schemas/index.ts"
+    "./schemas": "./schemas/index.ts",
+    "./chat": "./chat/index.ts",
+    "./documents": "./documents/index.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
