@@ -65,6 +65,9 @@ importers:
       '@notion/business':
         specifier: workspace:*
         version: link:../../packages/business
+      '@notion/convex':
+        specifier: workspace:*
+        version: link:../../packages/convex
       '@qdrant/js-client-rest':
         specifier: ^1.17.0
         version: 1.17.0(typescript@5.9.3)
@@ -248,6 +251,12 @@ importers:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3
+
+  packages/convex:
+    dependencies:
+      convex:
+        specifier: ^1.31.6
+        version: 1.35.1(@clerk/clerk-react@5.61.3(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react@19.2.5)
 
 packages:
 
