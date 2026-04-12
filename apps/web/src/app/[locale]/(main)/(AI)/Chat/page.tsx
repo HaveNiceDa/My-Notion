@@ -168,7 +168,7 @@ const runRAGQueryStream = async (
     onError(error);
   }
 };
-import { formatRelativeTime } from "@/src/lib/timeUtils";
+import { formatRelativeTime } from "@notion/business/utils";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";

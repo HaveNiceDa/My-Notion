@@ -1,10 +1,9 @@
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 import { Document } from "@langchain/core/documents";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
-import { CustomEmbeddings } from "./customEmbeddings";
-import { QdrantVectorStoreWrapper } from "./qdrantVectorStore";
+import { CustomEmbeddings } from "@notion/ai/embeddings";
+import { QdrantVectorStoreWrapper } from "@notion/ai/rag";
 import { promptLoader } from "@notion/ai/prompts";
 import {
   type AIModel,
