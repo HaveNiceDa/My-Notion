@@ -23,57 +23,59 @@ export interface EditorRef {
   focus: () => void;
 }
 
-function Editor({ onChange, initialContent, editable = true }: EditorProps, ref: React.Ref<EditorRef>) {
-  const { resolvedTheme } = useTheme();
-  const { edgestore } = useEdgeStore();
-  const params = useParams();
-  const locale = (params.locale as string) || "en";
+const Editor = forwardRef<EditorRef, EditorProps>(
+  ({ onChange, initialContent, editable = true }, ref) => {
+    const { resolvedTheme } = useTheme();
+    const { edgestore } = useEdgeStore();
+    const params = useParams();
+    const locale = (params.locale as string) || "en";
 
-  const handleUpload = async (file: File) => {
-    const response = await edgestore.publicFiles.upload({ file });
+    const handleUpload = async (file: File) => {
+      const response = await edgestore.publicFiles.upload({ file });
 
-    return response.url;
-  };
+      return response.url;
+    };
 
-  const editor: BlockNoteEditor = useCreateBlockNote({
-    initialContent: initialContent
-      ? (JSON.parse(initialContent) as PartialBlock[])
-      : undefined,
-    uploadFile: handleUpload,
-    dictionary: locales[getBlockNoteLocale(locale)] || locales.en,
-  });
-
-  useEffect(() => {
-    const unsubscribe = editor.onChange(() => {
-      onChange(JSON.stringify(editor.document, null, 2));
+    const editor: BlockNoteEditor = useCreateBlockNote({
+      initialContent: initialContent
+        ? (JSON.parse(initialContent) as PartialBlock[])
+        : undefined,
+      uploadFile: handleUpload,
+      dictionary: locales[getBlockNoteLocale(locale)] || locales.en,
     });
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
-      }
+    useEffect(() => {
+      const unsubscribe = editor.onChange(() => {
+        onChange(JSON.stringify(editor.document, null, 2));
+      });
+
+      return () => {
+        if (unsubscribe) {
+          unsubscribe();
+        }
+      };
+    }, [editor, onChange]);
+
+    // 聚焦到编辑器的方法
+    const focusEditor = () => {
+      editor.focus();
     };
-  }, [editor, onChange]);
 
-  // 聚焦到编辑器的方法
-  const focusEditor = () => {
-    editor.focus();
-  };
+    // 将focus方法暴露给父组件
+    useImperativeHandle(ref, () => ({
+      focus: focusEditor,
+    }));
 
-  // 将focus方法暴露给父组件
-  useImperativeHandle(ref, () => ({
-    focus: focusEditor
-  }));
+    return (
+      <div>
+        <BlockNoteView
+          editor={editor}
+          theme={resolvedTheme === "dark" ? "dark" : "light"}
+          editable={editable}
+        />
+      </div>
+    );
+  },
+);
 
-  return (
-    <div>
-      <BlockNoteView
-        editor={editor}
-        theme={resolvedTheme === "dark" ? "dark" : "light"}
-        editable={editable}
-      />
-    </div>
-  );
-}
-
-export default forwardRef<EditorRef, EditorProps>(Editor);
+export default Editor;
