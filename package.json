@@ -6,11 +6,11 @@
     "packages/*"
   ],
   "scripts": {
-    "build:web": "pnpm --filter notion-web build",
-    "build:mobile": "pnpm --filter notion-mobile build",
+    "build:web": "pnpm --filter @notion/web build",
+    "build:mobile": "pnpm --filter @notion/mobile build",
     "dev": "pnpm run dev --filter 'apps/*'",
-    "start:web": "pnpm --filter notion-web start",
-    "start:mobile": "pnpm --filter notion-mobile start",
+    "start:web": "pnpm --filter @notion/web start",
+    "start:mobile": "pnpm --filter @notion/mobile start",
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "engines": {
