@@ -51,9 +51,13 @@ pnpm build:web
 本项目正在按照 Monorepo 架构进行重构，计划支持：
 
 - **Web 端**：Next.js 应用（已实现）
-- **移动端**：React Native 应用（规划中）
+- **移动端**：React Native 应用（coding中）
 - **AI Gateway**：独立的 AI 网关服务（规划中）
 - **共享包**：类型定义、AI 工具、Convex Hooks、UI 组件等（部分实现）
+
+### 近期技术优化计划
+
+- **Convex 单例模式抽象**：将 Convex 客户端抽象为单例模式，Web 和 Mobile 应用只需初始化一次，避免各处调用各处实例化的资源浪费
 
 详细规划请参考。
 
