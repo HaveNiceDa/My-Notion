@@ -12,6 +12,7 @@
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "dependencies": {
+    "@notion/convex": "workspace:*",
     "convex": "^1.31.6",
     "@expo/vector-icons": "^15.0.3",
     "@react-navigation/bottom-tabs": "^7.4.0",
