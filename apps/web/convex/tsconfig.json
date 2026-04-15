@@ -7,6 +7,12 @@
     /* These settings are not required by Convex and can be modified. */
     "allowJs": true,
     "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@convex/*": ["./_generated/*"],
+      "@notion/convex": ["../../packages/convex/index.ts"],
+      "@notion/convex/*": ["../../packages/convex/*"]
+    },
 
     /* These compiler options are required by Convex */
     "target": "ESNext",
@@ -19,6 +25,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["./**/*"],
+  "include": ["./**/*", "../../packages/convex/**/*"],
   "exclude": ["./_generated"]
 }
