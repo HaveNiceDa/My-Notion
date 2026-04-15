@@ -8,7 +8,8 @@
  * @module
  */
 
-import type * as tasks from "../tasks.js";
+import type * as aiChat from "../aiChat.js";
+import type * as documents from "../documents.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +18,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  tasks: typeof tasks;
+  aiChat: typeof aiChat;
+  documents: typeof documents;
 }>;
 
 /**
