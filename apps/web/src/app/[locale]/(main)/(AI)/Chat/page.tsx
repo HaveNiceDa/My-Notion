@@ -620,7 +620,7 @@ const AIPage = () => {
         model,
         0.6,
         knowledgeBaseEnabled,
-        currentConversationId,
+        currentConversationId!,
         deepThinkingEnabled,
       );
     } finally {
@@ -706,7 +706,7 @@ const AIPage = () => {
           );
           setConversations(loadedConversations);
           conversation = loadedConversations.find(
-            (conv) => conv._id === convId,
+            (conv: any) => conv._id === convId,
           );
         }
         if (conversation) {
