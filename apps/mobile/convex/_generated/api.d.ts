@@ -8,19 +8,13 @@
  * @module
  */
 
-import type * as aiChat from "../aiChat.js";
-import type * as documents from "../documents.js";
-
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{
-  aiChat: typeof aiChat;
-  documents: typeof documents;
-}>;
+declare const fullApi: ApiFromModules<{}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.

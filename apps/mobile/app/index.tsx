@@ -1,17 +1,5 @@
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { Text, View } from "react-native";
+import { Redirect } from "expo-router";
 
 export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-    >
-      123
-    </View>
-  );
+  return <Redirect href="./(home)" />;
 }

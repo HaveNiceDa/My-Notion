@@ -3,8 +3,9 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
+    "dev": "expo start",
     "convex": "npx convex dev --typecheck=disable",
+    "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
