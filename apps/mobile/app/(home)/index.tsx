@@ -1,5 +1,4 @@
-import { Show, useUser } from "@clerk/expo";
-import { useClerk } from "@clerk/expo";
+import { Show, useUser, useClerk } from "@clerk/expo";
 import { Link } from "expo-router";
 import { Text, View, Pressable, StyleSheet } from "react-native";
 
