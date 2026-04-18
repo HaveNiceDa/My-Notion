@@ -1,24 +1,33 @@
-import { useCallback, useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { useUser } from "@clerk/expo";
+import { useRouter, type Href } from "expo-router";
+import { useCallback, useState } from "react";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import tw from "twrnc";
 
-import { mockHomeWorkspace } from "../mock/home-mock-data";
-import type { HomePageItem } from "../types";
+import type { Id } from "@convex/_generated/dataModel";
+
 import { CollapsibleSection } from "./collapsible-section";
 import { HomeBottomBar } from "./home-bottom-bar";
 import { HomeHeader } from "./home-header";
 import { RecentSection } from "./recent-section";
-import { WorkspacePageRow } from "./workspace-page-row";
+import { SidebarDocumentTree } from "./sidebar-document-tree";
+import { useRecentDocuments } from "../hooks/use-recent-documents";
 
 export type HomeScreenProps = {
-  /** 由路由层注入，避免在 feature 内直接依赖 Clerk */
   onOpenAccountMenu?: () => void;
 };
 
 export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
-  const data = useMemo(() => mockHomeWorkspace, []);
+  const router = useRouter();
+  const { user } = useUser();
   const insets = useSafeAreaInsets();
+  const { items: recentItems } = useRecentDocuments(12);
+
+  const workspaceTitle =
+    user?.firstName != null && user.firstName.length > 0
+      ? `${user.firstName}的工作空间`
+      : "我的工作空间";
 
   const [sections, setSections] = useState({
     knowledgeBase: true,
@@ -26,33 +35,35 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
     private: true,
   });
 
-  const [treeOpen, setTreeOpen] = useState<Set<string>>(() => {
-    const s = new Set<string>();
-    data.privatePages.forEach((p) => {
-      if (p.children?.length) s.add(p.id);
-    });
-    return s;
-  });
+  const [treeOpen, setTreeOpen] = useState<Set<string>>(new Set());
 
   const toggleSection = useCallback((key: keyof typeof sections) => {
     setSections((prev) => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
-  const toggleTree = useCallback((id: string) => {
+  const toggleTree = useCallback((id: Id<"documents">) => {
     setTreeOpen((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const key = id as string;
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   }, []);
+
+  const goDocument = useCallback(
+    (id: Id<"documents">) => {
+      router.push(`/(home)/document/${id}` as Href);
+    },
+    [router],
+  );
 
   const bottomOffset = Math.max(insets.bottom, 10) + 56;
 
   return (
     <View style={tw`flex-1 bg-[#f7f7f5]`}>
       <HomeHeader
-        workspaceTitle={data.workspaceTitle}
+        workspaceTitle={workspaceTitle}
         onPressInbox={() => {}}
         onPressMenu={onOpenAccountMenu}
       />
@@ -62,7 +73,17 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         contentContainerStyle={[tw`pb-4`, { paddingBottom: bottomOffset }]}
         scrollIndicatorInsets={{ bottom: bottomOffset }}
       >
-        <RecentSection title="最近" items={data.recent} />
+        {recentItems === undefined ? (
+          <View style={tw`px-3 py-6 items-center`}>
+            <ActivityIndicator />
+          </View>
+        ) : (
+          <RecentSection
+            title="最近"
+            items={recentItems}
+            onPressCard={(item) => goDocument(item.id as Id<"documents">)}
+          />
+        )}
 
         <View style={tw`px-1`}>
           <CollapsibleSection
@@ -70,14 +91,13 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
             expanded={sections.knowledgeBase}
             onToggle={() => toggleSection("knowledgeBase")}
           >
-            {data.knowledgeBase.map((item: HomePageItem) => (
-              <WorkspacePageRow
-                key={item.id}
-                item={item}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-              />
-            ))}
+            <SidebarDocumentTree
+              variant="knowledge"
+              expandedIds={treeOpen}
+              onToggleExpand={toggleTree}
+              onNavigateToDocument={goDocument}
+              emptyHint="暂无知识库页面"
+            />
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -85,14 +105,13 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
             expanded={sections.favorites}
             onToggle={() => toggleSection("favorites")}
           >
-            {data.favorites.map((item: HomePageItem) => (
-              <WorkspacePageRow
-                key={item.id}
-                item={item}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-              />
-            ))}
+            <SidebarDocumentTree
+              variant="starred"
+              expandedIds={treeOpen}
+              onToggleExpand={toggleTree}
+              onNavigateToDocument={goDocument}
+              emptyHint="暂无收藏"
+            />
           </CollapsibleSection>
 
           <CollapsibleSection
@@ -100,14 +119,12 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
             expanded={sections.private}
             onToggle={() => toggleSection("private")}
           >
-            {data.privatePages.map((item: HomePageItem) => (
-              <WorkspacePageRow
-                key={item.id}
-                item={item}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-              />
-            ))}
+            <SidebarDocumentTree
+              variant="private"
+              expandedIds={treeOpen}
+              onToggleExpand={toggleTree}
+              onNavigateToDocument={goDocument}
+            />
           </CollapsibleSection>
         </View>
       </ScrollView>

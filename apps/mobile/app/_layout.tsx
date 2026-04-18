@@ -1,6 +1,6 @@
-import { ConvexProvider } from "convex/react";
-import { ClerkProvider } from "@clerk/expo";
+import { ClerkProvider, useAuth } from "@clerk/expo";
 import { tokenCache } from "@clerk/expo/token-cache";
+import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
@@ -18,7 +18,7 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <ConvexProvider client={convex}>
+        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <I18nProvider>
             <Stack>
               <Stack.Screen name="index" />
@@ -26,7 +26,7 @@ export default function RootLayout() {
               <Stack.Screen name="(home)" options={{ headerShown: false }} />
             </Stack>
           </I18nProvider>
-        </ConvexProvider>
+        </ConvexProviderWithClerk>
       </ClerkProvider>
     </SafeAreaProvider>
   );

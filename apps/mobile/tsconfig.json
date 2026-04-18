@@ -4,6 +4,7 @@
     "strict": true,
     "paths": {
       "@/*": ["./app/src/*"],
+      "@convex/*": ["./convex/*"],
       "@notion-i18n/*": ["../../packages/business/i18n/*"]
     }
   },

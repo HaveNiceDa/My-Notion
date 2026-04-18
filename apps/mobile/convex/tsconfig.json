@@ -25,6 +25,6 @@
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["./**/*", "../../packages/convex/**/*"],
+  "include": ["./**/*"],
   "exclude": ["./_generated"]
 }
