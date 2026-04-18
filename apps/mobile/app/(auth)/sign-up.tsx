@@ -166,7 +166,7 @@ export default function Page() {
 
       <View style={styles.linkContainer}>
         <ThemedText>Already have an account? </ThemedText>
-        <Link href="../sign-in">
+        <Link href="/sign-in">
           <ThemedText type="link">Sign in</ThemedText>
         </Link>
       </View>

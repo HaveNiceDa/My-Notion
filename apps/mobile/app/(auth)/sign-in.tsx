@@ -3,7 +3,7 @@ import { ThemedView } from "@/components/themed-view";
 import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
 
 export default function Page() {
   const { signIn, errors, fetchStatus } = useSignIn();
@@ -12,7 +12,9 @@ export default function Page() {
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
+  const [useBackupCode, setUseBackupCode] = React.useState(false)
 
+  // Step 1: Create the sign-in
   const handleSubmit = async () => {
     const { error } = await signIn.password({
       emailAddress,
@@ -44,6 +46,7 @@ export default function Page() {
       });
     } else if (signIn.status === "needs_second_factor") {
       // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
+      await signIn.mfa.sendPhoneCode()
     } else if (signIn.status === "needs_client_trust") {
       // For other second factor strategies,
       // see https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
@@ -59,6 +62,83 @@ export default function Page() {
       console.error("Sign-in attempt not complete:", signIn);
     }
   };
+
+  // Step 2: Handle the MFA verification
+  const handleMFAVerification = async () => {
+    if (useBackupCode) {
+      await signIn.mfa.verifyBackupCode({ code })
+    } else {
+      await signIn.mfa.verifyPhoneCode({ code })
+      // If you're using the authenticator app strategy, use the following method instead:
+      // await signIn.mfa.verifyTOTP({ code })
+    }
+
+    if (signIn.status === 'complete') {
+      await signIn.finalize({
+        navigate: ({ session, decorateUrl }) => {
+          // Handle pending session tasks
+          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
+          if (session?.currentTask) {
+            console.log(session?.currentTask)
+            return
+          }
+          // If no session tasks, navigate the signed-in user to the home page
+          const url = decorateUrl('/')
+          if (url.startsWith('http')) {
+            window.location.href = url
+          } else {
+            router.push(url as Href)
+          }
+        },
+      })
+    }
+  }
+
+  // Step 2 UI: Display the MFA verification form
+  if (signIn.status === 'needs_second_factor') {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="title" style={styles.title}>
+          Verify your account
+        </ThemedText>
+        <ThemedText style={styles.label}>Code</ThemedText>
+        <TextInput
+          style={styles.input}
+          value={code}
+          placeholder="Enter code"
+          placeholderTextColor="#666666"
+          onChangeText={(code) => setCode(code)}
+          keyboardType="numeric"
+        />
+        {errors.fields.code && (
+          <ThemedText style={styles.error}>{errors.fields.code.message}</ThemedText>
+        )}
+        <Pressable style={styles.backupRow} onPress={() => setUseBackupCode((v) => !v)}>
+          <View style={[styles.checkbox, useBackupCode && styles.checkboxChecked]}>
+            {useBackupCode && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <ThemedText style={styles.backupLabel}>Use backup code</ThemedText>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [
+            styles.button,
+            fetchStatus === 'fetching' && styles.buttonDisabled,
+            pressed && styles.buttonPressed,
+          ]}
+          onPress={handleMFAVerification}
+          disabled={fetchStatus === 'fetching'}
+        >
+          <ThemedText style={styles.buttonText}>Verify</ThemedText>
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          onPress={() => signIn.mfa.sendPhoneCode()}
+        >
+          <ThemedText style={styles.buttonText}>I need a new code</ThemedText>
+        </Pressable>
+      </ThemedView>
+    )
+  }
 
   const handleVerify = async () => {
     await signIn.mfa.verifyEmailCode({ code });
@@ -201,7 +281,7 @@ export default function Page() {
 
       <View style={styles.linkContainer}>
         <ThemedText>Dont have an account? </ThemedText>
-        <Link href="../sign-up">
+        <Link href="/sign-up">
           <ThemedText type="link">Sign up</ThemedText>
         </Link>
       </View>
@@ -264,6 +344,40 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 12,
     alignItems: "center",
+  },
+  backupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 4,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderWidth: 2,
+    borderColor: '#687076',
+    borderRadius: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: '#0a7ea4',
+    borderColor: '#0a7ea4',
+  },
+  checkmark: {
+    color: '#fff',
+    fontSize: 13,
+    lineHeight: 13,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    transform: [{ translateY: 1.5 }],
+    ...Platform.select({
+      android: { includeFontPadding: false },
+    }),
+  },
+  backupLabel: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   error: {
     color: "#d32f2f",
