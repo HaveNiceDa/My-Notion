@@ -1,8 +1,7 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { useSignIn, useSSO } from "@clerk/expo";
+import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
-import * as Linking from "expo-linking";
 import React from "react";
 import {
   Platform,
@@ -15,54 +14,28 @@ import {
 
 export default function Page() {
   const { signIn, errors, fetchStatus } = useSignIn();
-  const { startSSOFlow } = useSSO();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
   const [useBackupCode, setUseBackupCode] = React.useState(false);
-
-  const redirectUrl = Linking.createURL("/(auth)/sign-in");
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_google",
-        redirectUrl,
-      });
-
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-      }
-    } catch (error) {
-      console.error("Google sign-in error:", error);
-    }
-  };
-
-  const handleGitHubSignIn = async () => {
-    try {
-      const { createdSessionId, setActive } = await startSSOFlow({
-        strategy: "oauth_github",
-        redirectUrl,
-      });
-
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
-      }
-    } catch (error) {
-      console.error("GitHub sign-in error:", error);
-    }
-  };
+  const [customError, setCustomError] = React.useState<string | null>(null);
 
   // Step 1: Create the sign-in
   const handleSubmit = async () => {
+    setCustomError(null);
     const { error } = await signIn.password({
       emailAddress,
       password,
     });
     if (error) {
-      console.error(JSON.stringify(error, null, 2));
+      // Check for specific error: 400 with code strategy_for_user_invalid
+      if ((error as any)?.errors?.[0]?.code === "strategy_for_user_invalid") {
+        setCustomError(
+          "当前帐号不支持密码登录，请点击页面底部的第三方账号登录",
+        );
+      }
       return;
     }
 
@@ -312,31 +285,16 @@ export default function Page() {
         </ThemedText>
       )}
 
-      {/* Social login buttons */}
-      <View style={styles.socialContainer}>
-        <ThemedText style={styles.socialText}>Or sign in with</ThemedText>
-        <View style={styles.socialButtons}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.socialButton,
-              styles.googleButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={handleGoogleSignIn}
-          >
-            <ThemedText style={styles.socialButtonText}>Google</ThemedText>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.socialButton,
-              styles.githubButton,
-              pressed && styles.buttonPressed,
-            ]}
-            onPress={handleGitHubSignIn}
-          >
-            <ThemedText style={styles.socialButtonText}>GitHub</ThemedText>
-          </Pressable>
-        </View>
+      {customError && (
+        <ThemedText style={styles.error}>{customError}</ThemedText>
+      )}
+
+      {/* Third-party login link */}
+      <View style={styles.linkContainer}>
+        <ThemedText>Or </ThemedText>
+        <Link href="/third-party-login">
+          <ThemedText type="link">sign in with third-party account</ThemedText>
+        </Link>
       </View>
 
       <Pressable
