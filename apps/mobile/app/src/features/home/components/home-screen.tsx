@@ -13,6 +13,7 @@ import { HomeHeader } from "./home-header";
 import { RecentSection } from "./recent-section";
 import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
+import { ChatModal } from "../../ai-chat/components/ChatModal";
 
 export type HomeScreenProps = {
   onOpenAccountMenu?: () => void;
@@ -23,6 +24,8 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
+
+  const [aiModalVisible, setAiModalVisible] = useState(false);
 
   const workspaceTitle =
     user?.firstName != null && user.firstName.length > 0
@@ -129,7 +132,13 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         </View>
       </ScrollView>
 
-      <HomeBottomBar onPressSearch={() => {}} onPressAi={() => {}} onPressNewPage={() => {}} />
+      <HomeBottomBar
+        onPressSearch={() => {}}
+        onPressAi={() => setAiModalVisible(true)}
+        onPressNewPage={() => {}}
+      />
+
+      <ChatModal visible={aiModalVisible} onClose={() => setAiModalVisible(false)} />
     </View>
   );
 }

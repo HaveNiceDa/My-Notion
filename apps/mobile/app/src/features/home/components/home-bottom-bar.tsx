@@ -15,7 +15,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
   return (
     <View
       style={[
-        tw`absolute left-0 right-0 bg-[#f7f7f5]/95 border-t border-neutral-200/70 px-3 pt-2`,
+        tw`absolute bottom-0 left-0 right-0 bg-[#f7f7f5]/95 border-t border-neutral-200/70 px-3 pt-2`,
         { paddingBottom: Math.max(insets.bottom, 10) },
       ]}
     >
