@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { Spinner, Text, View } from "tamagui";
 import tw from "twrnc";
 
 import { api } from "@convex/_generated/api";
@@ -59,7 +59,7 @@ export function SidebarDocumentTree({
   if (documents === undefined) {
     return (
       <View style={tw`py-2 pl-3`}>
-        <ActivityIndicator />
+        <Spinner />
       </View>
     );
   }

@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
+import { Text, View } from "tamagui";
 import tw from "twrnc";
 
 type Props = {

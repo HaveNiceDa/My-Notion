@@ -3,7 +3,8 @@ import { ThemedView } from "@/components/themed-view";
 import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
-import { Pressable, ScrollView, Text, TextInput } from "react-native";
+import { Pressable, TextInput } from "react-native";
+import { ScrollView, Text } from "tamagui";
 import tw from "twrnc";
 import { useLanguage } from "@/i18n/useLanguage";
 

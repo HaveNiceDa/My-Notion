@@ -1,4 +1,5 @@
-import { Text, type TextProps } from 'react-native';
+import { Text, type TextProps } from "tamagui";
+import { StyleSheet } from "react-native";
 import tw from "twrnc";
 
 import { useThemeColor } from '@/hooks/use-theme-color';
@@ -32,10 +33,11 @@ export function ThemedText({
         return tw`text-base leading-6`;
     }
   })();
+  const mergedStyle = StyleSheet.flatten([typeStyle, { color }, style] as any);
 
   return (
     <Text
-      style={[typeStyle, { color }, style]}
+      style={mergedStyle}
       {...rest}
     />
   );

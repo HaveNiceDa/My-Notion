@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
-import tw from "twrnc";
+import { Pressable } from "react-native";
+import { Text, View } from "tamagui";
+import tw, { style as twStyle } from "twrnc";
 
 import type { Doc, Id } from "@convex/_generated/dataModel";
 
@@ -26,7 +27,7 @@ export function WorkspacePageRow({
 
   return (
     <View style={tw`flex-row items-center py-2 pr-2 rounded-md`}>
-      <View style={[tw`w-7 items-center justify-center`, { marginLeft: paddingLeft }]}>
+      <View style={twStyle("w-7 items-center justify-center", { marginLeft: paddingLeft })}>
         <Pressable hitSlop={8} onPress={() => onToggleExpand(document._id)} style={tw`p-1`}>
           <Ionicons
             name="chevron-forward"

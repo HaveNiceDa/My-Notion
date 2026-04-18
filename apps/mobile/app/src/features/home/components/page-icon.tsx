@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "react-native";
+import { View } from "tamagui";
 import tw from "twrnc";
 
 import type { PageIconKind } from "../types";

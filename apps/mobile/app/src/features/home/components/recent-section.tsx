@@ -1,4 +1,5 @@
-import { ScrollView, Text, View, Pressable } from "react-native";
+import { Pressable } from "react-native";
+import { ScrollView, Text, View } from "tamagui";
 import tw from "twrnc";
 
 import type { HomeRecentItem } from "../types";

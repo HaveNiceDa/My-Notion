@@ -1,9 +1,10 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useQuery } from "convex/react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import tw from "twrnc";
+import { Spinner, Text, View } from "tamagui";
+import tw, { style as twStyle } from "twrnc";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -19,10 +20,9 @@ export default function DocumentDetailRoute() {
   return (
     <View style={tw`flex-1 bg-white`}>
       <View
-        style={[
-          tw`flex-row items-center gap-1 px-2 pb-3 border-b border-neutral-200`,
-          { paddingTop: insets.top + 4 },
-        ]}
+        style={twStyle("flex-row items-center gap-1 px-2 pb-3 border-b border-neutral-200", {
+          paddingTop: insets.top + 4,
+        })}
       >
         <Pressable
           onPress={() => router.back()}
@@ -36,7 +36,7 @@ export default function DocumentDetailRoute() {
 
       {doc === undefined ? (
         <View style={tw`flex-1 items-center justify-center`}>
-          <ActivityIndicator size="large" />
+          <Spinner size="large" />
         </View>
       ) : (
         <View style={tw`px-4 pt-6 pb-24`}>

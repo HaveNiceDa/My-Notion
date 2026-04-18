@@ -1,9 +1,9 @@
 import { useUser } from "@clerk/expo";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import tw from "twrnc";
+import { ScrollView, Spinner, View } from "tamagui";
+import tw, { style as twStyle } from "twrnc";
 
 import type { Id } from "@convex/_generated/dataModel";
 
@@ -73,12 +73,12 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
 
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={[tw`pb-4`, { paddingBottom: bottomOffset }]}
+        contentContainerStyle={twStyle("pb-4", { paddingBottom: bottomOffset })}
         scrollIndicatorInsets={{ bottom: bottomOffset }}
       >
         {recentItems === undefined ? (
           <View style={tw`px-3 py-6 items-center`}>
-            <ActivityIndicator />
+            <Spinner />
           </View>
         ) : (
           <RecentSection

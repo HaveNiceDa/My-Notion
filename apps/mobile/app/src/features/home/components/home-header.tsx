@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import tw from "twrnc";
+import { Text, View } from "tamagui";
+import tw, { style as twStyle } from "twrnc";
 
 type Props = {
   workspaceTitle: string;
@@ -13,7 +14,7 @@ export function HomeHeader({ workspaceTitle, onPressInbox, onPressMenu }: Props)
   const insets = useSafeAreaInsets();
 
   return (
-    <View style={[tw`bg-[#f7f7f5] border-b border-neutral-200/60`, { paddingTop: insets.top }]}>
+    <View style={twStyle("bg-[#f7f7f5] border-b border-neutral-200/60", { paddingTop: insets.top })}>
       <View style={tw`flex-row items-center justify-between px-3 pb-3 pt-1`}>
         <Pressable
           onPress={onPressMenu}

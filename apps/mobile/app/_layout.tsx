@@ -3,8 +3,8 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { ConvexProviderWithClerk } from "convex/react-clerk";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { TamaguiProvider, View } from 'tamagui'
-import { config } from '@tamagui/config'
+import { TamaguiProvider } from "tamagui";
+import { config } from "../tamagui.config";
 
 import { convex } from "@/lib/convex";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -22,7 +22,7 @@ export default function RootLayout() {
       <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
         <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
           <I18nProvider>
-            <TamaguiProvider config={config} defaultTheme="dark">
+            <TamaguiProvider config={config} defaultTheme="light">
               <Stack>
                 <Stack.Screen name="index" />
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />

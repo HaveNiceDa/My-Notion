@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Text, View } from "react-native";
+import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import tw from "twrnc";
+import { Text, View } from "tamagui";
+import tw, { style as twStyle } from "twrnc";
 
 type Props = {
   onPressSearch?: () => void;
@@ -14,10 +15,10 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
 
   return (
     <View
-      style={[
-        tw`absolute bottom-0 left-0 right-0 bg-[#f7f7f5]/95 border-t border-neutral-200/70 px-3 pt-2`,
-        { paddingBottom: Math.max(insets.bottom, 10) },
-      ]}
+      style={twStyle(
+        "absolute bottom-0 left-0 right-0 border-t border-neutral-200/70 px-3 pt-2",
+        { backgroundColor: "rgba(247,247,245,0.95)", paddingBottom: Math.max(insets.bottom, 10) },
+      )}
     >
       <View style={tw`flex-row items-center gap-2`}>
         <Pressable
