@@ -26,28 +26,37 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
       <View style={tw`flex-row items-center gap-2`}>
         <Pressable
           onPress={onPressSearch}
-          style={({ pressed }) => tw`p-2 rounded-full ${pressed ? "bg-black/5" : ""}`}
+          style={({ pressed }) =>
+            tw`w-10 h-10 rounded-full items-center justify-center ${pressed ? "bg-black/5" : ""}`
+          }
           accessibilityLabel={t("Navigation.search")}
         >
-          <Ionicons name="search" size={24} color="#262626" />
+          <Ionicons name="search" size={24} color="#404040" />
         </Pressable>
 
         <Pressable
           onPress={onPressAi}
           style={({ pressed }) =>
-            tw`flex-1 flex-row items-center bg-white border border-neutral-200 rounded-full px-4 py-2.5 gap-2 ${pressed ? "opacity-90" : ""}`
+            twStyle(
+              `flex-1 flex-row items-center rounded-full px-4 h-12 gap-2 border border-neutral-200 ${pressed ? "opacity-90" : ""}`,
+              { backgroundColor: theme.backgroundHover.val },
+            )
           }
+          hitSlop={4}
         >
           <Ionicons name="sparkles" size={18} color="#7c3aed" />
-          <Text style={tw`text-neutral-500 text-sm flex-1`}>{t("AI.aiConversation")}</Text>
+          <Text style={tw`text-neutral-500 text-sm flex-1`} numberOfLines={1}>
+            {t("AI.aiConversation")}
+          </Text>
         </Pressable>
 
         <Pressable
           onPress={onPressNewPage}
           style={({ pressed }) =>
-            tw`w-11 h-11 rounded-xl bg-neutral-900 items-center justify-center ${pressed ? "opacity-80" : ""}`
+            tw`w-12 h-12 rounded-2xl bg-neutral-900 items-center justify-center ${pressed ? "opacity-80" : ""}`
           }
           accessibilityLabel={t("Navigation.newPage")}
+          hitSlop={4}
         >
           <Ionicons name="add" size={28} color="#fff" />
         </Pressable>

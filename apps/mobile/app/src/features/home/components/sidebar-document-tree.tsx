@@ -13,6 +13,7 @@ type Props = {
   variant: SidebarTreeVariant;
   /** 根级为 undefined；子级为父文档 id */
   parentDocument?: Id<"documents">;
+  rootDocuments?: Doc<"documents">[];
   depth?: number;
   expandedIds: Set<string>;
   onToggleExpand: (id: Id<"documents">) => void;
@@ -23,6 +24,7 @@ type Props = {
 export function SidebarDocumentTree({
   variant,
   parentDocument,
+  rootDocuments,
   depth = 0,
   expandedIds,
   onToggleExpand,
@@ -48,13 +50,13 @@ export function SidebarDocumentTree({
     variant === "knowledge" && atRoot ? {} : "skip",
   );
 
-  const documents: Doc<"documents">[] | undefined = !atRoot
-    ? sidebarList
-    : variant === "private"
-      ? sidebarList
-      : variant === "starred"
-        ? starredRoot
-        : kbRoot;
+  const documents: Doc<"documents">[] | undefined = atRoot
+    ? variant === "starred"
+      ? starredRoot
+      : variant === "knowledge"
+        ? kbRoot
+        : rootDocuments
+    : sidebarList;
 
   if (documents === undefined) {
     return (

@@ -1,4 +1,5 @@
 import { useUser } from "@clerk/expo";
+import { useQuery } from "convex/react";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -6,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
+import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import type { SupportedLanguage } from "@/i18n";
 import { useLanguage } from "@/i18n/useLanguage";
@@ -31,6 +33,9 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
+  const privateRootDocuments = useQuery(api.documents.getSidebar, { parentDocument: undefined });
+  const starredRootDocuments = useQuery(api.documents.getStarred, {});
+  const knowledgeRootDocuments = useQuery(api.documents.getKnowledgeBaseDocuments, {});
 
   const [aiModalVisible, setAiModalVisible] = useState(false);
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
@@ -81,6 +86,11 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
     { value: "light", label: t("Home.themeLight") },
     { value: "dark", label: t("Home.themeDark") },
   ];
+  const isInitialLoading =
+    recentItems === undefined ||
+    privateRootDocuments === undefined ||
+    starredRootDocuments === undefined ||
+    knowledgeRootDocuments === undefined;
 
   return (
     <View flex={1} bg="$background">
@@ -103,60 +113,65 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         contentContainerStyle={twStyle("pb-4", { paddingBottom: bottomOffset })}
         scrollIndicatorInsets={{ bottom: bottomOffset }}
       >
-        {recentItems === undefined ? (
-          <View style={tw`px-3 py-6 items-center`}>
-            <Spinner />
+        {isInitialLoading ? (
+          <View style={tw`px-3 py-16 items-center justify-center`}>
+            <Spinner size="large" />
           </View>
         ) : (
+          <>
           <RecentSection
             title={t("Home.recent")}
             items={recentItems}
             onPressCard={(item) => goDocument(item.id as Id<"documents">)}
           />
+
+          <View style={tw`px-1`}>
+            <CollapsibleSection
+              title={t("Navigation.knowledgeBase")}
+              expanded={sections.knowledgeBase}
+              onToggle={() => toggleSection("knowledgeBase")}
+            >
+              <SidebarDocumentTree
+                variant="knowledge"
+                rootDocuments={knowledgeRootDocuments}
+                expandedIds={treeOpen}
+                onToggleExpand={toggleTree}
+                onNavigateToDocument={goDocument}
+                emptyHint={t("Documents.noKnowledgeBasePages")}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title={t("Navigation.favorites")}
+              expanded={sections.favorites}
+              onToggle={() => toggleSection("favorites")}
+            >
+              <SidebarDocumentTree
+                variant="starred"
+                rootDocuments={starredRootDocuments}
+                expandedIds={treeOpen}
+                onToggleExpand={toggleTree}
+                onNavigateToDocument={goDocument}
+                emptyHint={t("Documents.noStarredPages")}
+              />
+            </CollapsibleSection>
+
+            <CollapsibleSection
+              title={t("Navigation.private")}
+              expanded={sections.private}
+              onToggle={() => toggleSection("private")}
+            >
+              <SidebarDocumentTree
+                variant="private"
+                rootDocuments={privateRootDocuments}
+                expandedIds={treeOpen}
+                onToggleExpand={toggleTree}
+                onNavigateToDocument={goDocument}
+              />
+            </CollapsibleSection>
+          </View>
+          </>
         )}
-
-        <View style={tw`px-1`}>
-          <CollapsibleSection
-            title={t("Navigation.knowledgeBase")}
-            expanded={sections.knowledgeBase}
-            onToggle={() => toggleSection("knowledgeBase")}
-          >
-            <SidebarDocumentTree
-              variant="knowledge"
-              expandedIds={treeOpen}
-              onToggleExpand={toggleTree}
-              onNavigateToDocument={goDocument}
-              emptyHint={t("Documents.noKnowledgeBasePages")}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            title={t("Navigation.favorites")}
-            expanded={sections.favorites}
-            onToggle={() => toggleSection("favorites")}
-          >
-            <SidebarDocumentTree
-              variant="starred"
-              expandedIds={treeOpen}
-              onToggleExpand={toggleTree}
-              onNavigateToDocument={goDocument}
-              emptyHint={t("Documents.noStarredPages")}
-            />
-          </CollapsibleSection>
-
-          <CollapsibleSection
-            title={t("Navigation.private")}
-            expanded={sections.private}
-            onToggle={() => toggleSection("private")}
-          >
-            <SidebarDocumentTree
-              variant="private"
-              expandedIds={treeOpen}
-              onToggleExpand={toggleTree}
-              onNavigateToDocument={goDocument}
-            />
-          </CollapsibleSection>
-        </View>
       </ScrollView>
 
       <HomeBottomBar
