@@ -36,7 +36,7 @@ export function SidebarDocumentTree({
   const sidebarList = useQuery(
     api.documents.getSidebar,
     parentDocument !== undefined || variant === "private"
-      ? { parentDocument }
+      ? { parentDocument: parentDocument || undefined }
       : "skip",
   );
 
@@ -55,7 +55,7 @@ export function SidebarDocumentTree({
       ? starredRoot
       : variant === "knowledge"
         ? kbRoot
-        : rootDocuments
+        : rootDocuments || []
     : sidebarList;
 
   if (documents === undefined) {
