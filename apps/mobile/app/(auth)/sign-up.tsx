@@ -3,7 +3,8 @@ import { ThemedView } from "@/components/themed-view";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { Pressable, TextInput } from "react-native";
+import tw from "twrnc";
 
 export default function Page() {
   const { signUp, errors, fetchStatus } = useSignUp();
@@ -33,16 +34,11 @@ export default function Page() {
     });
     if (signUp.status === "complete") {
       await signUp.finalize({
-        // Redirect the user to the home page after signing up
         navigate: ({ session, decorateUrl }) => {
-          // Handle session tasks
-          // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
           if (session?.currentTask) {
             console.log(session?.currentTask);
             return;
           }
-
-          // If no session tasks, navigate the signed-in user to the home page
           const url = decorateUrl("/");
           if (url.startsWith("http")) {
             window.location.href = url;
@@ -52,7 +48,6 @@ export default function Page() {
         },
       });
     } else {
-      // Check why the sign-up is not complete
       console.error("Sign-up attempt not complete:", signUp);
     }
   };
@@ -67,12 +62,12 @@ export default function Page() {
     signUp.missingFields.length === 0
   ) {
     return (
-      <ThemedView style={styles.container}>
-        <ThemedText type="title" style={styles.title}>
+      <ThemedView style={tw`flex-1 p-5 gap-3`}>
+        <ThemedText type="title" style={tw`mb-2`}>
           Verify your account
         </ThemedText>
         <TextInput
-          style={styles.input}
+          style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
           value={code}
           placeholder="Enter your verification code"
           placeholderTextColor="#666666"
@@ -80,29 +75,24 @@ export default function Page() {
           keyboardType="numeric"
         />
         {errors.fields.code && (
-          <ThemedText style={styles.error}>
+          <ThemedText style={tw`text-red-600 text-xs -mt-2`}>
             {errors.fields.code.message}
           </ThemedText>
         )}
         <Pressable
           style={({ pressed }) => [
-            styles.button,
-            fetchStatus === "fetching" && styles.buttonDisabled,
-            pressed && styles.buttonPressed,
+            tw`bg-[#0a7ea4] py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""} ${fetchStatus === "fetching" ? "opacity-50" : ""}`,
           ]}
           onPress={handleVerify}
           disabled={fetchStatus === "fetching"}
         >
-          <ThemedText style={styles.buttonText}>Verify</ThemedText>
+          <ThemedText style={tw`text-white font-semibold`}>Verify</ThemedText>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [
-            styles.secondaryButton,
-            pressed && styles.buttonPressed,
-          ]}
+          style={({ pressed }) => tw`py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""}`}
           onPress={() => signUp.verifications.sendEmailCode()}
         >
-          <ThemedText style={styles.secondaryButtonText}>
+          <ThemedText style={tw`text-[#0a7ea4] font-semibold`}>
             I need a new code
           </ThemedText>
         </Pressable>
@@ -111,14 +101,14 @@ export default function Page() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
+    <ThemedView style={tw`flex-1 p-5 gap-3`}>
+      <ThemedText type="title" style={tw`mb-2`}>
         Sign up
       </ThemedText>
 
-      <ThemedText style={styles.label}>Email address</ThemedText>
+      <ThemedText style={tw`font-semibold text-sm`}>Email address</ThemedText>
       <TextInput
-        style={styles.input}
+        style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
         autoCapitalize="none"
         value={emailAddress}
         placeholder="Enter email"
@@ -127,13 +117,13 @@ export default function Page() {
         keyboardType="email-address"
       />
       {errors.fields.emailAddress && (
-        <ThemedText style={styles.error}>
+        <ThemedText style={tw`text-red-600 text-xs -mt-2`}>
           {errors.fields.emailAddress.message}
         </ThemedText>
       )}
-      <ThemedText style={styles.label}>Password</ThemedText>
+      <ThemedText style={tw`font-semibold text-sm`}>Password</ThemedText>
       <TextInput
-        style={styles.input}
+        style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
         value={password}
         placeholder="Enter password"
         placeholderTextColor="#666666"
@@ -141,106 +131,33 @@ export default function Page() {
         onChangeText={(password) => setPassword(password)}
       />
       {errors.fields.password && (
-        <ThemedText style={styles.error}>
+        <ThemedText style={tw`text-red-600 text-xs -mt-2`}>
           {errors.fields.password.message}
         </ThemedText>
       )}
       <Pressable
         style={({ pressed }) => [
-          styles.button,
-          (!emailAddress || !password || fetchStatus === "fetching") &&
-            styles.buttonDisabled,
-          pressed && styles.buttonPressed,
+          tw`bg-[#0a7ea4] py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""} ${(!emailAddress || !password || fetchStatus === "fetching") ? "opacity-50" : ""}`,
         ]}
         onPress={handleSubmit}
         disabled={!emailAddress || !password || fetchStatus === "fetching"}
       >
-        <ThemedText style={styles.buttonText}>Sign up</ThemedText>
+        <ThemedText style={tw`text-white font-semibold`}>Sign up</ThemedText>
       </Pressable>
-      {/* For your debugging purposes. You can just console.log errors, but we put them in the UI for convenience */}
       {errors && (
-        <ThemedText style={styles.debug}>
+        <ThemedText style={tw`text-xs opacity-50 mt-2`}>
           {JSON.stringify(errors, null, 2)}
         </ThemedText>
       )}
 
-      <View style={styles.linkContainer}>
+      <ThemedView style={tw`flex-row gap-1 mt-3 items-center`}>
         <ThemedText>Already have an account? </ThemedText>
         <Link href="/sign-in">
           <ThemedText type="link">Sign in</ThemedText>
         </Link>
-      </View>
+      </ThemedView>
 
-      {/* Required for sign-up flows. Clerk's bot sign-up protection is enabled by default */}
-      <View nativeID="clerk-captcha" />
+      <ThemedView nativeID="clerk-captcha" />
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    gap: 12,
-  },
-  title: {
-    marginBottom: 8,
-  },
-  label: {
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-  },
-  button: {
-    backgroundColor: "#0a7ea4",
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "600",
-  },
-  secondaryButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  secondaryButtonText: {
-    color: "#0a7ea4",
-    fontWeight: "600",
-  },
-  linkContainer: {
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 12,
-    alignItems: "center",
-  },
-  error: {
-    color: "#d32f2f",
-    fontSize: 12,
-    marginTop: -8,
-  },
-  debug: {
-    fontSize: 10,
-    opacity: 0.5,
-    marginTop: 8,
-  },
-});

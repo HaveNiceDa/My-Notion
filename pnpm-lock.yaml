@@ -122,6 +122,9 @@ importers:
       react-native-worklets:
         specifier: 0.5.1
         version: 0.5.1(@babel/core@7.29.0)(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@6.0.6))(react@19.1.0)
+      twrnc:
+        specifier: ^4.16.0
+        version: 4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@6.0.6))(yaml@2.8.3)
     devDependencies:
       '@types/react':
         specifier: ~19.1.0
@@ -9228,6 +9231,11 @@ packages:
 
   tweetnacl@0.14.5:
     resolution: {integrity: sha512-KXXFFdAbFXY4geFIwoyNK+f5Z1b7swfXABfL7HXCmoIWMKU3dmS26672A4EeQtDzLKy7SXmfBu51JolvEKwtGA==}
+
+  twrnc@4.16.0:
+    resolution: {integrity: sha512-sPSnSlT2CmOd2ITUm9M8ltsEjTyJti/9HpYfewAfhqRT4gMQtOWkK1tiIev0vVhPJ9IcTGtk2TC33OsSLhsFfA==}
+    peerDependencies:
+      react-native: '>=0.62.2'
 
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
@@ -20694,6 +20702,14 @@ snapshots:
       safe-buffer: 5.2.1
 
   tweetnacl@0.14.5: {}
+
+  twrnc@4.16.0(react-native@0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@6.0.6))(yaml@2.8.3):
+    dependencies:
+      react-native: 0.81.5(@babel/core@7.29.0)(@types/react@19.1.17)(bufferutil@4.1.0)(react@19.1.0)(utf-8-validate@6.0.6)
+      tailwindcss: 3.4.19(yaml@2.8.3)
+    transitivePeerDependencies:
+      - tsx
+      - yaml
 
   type-check@0.4.0:
     dependencies:

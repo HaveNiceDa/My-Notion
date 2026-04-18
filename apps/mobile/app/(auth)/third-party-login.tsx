@@ -4,7 +4,8 @@ import { useSSO } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import React from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable } from "react-native";
+import tw from "twrnc";
 import { useLanguage } from "@/i18n/useLanguage";
 
 export default function ThirdPartyLoginPage() {
@@ -47,103 +48,45 @@ export default function ThirdPartyLoginPage() {
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
+    <ThemedView style={tw`flex-1 p-5 gap-6 justify-center`}>
+      <ThemedText type="title" style={tw`mb-2 text-center`}>
         {t("Auth.thirdPartyTitle")}
       </ThemedText>
 
-      <ThemedText style={styles.subtitle}>
+      <ThemedText style={tw`text-center text-base mb-6`}>
         {t("Auth.thirdPartySubtitle")}
       </ThemedText>
 
-      <View style={styles.socialButtons}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.socialButton,
-            styles.googleButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={handleGoogleSignIn}
-        >
-          <ThemedText style={styles.socialButtonText}>
-            {t("Auth.continueWithGoogle")}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            styles.socialButton,
-            styles.githubButton,
-            pressed && styles.buttonPressed,
-          ]}
-          onPress={handleGitHubSignIn}
-        >
-          <ThemedText style={styles.socialButtonText}>
-            {t("Auth.continueWithGithub")}
-          </ThemedText>
-        </Pressable>
-      </View>
+      <Pressable
+        style={({ pressed }) => tw`bg-[#4285F4] py-4 px-6 rounded-lg items-center ${pressed ? "opacity-70" : ""}`}
+        onPress={handleGoogleSignIn}
+      >
+        <ThemedText style={tw`text-white font-semibold text-base`}>
+          {t("Auth.continueWithGoogle")}
+        </ThemedText>
+      </Pressable>
+      <Pressable
+        style={({ pressed }) => tw`bg-[#333] py-4 px-6 rounded-lg items-center ${pressed ? "opacity-70" : ""}`}
+        onPress={handleGitHubSignIn}
+      >
+        <ThemedText style={tw`text-white font-semibold text-base`}>
+          {t("Auth.continueWithGithub")}
+        </ThemedText>
+      </Pressable>
 
-      <View style={styles.linkContainer}>
+      <ThemedView style={tw`flex-row gap-1 mt-2 items-center justify-center`}>
         <ThemedText>Or </ThemedText>
         <Link href="/sign-in">
           <ThemedText type="link">{t("Auth.signInWithPassword")}</ThemedText>
         </Link>
-      </View>
+      </ThemedView>
 
-      <View style={styles.linkContainer}>
+      <ThemedView style={tw`flex-row gap-1 mt-2 items-center justify-center`}>
         <ThemedText>{t("Auth.dontHaveAccount")}</ThemedText>
         <Link href="/sign-up">
           <ThemedText type="link">{t("Auth.signUp")}</ThemedText>
         </Link>
-      </View>
+      </ThemedView>
     </ThemedView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    gap: 24,
-    justifyContent: "center",
-  },
-  title: {
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  subtitle: {
-    textAlign: "center",
-    fontSize: 16,
-    marginBottom: 24,
-  },
-  socialButtons: {
-    gap: 16,
-  },
-  socialButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  googleButton: {
-    backgroundColor: "#4285F4",
-  },
-  githubButton: {
-    backgroundColor: "#333",
-  },
-  socialButtonText: {
-    color: "#fff",
-    fontWeight: "600",
-    fontSize: 16,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  linkContainer: {
-    flexDirection: "row",
-    gap: 4,
-    marginTop: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
