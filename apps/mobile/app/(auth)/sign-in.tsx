@@ -1,18 +1,59 @@
 import { ThemedText } from "@/components/themed-text";
 import { ThemedView } from "@/components/themed-view";
-import { useSignIn } from "@clerk/expo";
+import { useSignIn, useSSO } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
+import * as Linking from "expo-linking";
 import React from "react";
-import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native'
+import {
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 export default function Page() {
   const { signIn, errors, fetchStatus } = useSignIn();
+  const { startSSOFlow } = useSSO();
   const router = useRouter();
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [code, setCode] = React.useState("");
-  const [useBackupCode, setUseBackupCode] = React.useState(false)
+  const [useBackupCode, setUseBackupCode] = React.useState(false);
+
+  const redirectUrl = Linking.createURL("/(auth)/sign-in");
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_google",
+        redirectUrl,
+      });
+
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+      }
+    } catch (error) {
+      console.error("Google sign-in error:", error);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_github",
+        redirectUrl,
+      });
+
+      if (createdSessionId && setActive) {
+        await setActive({ session: createdSessionId });
+      }
+    } catch (error) {
+      console.error("GitHub sign-in error:", error);
+    }
+  };
 
   // Step 1: Create the sign-in
   const handleSubmit = async () => {
@@ -46,7 +87,7 @@ export default function Page() {
       });
     } else if (signIn.status === "needs_second_factor") {
       // See https://clerk.com/docs/guides/development/custom-flows/authentication/multi-factor-authentication
-      await signIn.mfa.sendPhoneCode()
+      await signIn.mfa.sendPhoneCode();
     } else if (signIn.status === "needs_client_trust") {
       // For other second factor strategies,
       // see https://clerk.com/docs/guides/development/custom-flows/authentication/client-trust
@@ -66,36 +107,36 @@ export default function Page() {
   // Step 2: Handle the MFA verification
   const handleMFAVerification = async () => {
     if (useBackupCode) {
-      await signIn.mfa.verifyBackupCode({ code })
+      await signIn.mfa.verifyBackupCode({ code });
     } else {
-      await signIn.mfa.verifyPhoneCode({ code })
+      await signIn.mfa.verifyPhoneCode({ code });
       // If you're using the authenticator app strategy, use the following method instead:
       // await signIn.mfa.verifyTOTP({ code })
     }
 
-    if (signIn.status === 'complete') {
+    if (signIn.status === "complete") {
       await signIn.finalize({
         navigate: ({ session, decorateUrl }) => {
           // Handle pending session tasks
           // See https://clerk.com/docs/guides/development/custom-flows/authentication/session-tasks
           if (session?.currentTask) {
-            console.log(session?.currentTask)
-            return
+            console.log(session?.currentTask);
+            return;
           }
           // If no session tasks, navigate the signed-in user to the home page
-          const url = decorateUrl('/')
-          if (url.startsWith('http')) {
-            window.location.href = url
+          const url = decorateUrl("/");
+          if (url.startsWith("http")) {
+            window.location.href = url;
           } else {
-            router.push(url as Href)
+            router.push(url as Href);
           }
         },
-      })
+      });
     }
-  }
+  };
 
   // Step 2 UI: Display the MFA verification form
-  if (signIn.status === 'needs_second_factor') {
+  if (signIn.status === "needs_second_factor") {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
@@ -111,10 +152,17 @@ export default function Page() {
           keyboardType="numeric"
         />
         {errors.fields.code && (
-          <ThemedText style={styles.error}>{errors.fields.code.message}</ThemedText>
+          <ThemedText style={styles.error}>
+            {errors.fields.code.message}
+          </ThemedText>
         )}
-        <Pressable style={styles.backupRow} onPress={() => setUseBackupCode((v) => !v)}>
-          <View style={[styles.checkbox, useBackupCode && styles.checkboxChecked]}>
+        <Pressable
+          style={styles.backupRow}
+          onPress={() => setUseBackupCode((v) => !v)}
+        >
+          <View
+            style={[styles.checkbox, useBackupCode && styles.checkboxChecked]}
+          >
             {useBackupCode && <Text style={styles.checkmark}>✓</Text>}
           </View>
           <ThemedText style={styles.backupLabel}>Use backup code</ThemedText>
@@ -122,22 +170,25 @@ export default function Page() {
         <Pressable
           style={({ pressed }) => [
             styles.button,
-            fetchStatus === 'fetching' && styles.buttonDisabled,
+            fetchStatus === "fetching" && styles.buttonDisabled,
             pressed && styles.buttonPressed,
           ]}
           onPress={handleMFAVerification}
-          disabled={fetchStatus === 'fetching'}
+          disabled={fetchStatus === "fetching"}
         >
           <ThemedText style={styles.buttonText}>Verify</ThemedText>
         </Pressable>
         <Pressable
-          style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
+          style={({ pressed }) => [
+            styles.button,
+            pressed && styles.buttonPressed,
+          ]}
           onPress={() => signIn.mfa.sendPhoneCode()}
         >
           <ThemedText style={styles.buttonText}>I need a new code</ThemedText>
         </Pressable>
       </ThemedView>
-    )
+    );
   }
 
   const handleVerify = async () => {
@@ -260,6 +311,34 @@ export default function Page() {
           {errors.fields.password.message}
         </ThemedText>
       )}
+
+      {/* Social login buttons */}
+      <View style={styles.socialContainer}>
+        <ThemedText style={styles.socialText}>Or sign in with</ThemedText>
+        <View style={styles.socialButtons}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.socialButton,
+              styles.googleButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleGoogleSignIn}
+          >
+            <ThemedText style={styles.socialButtonText}>Google</ThemedText>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.socialButton,
+              styles.githubButton,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleGitHubSignIn}
+          >
+            <ThemedText style={styles.socialButtonText}>GitHub</ThemedText>
+          </Pressable>
+        </View>
+      </View>
+
       <Pressable
         style={({ pressed }) => [
           styles.button,
@@ -346,8 +425,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   backupRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
     marginTop: 4,
   },
@@ -355,21 +434,21 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
     borderWidth: 2,
-    borderColor: '#687076',
+    borderColor: "#687076",
     borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   checkboxChecked: {
-    backgroundColor: '#0a7ea4',
-    borderColor: '#0a7ea4',
+    backgroundColor: "#0a7ea4",
+    borderColor: "#0a7ea4",
   },
   checkmark: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 13,
     lineHeight: 13,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     transform: [{ translateY: 1.5 }],
     ...Platform.select({
       android: { includeFontPadding: false },
@@ -388,5 +467,36 @@ const styles = StyleSheet.create({
     fontSize: 10,
     opacity: 0.5,
     marginTop: 8,
+  },
+  socialContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  socialText: {
+    textAlign: "center",
+    marginBottom: 12,
+    fontSize: 14,
+  },
+  socialButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  socialButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  googleButton: {
+    backgroundColor: "#4285F4",
+  },
+  githubButton: {
+    backgroundColor: "#333",
+  },
+  socialButtonText: {
+    color: "#fff",
+    fontWeight: "600",
   },
 });
