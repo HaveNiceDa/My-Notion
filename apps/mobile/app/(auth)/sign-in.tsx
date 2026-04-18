@@ -6,6 +6,7 @@ import React from "react";
 import {
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -33,7 +34,7 @@ export default function Page() {
       // Check for specific error: 400 with code strategy_for_user_invalid
       if ((error as any)?.errors?.[0]?.code === "strategy_for_user_invalid") {
         setCustomError(
-          "当前帐号不支持密码登录，请点击页面底部的第三方账号登录",
+          "当前帐号不支持密码登录，请点击右下角的第三方账号登录",
         );
       }
       return;
@@ -250,90 +251,106 @@ export default function Page() {
   }
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type="title" style={styles.title}>
-        Sign in
-      </ThemedText>
-
-      <ThemedText style={styles.label}>Email address</ThemedText>
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Enter email"
-        placeholderTextColor="#666666"
-        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-        keyboardType="email-address"
-      />
-      {errors.fields.identifier && (
-        <ThemedText style={styles.error}>
-          {errors.fields.identifier.message}
-        </ThemedText>
-      )}
-      <ThemedText style={styles.label}>Password</ThemedText>
-      <TextInput
-        style={styles.input}
-        value={password}
-        placeholder="Enter password"
-        placeholderTextColor="#666666"
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
-      />
-      {errors.fields.password && (
-        <ThemedText style={styles.error}>
-          {errors.fields.password.message}
-        </ThemedText>
-      )}
-
-      {customError && (
-        <ThemedText style={styles.error}>{customError}</ThemedText>
-      )}
-
-      {/* Third-party login link */}
-      <View style={styles.linkContainer}>
-        <ThemedText>Or </ThemedText>
-        <Link href="/third-party-login">
-          <ThemedText type="link">sign in with third-party account</ThemedText>
-        </Link>
-      </View>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.button,
-          (!emailAddress || !password || fetchStatus === "fetching") &&
-            styles.buttonDisabled,
-          pressed && styles.buttonPressed,
-        ]}
-        onPress={handleSubmit}
-        disabled={!emailAddress || !password || fetchStatus === "fetching"}
+    <ThemedView style={styles.screen}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
       >
-        <ThemedText style={styles.buttonText}>Continue</ThemedText>
-      </Pressable>
-      {/* For your debugging purposes. You can just console.log errors, but we put them in the UI for convenience */}
-      {errors && (
-        <ThemedText style={styles.debug}>
-          {JSON.stringify(errors, null, 2)}
-        </ThemedText>
-      )}
+        <View style={styles.form}>
+          <ThemedText type="title" style={styles.title}>
+            Sign in
+          </ThemedText>
 
-      <View style={styles.linkContainer}>
-        <ThemedText>Dont have an account? </ThemedText>
-        <Link href="/sign-up">
-          <ThemedText type="link">Sign up</ThemedText>
-        </Link>
-      </View>
+          <ThemedText style={styles.label}>Email address</ThemedText>
+          <TextInput
+            style={styles.input}
+            autoCapitalize="none"
+            value={emailAddress}
+            placeholder="Enter email"
+            placeholderTextColor="#666666"
+            onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
+            keyboardType="email-address"
+          />
+          {errors.fields.identifier && (
+            <ThemedText style={styles.error}>
+              {errors.fields.identifier.message}
+            </ThemedText>
+          )}
+          <ThemedText style={styles.label}>Password</ThemedText>
+          <TextInput
+            style={styles.input}
+            value={password}
+            placeholder="Enter password"
+            placeholderTextColor="#666666"
+            secureTextEntry={true}
+            onChangeText={(password) => setPassword(password)}
+          />
+          {errors.fields.password && (
+            <ThemedText style={styles.error}>
+              {errors.fields.password.message}
+            </ThemedText>
+          )}
+
+          {customError && (
+            <ThemedText style={styles.error}>{customError}</ThemedText>
+          )}
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              (!emailAddress || !password || fetchStatus === "fetching") &&
+                styles.buttonDisabled,
+              pressed && styles.buttonPressed,
+            ]}
+            onPress={handleSubmit}
+            disabled={!emailAddress || !password || fetchStatus === "fetching"}
+          >
+            <ThemedText style={styles.buttonText}>Continue</ThemedText>
+          </Pressable>
+
+          <View style={styles.footerRow}>
+            <View style={styles.footerSignUp}>
+              <ThemedText>{"Don't have an account? "}</ThemedText>
+              <Link href="/sign-up">
+                <ThemedText type="link">Sign up</ThemedText>
+              </Link>
+            </View>
+            <View style={styles.footerThirdParty}>
+              <Link href="/third-party-login">
+                <ThemedText type="link">第三方账号登录</ThemedText>
+              </Link>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
     </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    justifyContent: "center",
+  },
+  form: {
+    width: "100%",
+    maxWidth: 400,
+    alignSelf: "center",
+    gap: 12,
+  },
   container: {
     flex: 1,
     padding: 20,
     gap: 12,
   },
   title: {
-    marginBottom: 8,
+    marginBottom: 4,
+    textAlign: "center",
   },
   label: {
     fontWeight: "600",
@@ -349,11 +366,11 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#0a7ea4",
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 16,
   },
   buttonPressed: {
     opacity: 0.7,
@@ -381,6 +398,25 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: 12,
     alignItems: "center",
+  },
+  footerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 20,
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  footerSignUp: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    flex: 1,
+    minWidth: 0,
+  },
+  footerThirdParty: {
+    flexShrink: 0,
+    alignSelf: "flex-end",
   },
   backupRow: {
     flexDirection: "row",
@@ -420,11 +456,6 @@ const styles = StyleSheet.create({
     color: "#d32f2f",
     fontSize: 12,
     marginTop: -8,
-  },
-  debug: {
-    fontSize: 10,
-    opacity: 0.5,
-    marginTop: 8,
   },
   socialContainer: {
     marginTop: 16,
