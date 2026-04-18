@@ -249,6 +249,30 @@
     "thirdPartyTitle": "登录",
     "thirdPartySubtitle": "选择您的账号继续",
     "continueWithGoogle": "使用 Google 继续",
-    "continueWithGithub": "使用 GitHub 继续"
+    "continueWithGithub": "使用 GitHub 继续",
+    "alreadyHaveAccount": "已有账号？"
+  },
+  "Home": {
+    "workspaceOwned": "{{name}}的工作空间",
+    "myWorkspace": "我的工作空间",
+    "recent": "最近",
+    "account": "账户",
+    "openSettingsMenu": "打开设置菜单",
+    "openWorkspaceMenu": "打开工作空间菜单",
+    "inbox": "收件箱",
+    "changeLanguage": "语言切换",
+    "changeTheme": "主题色切换",
+    "selectLanguage": "选择语言",
+    "selectTheme": "选择主题色",
+    "languageSimplifiedChinese": "简体中文",
+    "languageTraditionalChinese": "繁体中文",
+    "languageEnglish": "English",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "currentSelection": "当前",
+    "more": "更多",
+    "newSubPage": "新建子页面",
+    "documentPlaceholder": "正文与编辑后续再接 BlockNote；当前已从 Convex 拉取标题。",
+    "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
   }
 }

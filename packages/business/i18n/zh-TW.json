@@ -249,6 +249,30 @@
     "thirdPartyTitle": "登錄",
     "thirdPartySubtitle": "選擇您的帳號繼續",
     "continueWithGoogle": "使用 Google 繼續",
-    "continueWithGithub": "使用 GitHub 繼續"
+    "continueWithGithub": "使用 GitHub 繼續",
+    "alreadyHaveAccount": "已有帳號？"
+  },
+  "Home": {
+    "workspaceOwned": "{{name}}的工作空間",
+    "myWorkspace": "我的工作空間",
+    "recent": "最近",
+    "account": "帳戶",
+    "openSettingsMenu": "打開設定選單",
+    "openWorkspaceMenu": "打開工作空間選單",
+    "inbox": "收件箱",
+    "changeLanguage": "語言切換",
+    "changeTheme": "主題色切換",
+    "selectLanguage": "選擇語言",
+    "selectTheme": "選擇主題色",
+    "languageSimplifiedChinese": "簡體中文",
+    "languageTraditionalChinese": "繁體中文",
+    "languageEnglish": "English",
+    "themeLight": "淺色",
+    "themeDark": "深色",
+    "currentSelection": "當前",
+    "more": "更多",
+    "newSubPage": "新建子頁面",
+    "documentPlaceholder": "正文與編輯後續再接 BlockNote；當前已從 Convex 拉取標題。",
+    "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
   }
 }

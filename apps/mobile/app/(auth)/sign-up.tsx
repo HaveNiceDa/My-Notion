@@ -3,10 +3,12 @@ import { ThemedView } from "@/components/themed-view";
 import { useAuth, useSignUp } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, TextInput } from "react-native";
 import tw from "twrnc";
 
 export default function Page() {
+  const { t } = useTranslation();
   const { signUp, errors, fetchStatus } = useSignUp();
   const { isSignedIn } = useAuth();
   const router = useRouter();
@@ -64,12 +66,12 @@ export default function Page() {
     return (
       <ThemedView style={tw`flex-1 p-5 gap-3`}>
         <ThemedText type="title" style={tw`mb-2`}>
-          Verify your account
+          {t("Auth.verifyYourAccount")}
         </ThemedText>
         <TextInput
           style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
           value={code}
-          placeholder="Enter your verification code"
+          placeholder={t("Auth.enterCode")}
           placeholderTextColor="#666666"
           onChangeText={(code) => setCode(code)}
           keyboardType="numeric"
@@ -86,14 +88,14 @@ export default function Page() {
           onPress={handleVerify}
           disabled={fetchStatus === "fetching"}
         >
-          <ThemedText style={tw`text-white font-semibold`}>Verify</ThemedText>
+          <ThemedText style={tw`text-white font-semibold`}>{t("Auth.verify")}</ThemedText>
         </Pressable>
         <Pressable
           style={({ pressed }) => tw`py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""}`}
           onPress={() => signUp.verifications.sendEmailCode()}
         >
           <ThemedText style={tw`text-[#0a7ea4] font-semibold`}>
-            I need a new code
+            {t("Auth.needNewCode")}
           </ThemedText>
         </Pressable>
       </ThemedView>
@@ -103,15 +105,15 @@ export default function Page() {
   return (
     <ThemedView style={tw`flex-1 p-5 gap-3`}>
       <ThemedText type="title" style={tw`mb-2`}>
-        Sign up
+        {t("Auth.signUp")}
       </ThemedText>
 
-      <ThemedText style={tw`font-semibold text-sm`}>Email address</ThemedText>
+      <ThemedText style={tw`font-semibold text-sm`}>{t("Auth.emailAddress")}</ThemedText>
       <TextInput
         style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
         autoCapitalize="none"
         value={emailAddress}
-        placeholder="Enter email"
+        placeholder={t("Auth.enterEmail")}
         placeholderTextColor="#666666"
         onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
         keyboardType="email-address"
@@ -121,11 +123,11 @@ export default function Page() {
           {errors.fields.emailAddress.message}
         </ThemedText>
       )}
-      <ThemedText style={tw`font-semibold text-sm`}>Password</ThemedText>
+      <ThemedText style={tw`font-semibold text-sm`}>{t("Auth.password")}</ThemedText>
       <TextInput
         style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
         value={password}
-        placeholder="Enter password"
+        placeholder={t("Auth.enterPassword")}
         placeholderTextColor="#666666"
         secureTextEntry={true}
         onChangeText={(password) => setPassword(password)}
@@ -142,7 +144,7 @@ export default function Page() {
         onPress={handleSubmit}
         disabled={!emailAddress || !password || fetchStatus === "fetching"}
       >
-        <ThemedText style={tw`text-white font-semibold`}>Sign up</ThemedText>
+        <ThemedText style={tw`text-white font-semibold`}>{t("Auth.signUp")}</ThemedText>
       </Pressable>
       {errors && (
         <ThemedText style={tw`text-xs opacity-50 mt-2`}>
@@ -151,9 +153,9 @@ export default function Page() {
       )}
 
       <ThemedView style={tw`flex-row gap-1 mt-3 items-center`}>
-        <ThemedText>Already have an account? </ThemedText>
+        <ThemedText>{t("Auth.alreadyHaveAccount")}</ThemedText>
         <Link href="/sign-in">
-          <ThemedText type="link">Sign in</ThemedText>
+          <ThemedText type="link">{t("Auth.signIn")}</ThemedText>
         </Link>
       </ThemedView>
 

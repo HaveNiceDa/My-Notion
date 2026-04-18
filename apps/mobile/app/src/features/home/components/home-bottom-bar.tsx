@@ -1,7 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text, View } from "tamagui";
+import { Text, View, useTheme } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
 type Props = {
@@ -11,20 +12,22 @@ type Props = {
 };
 
 export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Props) {
+  const { t } = useTranslation();
+  const theme = useTheme();
   const insets = useSafeAreaInsets();
 
   return (
     <View
       style={twStyle(
         "absolute bottom-0 left-0 right-0 border-t border-neutral-200/70 px-3 pt-2",
-        { backgroundColor: "rgba(247,247,245,0.95)", paddingBottom: Math.max(insets.bottom, 10) },
+        { backgroundColor: theme.background.val, paddingBottom: Math.max(insets.bottom, 10) },
       )}
     >
       <View style={tw`flex-row items-center gap-2`}>
         <Pressable
           onPress={onPressSearch}
           style={({ pressed }) => tw`p-2 rounded-full ${pressed ? "bg-black/5" : ""}`}
-          accessibilityLabel="搜索"
+          accessibilityLabel={t("Navigation.search")}
         >
           <Ionicons name="search" size={24} color="#262626" />
         </Pressable>
@@ -36,7 +39,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
           }
         >
           <Ionicons name="sparkles" size={18} color="#7c3aed" />
-          <Text style={tw`text-neutral-500 text-sm flex-1`}>万事问 AI</Text>
+          <Text style={tw`text-neutral-500 text-sm flex-1`}>{t("AI.aiConversation")}</Text>
         </Pressable>
 
         <Pressable
@@ -44,7 +47,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
           style={({ pressed }) =>
             tw`w-11 h-11 rounded-xl bg-neutral-900 items-center justify-center ${pressed ? "opacity-80" : ""}`
           }
-          accessibilityLabel="新建页面"
+          accessibilityLabel={t("Navigation.newPage")}
         >
           <Ionicons name="add" size={28} color="#fff" />
         </Pressable>

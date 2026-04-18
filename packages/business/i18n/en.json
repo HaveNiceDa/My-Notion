@@ -249,6 +249,30 @@
     "thirdPartyTitle": "Sign in",
     "thirdPartySubtitle": "Continue with your preferred account",
     "continueWithGoogle": "Continue with Google",
-    "continueWithGithub": "Continue with GitHub"
+    "continueWithGithub": "Continue with GitHub",
+    "alreadyHaveAccount": "Already have an account? "
+  },
+  "Home": {
+    "workspaceOwned": "{{name}}'s workspace",
+    "myWorkspace": "My workspace",
+    "recent": "Recent",
+    "account": "Account",
+    "openSettingsMenu": "Open settings menu",
+    "openWorkspaceMenu": "Open workspace menu",
+    "inbox": "Inbox",
+    "changeLanguage": "Language",
+    "changeTheme": "Theme",
+    "selectLanguage": "Select language",
+    "selectTheme": "Select theme",
+    "languageSimplifiedChinese": "Simplified Chinese",
+    "languageTraditionalChinese": "Traditional Chinese",
+    "languageEnglish": "English",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "currentSelection": "Current",
+    "more": "More",
+    "newSubPage": "Create sub-page",
+    "documentPlaceholder": "Editor integration will be added in the next step. The title is already loaded from Convex.",
+    "aiMockResponse": "Message received: \"{{message}}\". AI features are being connected..."
   }
 }

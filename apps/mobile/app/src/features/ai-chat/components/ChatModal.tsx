@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useUser } from "@clerk/expo";
 import { useMutation, useQuery } from "convex/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -25,6 +26,7 @@ type Props = {
 };
 
 export function ChatModal({ visible, onClose }: Props) {
+  const { t } = useTranslation();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const [input, setInput] = useState("");
@@ -90,7 +92,7 @@ export function ChatModal({ visible, onClose }: Props) {
       setTimeout(async () => {
         await addMessage({
           conversationId: conversationId!,
-          content: `收到您的消息: "${userMessage}"。AI 功能正在接入中...`,
+          content: t("Home.aiMockResponse", { message: userMessage }),
           role: "assistant",
         });
         setIsSending(false);
@@ -121,7 +123,7 @@ export function ChatModal({ visible, onClose }: Props) {
                 <View style={tw`w-8 h-8 rounded-full bg-violet-100 items-center justify-center`}>
                   <Ionicons name="sparkles" size={18} color="#7c3aed" />
                 </View>
-                <Text style={tw`text-lg font-bold text-neutral-900`}>万事问 AI</Text>
+                <Text style={tw`text-lg font-bold text-neutral-900`}>{t("AI.aiConversation")}</Text>
               </View>
               <View style={tw`flex-row items-center gap-3`}>
                 <Pressable
@@ -180,7 +182,7 @@ export function ChatModal({ visible, onClose }: Props) {
               <View style={tw`flex-row items-center bg-neutral-100 rounded-2xl px-3 py-1.5 gap-2`}>
                 <TextInput
                   style={tw`flex-1 min-h-10 text-[16px] text-neutral-900 py-1`}
-                  placeholder="问问 AI..."
+                  placeholder={t("AI.pleaseEnterYourQuestion")}
                   placeholderTextColor="#a3a3a3"
                   value={input}
                   onChangeText={setInput}

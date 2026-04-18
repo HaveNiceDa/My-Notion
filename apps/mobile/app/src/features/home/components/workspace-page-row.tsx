@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
+import { useTranslation } from "react-i18next";
 import { Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
@@ -22,6 +23,7 @@ export function WorkspacePageRow({
   onToggleExpand,
   onPressRow,
 }: Props) {
+  const { t } = useTranslation();
   const isOpen = expandedIds.has(document._id);
   const paddingLeft = 8 + depth * 14;
 
@@ -50,10 +52,10 @@ export function WorkspacePageRow({
         </Text>
       </Pressable>
 
-      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel="更多">
+      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.more")}>
         <Ionicons name="ellipsis-horizontal" size={18} color="#737373" />
       </Pressable>
-      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel="新建子页面">
+      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.newSubPage")}>
         <Ionicons name="add" size={22} color="#737373" />
       </Pressable>
     </View>

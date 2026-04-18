@@ -1,38 +1,83 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text, View } from "tamagui";
-import tw, { style as twStyle } from "twrnc";
+import { Button, Popover, Text, View, YStack, useTheme } from "tamagui";
+import tw from "twrnc";
 
 type Props = {
   workspaceTitle: string;
+  openMenuLabel: string;
+  changeLanguageLabel: string;
+  changeThemeLabel: string;
+  settingsLabel: string;
+  inboxLabel: string;
+  workspaceMenuLabel: string;
+  onPressWorkspace?: () => void;
   onPressInbox?: () => void;
-  onPressMenu?: () => void;
+  onOpenLanguagePicker?: () => void;
+  onOpenThemePicker?: () => void;
 };
 
-export function HomeHeader({ workspaceTitle, onPressInbox, onPressMenu }: Props) {
+export function HomeHeader({
+  workspaceTitle,
+  openMenuLabel,
+  changeLanguageLabel,
+  changeThemeLabel,
+  settingsLabel,
+  inboxLabel,
+  workspaceMenuLabel,
+  onPressWorkspace,
+  onPressInbox,
+  onOpenLanguagePicker,
+  onOpenThemePicker,
+}: Props) {
   const insets = useSafeAreaInsets();
+  const theme = useTheme();
 
   return (
-    <View style={twStyle("bg-[#f7f7f5] border-b border-neutral-200/60", { paddingTop: insets.top })}>
+    <View bg="$background" borderBottomWidth={1} borderBottomColor="$borderColor" pt={insets.top}>
       <View style={tw`flex-row items-center justify-between px-3 pb-3 pt-1`}>
         <Pressable
-          onPress={onPressMenu}
+          onPress={onPressWorkspace}
+          accessibilityLabel={workspaceMenuLabel}
           style={({ pressed }) => tw`flex-row items-center max-w-[70%] ${pressed ? "opacity-70" : ""}`}
         >
           <Text style={tw`text-lg font-semibold text-neutral-900`} numberOfLines={1}>
             {workspaceTitle}
           </Text>
-          <Ionicons name="chevron-down" size={18} color="#404040" style={tw`ml-1`} />
+          <Ionicons name="chevron-down" size={18} color={theme.color.val} style={tw`ml-1`} />
         </Pressable>
 
         <View style={tw`flex-row items-center gap-1`}>
-          <Pressable hitSlop={10} onPress={onPressInbox} style={tw`p-2 rounded-full`}>
-            <Ionicons name="file-tray-outline" size={22} color="#262626" />
+          <Pressable hitSlop={10} onPress={onPressInbox} style={tw`p-2 rounded-full`} accessibilityLabel={inboxLabel}>
+            <Ionicons name="file-tray-outline" size={22} color={theme.color.val} />
           </Pressable>
-          <Pressable hitSlop={10} onPress={onPressMenu} style={tw`p-2 rounded-full`}>
-            <Ionicons name="ellipsis-horizontal" size={22} color="#262626" />
-          </Pressable>
+
+          <Popover placement="bottom-end" allowFlip>
+            <Popover.Trigger asChild>
+              <Pressable hitSlop={10} style={tw`p-2 rounded-full`} accessibilityLabel={openMenuLabel}>
+                <Ionicons name="ellipsis-horizontal" size={22} color={theme.color.val} />
+              </Pressable>
+            </Popover.Trigger>
+
+            <Popover.Content p="$2" borderWidth={1} borderColor="$borderColor" bg="$background">
+              <YStack gap="$2" width={150}>
+                <Text fontSize={12} color="$color10" px="$2">
+                  {settingsLabel}
+                </Text>
+                <Button onPress={onOpenLanguagePicker}>
+                  <Text style={tw`w-full text-left`}>
+                    {changeLanguageLabel}
+                  </Text>
+                </Button>
+                <Button onPress={onOpenThemePicker}>
+                  <Text style={tw`w-full text-left`}>
+                    {changeThemeLabel}
+                  </Text>
+                </Button>
+              </YStack>
+            </Popover.Content>
+          </Popover>
         </View>
       </View>
     </View>
