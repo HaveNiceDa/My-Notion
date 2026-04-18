@@ -7,12 +7,11 @@
 ```
 My-Notion/
 ├── apps/                          # 应用层
-│   └── web/                       # Next.js Web 应用
-│
+│   ├── web/                       # Next.js Web 应用
+│   └── mobile/                    # Expo 移动应用
 ├── packages/                      # 共享包
 │   └── business/                  # 业务共享包
 │       └── i18n/                  # 国际化翻译文件
-│
 ├── package.json
 ├── pnpm-workspace.yaml
 └── README.md
@@ -37,6 +36,10 @@ pnpm i
 # 启动 Web 应用
 cd apps/web
 pnpm start
+
+# 启动移动应用
+cd apps/mobile
+pnpm start
 ```
 
 ### 构建
@@ -46,21 +49,16 @@ pnpm start
 pnpm build:web
 ```
 
-## 🎯 架构规划（进行中）
+## 🎯 架构规划
 
-本项目正在按照 Monorepo 架构进行重构，计划支持：
+本项目按照 Monorepo 架构构建，支持：
 
 - **Web 端**：Next.js 应用（已实现）
 - **移动端**：React Native 应用（coding中）
 - **AI Gateway**：独立的 AI 网关服务（规划中）
 - **共享包**：类型定义、AI 工具、Convex Hooks、UI 组件等（部分实现）
 
-### 近期技术优化计划
-
-- **Convex 单例模式抽象**：将 Convex 客户端抽象为单例模式，Web 和 Mobile 应用只需初始化一次，避免各处调用各处实例化的资源浪费
-
-详细规划请参考。
-
 ## 📝 各应用说明
 
 - [Web 应用](./apps/web/README.md) - 基于 Next.js 的 Notion Web 应用
+- [移动应用](./apps/mobile/README.md) - 基于 Expo 的 Notion 移动应用
