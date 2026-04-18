@@ -4,6 +4,7 @@
     "strict": true,
     "paths": {
       "@/*": ["./app/src/*"],
+      "@tamagui/config": ["./tamagui.config.ts"],
       "@convex/*": ["./convex/*"],
       "@notion-i18n/*": ["../../packages/business/i18n/*"]
     }
