@@ -4,6 +4,8 @@ import { tokenCache } from "@clerk/expo/token-cache";
 import { Stack } from "expo-router";
 
 import { convex } from "@/lib/convex";
+import { I18nProvider } from "@/i18n/I18nProvider";
+import "@/i18n";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
 
@@ -15,11 +17,13 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
       <ConvexProvider client={convex}>
-        <Stack>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(home)" options={{ headerShown: false }} />
-        </Stack>
+        <I18nProvider>
+          <Stack>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          </Stack>
+        </I18nProvider>
       </ConvexProvider>
     </ClerkProvider>
   );

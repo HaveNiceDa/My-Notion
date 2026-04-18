@@ -12,10 +12,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { useLanguage } from "@/i18n/useLanguage";
 
 export default function Page() {
   const { signIn, errors, fetchStatus } = useSignIn();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -33,9 +35,7 @@ export default function Page() {
     if (error) {
       // Check for specific error: 400 with code strategy_for_user_invalid
       if ((error as any)?.errors?.[0]?.code === "strategy_for_user_invalid") {
-        setCustomError(
-          "当前帐号不支持密码登录，请点击右下角的第三方账号登录",
-        );
+        setCustomError(t("Auth.strategyForUserInvalid"));
       }
       return;
     }
@@ -114,13 +114,13 @@ export default function Page() {
     return (
       <ThemedView style={styles.container}>
         <ThemedText type="title" style={styles.title}>
-          Verify your account
+          {t("Auth.verifyYourAccount")}
         </ThemedText>
-        <ThemedText style={styles.label}>Code</ThemedText>
+        <ThemedText style={styles.label}>{t("Auth.enterCode")}</ThemedText>
         <TextInput
           style={styles.input}
           value={code}
-          placeholder="Enter code"
+          placeholder={t("Auth.enterCode")}
           placeholderTextColor="#666666"
           onChangeText={(code) => setCode(code)}
           keyboardType="numeric"
@@ -139,7 +139,7 @@ export default function Page() {
           >
             {useBackupCode && <Text style={styles.checkmark}>✓</Text>}
           </View>
-          <ThemedText style={styles.backupLabel}>Use backup code</ThemedText>
+          <ThemedText style={styles.backupLabel}>{t("Auth.useBackupCode")}</ThemedText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -150,7 +150,7 @@ export default function Page() {
           onPress={handleMFAVerification}
           disabled={fetchStatus === "fetching"}
         >
-          <ThemedText style={styles.buttonText}>Verify</ThemedText>
+          <ThemedText style={styles.buttonText}>{t("Auth.verify")}</ThemedText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -159,7 +159,7 @@ export default function Page() {
           ]}
           onPress={() => signIn.mfa.sendPhoneCode()}
         >
-          <ThemedText style={styles.buttonText}>I need a new code</ThemedText>
+          <ThemedText style={styles.buttonText}>{t("Auth.needNewCode")}</ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -200,12 +200,12 @@ export default function Page() {
           type="title"
           style={[styles.title, { fontSize: 24, fontWeight: "bold" }]}
         >
-          Verify your account
+          {t("Auth.verifyYourAccount")}
         </ThemedText>
         <TextInput
           style={styles.input}
           value={code}
-          placeholder="Enter your verification code"
+          placeholder={t("Auth.enterCode")}
           placeholderTextColor="#666666"
           onChangeText={(code) => setCode(code)}
           keyboardType="numeric"
@@ -224,7 +224,7 @@ export default function Page() {
           onPress={handleVerify}
           disabled={fetchStatus === "fetching"}
         >
-          <ThemedText style={styles.buttonText}>Verify</ThemedText>
+          <ThemedText style={styles.buttonText}>{t("Auth.verify")}</ThemedText>
         </Pressable>
         <Pressable
           style={({ pressed }) => [
@@ -234,7 +234,7 @@ export default function Page() {
           onPress={() => signIn.mfa.sendEmailCode()}
         >
           <ThemedText style={styles.secondaryButtonText}>
-            I need a new code
+            {t("Auth.needNewCode")}
           </ThemedText>
         </Pressable>
         <Pressable
@@ -244,7 +244,7 @@ export default function Page() {
           ]}
           onPress={() => signIn.reset()}
         >
-          <ThemedText style={styles.secondaryButtonText}>Start over</ThemedText>
+          <ThemedText style={styles.secondaryButtonText}>{t("Auth.startOver")}</ThemedText>
         </Pressable>
       </ThemedView>
     );
@@ -258,15 +258,15 @@ export default function Page() {
       >
         <View style={styles.form}>
           <ThemedText type="title" style={styles.title}>
-            Sign in
+            {t("Auth.signIn")}
           </ThemedText>
 
-          <ThemedText style={styles.label}>Email address</ThemedText>
+          <ThemedText style={styles.label}>{t("Auth.emailAddress")}</ThemedText>
           <TextInput
             style={styles.input}
             autoCapitalize="none"
             value={emailAddress}
-            placeholder="Enter email"
+            placeholder={t("Auth.enterEmail")}
             placeholderTextColor="#666666"
             onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
             keyboardType="email-address"
@@ -276,11 +276,11 @@ export default function Page() {
               {errors.fields.identifier.message}
             </ThemedText>
           )}
-          <ThemedText style={styles.label}>Password</ThemedText>
+          <ThemedText style={styles.label}>{t("Auth.password")}</ThemedText>
           <TextInput
             style={styles.input}
             value={password}
-            placeholder="Enter password"
+            placeholder={t("Auth.enterPassword")}
             placeholderTextColor="#666666"
             secureTextEntry={true}
             onChangeText={(password) => setPassword(password)}
@@ -305,19 +305,19 @@ export default function Page() {
             onPress={handleSubmit}
             disabled={!emailAddress || !password || fetchStatus === "fetching"}
           >
-            <ThemedText style={styles.buttonText}>Continue</ThemedText>
+            <ThemedText style={styles.buttonText}>{t("Auth.continue")}</ThemedText>
           </Pressable>
 
           <View style={styles.footerRow}>
             <View style={styles.footerSignUp}>
-              <ThemedText>{"Don't have an account? "}</ThemedText>
+              <ThemedText>{t("Auth.dontHaveAccount")}</ThemedText>
               <Link href="/sign-up">
-                <ThemedText type="link">Sign up</ThemedText>
+                <ThemedText type="link">{t("Auth.signUp")}</ThemedText>
               </Link>
             </View>
             <View style={styles.footerThirdParty}>
               <Link href="/third-party-login">
-                <ThemedText type="link">第三方账号登录</ThemedText>
+                <ThemedText type="link">{t("Auth.thirdPartyLogin")}</ThemedText>
               </Link>
             </View>
           </View>

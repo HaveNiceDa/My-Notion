@@ -227,5 +227,28 @@
     "deepThinkingDisabled": "Deep thinking disabled",
     "deepThinkingTooltip": "Deep thinking",
     "modelSelect": "Model selection"
+  },
+  "Auth": {
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "emailAddress": "Email address",
+    "enterEmail": "Enter email",
+    "password": "Password",
+    "enterPassword": "Enter password",
+    "continue": "Continue",
+    "verifyYourAccount": "Verify your account",
+    "enterCode": "Enter code",
+    "useBackupCode": "Use backup code",
+    "verify": "Verify",
+    "needNewCode": "I need a new code",
+    "startOver": "Start over",
+    "dontHaveAccount": "Don't have an account? ",
+    "thirdPartyLogin": "Third-party login",
+    "signInWithPassword": "sign in with password",
+    "strategyForUserInvalid": "Current account does not support password login, please click third-party login below",
+    "thirdPartyTitle": "Sign in",
+    "thirdPartySubtitle": "Continue with your preferred account",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithGithub": "Continue with GitHub"
   }
 }

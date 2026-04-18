@@ -5,10 +5,12 @@ import { type Href, Link, useRouter } from "expo-router";
 import * as Linking from "expo-linking";
 import React from "react";
 import { Pressable, StyleSheet, View } from "react-native";
+import { useLanguage } from "@/i18n/useLanguage";
 
 export default function ThirdPartyLoginPage() {
   const { startSSOFlow } = useSSO();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const redirectUrl = Linking.createURL("/(auth)/third-party-login");
 
@@ -47,11 +49,11 @@ export default function ThirdPartyLoginPage() {
   return (
     <ThemedView style={styles.container}>
       <ThemedText type="title" style={styles.title}>
-        Sign in
+        {t("Auth.thirdPartyTitle")}
       </ThemedText>
 
       <ThemedText style={styles.subtitle}>
-        Continue with your preferred account
+        {t("Auth.thirdPartySubtitle")}
       </ThemedText>
 
       <View style={styles.socialButtons}>
@@ -64,7 +66,7 @@ export default function ThirdPartyLoginPage() {
           onPress={handleGoogleSignIn}
         >
           <ThemedText style={styles.socialButtonText}>
-            Continue with Google
+            {t("Auth.continueWithGoogle")}
           </ThemedText>
         </Pressable>
         <Pressable
@@ -76,7 +78,7 @@ export default function ThirdPartyLoginPage() {
           onPress={handleGitHubSignIn}
         >
           <ThemedText style={styles.socialButtonText}>
-            Continue with GitHub
+            {t("Auth.continueWithGithub")}
           </ThemedText>
         </Pressable>
       </View>
@@ -84,14 +86,14 @@ export default function ThirdPartyLoginPage() {
       <View style={styles.linkContainer}>
         <ThemedText>Or </ThemedText>
         <Link href="/sign-in">
-          <ThemedText type="link">sign in with password</ThemedText>
+          <ThemedText type="link">{t("Auth.signInWithPassword")}</ThemedText>
         </Link>
       </View>
 
       <View style={styles.linkContainer}>
-        <ThemedText>Don&apos;t have an account? </ThemedText>
+        <ThemedText>{t("Auth.dontHaveAccount")}</ThemedText>
         <Link href="/sign-up">
-          <ThemedText type="link">Sign up</ThemedText>
+          <ThemedText type="link">{t("Auth.signUp")}</ThemedText>
         </Link>
       </View>
     </ThemedView>

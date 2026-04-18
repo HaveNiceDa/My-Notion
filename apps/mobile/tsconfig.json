@@ -3,7 +3,8 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "@/*": ["./app/src/*"]
+      "@/*": ["./app/src/*"],
+      "@notion-i18n/*": ["../../packages/business/i18n/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
