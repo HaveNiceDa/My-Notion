@@ -16,32 +16,30 @@ export function CollapsibleSection({ title, expanded, onToggle, children }: Prop
   return (
     <View
       style={{
-        marginBottom: 12,
+        marginBottom: 18,
         marginHorizontal: 12,
-        borderRadius: 24,
-        borderWidth: 1,
-        borderColor: theme.borderColor.val,
-        backgroundColor: theme.backgroundHover.val,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.borderColor.val,
       }}
     >
       <Pressable
         onPress={onToggle}
         style={({ pressed }) => [
-          tw`flex-row items-center justify-between px-4 py-3 rounded-2xl`,
-          pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+          tw`flex-row items-center justify-between px-1 py-2`,
+          pressed ? { opacity: 0.75 } : null,
         ]}
       >
-        <Text color="$color" style={tw`text-sm font-semibold`}>
+        <Text color="$placeholderColor" style={tw`text-sm font-semibold`}>
           {title}
         </Text>
         <Ionicons
           name="chevron-up"
-          size={16}
+          size={15}
           color={theme.placeholderColor.val}
           style={{ transform: [{ rotate: expanded ? "0deg" : "180deg" }] }}
         />
       </Pressable>
-      {expanded ? <View px="$2" pb="$2">{children}</View> : null}
+      {expanded ? <View pb="$1">{children}</View> : null}
     </View>
   );
 }

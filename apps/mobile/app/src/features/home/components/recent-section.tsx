@@ -15,9 +15,9 @@ export function RecentSection({ title, items, onPressCard }: Props) {
   const theme = useTheme();
 
   return (
-    <View style={tw`mb-4`}>
+    <View style={tw`mb-5`}>
       <View style={tw`px-3 mb-2`}>
-        <Text color="$color" style={tw`text-base font-bold`}>
+        <Text color="$placeholderColor" style={tw`text-sm font-semibold`}>
           {title}
         </Text>
       </View>
@@ -31,19 +31,18 @@ export function RecentSection({ title, items, onPressCard }: Props) {
             key={item.id}
             onPress={() => onPressCard?.(item)}
             style={({ pressed }) => [
-              tw`w-40 p-4`,
+              tw`w-34 p-3`,
               {
                 borderWidth: 1,
-                borderRadius: 24,
+                borderRadius: 16,
                 borderColor: theme.borderColor.val,
-                backgroundColor: pressed
-                  ? theme.backgroundPress.val
-                  : theme.backgroundHover.val,
+                backgroundColor: theme.background.val,
               },
+              pressed ? { opacity: 0.78 } : null,
             ]}
           >
             <PageIcon kind={item.iconKind} size={16} />
-            <Text color="$color" style={tw`mt-3 text-sm font-semibold`} numberOfLines={2}>
+            <Text color="$color" style={tw`mt-3 text-sm font-medium`} numberOfLines={2}>
               {item.title}
             </Text>
             {item.subtitle ? (

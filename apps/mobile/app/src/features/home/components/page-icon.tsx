@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { View } from "tamagui";
+import { View, useTheme } from "tamagui";
 import tw from "twrnc";
 
 import type { PageIconKind } from "../types";
@@ -10,6 +10,7 @@ type Props = {
 };
 
 export function PageIcon({ kind, size = 18 }: Props) {
+  const theme = useTheme();
   const name = (() => {
     switch (kind) {
       case "database":
@@ -22,8 +23,13 @@ export function PageIcon({ kind, size = 18 }: Props) {
   })();
 
   return (
-    <View style={tw`w-8 h-8 rounded-md bg-neutral-200/80 items-center justify-center`}>
-      <Ionicons name={name} size={size} color="#374151" />
+    <View
+      style={[
+        tw`w-8 h-8 rounded-lg items-center justify-center`,
+        { backgroundColor: theme.backgroundHover.val },
+      ]}
+    >
+      <Ionicons name={name} size={size} color={theme.placeholderColor.val} />
     </View>
   );
 }

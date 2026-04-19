@@ -14,10 +14,19 @@ import {
 } from "react-native-safe-area-context";
 import { Spinner, Text, View, useTheme } from "tamagui";
 import tw from "twrnc";
-import { RichText, Toolbar, useEditorBridge } from "@10play/tentap-editor";
+import {
+  RichText,
+  useEditorBridge,
+  useEditorContent,
+} from "@10play/tentap-editor";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
+import {
+  getEditorContentFromStoredContent,
+  getPlainTextFromStoredContent,
+  serializePlainTextToBlockNote,
+} from "@/features/documents/content-compat";
 
 const SAVE_DELAY_MS = 700;
 
@@ -42,35 +51,21 @@ export default function DocumentDetailRoute() {
   const lastSavedContentRef = useRef<string>("");
   const titleLoadedForIdRef = useRef<string | null>(null);
   const contentLoadedForIdRef = useRef<string | null>(null);
+  const loadedPlainTextRef = useRef<string>("");
 
-  const initialContent = useMemo(() => doc?.content ?? "", [doc?.content]);
+  const initialContent = useMemo(
+    () => getEditorContentFromStoredContent(doc?.content),
+    [doc?.content],
+  );
 
   const editor = useEditorBridge({
     autofocus: true,
     avoidIosKeyboard: true,
     initialContent,
-    onChange: () => {
-      if (!doc) return;
-
-      if (contentTimerRef.current) {
-        clearTimeout(contentTimerRef.current);
-      }
-
-      contentTimerRef.current = setTimeout(async () => {
-        const html = await editor.getHTML();
-        if (html === lastSavedContentRef.current) return;
-
-        setSaveState("saving");
-        try {
-          await update({ id, content: html });
-          lastSavedContentRef.current = html;
-          setSaveState("saved");
-        } catch (error) {
-          setSaveState("idle");
-          console.error("Failed to save content:", error);
-        }
-      }, SAVE_DELAY_MS);
-    },
+  });
+  const editorText = useEditorContent(editor, {
+    type: "text",
+    debounceInterval: 300,
   });
 
   useEffect(() => {
@@ -90,11 +85,38 @@ export default function DocumentDetailRoute() {
     }
 
     if (contentLoadedForIdRef.current !== doc._id) {
-      editor.setContent(doc.content ?? "");
+      const nextEditorContent = getEditorContentFromStoredContent(doc.content);
+      editor.setContent(nextEditorContent);
       lastSavedContentRef.current = doc.content ?? "";
       contentLoadedForIdRef.current = doc._id;
+      loadedPlainTextRef.current = getPlainTextFromStoredContent(doc.content);
     }
   }, [doc, editor]);
+
+  useEffect(() => {
+    if (!doc || editorText === undefined) return;
+    if (editorText === loadedPlainTextRef.current) return;
+
+    if (contentTimerRef.current) {
+      clearTimeout(contentTimerRef.current);
+    }
+
+    contentTimerRef.current = setTimeout(async () => {
+      const nextContent = serializePlainTextToBlockNote(editorText);
+      if (nextContent === lastSavedContentRef.current) return;
+
+      setSaveState("saving");
+      try {
+        await update({ id, content: nextContent });
+        lastSavedContentRef.current = nextContent;
+        loadedPlainTextRef.current = editorText;
+        setSaveState("saved");
+      } catch (error) {
+        setSaveState("idle");
+        console.error("Failed to save content:", error);
+      }
+    }, SAVE_DELAY_MS);
+  }, [doc, editorText, id, update]);
 
   const scheduleTitleSave = useCallback(
     (nextTitle: string) => {
@@ -201,12 +223,17 @@ export default function DocumentDetailRoute() {
             right: 0,
             bottom: 0,
             paddingBottom: Math.max(insets.bottom, 8),
-            backgroundColor: theme.backgroundHover.val,
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            backgroundColor: theme.background.val,
             borderTopWidth: 1,
             borderTopColor: theme.borderColor.val,
           }}
         >
-          <Toolbar editor={editor} />
+          <Text color="$placeholderColor" style={tw`text-xs leading-4`}>
+            当前移动端会把内容转换为 BlockNote 兼容段落再保存，先保证和 web
+            端数据互通。
+          </Text>
         </KeyboardAvoidingView>
       </View>
     </SafeAreaView>

@@ -25,7 +25,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
     >
       <View
         style={twStyle("flex-row items-center gap-2 px-2 py-2", {
-          backgroundColor: theme.backgroundHover.val,
+          backgroundColor: theme.background.val,
           borderColor: theme.borderColor.val,
           borderWidth: 1,
           borderRadius: 28,
@@ -46,7 +46,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
           onPress={onPressAi}
           style={({ pressed }) =>
             twStyle("flex-1 flex-row items-center rounded-full px-4 h-12 gap-2", {
-              backgroundColor: pressed ? theme.backgroundPress.val : theme.background.val,
+              backgroundColor: pressed ? theme.backgroundPress.val : theme.backgroundHover.val,
               borderColor: theme.borderColor.val,
               borderWidth: 1,
             })

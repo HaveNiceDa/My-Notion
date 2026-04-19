@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Dialog, ScrollView, Spinner, Text, View, useTheme } from "tamagui";
+import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 import { Alert } from "react-native";
 
@@ -32,7 +32,6 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const { t } = useTranslation();
   const { currentLanguage, switchLanguage } = useLanguage();
   const { theme, setTheme } = useAppTheme();
-  const tamaguiTheme = useTheme();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
@@ -142,33 +141,13 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
           </View>
         ) : (
           <View>
-            <View
-              mx="$3"
-              mb="$4"
-              px="$4"
-              py="$4"
-              style={{
-                borderRadius: 28,
-                borderWidth: 1,
-                borderColor: tamaguiTheme.borderColor.val,
-                backgroundColor: tamaguiTheme.backgroundHover.val,
-              }}
-            >
-              <Text color="$color" style={tw`text-lg font-bold`}>
-                {t("Home.workspaceOverview")}
-              </Text>
-              <Text color="$placeholderColor" style={tw`text-sm mt-1 leading-5`}>
-                {t("Home.workspaceOverviewHint")}
-              </Text>
-            </View>
-
             <RecentSection
               title={t("Home.recent")}
               items={recentItems}
               onPressCard={(item) => goDocument(item.id as Id<"documents">)}
             />
 
-            <View style={tw`mt-2`}>
+            <View style={tw`mt-1`}>
               <CollapsibleSection
                 title={t("Navigation.knowledgeBase")}
                 expanded={sections.knowledgeBase}

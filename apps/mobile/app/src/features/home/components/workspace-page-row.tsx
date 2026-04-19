@@ -31,8 +31,8 @@ export function WorkspacePageRow({
   return (
     <View
       style={[
-        tw`flex-row items-center py-2 pr-2 rounded-2xl`,
-        { backgroundColor: theme.background.val },
+        tw`flex-row items-center py-1 pr-1`,
+        { backgroundColor: "transparent" },
       ]}
     >
       <View style={twStyle("w-7 items-center justify-center", { marginLeft: paddingLeft })}>
@@ -49,12 +49,12 @@ export function WorkspacePageRow({
       <Pressable
         onPress={onPressRow}
         style={({ pressed }) => [
-          tw`flex-1 flex-row items-center min-h-10 rounded-xl px-1`,
+          tw`flex-1 flex-row items-center min-h-10 rounded-lg px-1`,
           pressed ? { backgroundColor: theme.backgroundHover.val } : null,
         ]}
       >
         <PageIcon kind="doc" />
-        <Text color="$color" style={tw`flex-1 ml-2 text-base`} numberOfLines={1}>
+        <Text color="$color" style={tw`flex-1 ml-2 text-[15px]`} numberOfLines={1}>
           {document.title}
         </Text>
       </Pressable>
