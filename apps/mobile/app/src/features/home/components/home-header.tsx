@@ -13,6 +13,7 @@ type Props = {
   settingsLabel: string;
   inboxLabel: string;
   workspaceMenuLabel: string;
+  workspaceSummary: string;
   onPressWorkspace?: () => void;
   onPressInbox?: () => void;
   onOpenLanguagePicker?: () => void;
@@ -27,6 +28,7 @@ export function HomeHeader({
   settingsLabel,
   inboxLabel,
   workspaceMenuLabel,
+  workspaceSummary,
   onPressWorkspace,
   onPressInbox,
   onOpenLanguagePicker,
@@ -48,12 +50,24 @@ export function HomeHeader({
 
   return (
     <View
-      bg="$background"
-      borderBottomWidth={1}
-      borderBottomColor="$borderColor"
+      background="$background"
       pt={insets.top}
     >
-      <View style={tw`flex-row items-center justify-between px-3 pb-3 pt-1`}>
+      <View
+        px="$3"
+        pb="$3"
+        pt="$2"
+        gap="$3"
+        style={{
+          marginHorizontal: 12,
+          marginBottom: 8,
+          borderWidth: 1,
+          borderColor: theme.borderColor.val,
+          borderRadius: 28,
+          backgroundColor: theme.backgroundHover.val,
+        }}
+      >
+        <View style={tw`flex-row items-center justify-between`}>
         <Pressable
           onPress={onPressWorkspace}
           accessibilityLabel={workspaceMenuLabel}
@@ -62,7 +76,8 @@ export function HomeHeader({
           }
         >
           <Text
-            style={tw`text-lg font-semibold text-neutral-900`}
+            color="$color"
+            style={tw`text-lg font-semibold`}
             numberOfLines={1}
           >
             {workspaceTitle}
@@ -79,7 +94,10 @@ export function HomeHeader({
           <Pressable
             hitSlop={10}
             onPress={onPressInbox}
-            style={tw`p-2 rounded-full`}
+            style={({ pressed }) => [
+              tw`p-2 rounded-full`,
+              pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+            ]}
             accessibilityLabel={inboxLabel}
           >
             <Ionicons
@@ -98,7 +116,10 @@ export function HomeHeader({
             <Popover.Trigger asChild>
               <Pressable
                 hitSlop={10}
-                style={tw`p-2 rounded-full`}
+                style={({ pressed }) => [
+                  tw`p-2 rounded-full`,
+                  pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                ]}
                 accessibilityLabel={openMenuLabel}
               >
                 <Ionicons
@@ -113,7 +134,8 @@ export function HomeHeader({
               p="$2"
               borderWidth={1}
               borderColor="$borderColor"
-              bg="$background"
+              bg="$backgroundHover"
+              style={{ borderRadius: 20 }}
             >
               <YStack gap="$2" width={150}>
                 <Text fontSize={12} color="$color10" px="$2">
@@ -130,6 +152,25 @@ export function HomeHeader({
               </YStack>
             </Popover.Content>
           </Popover>
+        </View>
+        </View>
+
+        <View
+          px="$3"
+          py="$3"
+          style={{
+            borderRadius: 22,
+            backgroundColor: theme.background.val,
+            borderWidth: 1,
+            borderColor: theme.borderColor.val,
+          }}
+        >
+          <Text color="$color" style={tw`text-xl font-bold`}>
+            {workspaceTitle}
+          </Text>
+          <Text color="$placeholderColor" style={tw`text-sm mt-1`}>
+            {workspaceSummary}
+          </Text>
         </View>
       </View>
     </View>

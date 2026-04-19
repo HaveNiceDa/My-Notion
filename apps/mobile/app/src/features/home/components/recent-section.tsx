@@ -1,5 +1,5 @@
 import { Pressable } from "react-native";
-import { ScrollView, Text, View } from "tamagui";
+import { ScrollView, Text, View, useTheme } from "tamagui";
 import tw from "twrnc";
 
 import type { HomeRecentItem } from "../types";
@@ -12,9 +12,15 @@ type Props = {
 };
 
 export function RecentSection({ title, items, onPressCard }: Props) {
+  const theme = useTheme();
+
   return (
     <View style={tw`mb-4`}>
-      <Text style={tw`text-sm font-semibold text-neutral-500 px-3 mb-2`}>{title}</Text>
+      <View style={tw`px-3 mb-2`}>
+        <Text color="$color" style={tw`text-base font-bold`}>
+          {title}
+        </Text>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -24,16 +30,24 @@ export function RecentSection({ title, items, onPressCard }: Props) {
           <Pressable
             key={item.id}
             onPress={() => onPressCard?.(item)}
-            style={({ pressed }) =>
-              tw`w-36 bg-white rounded-xl p-3 border border-neutral-200/80 shadow-sm ${pressed ? "opacity-80" : ""}`
-            }
+            style={({ pressed }) => [
+              tw`w-40 p-4`,
+              {
+                borderWidth: 1,
+                borderRadius: 24,
+                borderColor: theme.borderColor.val,
+                backgroundColor: pressed
+                  ? theme.backgroundPress.val
+                  : theme.backgroundHover.val,
+              },
+            ]}
           >
             <PageIcon kind={item.iconKind} size={16} />
-            <Text style={tw`mt-2 text-sm font-semibold text-neutral-900`} numberOfLines={2}>
+            <Text color="$color" style={tw`mt-3 text-sm font-semibold`} numberOfLines={2}>
               {item.title}
             </Text>
             {item.subtitle ? (
-              <Text style={tw`mt-1 text-xs text-neutral-500`} numberOfLines={1}>
+              <Text color="$placeholderColor" style={tw`mt-1 text-xs`} numberOfLines={1}>
                 {item.subtitle}
               </Text>
             ) : null}

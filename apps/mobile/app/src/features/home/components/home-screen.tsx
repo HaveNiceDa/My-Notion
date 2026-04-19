@@ -4,7 +4,7 @@ import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
+import { Button, Dialog, ScrollView, Spinner, Text, View, useTheme } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 import { Alert } from "react-native";
 
@@ -32,6 +32,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const { t } = useTranslation();
   const { currentLanguage, switchLanguage } = useLanguage();
   const { theme, setTheme } = useAppTheme();
+  const tamaguiTheme = useTheme();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
@@ -86,21 +87,23 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         title: t("Home.untitled"),
       });
       router.push(`/(home)/document/${documentId}` as Href);
-    } catch (error) {
+    } catch {
       Alert.alert(t("Common.error"), t("Common.somethingWentWrong"));
     }
   };
 
   const bottomOffset = Math.max(insets.bottom, 10) + 56;
-  const languageOptions: Array<{ value: SupportedLanguage; label: string }> = [
+  const languageOptions: { value: SupportedLanguage; label: string }[] = [
     { value: "zh-CN", label: t("Home.languageSimplifiedChinese") },
     { value: "zh-TW", label: t("Home.languageTraditionalChinese") },
     { value: "en", label: t("Home.languageEnglish") },
   ];
 
-  const themeOptions: Array<{ value: AppThemeName; label: string }> = [
+  const themeOptions: { value: AppThemeName; label: string }[] = [
     { value: "light", label: t("Home.themeLight") },
     { value: "dark", label: t("Home.themeDark") },
+    { value: "light_blue", label: t("Home.themeBlueLight") },
+    { value: "dark_blue", label: t("Home.themeBlueDark") },
   ];
   const isInitialLoading =
     recentItems === undefined ||
@@ -118,6 +121,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         settingsLabel={t("Navigation.settings")}
         inboxLabel={t("Home.inbox")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
+        workspaceSummary={t("Home.workspaceSummary")}
         onPressWorkspace={onOpenAccountMenu}
         onPressInbox={() => Alert.alert(t("Home.inbox"), t("Common.comingSoon"))}
         onOpenLanguagePicker={() => setLanguageDialogOpen(true)}
@@ -126,7 +130,10 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
 
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={twStyle("pb-4", { paddingBottom: bottomOffset })}
+        contentContainerStyle={twStyle("pb-4", {
+          paddingBottom: bottomOffset,
+          paddingTop: 4,
+        })}
         scrollIndicatorInsets={{ bottom: bottomOffset }}
       >
         {isInitialLoading ? (
@@ -134,59 +141,79 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
             <Spinner size="large" />
           </View>
         ) : (
-          <>
-          <RecentSection
-            title={t("Home.recent")}
-            items={recentItems}
-            onPressCard={(item) => goDocument(item.id as Id<"documents">)}
-          />
-
-          <View style={tw`px-1`}>
-            <CollapsibleSection
-              title={t("Navigation.knowledgeBase")}
-              expanded={sections.knowledgeBase}
-              onToggle={() => toggleSection("knowledgeBase")}
+          <View>
+            <View
+              mx="$3"
+              mb="$4"
+              px="$4"
+              py="$4"
+              style={{
+                borderRadius: 28,
+                borderWidth: 1,
+                borderColor: tamaguiTheme.borderColor.val,
+                backgroundColor: tamaguiTheme.backgroundHover.val,
+              }}
             >
-              <SidebarDocumentTree
-                variant="knowledge"
-                rootDocuments={knowledgeRootDocuments}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-                onNavigateToDocument={goDocument}
-                emptyHint={t("Documents.noKnowledgeBasePages")}
-              />
-            </CollapsibleSection>
+              <Text color="$color" style={tw`text-lg font-bold`}>
+                {t("Home.workspaceOverview")}
+              </Text>
+              <Text color="$placeholderColor" style={tw`text-sm mt-1 leading-5`}>
+                {t("Home.workspaceOverviewHint")}
+              </Text>
+            </View>
 
-            <CollapsibleSection
-              title={t("Navigation.favorites")}
-              expanded={sections.favorites}
-              onToggle={() => toggleSection("favorites")}
-            >
-              <SidebarDocumentTree
-                variant="starred"
-                rootDocuments={starredRootDocuments}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-                onNavigateToDocument={goDocument}
-                emptyHint={t("Documents.noStarredPages")}
-              />
-            </CollapsibleSection>
+            <RecentSection
+              title={t("Home.recent")}
+              items={recentItems}
+              onPressCard={(item) => goDocument(item.id as Id<"documents">)}
+            />
 
-            <CollapsibleSection
-              title={t("Navigation.private")}
-              expanded={sections.private}
-              onToggle={() => toggleSection("private")}
-            >
-              <SidebarDocumentTree
-                variant="private"
-                rootDocuments={privateRootDocuments}
-                expandedIds={treeOpen}
-                onToggleExpand={toggleTree}
-                onNavigateToDocument={goDocument}
-              />
-            </CollapsibleSection>
+            <View style={tw`mt-2`}>
+              <CollapsibleSection
+                title={t("Navigation.knowledgeBase")}
+                expanded={sections.knowledgeBase}
+                onToggle={() => toggleSection("knowledgeBase")}
+              >
+                <SidebarDocumentTree
+                  variant="knowledge"
+                  rootDocuments={knowledgeRootDocuments}
+                  expandedIds={treeOpen}
+                  onToggleExpand={toggleTree}
+                  onNavigateToDocument={goDocument}
+                  emptyHint={t("Documents.noKnowledgeBasePages")}
+                />
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title={t("Navigation.favorites")}
+                expanded={sections.favorites}
+                onToggle={() => toggleSection("favorites")}
+              >
+                <SidebarDocumentTree
+                  variant="starred"
+                  rootDocuments={starredRootDocuments}
+                  expandedIds={treeOpen}
+                  onToggleExpand={toggleTree}
+                  onNavigateToDocument={goDocument}
+                  emptyHint={t("Documents.noStarredPages")}
+                />
+              </CollapsibleSection>
+
+              <CollapsibleSection
+                title={t("Navigation.private")}
+                expanded={sections.private}
+                onToggle={() => toggleSection("private")}
+              >
+                <SidebarDocumentTree
+                  variant="private"
+                  rootDocuments={privateRootDocuments}
+                  expandedIds={treeOpen}
+                  onToggleExpand={toggleTree}
+                  onNavigateToDocument={goDocument}
+                />
+              </CollapsibleSection>
+            </View>
           </View>
-          </>
         )}
       </ScrollView>
 
@@ -202,13 +229,21 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
       <Dialog open={languageDialogOpen} onOpenChange={setLanguageDialogOpen} modal>
         <Dialog.Portal>
           <Dialog.Overlay key="language-overlay" opacity={0.5} />
-          <Dialog.Content bordered elevate key="language-content" width={320} gap="$3">
+          <Dialog.Content
+            bordered
+            elevate
+            key="language-content"
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={{ borderRadius: 24 }}
+          >
             <Dialog.Title>{t("Home.selectLanguage")}</Dialog.Title>
             {languageOptions.map((option) => (
               <Button key={option.value} onPress={() => {
                 void switchLanguage(option.value);
                 setLanguageDialogOpen(false);
-              }}>
+              }} bg="$background">
                 <Text width="100%">
                   {option.label}
                   {currentLanguage === option.value ? ` (${t("Home.currentSelection")})` : ""}
@@ -222,13 +257,21 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
       <Dialog open={themeDialogOpen} onOpenChange={setThemeDialogOpen} modal>
         <Dialog.Portal>
           <Dialog.Overlay key="theme-overlay" opacity={0.5} />
-          <Dialog.Content bordered elevate key="theme-content" width={320} gap="$3">
+          <Dialog.Content
+            bordered
+            elevate
+            key="theme-content"
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={{ borderRadius: 24 }}
+          >
             <Dialog.Title>{t("Home.selectTheme")}</Dialog.Title>
             {themeOptions.map((option) => (
               <Button key={option.value} onPress={() => {
                 void setTheme(option.value);
                 setThemeDialogOpen(false);
-              }}>
+              }} bg="$background">
                 <Text width="100%">
                   {option.label}
                   {theme === option.value ? ` (${t("Home.currentSelection")})` : ""}

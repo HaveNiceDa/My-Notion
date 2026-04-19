@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
 import { useTranslation } from "react-i18next";
-import { Text, View } from "tamagui";
+import { Text, View, useTheme } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
 import type { Doc, Id } from "@convex/_generated/dataModel";
@@ -24,17 +24,23 @@ export function WorkspacePageRow({
   onPressRow,
 }: Props) {
   const { t } = useTranslation();
+  const theme = useTheme();
   const isOpen = expandedIds.has(document._id);
   const paddingLeft = 8 + depth * 14;
 
   return (
-    <View style={tw`flex-row items-center py-2 pr-2 rounded-md`}>
+    <View
+      style={[
+        tw`flex-row items-center py-2 pr-2 rounded-2xl`,
+        { backgroundColor: theme.background.val },
+      ]}
+    >
       <View style={twStyle("w-7 items-center justify-center", { marginLeft: paddingLeft })}>
         <Pressable hitSlop={8} onPress={() => onToggleExpand(document._id)} style={tw`p-1`}>
           <Ionicons
             name="chevron-forward"
             size={16}
-            color="#525252"
+            color={theme.placeholderColor.val}
             style={{ transform: [{ rotate: isOpen ? "90deg" : "0deg" }] }}
           />
         </Pressable>
@@ -42,21 +48,22 @@ export function WorkspacePageRow({
 
       <Pressable
         onPress={onPressRow}
-        style={({ pressed }) =>
-          tw`flex-1 flex-row items-center min-h-10 ${pressed ? "opacity-70" : ""}`
-        }
+        style={({ pressed }) => [
+          tw`flex-1 flex-row items-center min-h-10 rounded-xl px-1`,
+          pressed ? { backgroundColor: theme.backgroundHover.val } : null,
+        ]}
       >
         <PageIcon kind="doc" />
-        <Text style={tw`flex-1 ml-2 text-base text-neutral-900`} numberOfLines={1}>
+        <Text color="$color" style={tw`flex-1 ml-2 text-base`} numberOfLines={1}>
           {document.title}
         </Text>
       </Pressable>
 
       <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.more")}>
-        <Ionicons name="ellipsis-horizontal" size={18} color="#737373" />
+        <Ionicons name="ellipsis-horizontal" size={18} color={theme.placeholderColor.val} />
       </Pressable>
       <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.newSubPage")}>
-        <Ionicons name="add" size={22} color="#737373" />
+        <Ionicons name="add" size={22} color={theme.placeholderColor.val} />
       </Pressable>
     </View>
   );

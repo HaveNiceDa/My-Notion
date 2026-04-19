@@ -269,9 +269,14 @@
     "languageEnglish": "English",
     "themeLight": "Light",
     "themeDark": "Dark",
+    "themeBlueLight": "Ocean Light",
+    "themeBlueDark": "Ocean Dark",
     "currentSelection": "Current",
     "more": "More",
     "newSubPage": "Create sub-page",
+    "workspaceSummary": "Focus, write, and organize with a calmer mobile workspace.",
+    "workspaceOverview": "Everything in one glance",
+    "workspaceOverviewHint": "Recent pages, favorites, and your private tree now share a softer, clearer visual rhythm.",
     "documentPlaceholder": "Editor integration will be added in the next step. The title is already loaded from Convex.",
     "aiMockResponse": "Message received: \"{{message}}\". AI features are being connected..."
   }

@@ -269,9 +269,14 @@
     "languageEnglish": "English",
     "themeLight": "浅色",
     "themeDark": "深色",
+    "themeBlueLight": "海风浅色",
+    "themeBlueDark": "海风深色",
     "currentSelection": "当前",
     "more": "更多",
     "newSubPage": "新建子页面",
+    "workspaceSummary": "更柔和的对比、更清晰的层次，让移动端写作和整理都更轻松。",
+    "workspaceOverview": "工作区一览",
+    "workspaceOverviewHint": "最近、收藏和私有页面现在用了统一的视觉节奏，浏览起来会更轻松。",
     "documentPlaceholder": "正文与编辑后续再接 BlockNote；当前已从 Convex 拉取标题。",
     "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
   }

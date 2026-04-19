@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createContext, useContext, useEffect, useState } from "react";
 
-export type AppThemeName = "light" | "dark";
+export type AppThemeName = "light" | "dark" | "light_blue" | "dark_blue";
 
 type AppThemeContextValue = {
   isLoading: boolean;
@@ -25,7 +25,12 @@ export function AppThemeProvider({ children }: { children: React.ReactNode }) {
     const loadTheme = async () => {
       try {
         const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
-        if (savedTheme === "light" || savedTheme === "dark") {
+        if (
+          savedTheme === "light" ||
+          savedTheme === "dark" ||
+          savedTheme === "light_blue" ||
+          savedTheme === "dark_blue"
+        ) {
           setThemeState(savedTheme);
         }
       } catch (error) {
