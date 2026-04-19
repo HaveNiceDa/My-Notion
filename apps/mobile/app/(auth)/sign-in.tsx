@@ -4,7 +4,7 @@ import { useSignIn } from "@clerk/expo";
 import { type Href, Link, useRouter } from "expo-router";
 import React from "react";
 import { Pressable, TextInput } from "react-native";
-import { ScrollView, Text } from "tamagui";
+import { ScrollView } from "tamagui";
 import tw from "twrnc";
 import { useLanguage } from "@/i18n/useLanguage";
 
@@ -15,8 +15,6 @@ export default function Page() {
 
   const [emailAddress, setEmailAddress] = React.useState("");
   const [password, setPassword] = React.useState("");
-  const [code, setCode] = React.useState("");
-  const [useBackupCode, setUseBackupCode] = React.useState(false);
   const [customError, setCustomError] = React.useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -48,185 +46,17 @@ export default function Page() {
         },
       });
     } else if (signIn.status === "needs_second_factor") {
-      await signIn.mfa.sendPhoneCode();
+      // 跳过二次验证，直接返回首页
+      signIn.reset();
+      router.push("/");
     } else if (signIn.status === "needs_client_trust") {
-      const emailCodeFactor = signIn.supportedSecondFactors.find(
-        (factor) => factor.strategy === "email_code",
-      );
-
-      if (emailCodeFactor) {
-        await signIn.mfa.sendEmailCode();
-      }
+      // 跳过客户端信任验证，直接返回首页
+      signIn.reset();
+      router.push("/");
     } else {
       console.error("Sign-in attempt not complete:", signIn);
     }
   };
-
-  const handleMFAVerification = async () => {
-    if (useBackupCode) {
-      await signIn.mfa.verifyBackupCode({ code });
-    } else {
-      await signIn.mfa.verifyPhoneCode({ code });
-    }
-
-    if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-          const url = decorateUrl("/");
-          if (url.startsWith("http")) {
-            window.location.href = url;
-          } else {
-            router.push(url as Href);
-          }
-        },
-      });
-    }
-  };
-
-  if (signIn.status === "needs_second_factor") {
-    return (
-      <ThemedView style={tw`flex-1 p-5 gap-3`}>
-        <ThemedText type="title" style={tw`mb-1 text-center`}>
-          {t("Auth.verifyYourAccount")}
-        </ThemedText>
-        <ThemedText style={tw`font-semibold text-sm`}>
-          {t("Auth.enterCode")}
-        </ThemedText>
-        <TextInput
-          style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
-          value={code}
-          placeholder={t("Auth.enterCode")}
-          placeholderTextColor="#666666"
-          onChangeText={(code) => setCode(code)}
-          keyboardType="numeric"
-        />
-        {errors.fields.code && (
-          <ThemedText style={tw`text-red-600 text-xs -mt-2`}>
-            {errors.fields.code.message}
-          </ThemedText>
-        )}
-        <Pressable
-          style={tw`flex-row items-center gap-2 mt-1`}
-          onPress={() => setUseBackupCode((v) => !v)}
-        >
-          <Pressable
-            style={tw`w-6 h-6 border-2 border-gray-500 rounded items-center justify-center ${useBackupCode ? "bg-[#0a7ea4] border-[#0a7ea4]" : ""}`}
-          >
-            {useBackupCode && (
-              <Text style={tw`text-white text-xs font-bold text-center`}>
-                ✓
-              </Text>
-            )}
-          </Pressable>
-          <ThemedText style={tw`text-sm leading-5`}>
-            {t("Auth.useBackupCode")}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [
-            tw`bg-[#0a7ea4] py-3.5 px-6 rounded-lg items-center mt-4 ${pressed ? "opacity-70" : ""} ${fetchStatus === "fetching" ? "opacity-50" : ""}`,
-          ]}
-          onPress={handleMFAVerification}
-          disabled={fetchStatus === "fetching"}
-        >
-          <ThemedText style={tw`text-white font-semibold`}>
-            {t("Auth.verify")}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) =>
-            tw`py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""}`
-          }
-          onPress={() => signIn.mfa.sendPhoneCode()}
-        >
-          <ThemedText style={tw`text-[#0a7ea4] font-semibold`}>
-            {t("Auth.needNewCode")}
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
-    );
-  }
-
-  const handleVerify = async () => {
-    await signIn.mfa.verifyEmailCode({ code });
-
-    if (signIn.status === "complete") {
-      await signIn.finalize({
-        navigate: ({ session, decorateUrl }) => {
-          if (session?.currentTask) {
-            console.log(session?.currentTask);
-            return;
-          }
-          const url = decorateUrl("/");
-          if (url.startsWith("http")) {
-            window.location.href = url;
-          } else {
-            router.push(url as Href);
-          }
-        },
-      });
-    } else {
-      console.error("Sign-in attempt not complete:", signIn);
-    }
-  };
-
-  if (signIn.status === "needs_client_trust") {
-    return (
-      <ThemedView style={tw`flex-1 p-5 gap-3`}>
-        <ThemedText type="title" style={tw`text-2xl font-bold text-center`}>
-          {t("Auth.verifyYourAccount")}
-        </ThemedText>
-        <TextInput
-          style={tw`border border-gray-300 rounded-lg p-3 text-base bg-white`}
-          value={code}
-          placeholder={t("Auth.enterCode")}
-          placeholderTextColor="#666666"
-          onChangeText={(code) => setCode(code)}
-          keyboardType="numeric"
-        />
-        {errors.fields.code && (
-          <ThemedText style={tw`text-red-600 text-xs -mt-2`}>
-            {errors.fields.code.message}
-          </ThemedText>
-        )}
-        <Pressable
-          style={({ pressed }) => [
-            tw`bg-[#0a7ea4] py-3.5 px-6 rounded-lg items-center mt-4 ${pressed ? "opacity-70" : ""} ${fetchStatus === "fetching" ? "opacity-50" : ""}`,
-          ]}
-          onPress={handleVerify}
-          disabled={fetchStatus === "fetching"}
-        >
-          <ThemedText style={tw`text-white font-semibold`}>
-            {t("Auth.verify")}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) =>
-            tw`py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""}`
-          }
-          onPress={() => signIn.mfa.sendEmailCode()}
-        >
-          <ThemedText style={tw`text-[#0a7ea4] font-semibold`}>
-            {t("Auth.needNewCode")}
-          </ThemedText>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) =>
-            tw`py-3 px-6 rounded-lg items-center mt-2 ${pressed ? "opacity-70" : ""}`
-          }
-          onPress={() => signIn.reset()}
-        >
-          <ThemedText style={tw`text-[#0a7ea4] font-semibold`}>
-            {t("Auth.startOver")}
-          </ThemedText>
-        </Pressable>
-      </ThemedView>
-    );
-  }
 
   return (
     <ThemedView style={tw`flex-1`}>
