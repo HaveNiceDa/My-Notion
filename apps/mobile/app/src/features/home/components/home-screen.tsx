@@ -1,11 +1,12 @@
 import { useUser } from "@clerk/expo";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
+import { Alert } from "react-native";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -20,6 +21,7 @@ import { RecentSection } from "./recent-section";
 import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
 import { ChatModal } from "../../ai-chat/components/ChatModal";
+import { SearchModal } from "./search-modal";
 
 export type HomeScreenProps = {
   onOpenAccountMenu?: () => void;
@@ -37,7 +39,10 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const starredRootDocuments = useQuery(api.documents.getStarred, {});
   const knowledgeRootDocuments = useQuery(api.documents.getKnowledgeBaseDocuments, {});
 
+  const create = useMutation(api.documents.create);
+
   const [aiModalVisible, setAiModalVisible] = useState(false);
+  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 
@@ -75,6 +80,17 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
     [router],
   );
 
+  const handleCreateNew = async () => {
+    try {
+      const documentId = await create({
+        title: t("Home.untitled"),
+      });
+      router.push(`/(home)/document/${documentId}` as Href);
+    } catch (error) {
+      Alert.alert(t("Common.error"), t("Common.somethingWentWrong"));
+    }
+  };
+
   const bottomOffset = Math.max(insets.bottom, 10) + 56;
   const languageOptions: Array<{ value: SupportedLanguage; label: string }> = [
     { value: "zh-CN", label: t("Home.languageSimplifiedChinese") },
@@ -103,7 +119,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         inboxLabel={t("Home.inbox")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
         onPressWorkspace={onOpenAccountMenu}
-        onPressInbox={() => {}}
+        onPressInbox={() => Alert.alert(t("Home.inbox"), t("Common.comingSoon"))}
         onOpenLanguagePicker={() => setLanguageDialogOpen(true)}
         onOpenThemePicker={() => setThemeDialogOpen(true)}
       />
@@ -175,12 +191,13 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
       </ScrollView>
 
       <HomeBottomBar
-        onPressSearch={() => {}}
+        onPressSearch={() => setSearchModalVisible(true)}
         onPressAi={() => setAiModalVisible(true)}
-        onPressNewPage={() => {}}
+        onPressNewPage={handleCreateNew}
       />
 
       <ChatModal visible={aiModalVisible} onClose={() => setAiModalVisible(false)} />
+      <SearchModal visible={searchModalVisible} onClose={() => setSearchModalVisible(false)} />
 
       <Dialog open={languageDialogOpen} onOpenChange={setLanguageDialogOpen} modal>
         <Dialog.Portal>
