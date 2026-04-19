@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "expo start",
     "convex": "npx convex dev --typecheck=disable",
-    "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
+    "start": "concurrently \"pnpm run dev\" \"pnpm run convex\"",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
@@ -14,6 +14,7 @@
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "dependencies": {
+    "@10play/react-native-web-webview": "^0.0.3",
     "@10play/tentap-editor": "^1.0.1",
     "@clerk/expo": "^3.1.12",
     "@expo/vector-icons": "^15.0.3",
@@ -27,6 +28,7 @@
     "convex": "^1.31.6",
     "expo": "~54.0.33",
     "expo-constants": "~18.0.13",
+    "expo-crypto": "~15.0.8",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
