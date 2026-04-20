@@ -21,7 +21,6 @@ import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
 import { ChatModal } from "../../ai-chat/components/ChatModal";
 import { SearchModal } from "./search-modal";
-import { Alert } from "react-native";
 
 export type HomeScreenProps = {
   signOut?: () => void;
@@ -50,6 +49,8 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [inboxDialogOpen, setInboxDialogOpen] = useState(false);
 
   const openAccountMenu = () => setAccountDialogOpen(true);
 
@@ -94,7 +95,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
       });
       router.push(`/(home)/document/${documentId}` as Href);
     } catch {
-      Alert.alert(t("Common.error"), t("Common.somethingWentWrong"));
+      setErrorDialogOpen(true);
     }
   };
 
@@ -127,9 +128,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         inboxLabel={t("Home.inbox")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
         onPressWorkspace={openAccountMenu}
-        onPressInbox={() =>
-          Alert.alert(t("Home.inbox"), t("Common.comingSoon"))
-        }
+        onPressInbox={() => setInboxDialogOpen(true)}
         onOpenLanguagePicker={() => setLanguageDialogOpen(true)}
         onOpenThemePicker={() => setThemeDialogOpen(true)}
       />
@@ -320,6 +319,48 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
               }}
             >
               <Text width="100%">{t("common.logOut")}</Text>
+            </Button>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      <Dialog open={errorDialogOpen} onOpenChange={setErrorDialogOpen} modal>
+        <Dialog.Portal>
+          <Dialog.Overlay key="error-overlay" opacity={0.5} />
+          <Dialog.Content
+            bordered
+            elevate
+            key="error-content"
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={{ borderRadius: 24 }}
+          >
+            <Dialog.Title>{t("Common.error")}</Dialog.Title>
+            <Text>{t("Common.somethingWentWrong")}</Text>
+            <Button onPress={() => setErrorDialogOpen(false)} style={{ marginTop: 16 }}>
+              <Text width="100%">{t("Modals.confirm.ok")}</Text>
+            </Button>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      <Dialog open={inboxDialogOpen} onOpenChange={setInboxDialogOpen} modal>
+        <Dialog.Portal>
+          <Dialog.Overlay key="inbox-overlay" opacity={0.5} />
+          <Dialog.Content
+            bordered
+            elevate
+            key="inbox-content"
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={{ borderRadius: 24 }}
+          >
+            <Dialog.Title>{t("Home.inbox")}</Dialog.Title>
+            <Text>{t("Common.comingSoon")}</Text>
+            <Button onPress={() => setInboxDialogOpen(false)} style={{ marginTop: 16 }}>
+              <Text width="100%">{t("Modals.confirm.ok")}</Text>
             </Button>
           </Dialog.Content>
         </Dialog.Portal>
