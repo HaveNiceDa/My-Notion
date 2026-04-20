@@ -35,9 +35,14 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const { user } = useUser();
   const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
-  const privateRootDocuments = useQuery(api.documents.getSidebar, { parentDocument: undefined });
+  const privateRootDocuments = useQuery(api.documents.getSidebar, {
+    parentDocument: undefined,
+  });
   const starredRootDocuments = useQuery(api.documents.getStarred, {});
-  const knowledgeRootDocuments = useQuery(api.documents.getKnowledgeBaseDocuments, {});
+  const knowledgeRootDocuments = useQuery(
+    api.documents.getKnowledgeBaseDocuments,
+    {},
+  );
 
   const create = useMutation(api.documents.create);
 
@@ -91,7 +96,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
     }
   };
 
-  const bottomOffset = Math.max(insets.bottom, 10) + 56;
+  const bottomOffset = Math.max(insets.bottom, 10) + 50;
   const languageOptions: { value: SupportedLanguage; label: string }[] = [
     { value: "zh-CN", label: t("Home.languageSimplifiedChinese") },
     { value: "zh-TW", label: t("Home.languageTraditionalChinese") },
@@ -122,7 +127,9 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
         workspaceSummary={t("Home.workspaceSummary")}
         onPressWorkspace={onOpenAccountMenu}
-        onPressInbox={() => Alert.alert(t("Home.inbox"), t("Common.comingSoon"))}
+        onPressInbox={() =>
+          Alert.alert(t("Home.inbox"), t("Common.comingSoon"))
+        }
         onOpenLanguagePicker={() => setLanguageDialogOpen(true)}
         onOpenThemePicker={() => setThemeDialogOpen(true)}
       />
@@ -202,10 +209,20 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         onPressNewPage={handleCreateNew}
       />
 
-      <ChatModal visible={aiModalVisible} onClose={() => setAiModalVisible(false)} />
-      <SearchModal visible={searchModalVisible} onClose={() => setSearchModalVisible(false)} />
+      <ChatModal
+        visible={aiModalVisible}
+        onClose={() => setAiModalVisible(false)}
+      />
+      <SearchModal
+        visible={searchModalVisible}
+        onClose={() => setSearchModalVisible(false)}
+      />
 
-      <Dialog open={languageDialogOpen} onOpenChange={setLanguageDialogOpen} modal>
+      <Dialog
+        open={languageDialogOpen}
+        onOpenChange={setLanguageDialogOpen}
+        modal
+      >
         <Dialog.Portal>
           <Dialog.Overlay key="language-overlay" opacity={0.5} />
           <Dialog.Content
@@ -219,13 +236,19 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
           >
             <Dialog.Title>{t("Home.selectLanguage")}</Dialog.Title>
             {languageOptions.map((option) => (
-              <Button key={option.value} onPress={() => {
-                void switchLanguage(option.value);
-                setLanguageDialogOpen(false);
-              }} bg="$background">
+              <Button
+                key={option.value}
+                onPress={() => {
+                  void switchLanguage(option.value);
+                  setLanguageDialogOpen(false);
+                }}
+                bg="$background"
+              >
                 <Text width="100%">
                   {option.label}
-                  {currentLanguage === option.value ? ` (${t("Home.currentSelection")})` : ""}
+                  {currentLanguage === option.value
+                    ? ` (${t("Home.currentSelection")})`
+                    : ""}
                 </Text>
               </Button>
             ))}
@@ -247,13 +270,19 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
           >
             <Dialog.Title>{t("Home.selectTheme")}</Dialog.Title>
             {themeOptions.map((option) => (
-              <Button key={option.value} onPress={() => {
-                void setTheme(option.value);
-                setThemeDialogOpen(false);
-              }} bg="$background">
+              <Button
+                key={option.value}
+                onPress={() => {
+                  void setTheme(option.value);
+                  setThemeDialogOpen(false);
+                }}
+                bg="$background"
+              >
                 <Text width="100%">
                   {option.label}
-                  {theme === option.value ? ` (${t("Home.currentSelection")})` : ""}
+                  {theme === option.value
+                    ? ` (${t("Home.currentSelection")})`
+                    : ""}
                 </Text>
               </Button>
             ))}
