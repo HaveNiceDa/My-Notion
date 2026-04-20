@@ -3,7 +3,6 @@ import { useQuery, useMutation } from "convex/react";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
@@ -133,18 +132,18 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         onOpenThemePicker={() => setThemeDialogOpen(true)}
       />
 
-      <ScrollView
-        style={tw`flex-1`}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={twStyle("", {
-          paddingTop: 4,
-        })}
-      >
-        {isInitialLoading ? (
-          <View style={tw`px-3 py-16 items-center justify-center`}>
-            <Spinner size="large" />
-          </View>
-        ) : (
+      {isInitialLoading ? (
+        <View flex={1} style={tw`items-center justify-center`}>
+          <Spinner size="large" />
+        </View>
+      ) : (
+        <ScrollView
+          style={tw`flex-1`}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={twStyle("", {
+            paddingTop: 4,
+          })}
+        >
           <View>
             <RecentSection
               title={t("Home.recent")}
@@ -198,8 +197,8 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
               </CollapsibleSection>
             </View>
           </View>
-        )}
-      </ScrollView>
+        </ScrollView>
+      )}
 
       <HomeBottomBar
         onPressSearch={() => setSearchModalVisible(true)}
@@ -230,7 +229,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
             width={320}
             gap="$3"
             bg="$backgroundHover"
-            style={{ borderRadius: 24 }}
+            style={tw`rounded-3xl`}
           >
             <Dialog.Title>{t("Home.selectLanguage")}</Dialog.Title>
             {languageOptions.map((option) => (
@@ -264,7 +263,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
             width={320}
             gap="$3"
             bg="$backgroundHover"
-            style={{ borderRadius: 24 }}
+            style={tw`rounded-3xl`}
           >
             <Dialog.Title>{t("Home.selectTheme")}</Dialog.Title>
             {themeOptions.map((option) => (
@@ -302,24 +301,30 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
             width={320}
             gap="$3"
             bg="$backgroundHover"
-            style={{ borderRadius: 24 }}
+            style={tw`rounded-3xl`}
           >
             <Dialog.Title>{t("Home.account")}</Dialog.Title>
-            <Button
-              onPress={() => setAccountDialogOpen(false)}
-              bg="$background"
-            >
-              <Text width="100%">{t("Modals.confirm.cancel")}</Text>
-            </Button>
-            <Button
-              theme="red"
-              onPress={() => {
-                void signOut?.();
-                setAccountDialogOpen(false);
-              }}
-            >
-              <Text width="100%">{t("common.logOut")}</Text>
-            </Button>
+            <View flexDirection="row" gap="$2">
+              <Button
+                flex={1}
+                onPress={() => setAccountDialogOpen(false)}
+                bg="$background"
+              >
+                <Text
+                  style={tw`text-center`}
+                >{`${t("Modals.confirm.cancel")}`}</Text>
+              </Button>
+              <Button
+                flex={1}
+                theme="red"
+                onPress={() => {
+                  void signOut?.();
+                  setAccountDialogOpen(false);
+                }}
+              >
+                <Text style={tw`text-center`}>{`${t("common.logOut")}`}</Text>
+              </Button>
+            </View>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
@@ -334,12 +339,12 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
             width={320}
             gap="$3"
             bg="$backgroundHover"
-            style={{ borderRadius: 24 }}
+            style={tw`rounded-3xl`}
           >
-            <Dialog.Title>{t("Common.error")}</Dialog.Title>
-            <Text>{t("Common.somethingWentWrong")}</Text>
-            <Button onPress={() => setErrorDialogOpen(false)} style={{ marginTop: 16 }}>
-              <Text width="100%">{t("Modals.confirm.ok")}</Text>
+            <Dialog.Title>Error</Dialog.Title>
+            <Text>{t("Error.somethingWentWrong")}</Text>
+            <Button onPress={() => setErrorDialogOpen(false)} style={tw`mt-4`}>
+              <Text width="100%">{t("Error.ok")}</Text>
             </Button>
           </Dialog.Content>
         </Dialog.Portal>
@@ -355,12 +360,12 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
             width={320}
             gap="$3"
             bg="$backgroundHover"
-            style={{ borderRadius: 24 }}
+            style={tw`rounded-3xl`}
           >
             <Dialog.Title>{t("Home.inbox")}</Dialog.Title>
-            <Text>{t("Common.comingSoon")}</Text>
-            <Button onPress={() => setInboxDialogOpen(false)} style={{ marginTop: 16 }}>
-              <Text width="100%">{t("Modals.confirm.ok")}</Text>
+            <Text>{t("Marketing.comingSoon")}</Text>
+            <Button onPress={() => setInboxDialogOpen(false)} style={tw`mt-4`}>
+              <Text width="100%">{t("Error.ok")}</Text>
             </Button>
           </Dialog.Content>
         </Dialog.Portal>
