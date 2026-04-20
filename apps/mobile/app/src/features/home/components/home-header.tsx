@@ -13,7 +13,6 @@ type Props = {
   settingsLabel: string;
   inboxLabel: string;
   workspaceMenuLabel: string;
-  workspaceSummary: string;
   onPressWorkspace?: () => void;
   onPressInbox?: () => void;
   onOpenLanguagePicker?: () => void;
@@ -28,7 +27,6 @@ export function HomeHeader({
   settingsLabel,
   inboxLabel,
   workspaceMenuLabel,
-  workspaceSummary,
   onPressWorkspace,
   onPressInbox,
   onOpenLanguagePicker,
@@ -150,10 +148,6 @@ export function HomeHeader({
             </Popover>
           </View>
         </View>
-
-        <Text color="$placeholderColor" style={tw`text-sm leading-5 mt-2 px-1`}>
-          {workspaceSummary}
-        </Text>
       </View>
     </View>
   );

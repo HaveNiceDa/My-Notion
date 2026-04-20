@@ -124,7 +124,6 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         settingsLabel={t("Navigation.settings")}
         inboxLabel={t("Home.inbox")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
-        workspaceSummary={t("Home.workspaceSummary")}
         onPressWorkspace={onOpenAccountMenu}
         onPressInbox={() =>
           Alert.alert(t("Home.inbox"), t("Common.comingSoon"))
