@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Dialog, ScrollView, Spinner, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
-import { Alert } from "react-native";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -22,18 +21,18 @@ import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
 import { ChatModal } from "../../ai-chat/components/ChatModal";
 import { SearchModal } from "./search-modal";
+import { Alert } from "react-native";
 
 export type HomeScreenProps = {
-  onOpenAccountMenu?: () => void;
+  signOut?: () => void;
 };
 
-export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
+export function HomeScreen({ signOut }: HomeScreenProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const { currentLanguage, switchLanguage } = useLanguage();
   const { theme, setTheme } = useAppTheme();
   const { user } = useUser();
-  const insets = useSafeAreaInsets();
   const { items: recentItems } = useRecentDocuments(12);
   const privateRootDocuments = useQuery(api.documents.getSidebar, {
     parentDocument: undefined,
@@ -50,6 +49,9 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
   const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
+  const [accountDialogOpen, setAccountDialogOpen] = useState(false);
+
+  const openAccountMenu = () => setAccountDialogOpen(true);
 
   const workspaceTitle =
     user?.firstName != null && user.firstName.length > 0
@@ -124,7 +126,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
         settingsLabel={t("Navigation.settings")}
         inboxLabel={t("Home.inbox")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
-        onPressWorkspace={onOpenAccountMenu}
+        onPressWorkspace={openAccountMenu}
         onPressInbox={() =>
           Alert.alert(t("Home.inbox"), t("Common.comingSoon"))
         }
@@ -283,6 +285,42 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
                 </Text>
               </Button>
             ))}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
+
+      <Dialog
+        open={accountDialogOpen}
+        onOpenChange={setAccountDialogOpen}
+        modal
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay key="account-overlay" opacity={0.5} />
+          <Dialog.Content
+            bordered
+            elevate
+            key="account-content"
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={{ borderRadius: 24 }}
+          >
+            <Dialog.Title>{t("Home.account")}</Dialog.Title>
+            <Button
+              onPress={() => setAccountDialogOpen(false)}
+              bg="$background"
+            >
+              <Text width="100%">{t("Modals.confirm.cancel")}</Text>
+            </Button>
+            <Button
+              theme="red"
+              onPress={() => {
+                void signOut?.();
+                setAccountDialogOpen(false);
+              }}
+            >
+              <Text width="100%">{t("common.logOut")}</Text>
+            </Button>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog>
