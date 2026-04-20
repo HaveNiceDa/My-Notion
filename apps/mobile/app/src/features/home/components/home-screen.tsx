@@ -96,7 +96,6 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
     }
   };
 
-  const bottomOffset = Math.max(insets.bottom, 10) + 50;
   const languageOptions: { value: SupportedLanguage; label: string }[] = [
     { value: "zh-CN", label: t("Home.languageSimplifiedChinese") },
     { value: "zh-TW", label: t("Home.languageTraditionalChinese") },
@@ -136,11 +135,9 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
 
       <ScrollView
         style={tw`flex-1`}
-        contentContainerStyle={twStyle("pb-4", {
-          paddingBottom: bottomOffset,
+        contentContainerStyle={twStyle("", {
           paddingTop: 4,
         })}
-        scrollIndicatorInsets={{ bottom: bottomOffset }}
       >
         {isInitialLoading ? (
           <View style={tw`px-3 py-16 items-center justify-center`}>

@@ -19,7 +19,7 @@ export function HomeBottomBar({ onPressSearch, onPressAi, onPressNewPage }: Prop
   return (
     <View
       pointerEvents="box-none"
-      style={twStyle("absolute bottom-0 left-0 right-0 px-3", {
+      style={twStyle("w-full px-3", {
         paddingBottom: Math.max(insets.bottom, 10),
       })}
     >
