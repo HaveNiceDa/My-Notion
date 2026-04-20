@@ -18,8 +18,6 @@ export function CollapsibleSection({ title, expanded, onToggle, children }: Prop
       style={{
         marginBottom: 18,
         marginHorizontal: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.borderColor.val,
       }}
     >
       <Pressable

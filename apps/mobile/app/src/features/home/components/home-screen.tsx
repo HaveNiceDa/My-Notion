@@ -135,6 +135,7 @@ export function HomeScreen({ onOpenAccountMenu }: HomeScreenProps) {
 
       <ScrollView
         style={tw`flex-1`}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={twStyle("", {
           paddingTop: 4,
         })}
