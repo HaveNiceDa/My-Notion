@@ -1,7 +1,17 @@
 const { getDefaultConfig } = require("expo/metro-config");
+const path = require("path");
 
 /** @type {import('expo/metro-config').MetroConfig} */
 const config = getDefaultConfig(__dirname);
+
+const projectRoot = path.resolve(__dirname);
+const reactPath = path.join(projectRoot, "node_modules", "react");
+const reactDomPath = path.join(projectRoot, "node_modules", "react-dom");
+
+config.resolver.extraNodeModules = {
+  react: reactPath,
+  "react-dom": reactDomPath,
+};
 
 const webAliases = {
   "react-native": "react-native-web",
