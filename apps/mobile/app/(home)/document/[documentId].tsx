@@ -26,7 +26,7 @@ import {
   getEditorContentFromStoredContent,
   getPlainTextFromStoredContent,
   serializePlainTextToBlockNote,
-} from "@/features/documents/content-compat";
+} from "@notion/business/content-compat";
 
 const SAVE_DELAY_MS = 700;
 
