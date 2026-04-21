@@ -136,11 +136,6 @@ export function HomeHeader({
                     </Text>
                   </Button>
                   <Button onPress={handleThemePress} chromeless>
-                    <Text style={tw`w-full text-left`}>
-                      {changeLanguageLabel}
-                    </Text>
-                  </Button>
-                  <Button onPress={handleThemePress} chromeless>
                     <Text style={tw`w-full text-left`}>{changeThemeLabel}</Text>
                   </Button>
                 </YStack>
