@@ -236,6 +236,7 @@ const AIPage = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const t = useTranslations("AI");
+  const tc = useTranslations("common");
   const { model } = useAIModelStore();
   const { userLoadingStatus } = useVectorStoreStore();
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
@@ -764,7 +765,7 @@ const AIPage = () => {
           onSelectConversation={loadConversation}
           onDeleteConversation={deleteConversation}
           currentConversationId={conversationId}
-          formatRelativeTime={formatRelativeTime}
+          formatRelativeTime={(ts) => formatRelativeTime(ts, tc)}
         />
 
         <div

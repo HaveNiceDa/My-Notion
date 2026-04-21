@@ -170,7 +170,13 @@
     "saved": "Saved successfully!",
     "saving": "Saving...",
     "userProfile": "User Profile",
-    "logOut": "Log out"
+    "logOut": "Log out",
+    "justNow": "Just now",
+    "minutesAgo": "{count} minutes ago",
+    "hoursAgo": "{count} hours ago",
+    "yesterday": "Yesterday",
+    "daysAgo": "{count} days ago",
+    "weeksAgo": "{count} weeks ago"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "You cannot delete the current conversation",

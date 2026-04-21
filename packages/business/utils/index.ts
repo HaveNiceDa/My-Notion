@@ -32,7 +32,10 @@ export function formatTime(timestamp: number | undefined, t: (key: string, param
   return `${year}年${month}月${day}日`;
 }
 
-export const formatRelativeTime = (timestamp: number): string => {
+export const formatRelativeTime = (
+  timestamp: number,
+  t: (key: string, params?: Record<string, any>) => string
+): string => {
   const date = new Date(timestamp);
   const now = new Date();
   const diffTime = now.getTime() - date.getTime();
@@ -42,17 +45,17 @@ export const formatRelativeTime = (timestamp: number): string => {
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffSeconds < 60) {
-    return "刚刚";
+    return t("justNow");
   } else if (diffMinutes < 60) {
-    return `${diffMinutes}分钟前`;
+    return t("minutesAgo", { count: diffMinutes });
   } else if (diffHours < 24) {
-    return `${diffHours}小时前`;
+    return t("hoursAgo", { count: diffHours });
   } else if (diffDays === 1) {
-    return "昨天";
+    return t("yesterday");
   } else if (diffDays < 7) {
-    return `${diffDays}天前`;
+    return t("daysAgo", { count: diffDays });
   } else if (diffDays < 30) {
-    return `${Math.floor(diffDays / 7)}周前`;
+    return t("weeksAgo", { count: Math.floor(diffDays / 7) });
   } else {
     return date.toLocaleDateString();
   }

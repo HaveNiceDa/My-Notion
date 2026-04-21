@@ -170,7 +170,13 @@
     "saved": "保存成功！",
     "saving": "保存中...",
     "userProfile": "用戶資料",
-    "logOut": "退出登錄"
+    "logOut": "退出登錄",
+    "justNow": "剛剛",
+    "minutesAgo": "{count}分鐘前",
+    "hoursAgo": "{count}小時前",
+    "yesterday": "昨天",
+    "daysAgo": "{count}天前",
+    "weeksAgo": "{count}週前"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "當前對話不能刪除",
