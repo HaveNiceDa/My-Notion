@@ -7,8 +7,7 @@ import { Spinner, Text, View } from "tamagui";
 import tw from "twrnc";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import { useRouter } from "expo-router";
-import type { Id } from "@convex/_generated/dataModel";
+import { useRouter, type Href } from "expo-router";
 
 type SearchModalProps = {
   visible: boolean;
@@ -17,7 +16,6 @@ type SearchModalProps = {
 
 export function SearchModal({ visible, onClose }: SearchModalProps) {
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   
@@ -31,7 +29,7 @@ export function SearchModal({ visible, onClose }: SearchModalProps) {
     <Pressable
       onPress={() => {
         onClose();
-        router.push(`/(home)/document/${item._id}`);
+        router.push(`/(home)/document/${item._id}` as Href);
       }}
       style={({ pressed }) => tw`flex-row items-center px-4 py-3 gap-3 ${pressed ? "bg-neutral-100" : ""}`}
     >
@@ -75,7 +73,7 @@ export function SearchModal({ visible, onClose }: SearchModalProps) {
               )}
             </View>
             <Pressable onPress={onClose} hitSlop={8}>
-              <Text style={tw`text-neutral-600 font-medium`}>{t("Common.cancel")}</Text>
+              <Text style={tw`text-neutral-600 font-medium`}>{t("Modals.confirm.cancel")}</Text>
             </Pressable>
           </View>
 
@@ -92,7 +90,7 @@ export function SearchModal({ visible, onClose }: SearchModalProps) {
               contentContainerStyle={tw`pb-12`}
               ListEmptyComponent={
                 <View style={tw`py-12 items-center justify-center`}>
-                  <Text style={tw`text-neutral-400`}>{t("Search.noResults")}</Text>
+                  <Text style={tw`text-neutral-400`}>{t("SearchCommand.empty")}</Text>
                 </View>
               }
             />

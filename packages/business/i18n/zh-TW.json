@@ -104,8 +104,7 @@
     "creatingNewNote": "正在創建新筆記...",
     "newNoteCreated": "新筆記已創建！",
     "failedToCreateNote": "創建筆記失敗。",
-    "untitled": "新筆記",
-    "aiConversation": "AI對話"
+    "untitled": "新筆記"
   },
   "Item": {
     "movingToTrash": "正在移至回收站...",
@@ -162,11 +161,7 @@
       "renaming": "重新命名中..."
     }
   },
-  "LanguageDetector": {
-    "message": "我們注意到你正在使用 {language}。你想要切換到這種語言嗎？",
-    "switch": "切換",
-    "dismiss": "關閉"
-  },
+
   "Toolbar": {
     "addIcon": "添加圖標",
     "addCover": "添加封面"
@@ -174,34 +169,23 @@
   "common": {
     "saved": "保存成功！",
     "saving": "保存中...",
-    "settings": "設定",
     "userProfile": "用戶資料",
-    "changeAvatar": "更換頭像",
-    "fullName": "全名",
-    "enterFullName": "輸入全名",
-    "save": "保存",
     "logOut": "退出登錄"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "當前對話不能刪除",
     "conversationDeleted": "對話已刪除",
     "deleteFailed": "刪除失敗，請重試",
-    "pleaseLoginFirst": "請先登錄",
-    "loginToUseAIConversation": "登錄後才能使用AI對話功能",
     "aiConversation": "AI對話",
-    "searchOrStartNewConversation": "搜索或開始新的對話",
     "past30Days": "過去30天",
     "loading": "加載中...",
     "noConversationRecords": "暫無對話記錄",
     "newConversation": "新對話",
     "pleaseEnterYourQuestion": "請輸入您的問題...",
-    "thinking": "思考中...",
     "todayIWillHelp": "今日事，我來幫。",
     "useAIToHandleTasks": "使用 AI 處理各種任務",
     "conversationHistory": "對話記錄",
-    "history": "歷史記錄",
     "notionAI": "Notion AI新功能",
-    "auto": "自動",
     "writeMeetingAgenda": "撰寫會議議程",
     "analyzePDFOrImage": "分析 PDF 或圖片",
     "createTaskReminder": "創建任務提醒器",
@@ -210,7 +194,6 @@
     "pinSidebar": "固定",
     "unpinSidebar": "取消固定",
     "closeSidebar": "關閉",
-    "newAIConversation": "新建AI對話",
     "goHome": "回到首頁",
     "searchConversationHistory": "搜索歷史對話",
     "noMatchingConversations": "沒有找到匹配的對話",
@@ -238,10 +221,8 @@
     "continue": "繼續",
     "verifyYourAccount": "驗證您的帳號",
     "enterCode": "輸入驗證碼",
-    "useBackupCode": "使用備用代碼",
     "verify": "驗證",
     "needNewCode": "獲取新驗證碼",
-    "startOver": "重新開始",
     "dontHaveAccount": "還沒有帳號？",
     "thirdPartyLogin": "第三方帳號登錄",
     "signInWithPassword": "帳號密碼登錄",
@@ -274,10 +255,6 @@
     "currentSelection": "當前",
     "more": "更多",
     "newSubPage": "新建子頁面",
-    "workspaceSummary": "更柔和的對比、更清楚的層次，讓行動端寫作和整理都更輕鬆。",
-    "workspaceOverview": "工作區總覽",
-    "workspaceOverviewHint": "最近、收藏和私人頁面現在用了統一的視覺節奏，瀏覽起來會更舒服。",
-    "documentPlaceholder": "正文與編輯後續再接 BlockNote；當前已從 Convex 拉取標題。",
     "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
   }
 }

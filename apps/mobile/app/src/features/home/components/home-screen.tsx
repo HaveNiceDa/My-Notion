@@ -90,7 +90,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
   const handleCreateNew = async () => {
     try {
       const documentId = await create({
-        title: t("Home.untitled"),
+        title: t("Documents.untitled"),
       });
       router.push(`/(home)/document/${documentId}` as Href);
     } catch {

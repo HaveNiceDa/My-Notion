@@ -104,8 +104,7 @@
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note.",
-    "untitled": "Untitled",
-    "aiConversation": "AI Conversation"
+    "untitled": "Untitled"
   },
   "Item": {
     "movingToTrash": "Moving to trash...",
@@ -166,42 +165,27 @@
     "addIcon": "Add icon",
     "addCover": "Add cover"
   },
-  "LanguageDetector": {
-    "message": "We noticed you're using {language}. Would you like to switch to this language?",
-    "switch": "Switch",
-    "dismiss": "Dismiss"
-  },
+
   "common": {
     "saved": "Saved successfully!",
     "saving": "Saving...",
-    "settings": "Settings",
     "userProfile": "User Profile",
-    "changeAvatar": "Change Avatar",
-    "fullName": "Full Name",
-    "enterFullName": "Enter full name",
-    "save": "Save",
     "logOut": "Log out"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "You cannot delete the current conversation",
     "conversationDeleted": "Conversation deleted",
     "deleteFailed": "Deletion failed, please try again",
-    "pleaseLoginFirst": "Please log in first",
-    "loginToUseAIConversation": "Log in to use AI conversation feature",
     "aiConversation": "AI Conversation",
-    "searchOrStartNewConversation": "Search or start a new conversation",
     "past30Days": "Past 30 days",
     "loading": "Loading...",
     "noConversationRecords": "No conversation records",
     "newConversation": "New Conversation",
     "pleaseEnterYourQuestion": "Please enter your question...",
-    "thinking": "Thinking...",
     "todayIWillHelp": "Today's tasks, I'll help with.",
     "useAIToHandleTasks": "Use AI to handle various tasks",
     "conversationHistory": "Conversation History",
-    "history": "History",
     "notionAI": "Notion AI New Feature",
-    "auto": "Auto",
     "writeMeetingAgenda": "Write Meeting Agenda",
     "analyzePDFOrImage": "Analyze PDF or Image",
     "createTaskReminder": "Create Task Reminder",
@@ -210,7 +194,6 @@
     "pinSidebar": "Pin",
     "unpinSidebar": "Unpin",
     "closeSidebar": "Close",
-    "newAIConversation": "New AI Conversation",
     "goHome": "Go Home",
     "searchConversationHistory": "Search conversation history",
     "noMatchingConversations": "No matching conversations found",
@@ -238,10 +221,8 @@
     "continue": "Continue",
     "verifyYourAccount": "Verify your account",
     "enterCode": "Enter code",
-    "useBackupCode": "Use backup code",
     "verify": "Verify",
     "needNewCode": "I need a new code",
-    "startOver": "Start over",
     "dontHaveAccount": "Don't have an account? ",
     "thirdPartyLogin": "Third-party login",
     "signInWithPassword": "sign in with password",
@@ -274,10 +255,6 @@
     "currentSelection": "Current",
     "more": "More",
     "newSubPage": "Create sub-page",
-    "workspaceSummary": "Focus, write, and organize with a calmer mobile workspace.",
-    "workspaceOverview": "Everything in one glance",
-    "workspaceOverviewHint": "Recent pages, favorites, and your private tree now share a softer, clearer visual rhythm.",
-    "documentPlaceholder": "Editor integration will be added in the next step. The title is already loaded from Convex.",
     "aiMockResponse": "Message received: \"{{message}}\". AI features are being connected..."
   }
 }

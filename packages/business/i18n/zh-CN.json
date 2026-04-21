@@ -104,8 +104,7 @@
     "creatingNewNote": "正在创建新笔记...",
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNote": "创建笔记失败。",
-    "untitled": "新笔记",
-    "aiConversation": "AI对话"
+    "untitled": "新笔记"
   },
   "Item": {
     "movingToTrash": "正在移至回收站...",
@@ -162,11 +161,7 @@
       "renaming": "重命名中..."
     }
   },
-  "LanguageDetector": {
-    "message": "我们注意到你正在使用 {language}。你想要切换到这种语言吗？",
-    "switch": "切换",
-    "dismiss": "关闭"
-  },
+
   "Toolbar": {
     "addIcon": "添加图标",
     "addCover": "添加封面"
@@ -174,34 +169,23 @@
   "common": {
     "saved": "保存成功！",
     "saving": "保存中...",
-    "settings": "设置",
     "userProfile": "用户资料",
-    "changeAvatar": "更换头像",
-    "fullName": "全名",
-    "enterFullName": "输入全名",
-    "save": "保存",
     "logOut": "退出登录"
   },
   "AI": {
     "cannotDeleteCurrentConversation": "当前对话不能删除",
     "conversationDeleted": "对话已删除",
     "deleteFailed": "删除失败，请重试",
-    "pleaseLoginFirst": "请先登录",
-    "loginToUseAIConversation": "登录后才能使用AI对话功能",
     "aiConversation": "AI对话",
-    "searchOrStartNewConversation": "搜索或开始新的对话",
     "past30Days": "过去30天",
     "loading": "加载中...",
     "noConversationRecords": "暂无对话记录",
     "newConversation": "新对话",
     "pleaseEnterYourQuestion": "请输入您的问题...",
-    "thinking": "思考中...",
     "todayIWillHelp": "今日事，我来帮。",
     "useAIToHandleTasks": "使用 AI 处理各种任务",
     "conversationHistory": "对话记录",
-    "history": "历史记录",
     "notionAI": "Notion AI新功能",
-    "auto": "自动",
     "writeMeetingAgenda": "撰写会议议程",
     "analyzePDFOrImage": "分析 PDF 或图片",
     "createTaskReminder": "创建任务提醒器",
@@ -210,7 +194,6 @@
     "pinSidebar": "固定",
     "unpinSidebar": "取消固定",
     "closeSidebar": "关闭",
-    "newAIConversation": "新建AI对话",
     "goHome": "回到首页",
     "searchConversationHistory": "搜索历史对话",
     "noMatchingConversations": "没有找到匹配的对话",
@@ -238,10 +221,8 @@
     "continue": "继续",
     "verifyYourAccount": "验证您的账号",
     "enterCode": "输入验证码",
-    "useBackupCode": "使用备用代码",
     "verify": "验证",
     "needNewCode": "获取新验证码",
-    "startOver": "重新开始",
     "dontHaveAccount": "还没有账号？",
     "thirdPartyLogin": "第三方账号登录",
     "signInWithPassword": "账号密码登录",
@@ -274,10 +255,6 @@
     "currentSelection": "当前",
     "more": "更多",
     "newSubPage": "新建子页面",
-    "workspaceSummary": "更柔和的对比、更清晰的层次，让移动端写作和整理都更轻松。",
-    "workspaceOverview": "工作区一览",
-    "workspaceOverviewHint": "最近、收藏和私有页面现在用了统一的视觉节奏，浏览起来会更轻松。",
-    "documentPlaceholder": "正文与编辑后续再接 BlockNote；当前已从 Convex 拉取标题。",
     "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
   }
 }
