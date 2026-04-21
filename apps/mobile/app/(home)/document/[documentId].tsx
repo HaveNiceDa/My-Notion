@@ -24,8 +24,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   getEditorContentFromStoredContent,
-  getPlainTextFromStoredContent,
-  serializePlainTextToBlockNote,
+  serializeHtmlToBlockNote,
 } from "@notion/business/content-compat";
 
 const SAVE_DELAY_MS = 700;
@@ -51,7 +50,7 @@ export default function DocumentDetailRoute() {
   const lastSavedContentRef = useRef<string>("");
   const titleLoadedForIdRef = useRef<string | null>(null);
   const contentLoadedForIdRef = useRef<string | null>(null);
-  const loadedPlainTextRef = useRef<string>("");
+  const loadedHtmlRef = useRef<string>("");
 
   const initialContent = useMemo(
     () => getEditorContentFromStoredContent(doc?.content),
@@ -63,8 +62,8 @@ export default function DocumentDetailRoute() {
     avoidIosKeyboard: true,
     initialContent,
   });
-  const editorText = useEditorContent(editor, {
-    type: "text",
+  const editorHtml = useEditorContent(editor, {
+    type: "html",
     debounceInterval: 300,
   });
 
@@ -89,34 +88,34 @@ export default function DocumentDetailRoute() {
       editor.setContent(nextEditorContent);
       lastSavedContentRef.current = doc.content ?? "";
       contentLoadedForIdRef.current = doc._id;
-      loadedPlainTextRef.current = getPlainTextFromStoredContent(doc.content);
+      loadedHtmlRef.current = getEditorContentFromStoredContent(doc.content);
     }
   }, [doc, editor]);
 
   useEffect(() => {
-    if (!doc || editorText === undefined) return;
-    if (editorText === loadedPlainTextRef.current) return;
+    if (!doc || editorHtml === undefined) return;
+    if (editorHtml === loadedHtmlRef.current) return;
 
     if (contentTimerRef.current) {
       clearTimeout(contentTimerRef.current);
     }
 
     contentTimerRef.current = setTimeout(async () => {
-      const nextContent = serializePlainTextToBlockNote(editorText);
+      const nextContent = serializeHtmlToBlockNote(editorHtml);
       if (nextContent === lastSavedContentRef.current) return;
 
       setSaveState("saving");
       try {
         await update({ id, content: nextContent });
         lastSavedContentRef.current = nextContent;
-        loadedPlainTextRef.current = editorText;
+        loadedHtmlRef.current = editorHtml;
         setSaveState("saved");
       } catch (error) {
         setSaveState("idle");
         console.error("Failed to save content:", error);
       }
     }, SAVE_DELAY_MS);
-  }, [doc, editorText, id, update]);
+  }, [doc, editorHtml, id, update]);
 
   const scheduleTitleSave = useCallback(
     (nextTitle: string) => {
@@ -231,8 +230,7 @@ export default function DocumentDetailRoute() {
           }}
         >
           <Text color="$placeholderColor" style={tw`text-xs leading-4`}>
-            当前移动端会把内容转换为 BlockNote 兼容段落再保存，先保证和 web
-            端数据互通。
+            内容自动保存，富文本格式与 Web 端互通。
           </Text>
         </KeyboardAvoidingView>
       </View>
