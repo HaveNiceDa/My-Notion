@@ -10,12 +10,14 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  Text,
   TextInput,
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Text, useTheme, TamaguiProvider, Theme } from "tamagui";
 import tw from "twrnc";
+import { config as tamaguiConfig } from "@tamagui/config";
+import { useAppTheme } from "@/theme/AppThemeProvider";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -29,6 +31,8 @@ export function ChatModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
   const { user } = useUser();
   const insets = useSafeAreaInsets();
+  const { theme: appTheme } = useAppTheme();
+  const theme = useTheme();
   const [input, setInput] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<Id<"aiConversations"> | null>(
@@ -47,7 +51,6 @@ export function ChatModal({ visible, onClose }: Props) {
     activeConversationId ? { conversationId: activeConversationId } : "skip",
   );
 
-  // 初始化活跃对话 id
   useEffect(() => {
     if (conversations && conversations.length > 0 && !activeConversationId) {
       setActiveConversationId(conversations[0]._id);
@@ -71,7 +74,6 @@ export function ChatModal({ visible, onClose }: Props) {
     try {
       let conversationId = activeConversationId;
 
-      // 如果没有活跃对话，创建一个
       if (!conversationId) {
         conversationId = await createConversation({
           userId: user.id,
@@ -80,15 +82,12 @@ export function ChatModal({ visible, onClose }: Props) {
         setActiveConversationId(conversationId);
       }
 
-      // 添加用户消息
       await addMessage({
         conversationId,
         content: userMessage,
         role: "user",
       });
 
-      // TODO: 这里应该调用 AI 接口。目前先模拟一个回复。
-      // 在实际项目中，这里应该调用 web 端的 API 或者在 Convex 中实现 AI 调用。
       setTimeout(async () => {
         await addMessage({
           conversationId: conversationId!,
@@ -110,35 +109,60 @@ export function ChatModal({ visible, onClose }: Props) {
       transparent={true}
       onRequestClose={onClose}
     >
-      <View style={tw`flex-1 bg-black/40`}>
+      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+        <Theme name={appTheme}>
+          <View style={tw`flex-1 bg-black/40`}>
         <Pressable style={tw`flex-1`} onPress={onClose} />
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={tw`bg-white rounded-t-3xl overflow-hidden`}
+          style={{
+            backgroundColor: theme.background.val,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            overflow: "hidden",
+          }}
         >
-          <View style={[tw`bg-white`, { height: "85%", paddingBottom: insets.bottom }]}>
-            {/* Header */}
-            <View style={tw`flex-row items-center justify-between px-4 py-3 border-b border-neutral-100`}>
+          <View style={{ height: "85%", paddingBottom: insets.bottom, backgroundColor: theme.background.val }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.borderColor.val,
+              }}
+            >
               <View style={tw`flex-row items-center gap-2`}>
-                <View style={tw`w-8 h-8 rounded-full bg-violet-100 items-center justify-center`}>
-                  <Ionicons name="sparkles" size={18} color="#7c3aed" />
+                <View
+                  style={[
+                    tw`w-8 h-8 rounded-full items-center justify-center`,
+                    { backgroundColor: theme.backgroundHover.val },
+                  ]}
+                >
+                  <Ionicons name="sparkles" size={18} color={theme.primary.val} />
                 </View>
-                <Text style={tw`text-lg font-bold text-neutral-900`}>{t("AI.aiConversation")}</Text>
+                <Text style={[tw`text-lg font-bold`, { color: theme.color.val }]}>
+                  {t("AI.aiConversation")}
+                </Text>
               </View>
               <View style={tw`flex-row items-center gap-3`}>
                 <Pressable
                   onPress={() => setActiveConversationId(null)}
-                  style={tw`p-1 rounded-full bg-neutral-50`}
+                  style={[
+                    tw`p-1 rounded-full`,
+                    { backgroundColor: theme.backgroundHover.val },
+                  ]}
                 >
-                  <Ionicons name="add" size={24} color="#737373" />
+                  <Ionicons name="add" size={24} color={theme.placeholderColor.val} />
                 </Pressable>
                 <Pressable onPress={onClose} style={tw`p-1`}>
-                  <Ionicons name="close" size={24} color="#737373" />
+                  <Ionicons name="close" size={24} color={theme.placeholderColor.val} />
                 </Pressable>
               </View>
             </View>
 
-            {/* Message List */}
             <ScrollView
               ref={scrollViewRef}
               style={tw`flex-1 px-4`}
@@ -153,14 +177,22 @@ export function ChatModal({ visible, onClose }: Props) {
                     style={[
                       tw`max-w-[85%] px-4 py-2.5 rounded-2xl`,
                       msg.role === "user"
-                        ? tw`bg-violet-600 rounded-tr-none`
-                        : tw`bg-neutral-100 rounded-tl-none`,
+                        ? {
+                            backgroundColor: theme.backgroundHover.val,
+                            borderTopRightRadius: 0,
+                          }
+                        : {
+                            backgroundColor: theme.backgroundPress.val,
+                            borderTopLeftRadius: 0,
+                          },
                     ]}
                   >
                     <Text
                       style={[
                         tw`text-[15px] leading-5`,
-                        msg.role === "user" ? tw`text-white` : tw`text-neutral-800`,
+                        {
+                          color: theme.color.val,
+                        },
                       ]}
                     >
                       {msg.content}
@@ -170,20 +202,42 @@ export function ChatModal({ visible, onClose }: Props) {
               ))}
               {isSending && (
                 <View style={tw`flex-row justify-start`}>
-                  <View style={tw`bg-neutral-100 px-4 py-2.5 rounded-2xl rounded-tl-none`}>
-                    <ActivityIndicator size="small" color="#7c3aed" />
+                  <View
+                    style={[
+                      tw`px-4 py-2.5 rounded-2xl`,
+                      {
+                        backgroundColor: theme.backgroundPress.val,
+                        borderTopLeftRadius: 0,
+                      },
+                    ]}
+                  >
+                    <ActivityIndicator size="small" color={theme.placeholderColor.val} />
                   </View>
                 </View>
               )}
             </ScrollView>
 
-            {/* Input Area */}
-            <View style={tw`px-4 py-3 border-t border-neutral-100`}>
-              <View style={tw`flex-row items-center bg-neutral-100 rounded-2xl px-3 py-1.5 gap-2`}>
+            <View
+              style={{
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderTopWidth: 1,
+                borderTopColor: theme.borderColor.val,
+              }}
+            >
+              <View
+                style={[
+                  tw`flex-row items-center rounded-2xl px-3 py-1.5 gap-2`,
+                  { backgroundColor: theme.backgroundHover.val },
+                ]}
+              >
                 <TextInput
-                  style={tw`flex-1 min-h-10 text-[16px] text-neutral-900 py-1`}
+                  style={[
+                    tw`flex-1 min-h-10 text-[16px] py-1`,
+                    { color: theme.color.val },
+                  ]}
                   placeholder={t("AI.pleaseEnterYourQuestion")}
-                  placeholderTextColor="#a3a3a3"
+                  placeholderTextColor={theme.placeholderColor.val}
                   value={input}
                   onChangeText={setInput}
                   multiline
@@ -193,19 +247,25 @@ export function ChatModal({ visible, onClose }: Props) {
                   onPress={handleSend}
                   disabled={!input.trim() || isSending}
                   style={({ pressed }) => [
-                    tw`w-8 h-8 rounded-full items-center justify-center ${
-                      input.trim() && !isSending ? "bg-violet-600" : "bg-neutral-300"
-                    }`,
-                    pressed && tw`opacity-80`,
+                    tw`w-8 h-8 rounded-full items-center justify-center`,
+                    {
+                      backgroundColor:
+                        input.trim() && !isSending
+                          ? theme.primary.val
+                          : theme.backgroundPress.val,
+                    },
+                    pressed ? tw`opacity-80` : null,
                   ]}
                 >
-                  <Ionicons name="arrow-up" size={20} color="#fff" />
+                  <Ionicons name="arrow-up" size={20} color={theme.primaryForeground.val} />
                 </Pressable>
               </View>
             </View>
           </View>
         </KeyboardAvoidingView>
       </View>
+        </Theme>
+      </TamaguiProvider>
     </Modal>
   );
 }

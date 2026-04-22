@@ -1,5 +1,5 @@
 import { useQuery } from "convex/react";
-import { Spinner, Text, View } from "tamagui";
+import { Spinner, Text, View, useTheme } from "tamagui";
 import tw from "twrnc";
 
 import { api } from "@convex/_generated/api";
@@ -31,6 +31,7 @@ export function SidebarDocumentTree({
   onNavigateToDocument,
   emptyHint,
 }: Props) {
+  const theme = useTheme();
   const atRoot = parentDocument === undefined;
 
   const sidebarList = useQuery(
@@ -68,7 +69,7 @@ export function SidebarDocumentTree({
 
   if (documents.length === 0 && emptyHint && atRoot) {
     return (
-      <Text style={tw`text-sm text-neutral-500 px-3 py-2`}>{emptyHint}</Text>
+      <Text style={[tw`text-sm px-3 py-2`, { color: theme.placeholderColor.val }]}>{emptyHint}</Text>
     );
   }
 

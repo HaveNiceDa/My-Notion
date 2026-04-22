@@ -106,9 +106,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
 
   const themeOptions: { value: AppThemeName; label: string }[] = [
     { value: "light", label: t("Home.themeLight") },
-    { value: "dark", label: t("Home.themeDark") },
     { value: "light_blue", label: t("Home.themeBlueLight") },
-    { value: "dark_blue", label: t("Home.themeBlueDark") },
   ];
   const isInitialLoading =
     recentItems === undefined ||
