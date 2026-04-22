@@ -2,7 +2,7 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable } from "react-native";
-import { Button, Dialog, Text, View, useTheme } from "tamagui";
+import { Dialog, Text, View, useTheme } from "tamagui";
 import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 
@@ -11,6 +11,7 @@ import type { Doc, Id } from "@convex/_generated/dataModel";
 
 import { RenameDialog } from "./rename-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
+import { useToast } from "./toast-provider";
 
 type Props = {
   open: boolean;
@@ -27,6 +28,7 @@ export function DocumentActionSheet({
 }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
+  const toast = useToast();
 
   const archive = useMutation(api.documents.archive);
   const toggleStar = useMutation(api.documents.toggleStar);
@@ -38,10 +40,11 @@ export function DocumentActionSheet({
   const handleArchive = async () => {
     try {
       await archive({ id: document._id });
-      onOpenChange(false);
+      toast.showSuccess(t("Menu.noteMovedToTrash"));
       onDeleted?.();
     } catch (error) {
       console.error("Failed to archive:", error);
+      toast.showError(t("Menu.failedToArchiveNote"));
     }
   };
 
@@ -51,9 +54,15 @@ export function DocumentActionSheet({
         id: document._id,
         isStarred: !document.isStarred,
       });
+      toast.showSuccess(
+        document.isStarred
+          ? t("Publish.unstarredSuccess")
+          : t("Publish.starredSuccess"),
+      );
       onOpenChange(false);
     } catch (error) {
       console.error("Failed to toggle star:", error);
+      toast.showError(t("Publish.errorToToggleStar"));
     }
   };
 
@@ -75,30 +84,38 @@ export function DocumentActionSheet({
     <>
       <Dialog open={open} onOpenChange={onOpenChange} modal>
         <Dialog.Portal>
-          <Dialog.Overlay opacity={0.5} />
+          <Dialog.Overlay opacity={0.4} />
           <Dialog.Content
             bordered
             elevate
-            width={320}
-            gap="$1"
-            bg="$backgroundHover"
-            style={tw`rounded-3xl`}
+            width={300}
+            bg="$background"
+            style={tw`overflow-hidden p-0`}
           >
-            <Dialog.Title style={tw`mb-2`}>{document.title}</Dialog.Title>
+            <View px="$4" pt="$4" pb="$3">
+              <Text
+                style={tw`text-base font-semibold`}
+                numberOfLines={1}
+              >
+                {document.title}
+              </Text>
+            </View>
 
             <Pressable
               onPress={handleToggleStar}
               style={({ pressed }) => [
-                tw`flex-row items-center gap-3 px-2 py-3 rounded-xl`,
-                pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                tw`flex-row items-center gap-3 px-4 py-3`,
+                pressed
+                  ? { backgroundColor: theme.backgroundHover.val }
+                  : null,
               ]}
             >
               <Ionicons
                 name={document.isStarred ? "star" : "star-outline"}
-                size={22}
+                size={20}
                 color={theme.color.val}
               />
-              <Text style={tw`text-base`}>
+              <Text style={tw`text-[15px] flex-1`}>
                 {document.isStarred
                   ? t("Publish.unstarredSuccess")
                   : t("Publish.starredSuccess")}
@@ -108,22 +125,22 @@ export function DocumentActionSheet({
             <Pressable
               onPress={handleToggleKnowledgeBase}
               style={({ pressed }) => [
-                tw`flex-row items-center gap-3 px-2 py-3 rounded-xl`,
-                pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                tw`flex-row items-center gap-3 px-4 py-3`,
+                pressed
+                  ? { backgroundColor: theme.backgroundHover.val }
+                  : null,
               ]}
             >
               <Ionicons
                 name={
-                  document.isInKnowledgeBase
-                    ? "book"
-                    : "book-outline"
+                  document.isInKnowledgeBase ? "book" : "book-outline"
                 }
-                size={22}
+                size={20}
                 color={theme.color.val}
               />
-              <Text style={tw`text-base`}>
+              <Text style={tw`text-[15px] flex-1`}>
                 {document.isInKnowledgeBase
-                  ? t("Navigation.knowledgeBase")
+                  ? t("Item.delete")
                   : t("Navigation.knowledgeBase")}
               </Text>
             </Pressable>
@@ -134,23 +151,27 @@ export function DocumentActionSheet({
                 setRenameOpen(true);
               }}
               style={({ pressed }) => [
-                tw`flex-row items-center gap-3 px-2 py-3 rounded-xl`,
-                pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                tw`flex-row items-center gap-3 px-4 py-3`,
+                pressed
+                  ? { backgroundColor: theme.backgroundHover.val }
+                  : null,
               ]}
             >
               <Ionicons
                 name="create-outline"
-                size={22}
+                size={20}
                 color={theme.color.val}
               />
-              <Text style={tw`text-base`}>{t("Menu.rename")}</Text>
+              <Text style={tw`text-[15px] flex-1`}>
+                {t("Menu.rename")}
+              </Text>
             </Pressable>
 
             <View
               style={{
                 height: 1,
                 backgroundColor: theme.borderColor.val,
-                marginVertical: 4,
+                marginHorizontal: 16,
               }}
             />
 
@@ -160,12 +181,14 @@ export function DocumentActionSheet({
                 setDeleteConfirmOpen(true);
               }}
               style={({ pressed }) => [
-                tw`flex-row items-center gap-3 px-2 py-3 rounded-xl`,
-                pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                tw`flex-row items-center gap-3 px-4 py-3`,
+                pressed
+                  ? { backgroundColor: theme.backgroundHover.val }
+                  : null,
               ]}
             >
-              <Ionicons name="trash-outline" size={22} color="#ef4444" />
-              <Text style={[tw`text-base`, { color: "#ef4444" }]}>
+              <Ionicons name="trash-outline" size={20} color="#ef4444" />
+              <Text style={[tw`text-[15px]`, { color: "#ef4444" }]}>
                 {t("Menu.delete")}
               </Text>
             </Pressable>

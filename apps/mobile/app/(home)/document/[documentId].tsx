@@ -29,6 +29,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
+import { useToast } from "@/features/home/components/toast-provider";
 
 const SAVE_DELAY_MS = 700;
 
@@ -38,6 +39,7 @@ export default function DocumentDetailRoute() {
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { t } = useTranslation();
+  const toast = useToast();
 
   const id = documentId as Id<"documents">;
   const doc = useQuery(api.documents.getById, { documentId: id });
@@ -154,17 +156,25 @@ export default function DocumentDetailRoute() {
     if (!doc) return;
     try {
       await toggleStar({ id, isStarred: !doc.isStarred });
+      toast.showSuccess(
+        doc.isStarred
+          ? t("Publish.unstarredSuccess")
+          : t("Publish.starredSuccess"),
+      );
     } catch (error) {
       console.error("Failed to toggle star:", error);
+      toast.showError(t("Publish.errorToToggleStar"));
     }
   };
 
   const handleArchive = async () => {
     try {
       await archive({ id });
+      toast.showSuccess(t("Menu.noteMovedToTrash"));
       router.back();
     } catch (error) {
       console.error("Failed to archive:", error);
+      toast.showError(t("Menu.failedToArchiveNote"));
     }
   };
 
@@ -216,7 +226,7 @@ export default function DocumentDetailRoute() {
               {saveLabel}
             </Text>
 
-            <View style={tw`flex-row items-center gap-0`}>
+            <View style={tw`flex-row items-center`}>
               <Pressable
                 onPress={handleToggleStar}
                 hitSlop={10}
@@ -266,26 +276,6 @@ export default function DocumentDetailRoute() {
         <View flex={1} bg="$background">
           <RichText editor={editor} />
         </View>
-
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            paddingBottom: Math.max(insets.bottom, 8),
-            paddingHorizontal: 16,
-            paddingTop: 12,
-            backgroundColor: theme.background.val,
-            borderTopWidth: 1,
-            borderTopColor: theme.borderColor.val,
-          }}
-        >
-          <Text color="$placeholderColor" style={tw`text-xs leading-4`}>
-            {t("Documents.autoSaveHint")}
-          </Text>
-        </KeyboardAvoidingView>
       </View>
 
       <ConfirmDialog

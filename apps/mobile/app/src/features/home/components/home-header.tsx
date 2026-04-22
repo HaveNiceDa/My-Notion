@@ -50,11 +50,6 @@ export function HomeHeader({
     onOpenThemePicker?.();
   };
 
-  const handleTrashPress = () => {
-    setPopoverOpen(false);
-    onPressTrash?.();
-  };
-
   return (
     <View background="$background" pt={insets.top}>
       <View px="$4" pb="$2" pt="$2" style={{ marginBottom: 6 }}>
@@ -63,7 +58,7 @@ export function HomeHeader({
             onPress={onPressWorkspace}
             accessibilityLabel={workspaceMenuLabel}
             style={({ pressed }) =>
-              tw`flex-row items-center max-w-[72%] ${pressed ? "opacity-70" : ""}`
+              tw`flex-row items-center max-w-[60%] ${pressed ? "opacity-70" : ""}`
             }
           >
             <Ionicons
@@ -86,7 +81,23 @@ export function HomeHeader({
             />
           </Pressable>
 
-          <View style={tw`flex-row items-center gap-1`}>
+          <View style={tw`flex-row items-center`}>
+            <Pressable
+              hitSlop={10}
+              onPress={onPressTrash}
+              style={({ pressed }) => [
+                tw`p-2 rounded-full`,
+                pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+              ]}
+              accessibilityLabel={trashLabel}
+            >
+              <Ionicons
+                name="trash-outline"
+                size={21}
+                color={theme.color.val}
+              />
+            </Pressable>
+
             <Pressable
               hitSlop={10}
               onPress={onPressInbox}
@@ -146,16 +157,6 @@ export function HomeHeader({
                   </Button>
                   <Button onPress={handleThemePress} chromeless>
                     <Text style={tw`w-full text-left`}>{changeThemeLabel}</Text>
-                  </Button>
-                  <View
-                    style={{
-                      height: 1,
-                      backgroundColor: theme.borderColor.val,
-                      marginVertical: 2,
-                    }}
-                  />
-                  <Button onPress={handleTrashPress} chromeless>
-                    <Text style={tw`w-full text-left`}>{trashLabel}</Text>
                   </Button>
                 </YStack>
               </Popover.Content>

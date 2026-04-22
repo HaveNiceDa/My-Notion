@@ -9,6 +9,7 @@ import { config } from "../tamagui.config";
 import { convex } from "@/lib/convex";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { AppThemeProvider, useAppTheme } from "@/theme/AppThemeProvider";
+import { ToastProvider } from "@/features/home/components/toast-provider";
 import "@/i18n";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -23,11 +24,13 @@ function AppStack() {
   return (
     <TamaguiProvider config={config} defaultTheme="light">
       <Theme name={theme}>
-        <Stack>
-          <Stack.Screen name="index" />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="(home)" options={{ headerShown: false }} />
-        </Stack>
+        <ToastProvider>
+          <Stack>
+            <Stack.Screen name="index" />
+            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+            <Stack.Screen name="(home)" options={{ headerShown: false }} />
+          </Stack>
+        </ToastProvider>
       </Theme>
     </TamaguiProvider>
   );
