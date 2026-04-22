@@ -12,9 +12,11 @@ type Props = {
   changeThemeLabel: string;
   settingsLabel: string;
   inboxLabel: string;
+  trashLabel: string;
   workspaceMenuLabel: string;
   onPressWorkspace?: () => void;
   onPressInbox?: () => void;
+  onPressTrash?: () => void;
   onOpenLanguagePicker?: () => void;
   onOpenThemePicker?: () => void;
 };
@@ -26,9 +28,11 @@ export function HomeHeader({
   changeThemeLabel,
   settingsLabel,
   inboxLabel,
+  trashLabel,
   workspaceMenuLabel,
   onPressWorkspace,
   onPressInbox,
+  onPressTrash,
   onOpenLanguagePicker,
   onOpenThemePicker,
 }: Props) {
@@ -44,6 +48,11 @@ export function HomeHeader({
   const handleThemePress = () => {
     setPopoverOpen(false);
     onOpenThemePicker?.();
+  };
+
+  const handleTrashPress = () => {
+    setPopoverOpen(false);
+    onPressTrash?.();
   };
 
   return (
@@ -137,6 +146,16 @@ export function HomeHeader({
                   </Button>
                   <Button onPress={handleThemePress} chromeless>
                     <Text style={tw`w-full text-left`}>{changeThemeLabel}</Text>
+                  </Button>
+                  <View
+                    style={{
+                      height: 1,
+                      backgroundColor: theme.borderColor.val,
+                      marginVertical: 2,
+                    }}
+                  />
+                  <Button onPress={handleTrashPress} chromeless>
+                    <Text style={tw`w-full text-left`}>{trashLabel}</Text>
                   </Button>
                 </YStack>
               </Popover.Content>

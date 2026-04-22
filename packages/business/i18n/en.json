@@ -133,7 +133,8 @@
     "failedToCreateNote": "Failed to create a new note",
     "untitled": "New Note",
     "noStarredPages": "Go star your favorite articles!",
-    "noKnowledgeBasePages": "No knowledge base pages yet"
+    "noKnowledgeBasePages": "No knowledge base pages yet",
+    "autoSaveHint": "Auto-saved. Rich text format compatible with Web."
   },
   "Modals": {
     "settings": {

@@ -26,6 +26,9 @@ import {
   getEditorContentFromStoredContent,
   serializeHtmlToBlockNote,
 } from "@notion/business/content-compat";
+import { useTranslation } from "react-i18next";
+
+import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
 
 const SAVE_DELAY_MS = 700;
 
@@ -34,15 +37,19 @@ export default function DocumentDetailRoute() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
+  const { t } = useTranslation();
 
   const id = documentId as Id<"documents">;
   const doc = useQuery(api.documents.getById, { documentId: id });
   const update = useMutation(api.documents.update);
+  const archive = useMutation(api.documents.archive);
+  const toggleStar = useMutation(api.documents.toggleStar);
 
   const [title, setTitle] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -143,6 +150,24 @@ export default function DocumentDetailRoute() {
     [doc, id, update],
   );
 
+  const handleToggleStar = async () => {
+    if (!doc) return;
+    try {
+      await toggleStar({ id, isStarred: !doc.isStarred });
+    } catch (error) {
+      console.error("Failed to toggle star:", error);
+    }
+  };
+
+  const handleArchive = async () => {
+    try {
+      await archive({ id });
+      router.back();
+    } catch (error) {
+      console.error("Failed to archive:", error);
+    }
+  };
+
   if (doc === undefined) {
     return (
       <View flex={1} bg="$background" items="center" justify="center">
@@ -190,6 +215,34 @@ export default function DocumentDetailRoute() {
             <Text color="$placeholderColor" style={tw`text-xs font-semibold`}>
               {saveLabel}
             </Text>
+
+            <View style={tw`flex-row items-center gap-0`}>
+              <Pressable
+                onPress={handleToggleStar}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  tw`w-10 h-10 rounded-full items-center justify-center`,
+                  pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                ]}
+              >
+                <Ionicons
+                  name={doc.isStarred ? "star" : "star-outline"}
+                  size={20}
+                  color={doc.isStarred ? theme.primary.val : theme.color.val}
+                />
+              </Pressable>
+
+              <Pressable
+                onPress={() => setDeleteConfirmOpen(true)}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  tw`w-10 h-10 rounded-full items-center justify-center`,
+                  pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                ]}
+              >
+                <Ionicons name="trash-outline" size={20} color={theme.color.val} />
+              </Pressable>
+            </View>
           </View>
 
           <TextInput
@@ -230,10 +283,17 @@ export default function DocumentDetailRoute() {
           }}
         >
           <Text color="$placeholderColor" style={tw`text-xs leading-4`}>
-            内容自动保存，富文本格式与 Web 端互通。
+            {t("Documents.autoSaveHint")}
           </Text>
         </KeyboardAvoidingView>
       </View>
+
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        destructive
+        onConfirm={handleArchive}
+      />
     </SafeAreaView>
   );
 }

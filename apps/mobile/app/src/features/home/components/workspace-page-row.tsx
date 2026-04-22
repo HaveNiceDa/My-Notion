@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Pressable } from "react-native";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Text, View, useTheme } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
@@ -7,6 +8,7 @@ import tw, { style as twStyle } from "twrnc";
 import type { Doc, Id } from "@convex/_generated/dataModel";
 
 import { PageIcon } from "./page-icon";
+import { DocumentActionSheet } from "./document-action-sheet";
 
 type Props = {
   document: Doc<"documents">;
@@ -14,6 +16,7 @@ type Props = {
   expandedIds: Set<string>;
   onToggleExpand: (id: Id<"documents">) => void;
   onPressRow: () => void;
+  onDeleted?: () => void;
 };
 
 export function WorkspacePageRow({
@@ -22,11 +25,14 @@ export function WorkspacePageRow({
   expandedIds,
   onToggleExpand,
   onPressRow,
+  onDeleted,
 }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
   const isOpen = expandedIds.has(document._id);
   const paddingLeft = 8 + depth * 14;
+
+  const [actionOpen, setActionOpen] = useState(false);
 
   return (
     <View
@@ -57,14 +63,29 @@ export function WorkspacePageRow({
         <Text color="$color" style={tw`flex-1 ml-2 text-[15px]`} numberOfLines={1}>
           {document.title}
         </Text>
+        {document.isStarred && (
+          <Ionicons name="star" size={14} color={theme.primary.val} style={tw`mr-1`} />
+        )}
       </Pressable>
 
-      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.more")}>
+      <Pressable
+        hitSlop={8}
+        style={tw`p-2`}
+        onPress={() => setActionOpen(true)}
+        accessibilityLabel={t("Home.more")}
+      >
         <Ionicons name="ellipsis-horizontal" size={18} color={theme.placeholderColor.val} />
       </Pressable>
       <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.newSubPage")}>
         <Ionicons name="add" size={22} color={theme.placeholderColor.val} />
       </Pressable>
+
+      <DocumentActionSheet
+        open={actionOpen}
+        onOpenChange={setActionOpen}
+        document={document}
+        onDeleted={onDeleted}
+      />
     </View>
   );
 }

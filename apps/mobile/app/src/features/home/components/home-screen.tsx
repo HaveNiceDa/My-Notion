@@ -125,9 +125,11 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         changeThemeLabel={t("Home.changeTheme")}
         settingsLabel={t("Navigation.settings")}
         inboxLabel={t("Home.inbox")}
+        trashLabel={t("Navigation.trash")}
         workspaceMenuLabel={t("Home.openWorkspaceMenu")}
         onPressWorkspace={openAccountMenu}
         onPressInbox={() => setInboxDialogOpen(true)}
+        onPressTrash={() => router.push("/(home)/trash" as Href)}
         onOpenLanguagePicker={() => setLanguageDialogOpen(true)}
         onOpenThemePicker={() => setThemeDialogOpen(true)}
       />

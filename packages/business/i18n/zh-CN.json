@@ -133,7 +133,8 @@
     "failedToCreateNote": "创建新笔记失败",
     "untitled": "新笔记",
     "noStarredPages": "快去收藏你喜好的文章吧～",
-    "noKnowledgeBasePages": "暂无知识库文档"
+    "noKnowledgeBasePages": "暂无知识库文档",
+    "autoSaveHint": "内容自动保存，富文本格式与 Web 端互通。"
   },
   "Modals": {
     "settings": {
