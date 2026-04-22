@@ -25,9 +25,7 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/src/components/ui/popover";
-import { useSearch } from "@/src/hooks/use-search";
-import { useSettings } from "@/src/hooks/use-settings";
-import { useNavigation } from "@/src/hooks/use-navigation";
+import { useSearch, useSettings, useNavigation } from "@notion/business/hooks";
 
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";

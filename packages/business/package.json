@@ -9,6 +9,8 @@
     "./types": "./types/index.ts",
     "./utils": "./utils/index.ts",
     "./content-compat": "./content-compat/index.ts",
+    "./hooks": "./hooks/index.ts",
+    "./validation": "./validation/index.ts",
     "./i18n/*": "./i18n/*.json"
   },
   "scripts": {
@@ -21,6 +23,9 @@
     "zod": "^3.22.4",
     "clsx": "^2.0.0",
     "tailwind-merge": "^1.14.0"
+  },
+  "peerDependencies": {
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

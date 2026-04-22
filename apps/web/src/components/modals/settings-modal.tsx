@@ -6,7 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
-import { useSettings } from "@/src/hooks/use-settings";
+import { useSettings } from "@notion/business/hooks";
 import { Label } from "@/src/components/ui/label";
 import { ModeToggle } from "@/src/components/mode-toggle";
 import { LanguageToggle } from "@/src/components/language-toggle";

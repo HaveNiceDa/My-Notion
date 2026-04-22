@@ -9,7 +9,7 @@ import {
   TooltipTrigger,
 } from "@/src/components/ui/tooltip";
 import { useTranslations } from "next-intl";
-import { useNavigation } from "@/src/hooks/use-navigation";
+import { useNavigation } from "@notion/business/hooks";
 
 interface TopNavigationProps {
   onShowHistory: () => void;

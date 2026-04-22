@@ -1,3 +1,4 @@
+/** 允许上传的图片 MIME 类型 */
 export const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
@@ -5,15 +6,24 @@ export const ALLOWED_IMAGE_TYPES = [
   "image/webp",
 ] as const;
 
-export type AllowedImageType = typeof ALLOWED_IMAGE_TYPES[number];
+/** 允许的图片类型联合 */
+export type AllowedImageType = (typeof ALLOWED_IMAGE_TYPES)[number];
 
+/** 文件校验结果 */
 export interface FileValidationResult {
   valid: boolean;
   error?: string;
 }
 
+/** 平台无关的文件接口，兼容浏览器 File 和 RN 文件对象 */
+export interface FileLike {
+  type: string;
+  name: string;
+}
+
+/** 校验单个文件是否为允许的图片类型 */
 export const validateImageFile = (
-  file: File,
+  file: FileLike,
   errorMessage: string,
 ): FileValidationResult => {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type as AllowedImageType)) {
@@ -25,11 +35,12 @@ export const validateImageFile = (
   return { valid: true };
 };
 
-export const validateFiles = (
-  files: File[],
+/** 批量校验文件列表，返回合法文件和非法文件名 */
+export function validateFiles<T extends FileLike>(
+  files: T[],
   errorMessage: string,
-): { validFiles: File[]; invalidFiles: string[] } => {
-  const validFiles: File[] = [];
+): { validFiles: T[]; invalidFiles: string[] } {
+  const validFiles: T[] = [];
   const invalidFiles: string[] = [];
 
   for (const file of files) {
@@ -42,4 +53,4 @@ export const validateFiles = (
   }
 
   return { validFiles, invalidFiles };
-};
+}

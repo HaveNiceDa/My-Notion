@@ -14,7 +14,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/src/components/ui/command";
-import { useSearch } from "@/src/hooks/use-search";
+import { useSearch } from "@notion/business/hooks";
 import { api } from "@/convex/_generated/api";
 import { useEffect, useState } from "react";
 
