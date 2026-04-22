@@ -77,20 +77,25 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               paddingHorizontal: 20,
               paddingVertical: 10,
               borderRadius: 20,
-              backgroundColor:
+              backgroundColor: theme.background.val,
+              borderWidth: 1,
+              borderColor:
                 toast.type === "success"
-                  ? theme.primary.val
-                  : "#ef4444",
+                  ? theme.borderColor.val
+                  : "#ef444440",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: 0.15,
+              shadowOpacity: 0.1,
               shadowRadius: 8,
               elevation: 5,
             }}
           >
             <Text
               style={{
-                color: "#fff",
+                color:
+                  toast.type === "success"
+                    ? theme.color.val
+                    : "#ef4444",
                 fontSize: 14,
                 fontWeight: "600",
                 textAlign: "center",

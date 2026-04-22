@@ -117,8 +117,8 @@ export function DocumentActionSheet({
               />
               <Text style={tw`text-[15px] flex-1`}>
                 {document.isStarred
-                  ? t("Publish.unstarredSuccess")
-                  : t("Publish.starredSuccess")}
+                  ? t("Navigation.removeFromStar")
+                  : t("Navigation.addToStar")}
               </Text>
             </Pressable>
 
@@ -140,8 +140,8 @@ export function DocumentActionSheet({
               />
               <Text style={tw`text-[15px] flex-1`}>
                 {document.isInKnowledgeBase
-                  ? t("Item.delete")
-                  : t("Navigation.knowledgeBase")}
+                  ? t("Navigation.removeFromKnowledgeBase")
+                  : t("Navigation.addToKnowledgeBase")}
               </Text>
             </Pressable>
 
