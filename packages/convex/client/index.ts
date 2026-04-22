@@ -1,6 +1,14 @@
 import { ConvexReactClient } from "convex/react";
-export const initConvexClient = (url: string) => {
-  return new ConvexReactClient(url, {
-    unsavedChangesWarning: false,
-  });
-};
+
+export class ConvexClient {
+  static #client: ConvexReactClient | null = null;
+
+  static getClient(url: string) {
+    if (!this.#client) {
+      this.#client = new ConvexReactClient(url, {
+        unsavedChangesWarning: false,
+      });
+    }
+    return this.#client;
+  }
+}
