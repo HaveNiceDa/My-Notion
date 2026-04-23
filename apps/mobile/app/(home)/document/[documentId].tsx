@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   TextInput,
-  Image,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
@@ -13,7 +12,7 @@ import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Spinner, Text, View, useTheme, Dialog, Input, Button } from "tamagui";
+import { Spinner, Text, View, useTheme, Dialog, Input, Button, Image } from "tamagui";
 import tw from "twrnc";
 import {
   RichText,
@@ -263,54 +262,46 @@ export default function DocumentDetailRoute() {
 
       <View flex={1} bg="$background">
         {doc.coverImage ? (
-          <View style={{ position: "relative", height: 180 }}>
+          <View position="relative" height={180}>
             <Image
-              source={{ uri: doc.coverImage }}
-              style={tw`w-full h-full`}
-              resizeMode="cover"
+              src={doc.coverImage}
+              width="100%"
+              height="100%"
+              objectFit="cover"
             />
             <View
-              style={{
-                position: "absolute",
-                bottom: 8,
-                right: 12,
-                flexDirection: "row",
-                gap: 8,
-              }}
+              position="absolute"
+              style={{ bottom: 8, right: 12 }}
+              flexDirection="row"
+              gap={8}
             >
-              <Pressable
+              <Button
+                size="$2"
                 onPress={() => {
                   setCoverUrlInput(doc.coverImage ?? "");
                   setCoverUrlDialogOpen(true);
                 }}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  borderRadius: 8,
-                  backgroundColor: theme.background.val,
-                  borderWidth: 1,
-                  borderColor: theme.borderColor.val,
-                }}
+                bg="$background"
+                borderWidth={1}
+                borderColor="$borderColor"
+                style={{ borderRadius: 8 }}
               >
-                <Text style={[tw`text-xs`, { color: theme.color.val }]}>
+                <Text fontSize="$1">
                   {t("Cover.change")}
                 </Text>
-              </Pressable>
-              <Pressable
+              </Button>
+              <Button
+                size="$2"
                 onPress={handleRemoveCover}
-                style={{
-                  paddingHorizontal: 10,
-                  paddingVertical: 5,
-                  borderRadius: 8,
-                  backgroundColor: theme.background.val,
-                  borderWidth: 1,
-                  borderColor: theme.borderColor.val,
-                }}
+                bg="$background"
+                borderWidth={1}
+                borderColor="$borderColor"
+                style={{ borderRadius: 8 }}
               >
-                <Text style={[tw`text-xs`, { color: theme.color.val }]}>
+                <Text fontSize="$1">
                   {t("Cover.remove")}
                 </Text>
-              </Pressable>
+              </Button>
             </View>
           </View>
         ) : null}
@@ -422,43 +413,31 @@ export default function DocumentDetailRoute() {
           </View>
 
           {!doc.coverImage && (
-            <View style={tw`flex-row gap-2 mt-1`}>
-              <Pressable
+            <View flexDirection="row" gap="$1" mt="$1">
+              <Button
+                size="$2"
                 onPress={() => {
                   setCoverUrlInput("");
                   setCoverUrlDialogOpen(true);
                 }}
-                style={({ pressed }) => [
-                  {
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                    borderRadius: 6,
-                    backgroundColor: theme.backgroundPress.val,
-                  },
-                  pressed ? { opacity: 0.7 } : null,
-                ]}
+                bg="$backgroundPress"
+                style={{ borderRadius: 6 }}
               >
-                <Text style={[tw`text-xs`, { color: theme.placeholderColor.val }]}>
+                <Text fontSize="$1" color="$placeholderColor">
                   {t("Toolbar.addCover")}
                 </Text>
-              </Pressable>
+              </Button>
               {!doc.icon && (
-                <Pressable
+                <Button
+                  size="$2"
                   onPress={() => setIconPickerOpen(true)}
-                  style={({ pressed }) => [
-                    {
-                      paddingHorizontal: 8,
-                      paddingVertical: 3,
-                      borderRadius: 6,
-                      backgroundColor: theme.backgroundPress.val,
-                    },
-                    pressed ? { opacity: 0.7 } : null,
-                  ]}
+                  bg="$backgroundPress"
+                  style={{ borderRadius: 6 }}
                 >
-                  <Text style={[tw`text-xs`, { color: theme.placeholderColor.val }]}>
+                  <Text fontSize="$1" color="$placeholderColor">
                     {t("Toolbar.addIcon")}
                   </Text>
-                </Pressable>
+                </Button>
               )}
             </View>
           )}
