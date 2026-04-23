@@ -10,6 +10,7 @@
 
 import type * as aiChat from "../aiChat.js";
 import type * as documents from "../documents.js";
+import type * as storage from "../storage.js";
 
 import type {
   ApiFromModules,
@@ -20,6 +21,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   aiChat: typeof aiChat;
   documents: typeof documents;
+  storage: typeof storage;
 }>;
 
 /**

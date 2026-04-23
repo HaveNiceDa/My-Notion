@@ -6,7 +6,10 @@
   },
   "Cover": {
     "change": "Change Cover",
-    "remove": "Remove"
+    "remove": "Remove",
+    "pickFromGallery": "Pick from Gallery",
+    "enterUrl": "Enter URL",
+    "uploading": "Uploading..."
   },
   "Layout": {
     "title": "Notion",

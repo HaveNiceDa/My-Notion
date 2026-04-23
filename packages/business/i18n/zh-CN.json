@@ -6,7 +6,10 @@
   },
   "Cover": {
     "change": "更换封面",
-    "remove": "移除"
+    "remove": "移除",
+    "pickFromGallery": "从相册选择",
+    "enterUrl": "输入链接",
+    "uploading": "上传中..."
   },
   "Layout": {
     "title": "Notion",
