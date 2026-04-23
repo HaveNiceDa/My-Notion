@@ -11,7 +11,7 @@ import Constants from "expo-constants";
 import {
   SafeAreaView,
 } from "react-native-safe-area-context";
-import { Spinner, Text, View, useTheme, Dialog, Button, Image } from "tamagui";
+import { Spinner, Text, View, useTheme, Button, Image } from "tamagui";
 import tw from "twrnc";
 import {
   RichText,
@@ -25,7 +25,6 @@ import {
   getEditorContentFromStoredContent,
   serializeHtmlToBlockNote,
 } from "@notion/business/content-compat";
-import { convex } from "@/lib/convex";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
@@ -54,13 +53,13 @@ export default function DocumentDetailRoute() {
   const removeCoverImage = useMutation(api.documents.removeCoverImage);
   const removeIcon = useMutation(api.documents.removeIcon);
   const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
+  const setCoverImage = useMutation(api.documents.setCoverImage);
 
   const [title, setTitle] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [coverUrlDialogOpen, setCoverUrlDialogOpen] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
@@ -237,14 +236,15 @@ export default function DocumentDetailRoute() {
 
       const uploader = new ConvexCoverImageUploader({
         generateUploadUrl: () => generateUploadUrl(),
-        getStorageUrl: (storageId) =>
-          convex.query(api.storage.getStorageUrl, {
-            storageId: storageId as Id<"_storage">,
-          }),
       });
       const result = await uploader.upload(params);
-      await update({ id, coverImage: result.url });
-      setCoverUrlDialogOpen(false);
+      if (!result.storageId) {
+        throw new Error("Missing storageId after upload");
+      }
+      await setCoverImage({
+        id,
+        storageId: result.storageId as Id<"_storage">,
+      });
     } catch (error) {
       console.error("Failed to pick and upload image:", error);
       toast.showError(t("Error.somethingWentWrong"));
@@ -302,14 +302,15 @@ export default function DocumentDetailRoute() {
             >
               <Button
                 size="$2"
-                onPress={() => setCoverUrlDialogOpen(true)}
+                onPress={handlePickImage}
+                disabled={coverUploading}
                 bg="$background"
                 borderWidth={1}
                 borderColor="$borderColor"
                 style={{ borderRadius: 8 }}
               >
                 <Text fontSize="$1">
-                  {t("Cover.change")}
+                  {coverUploading ? t("Cover.uploading") : t("Cover.change")}
                 </Text>
               </Button>
               <Button
@@ -438,12 +439,13 @@ export default function DocumentDetailRoute() {
             <View flexDirection="row" gap="$1" mt="$1">
               <Button
                 size="$2"
-                onPress={() => setCoverUrlDialogOpen(true)}
+                onPress={handlePickImage}
+                disabled={coverUploading}
                 bg="$backgroundPress"
                 style={{ borderRadius: 6 }}
               >
                 <Text fontSize="$1" color="$placeholderColor">
-                  {t("Toolbar.addCover")}
+                  {coverUploading ? t("Cover.uploading") : t("Toolbar.addCover")}
                 </Text>
               </Button>
               {!doc.icon && (
@@ -481,63 +483,6 @@ export default function DocumentDetailRoute() {
         onSelectIcon={handleSetIcon}
         onRemoveIcon={doc.icon ? handleRemoveIcon : undefined}
       />
-
-      <Dialog open={coverUrlDialogOpen} onOpenChange={setCoverUrlDialogOpen} modal>
-        <Dialog.Portal>
-          <Dialog.Overlay opacity={0.5} />
-          <Dialog.Content
-            bordered
-            elevate
-            width={320}
-            gap="$3"
-            bg="$backgroundHover"
-            style={tw`rounded-3xl`}
-          >
-            <Dialog.Title>{t("Modals.coverImage.coverImage")}</Dialog.Title>
-
-            {coverUploading ? (
-              <View py="$4" items="center" justify="center" gap="$2">
-                <Spinner size="small" color="$primary" />
-                <Text color="$placeholderColor" fontSize="$2">
-                  {t("Cover.uploading")}
-                </Text>
-              </View>
-            ) : (
-              <>
-                <Button
-                  onPress={handlePickImage}
-                  bg="$background"
-                  borderWidth={1}
-                  borderColor="$borderColor"
-                  flexDirection="row"
-                  gap="$2"
-                  items="center"
-                  justify="center"
-                >
-                  <Ionicons name="image-outline" size={18} color={theme.color.val} />
-                  <Text>{t("Cover.pickFromGallery")}</Text>
-                </Button>
-                <View flexDirection="row" gap="$2">
-                  <Button
-                    flex={1}
-                    onPress={() => setCoverUrlDialogOpen(false)}
-                    bg="$background"
-                  >
-                    <Text style={tw`text-center`}>
-                      {t("Modals.confirm.cancel")}
-                    </Text>
-                  </Button>
-                  <Button flex={1} onPress={handlePickImage} bg="$primary">
-                    <Text style={[tw`text-center`, { color: "#fff" }]}>
-                      {t("Cover.pickFromGallery")}
-                    </Text>
-                  </Button>
-                </View>
-              </>
-            )}
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
     </SafeAreaView>
   );
 }

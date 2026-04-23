@@ -8,7 +8,6 @@ import type {
 
 interface ConvexUploadDeps {
   generateUploadUrl: () => Promise<string>;
-  getStorageUrl: (storageId: string) => Promise<string | null>;
 }
 
 export class ConvexCoverImageUploader implements CoverImageUploader {
@@ -36,13 +35,7 @@ export class ConvexCoverImageUploader implements CoverImageUploader {
     }
 
     const { storageId } = await response.json();
-    const url = await this.deps.getStorageUrl(storageId);
-
-    if (!url) {
-      throw new Error("Failed to resolve storage URL");
-    }
-
-    return { url };
+    return { storageId };
   }
 }
 

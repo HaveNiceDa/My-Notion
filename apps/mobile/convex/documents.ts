@@ -344,8 +344,18 @@ export const getById = query({
       throw new Error("Not found");
     }
 
+    const coverImage =
+      document.coverImageStorageId
+        ? await context.storage.getUrl(document.coverImageStorageId)
+        : document.coverImage;
+
+    const hydratedDocument = {
+      ...document,
+      coverImage: coverImage ?? document.coverImage,
+    };
+
     if (document.isPublished && !document.isArchived) {
-      return document;
+      return hydratedDocument;
     }
 
     if (!identity) {
@@ -358,7 +368,7 @@ export const getById = query({
       throw new Error("Unauthorized");
     }
 
-    return document;
+    return hydratedDocument;
   },
 });
 
@@ -379,6 +389,7 @@ export const update = mutation({
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
+    coverImageStorageId: v.optional(v.id("_storage")),
     icon: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
     isStarred: v.optional(v.boolean()),
@@ -407,6 +418,46 @@ export const update = mutation({
 
     const document = await context.db.patch(args.id, {
       ...rest,
+      lastEditedTime: Date.now(),
+    });
+
+    return document;
+  },
+});
+
+export const setCoverImage = mutation({
+  args: {
+    id: v.id("documents"),
+    storageId: v.id("_storage"),
+  },
+  handler: async (context, args) => {
+    const identity = await context.auth.getUserIdentity();
+
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const userId = identity.subject;
+    const existingDocument = await context.db.get(args.id);
+
+    if (!existingDocument) {
+      throw new Error("Not found");
+    }
+
+    if (existingDocument.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    if (
+      existingDocument.coverImageStorageId &&
+      existingDocument.coverImageStorageId !== args.storageId
+    ) {
+      await context.storage.delete(existingDocument.coverImageStorageId);
+    }
+
+    const document = await context.db.patch(args.id, {
+      coverImageStorageId: args.storageId,
+      coverImage: undefined,
       lastEditedTime: Date.now(),
     });
 
@@ -474,8 +525,13 @@ export const removeCoverImage = mutation({
       throw new Error("Unauthorized");
     }
 
+    if (existingDocument.coverImageStorageId) {
+      await context.storage.delete(existingDocument.coverImageStorageId);
+    }
+
     const document = await context.db.patch(args.id, {
       coverImage: undefined,
+      coverImageStorageId: undefined,
     });
 
     return document;

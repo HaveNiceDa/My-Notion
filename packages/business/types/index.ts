@@ -4,6 +4,7 @@ export interface Document {
   userId: string;
   content?: string;
   coverImage?: string;
+  coverImageStorageId?: string;
   icon?: string;
   isArchived: boolean;
   isPublished: boolean;

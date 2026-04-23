@@ -35,7 +35,8 @@ export interface CoverImageUploadParams {
 
 /** 封面图片上传结果 */
 export interface CoverImageUploadResult {
-  url: string;
+  url?: string;
+  storageId?: string;
 }
 
 /** 封面图片上传服务接口（平台各自实现） */

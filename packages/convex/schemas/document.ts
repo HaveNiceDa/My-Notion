@@ -15,6 +15,8 @@ export const documentTable = defineTable({
   content: v.optional(v.string()),
   /** 封面图片URL */
   coverImage: v.optional(v.string()),
+  /** 封面图片存储ID（移动端 Convex Storage） */
+  coverImageStorageId: v.optional(v.id("_storage")),
   /** 文档图标 */
   icon: v.optional(v.string()),
   /** 是否发布 */
