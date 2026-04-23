@@ -10,18 +10,15 @@ import { api } from "@convex/_generated/api";
 import { useRouter, type Href } from "expo-router";
 import { config as tamaguiConfig } from "@tamagui/config";
 import { useAppTheme } from "@/theme/AppThemeProvider";
+import { useSearch } from "@notion/business/hooks";
 
-type SearchModalProps = {
-  visible: boolean;
-  onClose: () => void;
-};
-
-export function SearchModal({ visible, onClose }: SearchModalProps) {
+export function SearchModal() {
   const { t } = useTranslation();
   const router = useRouter();
   const { theme: appTheme } = useAppTheme();
   const theme = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
+  const { isOpen, onClose } = useSearch();
 
   const documents = useQuery(api.documents.getSearch);
 
@@ -49,7 +46,7 @@ export function SearchModal({ visible, onClose }: SearchModalProps) {
 
   return (
     <Modal
-      visible={visible}
+      visible={isOpen}
       animationType="fade"
       transparent
       onRequestClose={onClose}

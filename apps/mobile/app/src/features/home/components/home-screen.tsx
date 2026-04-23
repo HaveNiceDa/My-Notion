@@ -20,6 +20,7 @@ import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
 import { ChatModal } from "../../ai-chat/components/ChatModal";
 import { SearchModal } from "./search-modal";
+import { useSearch } from "@notion/business/hooks";
 
 export type HomeScreenProps = {
   signOut?: () => void;
@@ -44,12 +45,13 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
   const create = useMutation(api.documents.create);
 
   const [aiModalVisible, setAiModalVisible] = useState(false);
-  const [searchModalVisible, setSearchModalVisible] = useState(false);
   const [languageDialogOpen, setLanguageDialogOpen] = useState(false);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [accountDialogOpen, setAccountDialogOpen] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [inboxDialogOpen, setInboxDialogOpen] = useState(false);
+
+  const { onOpen: openSearch } = useSearch();
 
   const openAccountMenu = () => setAccountDialogOpen(true);
 
@@ -92,6 +94,21 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
       const documentId = await create({
         title: t("Documents.untitled"),
       });
+      router.push(`/(home)/document/${documentId}` as Href);
+    } catch {
+      setErrorDialogOpen(true);
+    }
+  };
+
+  const handleCreateChild = async (parentId: Id<"documents">) => {
+    try {
+      const documentId = await create({
+        title: t("Documents.untitled"),
+        parentDocument: parentId,
+      });
+      if (!treeOpen.has(parentId)) {
+        toggleTree(parentId);
+      }
       router.push(`/(home)/document/${documentId}` as Href);
     } catch {
       setErrorDialogOpen(true);
@@ -163,6 +180,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}
+                  onCreateChild={handleCreateChild}
                   emptyHint={t("Documents.noKnowledgeBasePages")}
                 />
               </CollapsibleSection>
@@ -178,6 +196,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}
+                  onCreateChild={handleCreateChild}
                   emptyHint={t("Documents.noStarredPages")}
                 />
               </CollapsibleSection>
@@ -193,6 +212,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}
+                  onCreateChild={handleCreateChild}
                 />
               </CollapsibleSection>
             </View>
@@ -201,7 +221,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
       )}
 
       <HomeBottomBar
-        onPressSearch={() => setSearchModalVisible(true)}
+        onPressSearch={openSearch}
         onPressAi={() => setAiModalVisible(true)}
         onPressNewPage={handleCreateNew}
       />
@@ -210,10 +230,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         visible={aiModalVisible}
         onClose={() => setAiModalVisible(false)}
       />
-      <SearchModal
-        visible={searchModalVisible}
-        onClose={() => setSearchModalVisible(false)}
-      />
+      <SearchModal />
 
       <Dialog
         open={languageDialogOpen}

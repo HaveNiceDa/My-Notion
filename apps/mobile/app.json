@@ -45,6 +45,9 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "webUrl": "https://notion-j9zj.vercel.app"
     }
   }
 }

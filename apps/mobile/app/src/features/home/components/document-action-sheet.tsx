@@ -93,12 +93,17 @@ export function DocumentActionSheet({
             style={tw`overflow-hidden p-0`}
           >
             <View px="$4" pt="$4" pb="$3">
-              <Text
-                style={tw`text-base font-semibold`}
-                numberOfLines={1}
-              >
-                {document.title}
-              </Text>
+              <View style={tw`flex-row items-center gap-2`}>
+                {document.icon && (
+                  <Text style={tw`text-xl`}>{document.icon}</Text>
+                )}
+                <Text
+                  style={tw`text-base font-semibold flex-1`}
+                  numberOfLines={1}
+                >
+                  {document.title}
+                </Text>
+              </View>
             </View>
 
             <Pressable

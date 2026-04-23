@@ -75,7 +75,8 @@
     "minutesAgo": "{count} minutes ago",
     "hoursAgo": "{count} hours ago",
     "createdBy": "Created by {user} on {time}",
-    "editedBy": "Edited by {user} on {time}"
+    "editedBy": "Edited by {user} on {time}",
+    "linkCopiedToClipboard": "Link copied to clipboard"
   },
   "TrashBox": {
     "filterByPageTitle": "Filter by page title...",

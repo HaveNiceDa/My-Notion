@@ -43,7 +43,7 @@ export function RecentSection({ title, items, onPressCard }: Props) {
           >
             <PageIcon kind={item.iconKind} size={16} />
             <Text color="$color" style={tw`mt-3 text-sm font-medium`} numberOfLines={2}>
-              {item.title}
+              {item.icon ? `${item.icon} ` : ""}{item.title}
             </Text>
             {item.subtitle ? (
               <Text color="$placeholderColor" style={tw`mt-1 text-xs`} numberOfLines={1}>

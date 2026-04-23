@@ -23,6 +23,7 @@ export function useRecentDocuments(limit = 12): {
         id: d._id,
         title: d.title,
         iconKind: "doc" as const,
+        icon: d.icon,
       }));
   }, [docs, limit]);
 

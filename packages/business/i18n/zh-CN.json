@@ -75,7 +75,8 @@
     "minutesAgo": "{count}分钟前",
     "hoursAgo": "{count}小时前",
     "createdBy": "{user}于{time}创建",
-    "editedBy": "{user}于{time}修改"
+    "editedBy": "{user}于{time}修改",
+    "linkCopiedToClipboard": "链接已复制到剪贴板"
   },
   "TrashBox": {
     "filterByPageTitle": "按页面标题过滤...",

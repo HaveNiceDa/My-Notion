@@ -11,13 +11,13 @@ export type SidebarTreeVariant = "private" | "starred" | "knowledge";
 
 type Props = {
   variant: SidebarTreeVariant;
-  /** 根级为 undefined；子级为父文档 id */
   parentDocument?: Id<"documents">;
   rootDocuments?: Doc<"documents">[];
   depth?: number;
   expandedIds: Set<string>;
   onToggleExpand: (id: Id<"documents">) => void;
   onNavigateToDocument: (id: Id<"documents">) => void;
+  onCreateChild?: (parentId: Id<"documents">) => void;
   emptyHint?: string;
 };
 
@@ -29,6 +29,7 @@ export function SidebarDocumentTree({
   expandedIds,
   onToggleExpand,
   onNavigateToDocument,
+  onCreateChild,
   emptyHint,
 }: Props) {
   const theme = useTheme();
@@ -83,6 +84,7 @@ export function SidebarDocumentTree({
             expandedIds={expandedIds}
             onToggleExpand={onToggleExpand}
             onPressRow={() => onNavigateToDocument(doc._id)}
+            onCreateChild={onCreateChild}
           />
           {expandedIds.has(doc._id) ? (
             <SidebarDocumentTree
@@ -92,6 +94,7 @@ export function SidebarDocumentTree({
               expandedIds={expandedIds}
               onToggleExpand={onToggleExpand}
               onNavigateToDocument={onNavigateToDocument}
+              onCreateChild={onCreateChild}
             />
           ) : null}
         </View>

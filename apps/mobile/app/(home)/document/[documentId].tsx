@@ -3,16 +3,17 @@ import { useMutation, useQuery } from "convex/react";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  KeyboardAvoidingView,
-  Platform,
   Pressable,
   TextInput,
+  Image,
 } from "react-native";
+import * as Clipboard from "expo-clipboard";
+import Constants from "expo-constants";
 import {
   SafeAreaView,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
-import { Spinner, Text, View, useTheme } from "tamagui";
+import { Spinner, Text, View, useTheme, Dialog, Input, Button } from "tamagui";
 import tw from "twrnc";
 import {
   RichText,
@@ -30,8 +31,14 @@ import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
 import { useToast } from "@/features/home/components/toast-provider";
+import { IconPicker } from "@/features/home/components/icon-picker";
+import { DocumentBreadcrumb } from "@/features/home/components/document-breadcrumb";
 
 const SAVE_DELAY_MS = 700;
+
+function getWebOrigin(): string {
+  return Constants.expoConfig?.extra?.webUrl ?? "https://notion-j9zj.vercel.app";
+}
 
 export default function DocumentDetailRoute() {
   const { documentId } = useLocalSearchParams<{ documentId: string }>();
@@ -46,12 +53,17 @@ export default function DocumentDetailRoute() {
   const update = useMutation(api.documents.update);
   const archive = useMutation(api.documents.archive);
   const toggleStar = useMutation(api.documents.toggleStar);
+  const removeCoverImage = useMutation(api.documents.removeCoverImage);
+  const removeIcon = useMutation(api.documents.removeIcon);
 
   const [title, setTitle] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [coverUrlDialogOpen, setCoverUrlDialogOpen] = useState(false);
+  const [coverUrlInput, setCoverUrlInput] = useState("");
+  const [iconPickerOpen, setIconPickerOpen] = useState(false);
 
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -178,6 +190,56 @@ export default function DocumentDetailRoute() {
     }
   };
 
+  const handleSetIcon = async (icon: string) => {
+    try {
+      await update({ id, icon });
+      setIconPickerOpen(false);
+    } catch (error) {
+      console.error("Failed to set icon:", error);
+    }
+  };
+
+  const handleRemoveIcon = async () => {
+    try {
+      await removeIcon({ id });
+      setIconPickerOpen(false);
+    } catch (error) {
+      console.error("Failed to remove icon:", error);
+    }
+  };
+
+  const handleSetCoverUrl = async () => {
+    const url = coverUrlInput.trim();
+    if (!url) return;
+    try {
+      await update({ id, coverImage: url });
+      setCoverUrlDialogOpen(false);
+      setCoverUrlInput("");
+    } catch (error) {
+      console.error("Failed to set cover image:", error);
+      toast.showError(t("Cover.change"));
+    }
+  };
+
+  const handleRemoveCover = async () => {
+    try {
+      await removeCoverImage({ id });
+    } catch (error) {
+      console.error("Failed to remove cover image:", error);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    try {
+      const origin = getWebOrigin();
+      const url = `${origin}/preview/${id}`;
+      await Clipboard.setStringAsync(url);
+      toast.showSuccess(t("Publish.linkCopiedToClipboard"));
+    } catch {
+      toast.showError(t("Error.somethingWentWrong"));
+    }
+  };
+
   if (doc === undefined) {
     return (
       <View flex={1} bg="$background" items="center" justify="center">
@@ -200,6 +262,59 @@ export default function DocumentDetailRoute() {
       />
 
       <View flex={1} bg="$background">
+        {doc.coverImage ? (
+          <View style={{ position: "relative", height: 180 }}>
+            <Image
+              source={{ uri: doc.coverImage }}
+              style={tw`w-full h-full`}
+              resizeMode="cover"
+            />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 8,
+                right: 12,
+                flexDirection: "row",
+                gap: 8,
+              }}
+            >
+              <Pressable
+                onPress={() => {
+                  setCoverUrlInput(doc.coverImage ?? "");
+                  setCoverUrlDialogOpen(true);
+                }}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                  backgroundColor: theme.background.val,
+                  borderWidth: 1,
+                  borderColor: theme.borderColor.val,
+                }}
+              >
+                <Text style={[tw`text-xs`, { color: theme.color.val }]}>
+                  {t("Cover.change")}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={handleRemoveCover}
+                style={{
+                  paddingHorizontal: 10,
+                  paddingVertical: 5,
+                  borderRadius: 8,
+                  backgroundColor: theme.background.val,
+                  borderWidth: 1,
+                  borderColor: theme.borderColor.val,
+                }}
+              >
+                <Text style={[tw`text-xs`, { color: theme.color.val }]}>
+                  {t("Cover.remove")}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
         <View
           px="$3"
           pt="$2"
@@ -228,6 +343,17 @@ export default function DocumentDetailRoute() {
 
             <View style={tw`flex-row items-center`}>
               <Pressable
+                onPress={handleCopyLink}
+                hitSlop={10}
+                style={({ pressed }) => [
+                  tw`w-10 h-10 rounded-full items-center justify-center`,
+                  pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                ]}
+              >
+                <Ionicons name="link-outline" size={20} color={theme.color.val} />
+              </Pressable>
+
+              <Pressable
                 onPress={handleToggleStar}
                 hitSlop={10}
                 style={({ pressed }) => [
@@ -255,22 +381,87 @@ export default function DocumentDetailRoute() {
             </View>
           </View>
 
-          <TextInput
-            value={title}
-            onChangeText={(nextTitle) => {
-              setTitle(nextTitle);
-              scheduleTitleSave(nextTitle);
-            }}
-            placeholder="Untitled"
-            placeholderTextColor={theme.placeholderColor.val}
-            style={{
-              color: theme.color.val,
-              fontSize: 28,
-              fontWeight: "700",
-              marginTop: 12,
-              paddingVertical: 8,
-            }}
-          />
+          <DocumentBreadcrumb documentId={id} />
+
+          <View style={tw`flex-row items-center mt-2`}>
+            <Pressable
+              onPress={() => setIconPickerOpen(true)}
+              hitSlop={4}
+              style={tw`mr-2`}
+            >
+              {doc.icon ? (
+                <Text style={tw`text-3xl`}>{doc.icon}</Text>
+              ) : (
+                <View
+                  style={[
+                    tw`w-9 h-9 rounded-lg items-center justify-center`,
+                    { backgroundColor: theme.backgroundPress.val },
+                  ]}
+                >
+                  <Ionicons name="happy-outline" size={20} color={theme.placeholderColor.val} />
+                </View>
+              )}
+            </Pressable>
+
+            <TextInput
+              value={title}
+              onChangeText={(nextTitle) => {
+                setTitle(nextTitle);
+                scheduleTitleSave(nextTitle);
+              }}
+              placeholder="Untitled"
+              placeholderTextColor={theme.placeholderColor.val}
+              style={{
+                color: theme.color.val,
+                fontSize: 28,
+                fontWeight: "700",
+                paddingVertical: 8,
+                flex: 1,
+              }}
+            />
+          </View>
+
+          {!doc.coverImage && (
+            <View style={tw`flex-row gap-2 mt-1`}>
+              <Pressable
+                onPress={() => {
+                  setCoverUrlInput("");
+                  setCoverUrlDialogOpen(true);
+                }}
+                style={({ pressed }) => [
+                  {
+                    paddingHorizontal: 8,
+                    paddingVertical: 3,
+                    borderRadius: 6,
+                    backgroundColor: theme.backgroundPress.val,
+                  },
+                  pressed ? { opacity: 0.7 } : null,
+                ]}
+              >
+                <Text style={[tw`text-xs`, { color: theme.placeholderColor.val }]}>
+                  {t("Toolbar.addCover")}
+                </Text>
+              </Pressable>
+              {!doc.icon && (
+                <Pressable
+                  onPress={() => setIconPickerOpen(true)}
+                  style={({ pressed }) => [
+                    {
+                      paddingHorizontal: 8,
+                      paddingVertical: 3,
+                      borderRadius: 6,
+                      backgroundColor: theme.backgroundPress.val,
+                    },
+                    pressed ? { opacity: 0.7 } : null,
+                  ]}
+                >
+                  <Text style={[tw`text-xs`, { color: theme.placeholderColor.val }]}>
+                    {t("Toolbar.addIcon")}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          )}
         </View>
 
         <View flex={1} bg="$background">
@@ -284,6 +475,59 @@ export default function DocumentDetailRoute() {
         destructive
         onConfirm={handleArchive}
       />
+
+      <IconPicker
+        open={iconPickerOpen}
+        onOpenChange={setIconPickerOpen}
+        currentIcon={doc.icon}
+        onSelectIcon={handleSetIcon}
+        onRemoveIcon={doc.icon ? handleRemoveIcon : undefined}
+      />
+
+      <Dialog open={coverUrlDialogOpen} onOpenChange={setCoverUrlDialogOpen} modal>
+        <Dialog.Portal>
+          <Dialog.Overlay opacity={0.5} />
+          <Dialog.Content
+            bordered
+            elevate
+            width={320}
+            gap="$3"
+            bg="$backgroundHover"
+            style={tw`rounded-3xl`}
+          >
+            <Dialog.Title>{t("Modals.coverImage.coverImage")}</Dialog.Title>
+            <Input
+              value={coverUrlInput}
+              onChangeText={setCoverUrlInput}
+              placeholder="https://example.com/image.jpg"
+              placeholderTextColor={theme.placeholderColor.val as any}
+              autoFocus
+              selectTextOnFocus
+            />
+            <View flexDirection="row" gap="$2">
+              <Button
+                flex={1}
+                onPress={() => setCoverUrlDialogOpen(false)}
+                bg="$background"
+              >
+                <Text style={tw`text-center`}>
+                  {t("Modals.confirm.cancel")}
+                </Text>
+              </Button>
+              <Button
+                flex={1}
+                onPress={handleSetCoverUrl}
+                disabled={!coverUrlInput.trim()}
+                bg="$primary"
+              >
+                <Text style={[tw`text-center`, { color: "#fff" }]}>
+                  {t("Modals.confirm.confirm")}
+                </Text>
+              </Button>
+            </View>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog>
     </SafeAreaView>
   );
 }

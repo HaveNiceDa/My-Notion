@@ -15,6 +15,7 @@ export type HomeRecentItem = {
   title: string;
   subtitle?: string;
   iconKind: PageIconKind;
+  icon?: string;
 };
 
 export type HomeWorkspaceSnapshot = {

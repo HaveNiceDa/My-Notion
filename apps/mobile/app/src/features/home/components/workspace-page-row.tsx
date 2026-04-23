@@ -17,6 +17,7 @@ type Props = {
   onToggleExpand: (id: Id<"documents">) => void;
   onPressRow: () => void;
   onDeleted?: () => void;
+  onCreateChild?: (parentId: Id<"documents">) => void;
 };
 
 export function WorkspacePageRow({
@@ -26,6 +27,7 @@ export function WorkspacePageRow({
   onToggleExpand,
   onPressRow,
   onDeleted,
+  onCreateChild,
 }: Props) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -59,7 +61,11 @@ export function WorkspacePageRow({
           pressed ? { backgroundColor: theme.backgroundHover.val } : null,
         ]}
       >
-        <PageIcon kind="doc" />
+        {document.icon ? (
+          <Text style={tw`text-lg mr-2`}>{document.icon}</Text>
+        ) : (
+          <PageIcon kind="doc" />
+        )}
         <Text color="$color" style={tw`flex-1 ml-2 text-[15px]`} numberOfLines={1}>
           {document.title}
         </Text>
@@ -76,7 +82,7 @@ export function WorkspacePageRow({
       >
         <Ionicons name="ellipsis-horizontal" size={18} color={theme.placeholderColor.val} />
       </Pressable>
-      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => {}} accessibilityLabel={t("Home.newSubPage")}>
+      <Pressable hitSlop={8} style={tw`p-2`} onPress={() => onCreateChild?.(document._id)} accessibilityLabel={t("Home.newSubPage")}>
         <Ionicons name="add" size={22} color={theme.placeholderColor.val} />
       </Pressable>
 
