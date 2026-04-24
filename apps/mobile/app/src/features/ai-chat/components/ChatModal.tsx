@@ -10,12 +10,17 @@ import {
   Modal,
   Platform,
   Pressable,
-  ScrollView,
   TextInput,
-  View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Text, useTheme, TamaguiProvider, Theme } from "tamagui";
+import {
+  ScrollView,
+  Text,
+  View,
+  useTheme,
+  TamaguiProvider,
+  Theme,
+} from "tamagui";
 import tw from "twrnc";
 import { config as tamaguiConfig } from "@tamagui/config";
 import { useAppTheme } from "@/theme/AppThemeProvider";
@@ -58,7 +63,6 @@ export function ChatModal({ visible, onClose }: Props) {
   const [showHistory, setShowHistory] = useState(false);
 
   const isCreatingNewRef = useRef(false);
-
   const scrollViewRef = useRef<ScrollView>(null);
 
   const createConversation = useMutation(api.aiChat.createConversation);
@@ -232,11 +236,10 @@ export function ChatModal({ visible, onClose }: Props) {
   const modalHeight = screenHeight * MODAL_HEIGHT_RATIO;
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
-
   const displayReasoning = reasoningContent || completedReasoning;
 
   const renderHistory = () => (
-    <View style={tw`flex-1`}>
+    <View flex={1}>
       <View
         style={{
           flexDirection: "row",
@@ -251,12 +254,12 @@ export function ChatModal({ visible, onClose }: Props) {
         <Pressable onPress={() => setShowHistory(false)} hitSlop={10}>
           <Ionicons name="chevron-back" size={22} color={theme.primary.val} />
         </Pressable>
-        <Text style={[tw`text-base font-semibold`, { color: theme.color.val }]}>
+        <Text fontSize={18} fontWeight="bold" color="$color">
           {t("AI.conversationHistory")}
         </Text>
-        <View style={tw`w-6`} />
+        <View width={22} />
       </View>
-      <ScrollView style={tw`flex-1`} contentContainerStyle={tw`py-2`}>
+      <ScrollView flex={1} contentContainerStyle={tw`py-2`}>
         {conversations && conversations.length > 0 ? (
           conversations.map((conv: any) => (
             <Pressable
@@ -264,32 +267,21 @@ export function ChatModal({ visible, onClose }: Props) {
               onPress={() => handleSelectConversation(conv._id)}
               style={({ pressed }) => [
                 tw`flex-row items-center px-4 py-3 gap-3`,
-                pressed ? { backgroundColor: theme.backgroundHover.val } : null,
-                activeConversationId === conv._id
-                  ? { backgroundColor: theme.backgroundHover.val }
-                  : null,
+                {
+                  backgroundColor: pressed
+                    ? theme.backgroundHover.val
+                    : activeConversationId === conv._id
+                      ? theme.backgroundHover.val
+                      : "transparent",
+                },
               ]}
             >
-              <Ionicons
-                name="chatbubble-outline"
-                size={18}
-                color={theme.placeholderColor.val}
-              />
-              <Text
-                style={[tw`flex-1 text-sm`, { color: theme.color.val }]}
-                numberOfLines={1}
-              >
+              <Ionicons name="chatbubble-outline" size={18} color={theme.placeholderColor.val} />
+              <Text flex={1} fontSize={14} color="$color" numberOfLines={1}>
                 {conv.title}
               </Text>
-              <Pressable
-                onPress={() => handleDeleteConversation(conv._id)}
-                hitSlop={8}
-              >
-                <Ionicons
-                  name="trash-outline"
-                  size={16}
-                  color={theme.placeholderColor.val}
-                />
+              <Pressable onPress={() => handleDeleteConversation(conv._id)} hitSlop={8}>
+                <Ionicons name="trash-outline" size={16} color={theme.placeholderColor.val} />
               </Pressable>
             </Pressable>
           ))
@@ -315,14 +307,14 @@ export function ChatModal({ visible, onClose }: Props) {
         backgroundColor: theme.background.val,
         shadowColor: "#000",
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
+        shadowOpacity: 0.12,
         shadowRadius: 8,
         elevation: 8,
         zIndex: 100,
       }}
     >
-      <View style={tw`px-4 py-2.5`}>
-        <Text style={[tw`text-xs font-semibold`, { color: theme.placeholderColor.val }]}>
+      <View style={tw`px-4 py-2`}>
+        <Text fontSize={11} fontWeight="bold" color="$placeholderColor">
           {t("AI.modelSelect")}
         </Text>
       </View>
@@ -335,12 +327,12 @@ export function ChatModal({ visible, onClose }: Props) {
           }}
           style={({ pressed }) => [
             tw`flex-row items-center justify-between px-4 py-2.5`,
-            pressed ? { backgroundColor: theme.backgroundHover.val } : null,
+            {
+              backgroundColor: pressed ? theme.backgroundHover.val : "transparent",
+            },
           ]}
         >
-          <Text style={[tw`text-sm`, { color: theme.color.val }]}>
-            {model.displayName}
-          </Text>
+          <Text fontSize={14} color="$color">{model.displayName}</Text>
           {selectedModel === model.id && (
             <Ionicons name="checkmark" size={18} color={theme.primary.val} />
           )}
@@ -352,22 +344,23 @@ export function ChatModal({ visible, onClose }: Props) {
   const renderReasoningBubble = () => (
     <View style={tw`flex-row justify-start`}>
       <View
-        style={[
-          tw`max-w-[85%] rounded-2xl overflow-hidden`,
-          {
-            backgroundColor: theme.backgroundHover.val,
-            borderLeftWidth: 3,
-            borderLeftColor: theme.primary.val,
-            borderTopLeftRadius: 0,
-          },
-        ]}
+        flex={1}
+        style={{
+          maxWidth: "85%",
+          borderRadius: 20,
+          borderLeftWidth: 3,
+          borderLeftColor: theme.primary.val,
+          borderTopLeftRadius: 0,
+          backgroundColor: theme.backgroundHover.val,
+          overflow: "hidden",
+        }}
       >
         <Pressable
           onPress={() => setReasoningExpanded(!reasoningExpanded)}
-          style={tw`flex-row items-center gap-1.5 px-4 pt-2.5 pb-1`}
+          style={tw`flex-row items-center gap-1.5 px-3.5 pt-2.5 pb-1`}
         >
           <Ionicons name="bulb-outline" size={14} color={theme.primary.val} />
-          <Text style={[tw`text-xs font-semibold flex-1`, { color: theme.primary.val }]}>
+          <Text flex={1} fontSize={11} fontWeight="bold" color="$primary">
             {t("AI.deepThinking")}
           </Text>
           <Ionicons
@@ -378,23 +371,9 @@ export function ChatModal({ visible, onClose }: Props) {
         </Pressable>
 
         {reasoningExpanded && (
-          <View
-            style={{
-              maxHeight: 120,
-              paddingHorizontal: 16,
-              paddingBottom: 10,
-            }}
-          >
-            <ScrollView
-              nestedScrollEnabled
-              showsVerticalScrollIndicator={false}
-            >
-              <Text
-                style={[
-                  tw`text-[13px] leading-4`,
-                  { color: theme.placeholderColor.val },
-                ]}
-              >
+          <View style={[tw`px-3.5 pb-2.5`, { maxHeight: 120 }]}>
+            <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+              <Text fontSize={12} lineHeight={18} color="$placeholderColor">
                 {displayReasoning}
               </Text>
             </ScrollView>
@@ -404,8 +383,19 @@ export function ChatModal({ visible, onClose }: Props) {
     </View>
   );
 
+  const bubbleStyle = (role: "user" | "assistant") => [
+    tw`px-4 py-2.5`,
+    {
+      maxWidth: "85%",
+      borderRadius: 20,
+      backgroundColor: role === "user" ? theme.backgroundHover.val : theme.backgroundPress.val,
+      borderTopRightRadius: role === "user" ? 0 : undefined,
+      borderTopLeftRadius: role === "assistant" ? 0 : undefined,
+    },
+  ];
+
   const renderChat = () => (
-    <>
+    <View flex={1}>
       <View
         style={{
           flexDirection: "row",
@@ -421,46 +411,40 @@ export function ChatModal({ visible, onClose }: Props) {
           <Pressable onPress={() => setShowHistory(true)} hitSlop={8}>
             <Ionicons name="menu-outline" size={22} color={theme.placeholderColor.val} />
           </Pressable>
-          <View
-            style={[
-              tw`w-7 h-7 rounded-full items-center justify-center`,
-              { backgroundColor: theme.backgroundHover.val },
-            ]}
-          >
+          <View style={[tw`items-center justify-center`, { width: 28, height: 28, borderRadius: 14, backgroundColor: theme.backgroundHover.val }]}>
             <Ionicons name="sparkles" size={15} color={theme.primary.val} />
           </View>
-          <Text style={[tw`text-base font-bold`, { color: theme.color.val }]}>
+          <Text fontSize={17} fontWeight="bold" color="$color">
             {t("AI.aiConversation")}
           </Text>
         </View>
         <View style={tw`flex-row items-center gap-2`}>
-          <Pressable
-            onPress={handleNewConversation}
-            style={[
-              tw`p-1.5 rounded-full`,
-              { backgroundColor: theme.backgroundHover.val },
-            ]}
-          >
-            <Ionicons name="add" size={20} color={theme.placeholderColor.val} />
+          <Pressable onPress={handleNewConversation} hitSlop={4}>
+            <View style={[tw`items-center justify-center`, { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.backgroundHover.val }]}>
+              <Ionicons name="add" size={20} color={theme.placeholderColor.val} />
+            </View>
           </Pressable>
-          <Pressable onPress={onClose} style={tw`p-1.5`}>
-            <Ionicons name="close" size={20} color={theme.placeholderColor.val} />
+          <Pressable onPress={onClose} hitSlop={4}>
+            <View style={[tw`items-center justify-center`, { width: 32, height: 32 }]}>
+              <Ionicons name="close" size={20} color={theme.placeholderColor.val} />
+            </View>
           </Pressable>
         </View>
       </View>
 
       <ScrollView
         ref={scrollViewRef}
-        style={tw`flex-1 px-4`}
+        flex={1}
+        style={tw`px-4`}
         contentContainerStyle={tw`py-4 gap-4`}
       >
         {!activeConversationId && !isSending && (!convexMessages || convexMessages.length === 0) && (
           <View style={tw`py-8 items-center gap-3`}>
             <Ionicons name="sparkles-outline" size={40} color={theme.placeholderColor.val} />
-            <Text style={[tw`text-lg font-semibold`, { color: theme.color.val }]}>
+            <Text fontSize={20} fontWeight="bold" color="$color">
               {t("AI.todayIWillHelp")}
             </Text>
-            <Text style={[tw`text-sm text-center max-w-[80%]`, { color: theme.placeholderColor.val }]}>
+            <Text fontSize={14} color="$placeholderColor" style={{ textAlign: "center", maxWidth: "80%" }}>
               {t("AI.useAIToHandleTasks")}
             </Text>
           </View>
@@ -471,28 +455,8 @@ export function ChatModal({ visible, onClose }: Props) {
             key={msg._id}
             style={tw`flex-row ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <View
-              style={[
-                tw`max-w-[85%] px-4 py-2.5 rounded-2xl`,
-                msg.role === "user"
-                  ? {
-                      backgroundColor: theme.backgroundHover.val,
-                      borderTopRightRadius: 0,
-                    }
-                  : {
-                      backgroundColor: theme.backgroundPress.val,
-                      borderTopLeftRadius: 0,
-                    },
-              ]}
-            >
-              <Text
-                style={[
-                  tw`text-[15px] leading-5`,
-                  {
-                    color: theme.color.val,
-                  },
-                ]}
-              >
+            <View style={bubbleStyle(msg.role)}>
+              <Text fontSize={15} lineHeight={22} color="$color">
                 {msg.content}
               </Text>
             </View>
@@ -505,21 +469,16 @@ export function ChatModal({ visible, onClose }: Props) {
           <View style={tw`flex-row justify-start`}>
             <View
               style={[
-                tw`max-w-[85%] px-4 py-2.5 rounded-2xl`,
+                tw`px-4 py-2.5`,
                 {
-                  backgroundColor: theme.backgroundPress.val,
+                  maxWidth: "85%",
+                  borderRadius: 20,
                   borderTopLeftRadius: 0,
+                  backgroundColor: theme.backgroundPress.val,
                 },
               ]}
             >
-              <Text
-                style={[
-                  tw`text-[15px] leading-5`,
-                  {
-                    color: theme.color.val,
-                  },
-                ]}
-              >
+              <Text fontSize={15} lineHeight={22} color="$color">
                 {streamingContent}
               </Text>
             </View>
@@ -528,86 +487,84 @@ export function ChatModal({ visible, onClose }: Props) {
 
         {isSending && streamingContent.length === 0 && displayReasoning.length === 0 && (
           <View style={tw`flex-row justify-start`}>
-            <View
-              style={[
-                tw`px-4 py-2.5 rounded-2xl`,
-                {
-                  backgroundColor: theme.backgroundPress.val,
-                  borderTopLeftRadius: 0,
-                },
-              ]}
-            >
+            <View style={[tw`px-4 py-2.5`, { borderRadius: 20, borderTopLeftRadius: 0, backgroundColor: theme.backgroundPress.val }]}>
               <ActivityIndicator size="small" color={theme.placeholderColor.val} />
             </View>
           </View>
         )}
       </ScrollView>
 
-      <View
-        style={{
-          paddingHorizontal: 16,
-          paddingVertical: 8,
-          borderTopWidth: 1,
-          borderTopColor: theme.borderColor.val,
-        }}
-      >
+      <View style={[tw`px-3 pt-1 pb-0`, { borderTopWidth: 1, borderTopColor: theme.borderColor.val }]}>
         <View style={tw`flex-row items-center gap-2 mb-2`}>
-          <Pressable
-            onPress={() => setShowModelPicker(!showModelPicker)}
-            style={[
-              tw`flex-row items-center px-2.5 py-1 rounded-full gap-1`,
-              { backgroundColor: theme.backgroundHover.val },
-            ]}
-          >
-            <Ionicons name="hardware-chip-outline" size={13} color={theme.placeholderColor.val} />
-            <Text style={[tw`text-xs`, { color: theme.placeholderColor.val }]}>
-              {currentModelConfig?.displayName ?? "Model"}
-            </Text>
-            <Ionicons name="chevron-down" size={12} color={theme.placeholderColor.val} />
+          <Pressable onPress={() => setShowModelPicker(!showModelPicker)}>
+            <View
+              style={[tw`flex-row items-center gap-1 px-2 py-1 rounded-full`, { backgroundColor: theme.backgroundHover.val }]}
+            >
+              <Ionicons name="hardware-chip-outline" size={13} color={theme.placeholderColor.val} />
+              <Text fontSize={11} color="$placeholderColor">
+                {currentModelConfig?.displayName ?? "Model"}
+              </Text>
+              <Ionicons name="chevron-down" size={12} color={theme.placeholderColor.val} />
+            </View>
           </Pressable>
 
-          <Pressable
-            onPress={() => setEnableThinking(!enableThinking)}
-            style={[
-              tw`flex-row items-center px-2.5 py-1 rounded-full gap-1`,
-              {
-                backgroundColor: enableThinking
-                  ? theme.primary.val
-                  : theme.backgroundHover.val,
-              },
-            ]}
-          >
-            <Ionicons
-              name="bulb-outline"
-              size={13}
-              color={enableThinking ? theme.primaryForeground.val : theme.placeholderColor.val}
-            />
-            <Text
+          <Pressable onPress={() => setEnableThinking(!enableThinking)}>
+            <View
               style={[
-                tw`text-xs`,
-                {
-                  color: enableThinking
-                    ? theme.primaryForeground.val
-                    : theme.placeholderColor.val,
-                },
+                tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
+                { backgroundColor: enableThinking ? theme.primary.val : theme.backgroundHover.val },
               ]}
             >
-              {t("AI.deepThinking")}
-            </Text>
+              <Ionicons
+                name="bulb-outline"
+                size={13}
+                color={enableThinking ? theme.primaryForeground.val : theme.placeholderColor.val}
+              />
+              <Text
+                fontSize={11}
+                color={enableThinking ? "$primaryForeground" : "$placeholderColor"}
+              >
+                {t("AI.deepThinking")}
+              </Text>
+            </View>
           </Pressable>
         </View>
 
         <View
           style={[
-            tw`flex-row items-center rounded-2xl px-3 py-1.5 gap-2`,
-            { backgroundColor: theme.backgroundHover.val },
+            tw`flex-row items-center rounded-2xl`,
+            {
+              backgroundColor: theme.backgroundHover.val,
+              paddingLeft: 0,
+              paddingRight: 6,
+              paddingVertical: 0,
+              gap: 0,
+              overflow: "hidden",
+            },
           ]}
         >
           <TextInput
-            style={[
-              tw`flex-1 min-h-10 text-[16px] py-1`,
-              { color: theme.color.val },
-            ]}
+            style={
+              [
+                {
+                  flex: 1,
+                  minHeight: 44,
+                  fontSize: 16,
+                  color: theme.color.val,
+                  paddingVertical: 0,
+                  paddingHorizontal: 14,
+                  margin: 0,
+                  borderWidth: 0,
+                  backgroundColor: "transparent",
+                },
+                Platform.OS === "web"
+                  ? {
+                      outlineStyle: "none",
+                      boxShadow: "none",
+                    }
+                  : null,
+              ] as any
+            }
             placeholder={t("AI.pleaseEnterYourQuestion")}
             placeholderTextColor={theme.placeholderColor.val}
             value={input}
@@ -618,16 +575,18 @@ export function ChatModal({ visible, onClose }: Props) {
           <Pressable
             onPress={handleSend}
             disabled={!input.trim() || isSending}
-            style={({ pressed }) => [
-              tw`w-8 h-8 rounded-full items-center justify-center`,
-              {
-                backgroundColor:
-                  input.trim() && !isSending
-                    ? theme.primary.val
-                    : theme.backgroundPress.val,
-              },
-              pressed ? tw`opacity-80` : null,
-            ]}
+            style={({ pressed }) => ({
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor:
+                input.trim() && !isSending
+                  ? theme.primary.val
+                  : theme.backgroundPress.val,
+              opacity: pressed ? 0.8 : 1,
+            })}
           >
             <Ionicons name="arrow-up" size={20} color={theme.primaryForeground.val} />
           </Pressable>
@@ -635,19 +594,19 @@ export function ChatModal({ visible, onClose }: Props) {
       </View>
 
       {showModelPicker && renderModelPicker()}
-    </>
+    </View>
   );
 
   return (
     <Modal
       visible={visible}
       animationType="slide"
-      transparent={true}
+      transparent
       onRequestClose={onClose}
     >
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <Theme name={appTheme}>
-          <View style={tw`flex-1`}>
+          <View flex={1}>
             <Pressable
               style={{ flex: 1 }}
               onPress={() => {
@@ -663,7 +622,7 @@ export function ChatModal({ visible, onClose }: Props) {
                 height: modalHeight,
                 shadowColor: "#000",
                 shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.25,
+                shadowOpacity: 0.2,
                 shadowRadius: 12,
                 elevation: 24,
               }}
@@ -671,18 +630,17 @@ export function ChatModal({ visible, onClose }: Props) {
               <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{
-                  backgroundColor: theme.background.val,
-                  borderTopLeftRadius: 24,
-                  borderTopRightRadius: 24,
-                  overflow: "hidden",
                   height: modalHeight,
+                  overflow: "hidden",
                 }}
               >
                 <View
+                  flex={1}
+                  bg="$background"
                   style={{
-                    flex: 1,
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
                     paddingBottom: insets.bottom,
-                    backgroundColor: theme.background.val,
                   }}
                 >
                   {showHistory ? renderHistory() : renderChat()}
