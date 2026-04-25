@@ -620,18 +620,20 @@ export function ChatModal({ visible, onClose }: Props) {
             <View
               style={{
                 height: modalHeight,
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: -4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 12,
+                shadowOffset: { width: 0, height: -6 },
+                shadowOpacity: 0.3,
+                shadowRadius: 16,
                 elevation: 24,
+                backgroundColor: theme.background.val,
               }}
             >
               <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{
                   height: modalHeight,
-                  overflow: "hidden",
                 }}
               >
                 <View

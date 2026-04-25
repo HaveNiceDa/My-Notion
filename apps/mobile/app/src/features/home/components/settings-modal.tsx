@@ -253,13 +253,11 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
         <Theme name={appTheme}>
           <View style={tw`flex-1 bg-black/50`}>
             <View
-              style={[
-                tw`flex-1 rounded-t-3xl`,
-                {
-                  backgroundColor: theme.background.val,
-                  paddingTop: insets.top + 8,
-                },
-              ]}
+              style={{
+                flex: 1,
+                backgroundColor: theme.background.val,
+                paddingTop: insets.top + 8,
+              }}
             >
               <View style={tw`flex-row items-center px-4 pb-3`}>
                 {section === "main" ? (
