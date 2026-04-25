@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   KeyboardAvoidingView,
   Modal,
@@ -64,6 +65,45 @@ export function ChatModal({ visible, onClose }: Props) {
 
   const isCreatingNewRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const overlayAnim = useRef(new Animated.Value(0)).current;
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 1,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 14,
+        }),
+        Animated.timing(overlayAnim, {
+          toValue: 1,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else if (modalVisible) {
+      Animated.parallel([
+        Animated.spring(slideAnim, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 65,
+          friction: 14,
+        }),
+        Animated.timing(overlayAnim, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setModalVisible(false);
+      });
+    }
+  }, [visible]);
 
   const createConversation = useMutation(api.aiChat.createConversation);
   const addMessage = useMutation(api.aiChat.addMessage);
@@ -599,25 +639,33 @@ export function ChatModal({ visible, onClose }: Props) {
 
   return (
     <Modal
-      visible={visible}
-      animationType="slide"
+      visible={modalVisible}
+      animationType="none"
       transparent
       onRequestClose={onClose}
     >
       <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
         <Theme name={appTheme}>
           <View flex={1}>
-            <Pressable
-              style={{ flex: 1 }}
-              onPress={() => {
-                if (showModelPicker) {
-                  setShowModelPicker(false);
-                } else {
-                  onClose();
-                }
+            <Animated.View
+              style={{
+                flex: 1,
+                backgroundColor: "rgba(0, 0, 0, 0.4)",
+                opacity: overlayAnim,
               }}
-            />
-            <View
+            >
+              <Pressable
+                style={{ flex: 1 }}
+                onPress={() => {
+                  if (showModelPicker) {
+                    setShowModelPicker(false);
+                  } else {
+                    onClose();
+                  }
+                }}
+              />
+            </Animated.View>
+            <Animated.View
               style={{
                 height: modalHeight,
                 borderTopLeftRadius: 24,
@@ -628,6 +676,14 @@ export function ChatModal({ visible, onClose }: Props) {
                 shadowRadius: 16,
                 elevation: 24,
                 backgroundColor: theme.background.val,
+                transform: [
+                  {
+                    translateY: slideAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [modalHeight, 0],
+                    }),
+                  },
+                ],
               }}
             >
               <KeyboardAvoidingView
@@ -648,7 +704,7 @@ export function ChatModal({ visible, onClose }: Props) {
                   {showHistory ? renderHistory() : renderChat()}
                 </View>
               </KeyboardAvoidingView>
-            </View>
+            </Animated.View>
           </View>
         </Theme>
       </TamaguiProvider>
