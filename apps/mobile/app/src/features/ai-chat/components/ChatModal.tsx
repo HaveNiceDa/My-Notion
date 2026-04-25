@@ -25,6 +25,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
   streamChat,
+  streamRAG,
   buildMessages,
   type ChatMessage,
   type AIModel,
@@ -35,6 +36,12 @@ import {
 type Props = {
   visible: boolean;
   onClose: () => void;
+};
+
+type ThinkingStep = {
+  type: string;
+  content: string;
+  details?: string;
 };
 
 export function ChatModal({ visible, onClose }: Props) {
@@ -53,6 +60,9 @@ export function ChatModal({ visible, onClose }: Props) {
   const [activeConversationId, setActiveConversationId] = useState<Id<"aiConversations"> | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL);
   const [enableThinking, setEnableThinking] = useState(false);
+  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(false);
+  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [stepsExpanded, setStepsExpanded] = useState(true);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
 
@@ -113,6 +123,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
+    setThinkingSteps([]);
 
     try {
       let conversationId = activeConversationId;
@@ -138,60 +149,79 @@ export function ChatModal({ visible, onClose }: Props) {
           content: msg.content,
         }));
 
-      const chatMessages = buildMessages(userMessage, history);
-
       let fullContent = "";
       let fullReasoning = "";
 
-      await streamChat(
-        chatMessages,
-        selectedModel,
-        enableThinking,
-        {
-          onContent: (text) => {
-            fullContent += text;
-            setStreamingContent(fullContent);
-          },
-          onReasoning: (text) => {
-            fullReasoning += text;
-            setReasoningContent(fullReasoning);
-            setReasoningExpanded(true);
-          },
-          onError: (error) => {
-            console.error("AI stream error:", error);
-            setIsSending(false);
-            setStreamingContent("");
-            setReasoningContent("");
-          },
-          onComplete: async () => {
-            if (fullReasoning) {
-              setCompletedReasoning(fullReasoning);
-              setReasoningContent("");
-              setReasoningExpanded(false);
-            }
-            if (conversationId && fullContent) {
-              try {
-                await addMessage({
-                  conversationId,
-                  content: fullContent,
-                  role: "assistant",
-                });
-              } catch (err) {
-                console.error("Failed to save assistant message:", err);
-              }
-            }
-            setStreamingContent("");
-            setIsSending(false);
-          },
+      const callbacks = {
+        onContent: (text: string) => {
+          fullContent += text;
+          setStreamingContent(fullContent);
         },
-      );
+        onReasoning: (text: string) => {
+          fullReasoning += text;
+          setReasoningContent(fullReasoning);
+          setReasoningExpanded(true);
+        },
+        onThinkingStep: (step: ThinkingStep) => {
+          setThinkingSteps((prev) => [...prev, step]);
+        },
+        onError: (error: Error) => {
+          console.error("AI stream error:", error);
+          setIsSending(false);
+          setStreamingContent("");
+          setReasoningContent("");
+        },
+        onComplete: async () => {
+          if (fullReasoning) {
+            setCompletedReasoning(fullReasoning);
+            setReasoningContent("");
+            setReasoningExpanded(false);
+          }
+          if (conversationId && fullContent) {
+            try {
+              await addMessage({
+                conversationId,
+                content: fullContent,
+                role: "assistant",
+              });
+            } catch (err) {
+              console.error("Failed to save assistant message:", err);
+            }
+          }
+          setStreamingContent("");
+          setIsSending(false);
+        },
+      };
+
+      if (knowledgeBaseEnabled) {
+        await streamRAG(
+          {
+            userId: user.id,
+            query: userMessage,
+            model: selectedModel,
+            conversationHistory: history,
+            conversationId: conversationId ?? undefined,
+            enableThinking,
+            knowledgeBaseEnabled: true,
+          },
+          callbacks,
+        );
+      } else {
+        const chatMessages = buildMessages(userMessage, history);
+        await streamChat(
+          chatMessages,
+          selectedModel,
+          enableThinking,
+          callbacks,
+        );
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       setIsSending(false);
       setStreamingContent("");
       setReasoningContent("");
     }
-  }, [input, user, isSending, activeConversationId, createConversation, addMessage, convexMessages, selectedModel, enableThinking]);
+  }, [input, user, isSending, activeConversationId, createConversation, addMessage, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled]);
 
   const handleNewConversation = () => {
     isCreatingNewRef.current = true;
@@ -199,6 +229,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
+    setThinkingSteps([]);
     setShowHistory(false);
   };
 
@@ -208,6 +239,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
+    setThinkingSteps([]);
     setShowHistory(false);
   };
 
@@ -220,6 +252,7 @@ export function ChatModal({ visible, onClose }: Props) {
         setStreamingContent("");
         setReasoningContent("");
         setCompletedReasoning("");
+        setThinkingSteps([]);
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
@@ -374,6 +407,80 @@ export function ChatModal({ visible, onClose }: Props) {
     </View>
   );
 
+  const renderThinkingSteps = () => {
+    if (thinkingSteps.length === 0) return null;
+
+    return (
+      <View style={tw`flex-row justify-start`}>
+        <View
+          flex={1}
+          style={{
+            maxWidth: "85%",
+            borderRadius: 20,
+            borderLeftWidth: 3,
+            borderLeftColor: "#3b82f6",
+            borderTopLeftRadius: 0,
+            backgroundColor: theme.backgroundHover.val,
+            overflow: "hidden",
+          }}
+        >
+          <Pressable
+            onPress={() => setStepsExpanded(!stepsExpanded)}
+            style={tw`flex-row items-center gap-1.5 px-3.5 pt-2.5 pb-1`}
+          >
+            <Ionicons name="search-outline" size={14} color="#3b82f6" />
+            <Text flex={1} fontSize={11} fontWeight="bold" color="#3b82f6">
+              {t("AI.knowledgeBaseSearch")}
+            </Text>
+            <Text fontSize={10} color="$placeholderColor">
+              {thinkingSteps.length}
+            </Text>
+            <Ionicons
+              name={stepsExpanded ? "chevron-up" : "chevron-down"}
+              size={14}
+              color={theme.placeholderColor.val}
+            />
+          </Pressable>
+
+          {stepsExpanded && (
+            <View style={[tw`px-3.5 pb-2.5 gap-1.5`, { maxHeight: 150 }]}>
+              <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                {thinkingSteps.map((step, index) => (
+                  <View
+                    key={`${step.type}-${index}`}
+                    style={tw`flex-row items-start gap-1.5 py-0.5`}
+                  >
+                    <Ionicons
+                      name={
+                        step.type === "error"
+                          ? "alert-circle-outline"
+                          : step.type === "documents"
+                            ? "document-text-outline"
+                            : "ellipse"
+                      }
+                      size={10}
+                      color={
+                        step.type === "error"
+                          ? "#ef4444"
+                          : step.type === "documents"
+                            ? "#22c55e"
+                            : theme.placeholderColor.val
+                      }
+                      style={tw`mt-1`}
+                    />
+                    <Text fontSize={11} lineHeight={16} color="$placeholderColor" flex={1}>
+                      {step.content}
+                    </Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   const bubbleStyle = (role: "user" | "assistant") => [
     tw`px-4 py-2.5`,
     {
@@ -454,6 +561,8 @@ export function ChatModal({ visible, onClose }: Props) {
           </View>
         ))}
 
+        {thinkingSteps.length > 0 && renderThinkingSteps()}
+
         {displayReasoning.length > 0 && renderReasoningBubble()}
 
         {streamingContent.length > 0 && (
@@ -476,7 +585,7 @@ export function ChatModal({ visible, onClose }: Props) {
           </View>
         )}
 
-        {isSending && streamingContent.length === 0 && displayReasoning.length === 0 && (
+        {isSending && streamingContent.length === 0 && displayReasoning.length === 0 && thinkingSteps.length === 0 && (
           <View style={tw`flex-row justify-start`}>
             <View style={[tw`px-4 py-2.5`, { borderRadius: 20, borderTopLeftRadius: 0, backgroundColor: theme.backgroundPress.val }]}>
               <ActivityIndicator size="small" color={theme.placeholderColor.val} />
@@ -496,6 +605,27 @@ export function ChatModal({ visible, onClose }: Props) {
                 {currentModelConfig?.displayName ?? "Model"}
               </Text>
               <Ionicons name="chevron-down" size={12} color={theme.placeholderColor.val} />
+            </View>
+          </Pressable>
+
+          <Pressable onPress={() => setKnowledgeBaseEnabled(!knowledgeBaseEnabled)}>
+            <View
+              style={[
+                tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
+                { backgroundColor: knowledgeBaseEnabled ? "#3b82f6" : theme.backgroundHover.val },
+              ]}
+            >
+              <Ionicons
+                name="book-outline"
+                size={13}
+                color={knowledgeBaseEnabled ? "#fff" : theme.placeholderColor.val}
+              />
+              <Text
+                fontSize={11}
+                color={knowledgeBaseEnabled ? "#fff" : "$placeholderColor"}
+              >
+                {t("AI.knowledgeBase")}
+              </Text>
             </View>
           </Pressable>
 
