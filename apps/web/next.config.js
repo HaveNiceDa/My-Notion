@@ -4,6 +4,7 @@ const withNextIntl = createNextIntlPlugin();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["@notion/ai", "@notion/business", "@notion/convex"],
   images: {
     remotePatterns: [
       {

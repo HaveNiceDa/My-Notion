@@ -1,234 +1,295 @@
-# My-Notion Web vs Mobile 架构分析报告
+# My-Notion Web vs Mobile 最新状态对照表
 
-> 生成时间：2026-04-24
-> 分析范围：全仓库架构、packages 职责、两端功能实现对比
-
----
-
-## 一、整体架构概览
-
-仓库采用 **pnpm monorepo** 结构，目标架构是「数据层统一、UI 层分离」：
-
-| 层级 | 对应 Package / App | 职责 |
-|---|---|---|
-| **数据层（共享）** | `@notion/convex` | Convex Schema + Server 函数（文档/AI对话） |
-| **业务逻辑层（共享）** | `@notion/business` | 类型定义、工具函数、校验逻辑、Hooks、i18n |
-| **AI 能力层（共享）** | `@notion/ai` | AI 配置、Prompts、RAG、Tools、Embeddings |
-| **Web 端** | `@notion/web` | Next.js 15 + BlockNote 编辑器 + EdgeStore |
-| **移动端** | `@notion/mobile` | Expo 54 + Tamagui + TenTap 编辑器 + Convex Storage |
-
-### 目录结构
-
-```
-My-Notion/
-├── apps/
-│   ├── web/          # Next.js 15 应用
-│   └── mobile/       # Expo 54 应用
-├── packages/
-│   ├── ai/           # AI 能力（配置/Prompts/RAG/Tools）
-│   ├── business/     # 共享业务逻辑（类型/工具/校验/Hooks/i18n）
-│   └── convex/       # Convex Schema + Server 函数
-└── docs/
-    └── web-mobile-gap-analysis.md   # 历史差距分析文档
-```
+> 更新时间：2026-04-25
+> 说明：本表基于当前代码状态整理，修正了历史分析中已过时的结论。
 
 ---
 
-## 二、已实现的部分（做得好的）
+## 一、总体结论
 
-### 1. 数据层完全共享
+当前项目已经从“Web 完整、Mobile 缺失较多”演进到“数据层基本统一、Mobile 主要功能已补齐、但 AI 能力和编辑器能力仍未完全对齐 Web”。
 
-- **Schema 统一**：`apps/mobile/convex/schema.ts` 和 `apps/web/convex/schema.ts` 都是 `import schema from "@notion/convex/schemas"` 的 re-export，零重复
-- **Convex 函数共享**：`@notion/convex` 提供了完整的文档操作（archive/create/update/move/remove/restore/star/knowledgeBase）和 AI 对话操作（createConversation/addMessage/getMessages 等）
-- **两端直接消费同一套 Convex API**，数据一致性有保障
+最关键的变化有两点：
 
-### 2. 业务逻辑公共化
+1. **Mobile AI 已不是 Mock**，已经接入真实模型流式对话
+2. **`@notion/business/hooks` 已在 Mobile 部分落地**，至少设置和搜索已接入共享状态
 
-| 模块 | 内容 | 两端使用情况 |
-|---|---|---|
-| `@notion/business/types` | `Document`, `AIConversation`, `AIMessage` 等 | Web 仍偏向用 Convex 生成的 `Doc<"documents">`，Mobile 直接用 |
-| `@notion/business/utils` | `cn()`, `formatTime()`, `formatRelativeTime()` | 两端都在用 |
-| `@notion/business/validation` | `FileLike` 接口、`validateCoverImage()`、`validateFiles()` | Web（EdgeStore）和 Mobile（Convex Storage）共用同一套校验 |
-| `@notion/business/content-compat` | BlockNote JSON ↔ HTML 双向转换（536 行） | **核心公共模块**，解决两端编辑器格式互通 |
-| `@notion/business/hooks` | `useSettings`, `useSearch`, `useNavigation` | Web 在用，Mobile 尚未接入 |
-| `@notion/business/i18n` | `en.json`, `zh-CN.json`, `zh-TW.json` | 两端共用同一套翻译文件 |
+但仍有几个核心差距存在：
 
-### 3. AI 能力公共化
-
-- `@notion/ai` 包含：AI 模型配置、Prompts、RAG（Qdrant 向量存储）、Tools（Web Search）、Embeddings
-- 目前 **仅 Web 端在使用**，但模块本身已做好跨端准备
-
-### 4. 移动端核心文档功能已补齐
-
-- 文档 CRUD、收藏、知识库切换、回收站（含批量删除）、重命名、删除确认
-- 封面图上传（通过 `expo-image-picker` + Convex Storage，独立实现）
-- 面包屑导航、Toast 反馈系统、主题切换、语言切换
+1. **Mobile AI 还没有接入 Web 同级的 RAG / Tool / 知识库检索能力**
+2. **Mobile 编辑器正文图片上传仍未实现**
+3. **部分架构债务仍未处理**，如 Web Chat 页面过重、Mobile 文档树递归查询、RAG 初始化效率问题
 
 ---
 
-## 三、尚未完成 / 需要改进的部分
+## 二、状态总览
 
-### 1. AI 对话功能 — Mobile 仍为 Mock（P0）
-
-| Web 端 | Mobile 端 | 差距 |
+| 模块 | 当前状态 | 说明 |
 |---|---|---|
-| `/api/chat` + `/api/rag-stream` 流式 SSE | `ChatModal.tsx` 里 AI 回复是 `t("Home.aiMockResponse")` mock | **核心功能未接通** |
-| RAG 检索（Qdrant + Embeddings） | 无 | Mobile 无法使用知识库 |
-| 模型选择、深度思考、工具调用 | 无 | 无 AI 能力配置 |
-| 对话历史侧栏（搜索/固定/删除） | 仅显示消息列表，无对话管理 UI | 体验差距大 |
-
-**建议**：Mobile 通过调用 Web 的 API 路由（`/api/chat`、`/api/rag-stream`）接入真实 AI，复用 `@notion/ai` 的 Prompt 和配置。
-
-### 2. 编辑器能力差距
-
-| 能力 | Web | Mobile |
-|---|---|---|
-| 编辑器 | BlockNote（功能完整） | TenTap（基础富文本） |
-| 图片上传 | ✅ EdgeStore 集成 | ❌ 未实现 |
-| 格式互通 | ✅ 通过 `content-compat` | ✅ 已接入 |
-
-Mobile 编辑器目前只支持基础富文本，且**无法上传图片到文档内容中**。
-
-### 3. 公共 Hooks 未在 Mobile 落地
-
-- `@notion/business/hooks` 提供了 `useSettings` / `useSearch` / `useNavigation`
-- Mobile 目前仍是组件内 `useState` 管理这些状态，未接入共享 store
-- 导致两端状态管理范式不一致
-
-### 4. i18n 体系分化
-
-| 维度 | Web | Mobile |
-|---|---|---|
-| 框架 | `next-intl` | `react-i18next` |
-| 键风格 | `t("key")` 短路径 | `t("Namespace.key")` 全路径 |
-| 翻译文件 | 共用 `@notion/business/i18n` | 共用 `@notion/business/i18n` |
-
-虽然共用翻译文件，但**调用风格不统一**，维护时需要同时适配两种范式。
-
-### 5. Web 端独有功能（Mobile 不需要或有替代）
-
-| 功能 | Web | Mobile 是否需要 |
-|---|---|---|
-| 发布/预览（`isPublished` + `/preview` 路由） | ✅ 完整 | 不需要（但 Mobile 文档详情页有「复制链接」按钮，指向 Web 预览页） |
-| Marketing 落地页 | ✅ `(marketing)` 路由 | 不需要 |
-| 文档拖拽排序 | ✅ 原生 Drag & Drop | 低优先级（可用「移动到」替代） |
-
-### 6. 代码质量与架构债务
-
-| 问题 | 位置 | 建议 |
-|---|---|---|
-| Web AI Chat 页面超 800 行 | `web/.../Chat/page.tsx` | 拆分为 `useAIChat` hook + UI 组件 |
-| Mobile `SidebarDocumentTree` 递归查询 | `sidebar-document-tree.tsx` | 每层展开都发 `useQuery`，深层嵌套时性能差 |
-| RAG 向量存储重复初始化 | `ragUtils.ts` | 应做增量检查 + 缓存 |
-| AI Store 未公共化 | `web/src/lib/store/` 下 7 个 zustand store | 待 Mobile 接入 AI 时，评估是否抽离到 `@notion/business` |
+| 数据 Schema 共享 | 已完成 | Web / Mobile 都复用 `@notion/convex/schemas` |
+| Convex 文档能力 | 已完成 | 文档 CRUD、收藏、回收站、知识库等两端都可用 |
+| Convex Chat 数据表 | 已完成 | `aiConversations`、`aiMessages`、`aiThinkingSteps` 已具备 |
+| Mobile 真实 AI 对话 | 已完成 | 已替代 mock，支持流式输出 |
+| Mobile 对话历史管理 | 已完成 | 已支持列表、切换、删除、新建 |
+| Mobile 模型选择 | 已完成 | ChatModal 中已支持模型切换 |
+| Mobile 深度思考 UI | 已完成 | 已支持 reasoning 展示和折叠 |
+| Mobile 设置共享 store | 已完成 | 已接入 `useSettings` |
+| Mobile 搜索共享 store | 已完成 | 已接入 `useSearch` |
+| Mobile 导航共享 store | 部分完成 | `useNavigation` 仍未看到实际接入 |
+| Mobile 文档图标能力 | 已完成 | 已支持 Emoji Icon Picker，不再是固定图标 |
+| Mobile 封面图上传 | 已完成 | 基于 `expo-image-picker` + Convex Storage |
+| Mobile 编辑器内容格式互通 | 已完成 | 已使用 `@notion/business/content-compat` |
+| Mobile 编辑器正文图片上传 | 未完成 | 仍无正文图片插入/上传链路 |
+| Mobile 知识库 RAG 检索 | 未完成 | 当前 Mobile AI 未接入 Web 的 RAG 流程 |
+| Mobile Tool Call / Web Search | 未完成 | 当前未看到与 Web 同级的工具链能力 |
+| Web Chat 页面拆分 | 部分完成 | 抽了部分组件，但主页面仍很重 |
+| RAG 初始化增量优化 | 未完成 | 仍会遍历知识库文档逐个检查 |
+| Mobile Sidebar 树查询优化 | 未完成 | 仍为递归 `useQuery` |
+| i18n 使用方式统一 | 未完成 | Web 仍是 `next-intl`，Mobile 仍是 `react-i18next` |
 
 ---
 
-## 四、功能对比矩阵
+## 三、已完成
 
-| 功能模块 | Web | Mobile | 共享层 | 状态 |
-|---|---|---|---|---|
-| **文档 CRUD** | ✅ | ✅ | `@notion/convex/documents` | 已完成 |
-| **文档树/侧边栏** | ✅ | ✅ | `@notion/convex/documents` | 已完成 |
-| **收藏/知识库** | ✅ | ✅ | `@notion/convex/documents` | 已完成 |
-| **回收站** | ✅ | ✅ | `@notion/convex/documents` | 已完成 |
-| **封面图** | ✅ EdgeStore | ✅ Convex Storage | `@notion/business/validation` | 已完成（上传方式不同） |
-| **文档图标** | ✅ Emoji Picker | ⚠️ 固定图标 | — | 需补齐 Emoji Picker |
-| **编辑器** | ✅ BlockNote | ⚠️ TenTap 基础版 | `@notion/business/content-compat` | 格式互通已完成 |
-| **编辑器图片上传** | ✅ | ❌ | — | Mobile 缺失 |
-| **AI 对话** | ✅ 流式+RAG+Tool | ❌ Mock 回复 | `@notion/ai` | **核心差距** |
-| **AI 对话历史** | ✅ 侧栏管理 | ⚠️ 仅显示消息 | `@notion/convex/chat` | 需补齐 |
-| **模型选择** | ✅ | ❌ | `@notion/ai/config` | 需补齐 |
-| **知识库 RAG** | ✅ Qdrant | ❌ | `@notion/ai/rag` | 需补齐 |
-| **发布/预览** | ✅ | 不需要 | — | — |
-| **设置** | ✅ Modal | ✅ Popover | `@notion/business/hooks` | Mobile 未接入共享 store |
-| **搜索** | ✅ Command Palette | ✅ Modal | `@notion/business/hooks` | Mobile 未接入共享 store |
-| **主题切换** | ✅ next-themes | ✅ AsyncStorage | — | 独立实现 |
-| **语言切换** | ✅ next-intl | ✅ react-i18next | `@notion/business/i18n` | 共用翻译文件 |
-| **Toast/反馈** | ✅ sonner | ✅ 自定义 Toast | — | 独立实现 |
+### 1. 数据层与基础能力
 
----
+- **Schema 共享已完成**
+  - Web 和 Mobile 都直接 re-export `@notion/convex/schemas`
+- **文档能力共享已完成**
+  - 文档创建、编辑、归档、恢复、收藏、知识库等基础能力已具备
+- **Chat 数据结构已具备**
+  - 已有 `aiConversations`、`aiMessages`、`aiThinkingSteps` 相关能力
 
-## 五、Packages 详细分析
+### 2. Mobile 端已补齐的重要功能
 
-### `@notion/convex`
-
-**职责**：Convex Schema 定义 + Server 端函数（Queries / Mutations）
-
-**导出**：
-- `schemas` — 数据库表定义（documents, aiConversations, aiMessages, aiThinkingSteps）
-- `documents` — 文档相关 Convex 函数（18 个操作）
-- `chat` — AI 对话相关 Convex 函数（11 个操作）
-- `client` — Convex 客户端配置
-
-**两端使用方式**：
-- Web：`import { api } from "@/convex/_generated/api"`
-- Mobile：`import { api } from "@convex/_generated/api"`
-
-**状态**：✅ 完全共享，Schema 已统一
-
-### `@notion/business`
-
-**职责**：共享业务逻辑、类型、工具、校验、Hooks、i18n
-
-**导出**：
-- `/` — 统一导出 Types + Utils
-- `types` — TypeScript 接口（Document, AIConversation, AIMessage, AIThinkingStep）
-- `utils` — `cn()`, `formatTime()`, `formatRelativeTime()`
-- `validation` — `FileLike` 接口、图片校验逻辑、封面图上传抽象
-- `hooks` — `useSettings`, `useSearch`, `useNavigation`（zustand store）
-- `content-compat` — BlockNote JSON ↔ HTML 双向转换
-- `i18n/*` — 翻译文件（en, zh-CN, zh-TW）
-
-**状态**：
-- ✅ 类型、工具、校验、格式兼容已共享
-- ⚠️ Hooks 尚未在 Mobile 落地
-- ⚠️ i18n 调用风格两端不一致
-
-### `@notion/ai`
-
-**职责**：AI 能力抽象，与平台无关
-
-**导出**：
-- `config` — AI 模型配置、BaseURL、模型映射
-- `prompts` — 系统 Prompts 加载器
-- `tools` — Tool 定义（Web Search）+ Tool 注册表
-- `embeddings` — 自定义 Embeddings 实现
-- `rag` — Qdrant 向量存储封装
-- `utils` — AI 相关工具函数
-
-**状态**：
-- ✅ 模块已做好跨端准备
-- ❌ 目前仅 Web 端使用
+- **真实 AI 对话已完成**
+  - Mobile 已接入真实流式模型，不再是 mock 回复
+- **对话历史管理已完成**
+  - 支持会话列表、切换、新建、删除
+- **模型选择已完成**
+  - 用户可在 Mobile AI 对话中选择模型
+- **深度思考展示已完成**
+  - reasoning 内容已支持展示与折叠
+- **设置 / 搜索共享状态已完成**
+  - `useSettings`、`useSearch` 已在 Mobile 实际接入
+- **图标选择已完成**
+  - Mobile 文档已支持 Emoji 图标选择器
+- **封面图上传已完成**
+  - 通过 Convex Storage 实现上传和持久化
+- **编辑器内容格式互通已完成**
+  - 已通过共享兼容层做 BlockNote JSON / HTML 适配
 
 ---
 
-## 六、总结与建议
+## 四、部分完成
 
-### 已实现的部分
+### 1. Mobile 共享状态管理
 
-1. **数据层完全统一** — Schema、Convex Server 函数、API 调用方式两端一致
-2. **核心业务逻辑已抽离** — `@notion/business` 覆盖了类型、工具、校验、格式兼容、Hooks
-3. **AI 能力已模块化** — `@notion/ai` 准备好跨端使用
-4. **Mobile 基础文档功能已补齐** — 编辑、收藏、回收站、封面图、面包屑等
-
-### 最关键的差距
-
-1. **Mobile AI 对话仍是 Mock** — 这是当前最大的功能断裂，需要接入 Web 的 `/api/chat` 和 `/api/rag-stream`
-2. **Mobile 编辑器无法上传图片** — TenTap 的图片上传能力需要补充
-3. **公共 Hooks 未在 Mobile 落地** — `useSettings`/`useSearch`/`useNavigation` 需要接入
-
-### 下一步建议优先级
-
-| 优先级 | 事项 | 说明 |
+| 项目 | 状态 | 说明 |
 |---|---|---|
-| **P0** | Mobile 接入真实 AI 对话 | 调用 Web API 路由 `/api/chat`、`/api/rag-stream` |
-| **P1** | 补齐 Mobile 对话历史管理 UI | 复用 Convex `aiConversations` 表 |
-| **P1** | Mobile 接入 `@notion/business/hooks` | 统一设置/搜索/导航状态管理 |
-| **P2** | Mobile 编辑器图片上传 | TenTap 图片上传能力 |
-| **P2** | Web AI Chat 页面拆分 | 提取 `useAIChat` hook，逻辑与 UI 分离 |
-| **P2** | RAG 向量存储增量优化 | 缓存初始化结果，避免重复检查 |
+| `useSettings` | 已接入 | 设置弹窗已使用共享 store |
+| `useSearch` | 已接入 | 搜索弹窗已使用共享 store |
+| `useNavigation` | 未确认落地 | 目前未看到 Mobile 端明确使用 |
+
+结论：
+
+- 共享 hooks **不是未做**，而是**部分完成**
+- 历史文档里“Mobile 未接入共享 hooks”的结论已过时
+
+### 2. Web AI Chat 页面拆分
+
+当前 Web Chat 已经拆出了一些组件，例如：
+
+- `ConversationSidebar`
+- `TopNavigation`
+- `MessageInput`
+- `MessageList`
+
+但主页面仍保留大量状态、流程和副作用逻辑，因此只能算：
+
+- **组件拆分已做**
+- **核心逻辑抽离仍未完成**
+
+结论：
+
+- 这项是 **部分完成**，不是完全未做
+
+### 3. Mobile AI 能力
+
+当前 Mobile AI 已经具备：
+
+- 真实流式回复
+- 对话持久化
+- 对话历史管理
+- 模型选择
+- 深度思考显示
+
+但还不具备：
+
+- Web 同级 RAG 检索
+- 知识库增强回答
+- Tool Call / Web Search
+- 与 Web 完全一致的 AI 体验
+
+结论：
+
+- **AI 对话能力已完成**
+- **AI 增强能力仍未完成**
+- 因此整体上应视为 **部分完成**
 
 ---
 
-> 本报告基于仓库当前状态（2026-04-24）生成，与已有的 `web-mobile-gap-analysis.md` 互为补充。
+## 五、未完成
+
+### 1. Mobile 编辑器正文图片上传
+
+当前 Mobile 已支持：
+
+- 封面图上传
+- 图标选择
+- 富文本编辑
+- 内容自动保存
+
+但仍未支持：
+
+- 在正文编辑器中插入图片
+- 上传正文图片
+- 将图片作为文档内容的一部分保存和渲染
+
+这是当前最明显的编辑器能力缺口之一。
+
+### 2. Mobile 知识库 RAG 能力
+
+当前 Mobile AI 还没有接入 Web 那套：
+
+- `/api/rag-stream`
+- Qdrant 向量检索
+- Embeddings
+- 知识库上下文增强
+- 语义检索后的回答增强
+
+因此 Mobile 目前更像：
+
+- **真实聊天**
+- 但不是 **知识库增强 AI 助手**
+
+### 3. Tool Call / Web Search 能力
+
+Web 端 AI 架构中已经有：
+
+- Tool 定义
+- Web Search
+- 更复杂的 AI 链路
+
+但 Mobile 目前未见同级能力接入，因此这部分仍未完成。
+
+### 4. RAG 初始化与增量优化
+
+当前 `ragUtils.ts` 仍然会：
+
+- 获取知识库文档
+- 逐个检查是否需要重新嵌入
+- 在查询链路上执行较重初始化逻辑
+
+说明这部分性能债务仍在。
+
+### 5. Mobile 侧边栏递归查询优化
+
+`SidebarDocumentTree` 当前模式仍然是：
+
+- 每层展开发一次 `useQuery`
+- 深层嵌套时查询数持续增长
+
+这会影响复杂文档树下的性能和响应体验。
+
+### 6. i18n 调用范式统一
+
+当前仍然是：
+
+- Web：`next-intl`
+- Mobile：`react-i18next`
+
+翻译文件虽然共享，但调用方式、使用心智和维护方式并未统一。
+
+---
+
+## 六、建议优先级
+
+### P0
+
+| 事项 | 优先级理由 | 建议 |
+|---|---|---|
+| Mobile 接入 Web 同级 RAG / 知识库 AI 能力 | 这是当前 Web / Mobile 最大能力差距 | 优先统一 AI 能力边界，明确 Mobile 是直连模型还是复用 Web AI 服务 |
+| 明确 AI 架构统一方案 | 当前 Mobile 走直连模型，Web 走 API + RAG，两端策略不一致 | 先定方向，再推进实现，避免后续返工 |
+
+### P1
+
+| 事项 | 优先级理由 | 建议 |
+|---|---|---|
+| Mobile 编辑器正文图片上传 | 用户感知明显，是编辑体验的重要缺口 | 为 TenTap 增加图片插入、上传、持久化链路 |
+| Mobile 文档树查询优化 | 深层树结构下性能风险较高 | 改为一次性拉取子树或按批次加载 |
+| `useNavigation` 接入 Mobile | 补齐共享状态管理闭环 | 统一设置 / 搜索 / 导航三类状态管理 |
+
+### P2
+
+| 事项 | 优先级理由 | 建议 |
+|---|---|---|
+| Web AI Chat 页面进一步拆分 | 可维护性问题明显，但不阻塞功能 | 提取 `useAIChat` 或等价 hook，降低页面复杂度 |
+| RAG 初始化增量缓存优化 | 性能优化价值高，但短期不如功能补齐紧急 | 做向量存储初始化缓存、增量检查、文档级别脏数据更新 |
+| i18n 使用范式统一 | 架构一致性收益高，但不是当前功能阻塞点 | 统一翻译 key 规范和调用约定 |
+
+---
+
+## 七、建议的执行顺序
+
+建议按下面顺序推进：
+
+1. **先统一 Mobile AI 架构方向**
+   - 决定 Mobile 是继续直连模型，还是统一走 Web AI 服务 / RAG 服务
+2. **再补 Mobile 编辑器正文图片上传**
+   - 这是最直接的功能缺口，用户感知最明显
+3. **优化 Mobile 文档树查询**
+   - 提升复杂层级下的性能
+4. **补齐 `useNavigation`**
+   - 完成共享 hooks 的最后一块
+5. **治理 Web Chat / RAG 架构债务**
+   - 做页面拆分和向量初始化优化
+
+---
+
+## 八、最终判断
+
+### 已完成
+
+- Schema 共享
+- 文档基础能力共享
+- Mobile 真实 AI 对话
+- Mobile 对话历史管理
+- Mobile 模型选择
+- Mobile 深度思考展示
+- Mobile 设置 / 搜索共享 hooks 接入
+- Mobile 图标选择器
+- Mobile 封面图上传
+- 编辑器内容格式互通
+
+### 部分完成
+
+- Mobile AI 能力整体对齐 Web
+- Mobile hooks 全量接入
+- Web Chat 页面拆分
+
+### 未完成
+
+- Mobile 正文图片上传
+- Mobile RAG / 知识库增强 AI
+- Mobile Tool Call / Web Search
+- RAG 增量优化
+- Mobile 递归查询优化
+- i18n 使用范式统一
+
+### 当前最值得做的两件事
+
+1. **补齐 Mobile 的 RAG / 知识库 AI 能力**
+2. **补齐 Mobile 编辑器正文图片上传**
+
+---

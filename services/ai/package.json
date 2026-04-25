@@ -1,0 +1,24 @@
+{
+  "name": "@notion/ai-service",
+  "version": "1.0.0",
+  "description": "AI Service for My-Notion",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "@notion/ai": "workspace:*",
+    "convex": "^1.24.6",
+    "hono": "^4.7.9",
+    "dotenv": "^16.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.0.0"
+  }
+}

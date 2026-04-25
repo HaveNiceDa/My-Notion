@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runRAGQuery, type AIModel } from "@/src/lib/rag/ragUtils";
+import { streamRAG, ConvexDataSource, type AIStreamEvent } from "@notion/ai/server";
 
-// 处理POST请求
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { action, ...params } = body;
 
-    console.log(`[RAG API] 接收到请求: ${action}`);
-
     switch (action) {
-      case "runRAGQuery":
+      case "runRAGQuery": {
         const {
           userId,
           query,
@@ -21,17 +18,30 @@ export async function POST(req: NextRequest) {
           conversationId,
         } = params;
 
-        const answer = await runRAGQuery(
-          userId,
+        const dataSource = new ConvexDataSource(process.env.NEXT_PUBLIC_CONVEX_URL!);
+
+        let fullContent = "";
+
+        await streamRAG(
           query,
-          model,
-          minScore,
-          conversationHistory,
-          knowledgeBaseEnabled,
-          conversationId,
+          {
+            userId,
+            model,
+            conversationHistory: conversationHistory || [],
+            dataSource,
+            minScore,
+            knowledgeBaseEnabled,
+            conversationId,
+          },
+          (event: AIStreamEvent) => {
+            if (event.type === "content") {
+              fullContent += event.text;
+            }
+          },
         );
 
-        return NextResponse.json({ success: true, answer });
+        return NextResponse.json({ success: true, answer: fullContent });
+      }
 
       default:
         return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });

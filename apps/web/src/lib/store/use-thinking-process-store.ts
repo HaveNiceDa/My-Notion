@@ -33,6 +33,8 @@ interface ThinkingProcessState {
   ) => Promise<void>;
 }
 
+let stepCounter = 0;
+
 export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
   steps: [],
   isExpanded: true,
@@ -41,7 +43,7 @@ export const useThinkingProcessStore = create<ThinkingProcessState>((set) => ({
   isLoaded: false,
   addStep: (type: string, content: string, details?: string) => {
     const newStep: ThinkingStep = {
-      id: Date.now().toString(),
+      id: `step_${++stepCounter}_${Date.now()}`,
       timestamp: new Date(),
       type,
       content,

@@ -27,15 +27,11 @@ const runRAGQueryStream = async (
   try {
     console.log("[RAG System] 调用后端RAG流式API...");
 
-    // 清除旧的思考过程步骤
     if (conversationId) {
       const { clearSteps } = useThinkingProcessStore.getState();
       clearSteps();
     }
 
-    // 不再显示加载中的思考过程，直接等待后端通过SSE推送标准的思考过程步骤
-
-    // 调用后端API
     const response = await fetch("/api/rag-stream", {
       method: "POST",
       headers: {
@@ -47,7 +43,7 @@ const runRAGQueryStream = async (
         query: input,
         conversationHistory: conversationHistoryMessages,
         model,
-        minScore: temperature, // 这里temperature实际上是minScore
+        minScore: temperature,
         knowledgeBaseEnabled,
         conversationId,
         enableThinking,
@@ -66,99 +62,83 @@ const runRAGQueryStream = async (
     const decoder = new TextDecoder();
     let buffer = "";
 
+    function processBuffer(isFinal: boolean = false) {
+      const lines = buffer.split("\n");
+      const endIdx = isFinal ? lines.length : lines.length - 1;
+
+      for (let i = 0; i < endIdx; i++) {
+        const line = lines[i];
+        if (line.startsWith("event: ")) {
+          const eventType = line.substring(7).trim();
+          const dataLine = lines[i + 1];
+          if (dataLine && dataLine.startsWith("data: ")) {
+            const data = dataLine.substring(6);
+
+            try {
+              const parsedData = JSON.parse(data);
+
+              switch (eventType) {
+                case "content":
+                  if (parsedData.text) {
+                    onChunk(parsedData.text);
+                  }
+                  break;
+                case "reasoning":
+                  if (parsedData.text) {
+                    onReasoningChunk(parsedData.text);
+                  }
+                  break;
+                case "thinking_step":
+                  if (conversationId) {
+                    const { addStep } = useThinkingProcessStore.getState();
+                    addStep(
+                      parsedData.step_type,
+                      parsedData.content,
+                      parsedData.details,
+                    );
+                  }
+                  break;
+                case "tool_call_start":
+                case "tool_executing":
+                case "tool_result":
+                  onToolCall(parsedData);
+                  break;
+                case "error":
+                  if (parsedData.message === "terminated") {
+                    console.log("[RAG System] 连接正常终止");
+                  } else {
+                    onError(new Error(parsedData.message));
+                  }
+                  break;
+                case "done":
+                  console.log("[RAG System] 接收到结束事件");
+                  break;
+              }
+            } catch (error) {
+              console.error("[RAG System] 解析SSE数据出错:", error);
+            }
+          }
+        }
+      }
+
+      buffer = isFinal ? "" : lines[lines.length - 1];
+    }
+
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) {
+          if (buffer.trim()) {
+            processBuffer(true);
+          }
           console.log("[RAG System] 流式RAG查询完成");
           await onComplete();
           break;
         }
 
-        // 解码并处理响应
         const chunk = decoder.decode(value, { stream: true });
         buffer += chunk;
-
-        // 处理Server-Sent Events (SSE)
-        const lines = buffer.split("\n");
-        for (let i = 0; i < lines.length; i++) {
-          const line = lines[i];
-          if (line.startsWith("event: ")) {
-            const event = line.substring(7);
-            const dataLine = lines[i + 1];
-            if (dataLine && dataLine.startsWith("data: ")) {
-              const data = dataLine.substring(6);
-
-              // 处理聊天响应
-              if (event === "chatResponse") {
-                // 这是聊天API的响应，尝试解析JSON
-                try {
-                  const parsedData = JSON.parse(data);
-                  if (parsedData.reasoning_content) {
-                    onReasoningChunk(parsedData.reasoning_content);
-                  }
-                  if (parsedData.content) {
-                    onChunk(parsedData.content);
-                  }
-                } catch {
-                  // 如果不是JSON，当作纯文本处理
-                  onChunk(data);
-                }
-              }
-              // 处理传统的无事件类型响应
-              else if (!event) {
-                // 这是聊天API的响应，直接传递给onChunk
-                onChunk(data);
-              }
-              // 处理其他事件，需要解析JSON
-              else {
-                try {
-                  const parsedData = JSON.parse(data);
-
-                  // 处理思考过程步骤
-                  if (event === "thinkingStep") {
-                    console.log("[RAG System] 接收到思考过程步骤:", parsedData);
-                    if (conversationId) {
-                      // 直接添加步骤，移除节流以避免步骤丢失
-                      const { addStep } = useThinkingProcessStore.getState();
-                      addStep(
-                        parsedData.type,
-                        parsedData.content,
-                        parsedData.details,
-                      );
-                    }
-                  }
-                  // 处理错误事件
-                  else if (event === "error") {
-                    console.error("[RAG System] 接收到错误:", parsedData);
-                    // 检查错误消息是否为 "terminated"，如果是则视为正常终止
-                    if (parsedData.message === "terminated") {
-                      console.log("[RAG System] 连接正常终止");
-                      // 不抛出错误，视为正常结束
-                    } else {
-                      onError(new Error(parsedData.message));
-                    }
-                  }
-                  // 处理工具调用事件 - 暂时不处理，因为用户觉得太乱
-                  else if (event === "toolCall") {
-                    console.log("[RAG System] 接收到工具调用事件:", parsedData);
-                    // 不调用 onToolCall，避免显示工具调用
-                  }
-                  // 处理结束事件
-                  else if (event === "end") {
-                    console.log("[RAG System] 接收到结束事件");
-                  }
-                } catch (error) {
-                  console.error("[RAG System] 解析SSE数据出错:", error);
-                  // 忽略解析错误，继续处理其他事件
-                }
-              }
-            }
-          }
-        }
-
-        // 保留未处理的部分
-        buffer = lines[lines.length - 1];
+        processBuffer(false);
       }
     } finally {
       reader.releaseLock();
@@ -399,6 +379,32 @@ const AIPage = () => {
 
     setMessages((prev) => [...prev, tempAssistantMessage]);
 
+    let currentContent = "";
+    let currentReasoningContent = "";
+    let pendingRender = false;
+
+    const flushMessages = () => {
+      pendingRender = false;
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: currentContent,
+                reasoningContent: currentReasoningContent || undefined,
+              }
+            : msg,
+        ),
+      );
+    };
+
+    const scheduleRender = () => {
+      if (!pendingRender) {
+        pendingRender = true;
+        requestAnimationFrame(flushMessages);
+      }
+    };
+
     try {
       await convex.mutation(api.aiChat.addMessage, {
         conversationId: currentConversationId,
@@ -445,13 +451,7 @@ const AIPage = () => {
       if (currentConversationId) {
         const { clearSteps } = useThinkingProcessStore.getState();
         clearSteps();
-        // 不再立即加载思考过程，而是等待后端通过SSE推送新的步骤
       }
-
-      let currentContent = "";
-      let currentReasoningContent = "";
-      let lastMessageUpdateTime = 0;
-      const MESSAGE_UPDATE_THROTTLE = 100; // 100ms的消息更新节流
 
       await runRAGQueryStream(
         user.id,
@@ -459,43 +459,12 @@ const AIPage = () => {
         conversationHistoryMessages,
         (chunk) => {
           currentContent += chunk;
-          // 节流处理，避免过于频繁的消息更新
-          const now = Date.now();
-          if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === assistantMessageId
-                  ? {
-                      ...msg,
-                      content: currentContent,
-                      reasoningContent: currentReasoningContent,
-                    }
-                  : msg,
-              ),
-            );
-            lastMessageUpdateTime = now;
-          }
+          scheduleRender();
         },
         (chunk) => {
-          // 只有在深度思考启用时才处理 reasoning content
           if (deepThinkingEnabled) {
             currentReasoningContent += chunk;
-            // 节流处理，避免过于频繁的消息更新
-            const now = Date.now();
-            if (now - lastMessageUpdateTime >= MESSAGE_UPDATE_THROTTLE) {
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.id === assistantMessageId
-                    ? {
-                        ...msg,
-                        content: currentContent,
-                        reasoningContent: currentReasoningContent,
-                      }
-                    : msg,
-                ),
-              );
-              lastMessageUpdateTime = now;
-            }
+            scheduleRender();
           }
         },
         (data: any) => {
@@ -568,20 +537,19 @@ const AIPage = () => {
           }
         },
         async () => {
-          // 最终更新前端消息，确保完整的 reasoningContent 被显示
+          pendingRender = false;
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === assistantMessageId
                 ? {
                     ...msg,
                     content: currentContent,
-                    reasoningContent: currentReasoningContent,
+                    reasoningContent: currentReasoningContent || undefined,
                   }
                 : msg,
             ),
           );
 
-          // 保存消息到数据库，只有在深度思考启用时才保存 reasoningContent
           const messageData: any = {
             content: currentContent,
           };
@@ -589,21 +557,25 @@ const AIPage = () => {
             messageData.reasoningContent = currentReasoningContent;
           }
 
-          await convex.mutation(api.aiChat.addMessage, {
-            conversationId: currentConversationId,
-            content: JSON.stringify(messageData),
-            role: "assistant" as "user" | "assistant",
-          });
+          try {
+            await convex.mutation(api.aiChat.addMessage, {
+              conversationId: currentConversationId,
+              content: JSON.stringify(messageData),
+              role: "assistant" as "user" | "assistant",
+            });
 
-          await convex.mutation(api.aiChat.updateConversationTitle, {
-            conversationId: currentConversationId,
-            title:
-              input.length > 50
-                ? input.substring(0, 50) + "..."
-                : input || "图片对话",
-          });
+            await convex.mutation(api.aiChat.updateConversationTitle, {
+              conversationId: currentConversationId,
+              title:
+                input.length > 50
+                  ? input.substring(0, 50) + "..."
+                  : input || "图片对话",
+            });
 
-          await loadConversations();
+            await loadConversations();
+          } catch (err) {
+            console.error("[Chat] Failed to save message to Convex:", err);
+          }
         },
         (error: any) => {
           console.error("Error in RAG stream:", error);
@@ -626,6 +598,17 @@ const AIPage = () => {
       );
     } finally {
       setIsLoading(false);
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? {
+                ...msg,
+                content: currentContent || msg.content,
+                reasoningContent: currentReasoningContent || msg.reasoningContent,
+              }
+            : msg,
+        ),
+      );
     }
   });
 
