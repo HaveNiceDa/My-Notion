@@ -16,6 +16,7 @@ import { HomeHeader } from "./home-header";
 import { RecentSection } from "./recent-section";
 import { SidebarDocumentTree } from "./sidebar-document-tree";
 import { useRecentDocuments } from "../hooks/use-recent-documents";
+import { useDocumentTree } from "../hooks/use-document-tree";
 import { ChatModal } from "../../ai-chat/components/ChatModal";
 import { SearchModal } from "./search-modal";
 import { SettingsModal } from "./settings-modal";
@@ -30,14 +31,11 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
 
   const { user } = useUser();
   const { items: recentItems } = useRecentDocuments(12);
-  const privateRootDocuments = useQuery(api.documents.getSidebar, {
-    parentDocument: undefined,
-  });
-  const starredRootDocuments = useQuery(api.documents.getStarred, {});
-  const knowledgeRootDocuments = useQuery(
-    api.documents.getKnowledgeBaseDocuments,
-    {},
-  );
+  const allDocuments = useQuery(api.documents.getAllSidebarDocuments, {});
+
+  const { rootNodes: privateRootNodes } = useDocumentTree(allDocuments, "private");
+  const { rootNodes: starredRootNodes } = useDocumentTree(allDocuments, "starred");
+  const { rootNodes: knowledgeRootNodes } = useDocumentTree(allDocuments, "knowledge");
 
   const create = useMutation(api.documents.create);
 
@@ -109,9 +107,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
 
   const isInitialLoading =
     recentItems === undefined ||
-    privateRootDocuments === undefined ||
-    starredRootDocuments === undefined ||
-    knowledgeRootDocuments === undefined;
+    allDocuments === undefined;
 
   return (
     <View flex={1} bg="$background">
@@ -151,7 +147,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
               >
                 <SidebarDocumentTree
                   variant="knowledge"
-                  rootDocuments={knowledgeRootDocuments}
+                  nodes={knowledgeRootNodes}
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}
@@ -167,7 +163,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
               >
                 <SidebarDocumentTree
                   variant="starred"
-                  rootDocuments={starredRootDocuments}
+                  nodes={starredRootNodes}
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}
@@ -183,7 +179,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
               >
                 <SidebarDocumentTree
                   variant="private"
-                  rootDocuments={privateRootDocuments}
+                  nodes={privateRootNodes}
                   expandedIds={treeOpen}
                   onToggleExpand={toggleTree}
                   onNavigateToDocument={goDocument}

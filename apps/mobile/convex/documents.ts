@@ -89,6 +89,25 @@ export const getSidebar = query({
   },
 });
 
+export const getAllSidebarDocuments = query({
+  args: {},
+  handler: async (context) => {
+    const identity = await context.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+    const userId = identity.subject;
+
+    const documents = await context.db
+      .query("documents")
+      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .filter((q) => q.eq(q.field("isArchived"), false))
+      .collect();
+
+    return documents;
+  },
+});
+
 /**
  * 获取收藏的文档列表
  * @returns 收藏的文档列表，按创建时间倒序排列
