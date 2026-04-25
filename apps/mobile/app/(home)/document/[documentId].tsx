@@ -465,7 +465,18 @@ export default function DocumentDetailRoute() {
         </View>
 
         <View flex={1} bg="$background">
-          <RichText editor={editor} />
+          <RichText
+            editor={editor}
+            containerStyle={{
+              paddingHorizontal: 16,
+              paddingTop: 12,
+              paddingBottom: 16,
+              backgroundColor: theme.background.val,
+            }}
+            style={{ backgroundColor: theme.background.val }}
+            showsVerticalScrollIndicator={false}
+            showsHorizontalScrollIndicator={false}
+          />
         </View>
       </View>
 
