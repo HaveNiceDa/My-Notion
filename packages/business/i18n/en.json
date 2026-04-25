@@ -172,7 +172,8 @@
   },
   "Toolbar": {
     "addIcon": "Add icon",
-    "addCover": "Add cover"
+    "addCover": "Add cover",
+    "insertImage": "Insert image"
   },
 
   "common": {

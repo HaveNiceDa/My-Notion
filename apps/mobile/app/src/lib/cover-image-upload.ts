@@ -1,43 +1,8 @@
 import * as ImagePicker from "expo-image-picker";
 
 import type {
-  CoverImageUploader,
   CoverImageUploadParams,
-  CoverImageUploadResult,
 } from "@notion/business/validation";
-
-interface ConvexUploadDeps {
-  generateUploadUrl: () => Promise<string>;
-}
-
-export class ConvexCoverImageUploader implements CoverImageUploader {
-  private deps: ConvexUploadDeps;
-
-  constructor(deps: ConvexUploadDeps) {
-    this.deps = deps;
-  }
-
-  async upload(params: CoverImageUploadParams): Promise<CoverImageUploadResult> {
-    const uploadUrl = await this.deps.generateUploadUrl();
-    const fileResponse = await fetch(params.uri);
-    const fileBlob = await fileResponse.blob();
-
-    const response = await fetch(uploadUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": params.type,
-      },
-      body: fileBlob,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.status}`);
-    }
-
-    const { storageId } = await response.json();
-    return { storageId };
-  }
-}
 
 export async function pickCoverImage(): Promise<CoverImageUploadParams | null> {
   const permissionResult =

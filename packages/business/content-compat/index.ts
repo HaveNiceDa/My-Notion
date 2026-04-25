@@ -88,6 +88,13 @@ export function getPlainTextFromStoredContent(content?: string | null) {
 function inlineContentToHtml(nodes: BlockNoteInlineContent[]): string {
   return nodes
     .map((node) => {
+      if (node.type === "image") {
+        const url = (node as any).url ?? "";
+        const caption = (node as any).caption ?? "";
+        const altAttr = caption ? ` alt="${escapeAttr(caption)}"` : "";
+        return `<img src="${escapeAttr(url)}"${altAttr}>`;
+      }
+
       if (node.type === "link" && node.href) {
         const inner = node.content ? inlineContentToHtml(node.content) : "";
         return `<a href="${escapeAttr(node.href)}">${inner}</a>`;
@@ -117,6 +124,13 @@ function blockToHtml(block: BlockNoteBlock, indent: string = ""): string {
 
   if (block.type === "divider") {
     return `${indent}<hr>`;
+  }
+
+  if (block.type === "image") {
+    const url = (block.props?.url as string) ?? "";
+    const caption = (block.props?.caption as string) ?? "";
+    const altAttr = caption ? ` alt="${escapeAttr(caption)}"` : "";
+    return `${indent}<img src="${escapeAttr(url)}"${altAttr}>`;
   }
 
   if (block.type === "codeBlock") {
@@ -183,6 +197,12 @@ export function blockNoteJsonToHtml(json: BlockNoteBlock[]): string {
         return `<li${checked}>${b.content ? inlineContentToHtml(b.content) : ""}</li>`;
       }).join("\n")}</ul>`);
       i += items.length;
+    } else if (block.type === "image") {
+      const url = (block.props?.url as string) ?? "";
+      const caption = (block.props?.caption as string) ?? "";
+      const altAttr = caption ? ` alt="${escapeAttr(caption)}"` : "";
+      htmlParts.push(`<img src="${escapeAttr(url)}"${altAttr}>`);
+      i++;
     } else {
       htmlParts.push(blockToHtml(block));
       i++;
@@ -287,6 +307,8 @@ function parseHtmlToNodes(html: string): HtmlNode[] {
         appendText(currentList, "\n");
       } else if (tag === "hr") {
         currentList.push({ tag: "hr", attrs, children: [] });
+      } else if (tag === "img") {
+        currentList.push({ tag: "img", attrs, children: [] });
       }
       continue;
     }
@@ -338,11 +360,66 @@ function decodeHtmlEntities(text: string): string {
     .replaceAll("&nbsp;", " ");
 }
 
+const STORAGE_ID_FRAGMENT = "#convex-storage-id=";
+
+function extractStorageIdFromUrl(url: string): { url: string; storageId?: string } {
+  const idx = url.indexOf(STORAGE_ID_FRAGMENT);
+  if (idx === -1) return { url };
+  const storageId = url.slice(idx + STORAGE_ID_FRAGMENT.length);
+  const cleanUrl = url.slice(0, idx);
+  return { url: cleanUrl, storageId: storageId || undefined };
+}
+
+function isImageOnlyNode(node: HtmlNode): boolean {
+  if (node.tag === "img") return true;
+  if (node.tag === "p" || node.tag === "div") {
+    const nonTextChildren = node.children.filter((c) => c.tag !== "_text");
+    if (nonTextChildren.length === 1 && nonTextChildren[0].tag === "img") {
+      const textChildren = node.children.filter((c) => c.tag === "_text");
+      const allTextEmpty = textChildren.every((c) => !(c.text ?? "").trim());
+      if (allTextEmpty) return true;
+    }
+  }
+  return false;
+}
+
+function extractImageFromNode(node: HtmlNode): HtmlNode | null {
+  if (node.tag === "img") return node;
+  if (node.tag === "p" || node.tag === "div") {
+    const imgChild = node.children.find((c) => c.tag === "img");
+    return imgChild ?? null;
+  }
+  return null;
+}
+
 function nodesToBlockNoteBlocks(nodes: HtmlNode[]): BlockNoteBlock[] {
   const blocks: BlockNoteBlock[] = [];
   let blockIndex = 0;
 
   for (const node of nodes) {
+    if (isImageOnlyNode(node)) {
+      const imgNode = extractImageFromNode(node);
+      if (imgNode) {
+        const src = imgNode.attrs?.["src"] ?? "";
+        const { url } = extractStorageIdFromUrl(src);
+        const alt = imgNode.attrs?.["alt"] ?? "";
+        blocks.push({
+          id: createBlockId(blockIndex++),
+          type: "image",
+          props: {
+            url,
+            ...(alt ? { caption: alt } : {}),
+            backgroundColor: "default",
+            textColor: "default",
+            textAlignment: "left",
+          },
+          content: undefined,
+          children: [],
+        });
+        continue;
+      }
+    }
+
     if (node.tag === "ul" || node.tag === "ol") {
       const isOrdered = node.tag === "ol";
       for (const li of node.children) {
@@ -450,6 +527,17 @@ function collectInlineContent(node: HtmlNode): BlockNoteInlineContent[] {
       result.push({ type: "link", content: innerContent, href });
     } else if (child.tag === "br") {
       result.push({ type: "text", text: "\n", styles: {} });
+    } else if (child.tag === "img") {
+      const src = child.attrs?.["src"] ?? "";
+      const { url } = extractStorageIdFromUrl(src);
+      const alt = child.attrs?.["alt"] ?? "";
+      result.push({
+        type: "image",
+        text: "",
+        styles: {},
+        ...(url ? { url } : {}),
+        ...(alt ? { caption: alt } : {}),
+      });
     } else {
       result.push(...collectInlineContent(child));
     }
@@ -534,3 +622,5 @@ function emptyParagraph(index: number): BlockNoteBlock {
 export function serializeHtmlToBlockNote(html: string): string {
   return htmlToBlockNoteJson(html);
 }
+
+export { extractStorageIdFromUrl, STORAGE_ID_FRAGMENT };

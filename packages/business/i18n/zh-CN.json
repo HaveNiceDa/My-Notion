@@ -173,7 +173,8 @@
 
   "Toolbar": {
     "addIcon": "添加图标",
-    "addCover": "添加封面"
+    "addCover": "添加封面",
+    "insertImage": "插入图片"
   },
   "common": {
     "saved": "保存成功！",

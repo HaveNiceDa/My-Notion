@@ -13,6 +13,12 @@ const nextConfig = {
         port: "",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "handsome-stoat-500.convex.cloud",
+        port: "",
+        pathname: "**",
+      },
     ],
   },
   reactStrictMode: false,

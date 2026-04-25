@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
@@ -31,6 +32,10 @@ import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
 import { useToast } from "@/features/home/components/toast-provider";
 import { IconPicker } from "@/features/home/components/icon-picker";
 import { DocumentBreadcrumb } from "@/features/home/components/document-breadcrumb";
+import {
+  pickInlineImage,
+  uploadFileToEdgeStore,
+} from "@/lib/inline-image-upload";
 
 const SAVE_DELAY_MS = 700;
 
@@ -52,8 +57,6 @@ export default function DocumentDetailRoute() {
   const toggleStar = useMutation(api.documents.toggleStar);
   const removeCoverImage = useMutation(api.documents.removeCoverImage);
   const removeIcon = useMutation(api.documents.removeIcon);
-  const generateUploadUrl = useMutation(api.storage.generateUploadUrl);
-  const setCoverImage = useMutation(api.documents.setCoverImage);
 
   const [title, setTitle] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">(
@@ -62,6 +65,7 @@ export default function DocumentDetailRoute() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
 
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -217,7 +221,7 @@ export default function DocumentDetailRoute() {
   const handlePickImage = async () => {
     try {
       setCoverUploading(true);
-      const { pickCoverImage, ConvexCoverImageUploader } = await import(
+      const { pickCoverImage } = await import(
         "@/lib/cover-image-upload"
       );
       const params = await pickCoverImage();
@@ -234,17 +238,12 @@ export default function DocumentDetailRoute() {
         return;
       }
 
-      const uploader = new ConvexCoverImageUploader({
-        generateUploadUrl: () => generateUploadUrl(),
-      });
-      const result = await uploader.upload(params);
-      if (!result.storageId) {
-        throw new Error("Missing storageId after upload");
-      }
-      await setCoverImage({
-        id,
-        storageId: result.storageId as Id<"_storage">,
-      });
+      const result = await uploadFileToEdgeStore(
+        params.uri,
+        params.type,
+        params.name,
+      );
+      await update({ id, coverImage: result.url });
     } catch (error) {
       console.error("Failed to pick and upload image:", error);
       toast.showError(t("Error.somethingWentWrong"));
@@ -261,6 +260,26 @@ export default function DocumentDetailRoute() {
       toast.showSuccess(t("Publish.linkCopiedToClipboard"));
     } catch {
       toast.showError(t("Error.somethingWentWrong"));
+    }
+  };
+
+  const handleInsertImage = async () => {
+    try {
+      setImageUploading(true);
+      const params = await pickInlineImage();
+      if (!params) return;
+
+      const result = await uploadFileToEdgeStore(
+        params.uri,
+        params.mimeType,
+        params.name,
+      );
+      editor.setImage(result.url);
+    } catch (error) {
+      console.error("Failed to insert image:", error);
+      toast.showError(t("Error.somethingWentWrong"));
+    } finally {
+      setImageUploading(false);
     }
   };
 
@@ -462,6 +481,23 @@ export default function DocumentDetailRoute() {
               )}
             </View>
           )}
+          <View flexDirection="row" gap="$1" mt="$1">
+            <Button
+              size="$2"
+              onPress={handleInsertImage}
+              disabled={imageUploading}
+              bg="$backgroundPress"
+              style={{ borderRadius: 6 }}
+            >
+              {imageUploading ? (
+                <ActivityIndicator size="small" color={theme.placeholderColor.val} />
+              ) : (
+                <Text fontSize="$1" color="$placeholderColor">
+                  {t("Toolbar.insertImage")}
+                </Text>
+              )}
+            </Button>
+          </View>
         </View>
 
         <View flex={1} bg="$background">
