@@ -1,8 +1,43 @@
+import { createAnimations } from "@tamagui/animations-react-native";
 import { defaultConfig } from "@tamagui/config/v5";
 import { createTamagui } from "tamagui";
 
+const animations = createAnimations({
+  fast: {
+    damping: 22,
+    mass: 1,
+    stiffness: 320,
+  },
+  medium: {
+    damping: 18,
+    mass: 0.95,
+    stiffness: 180,
+  },
+  slow: {
+    damping: 20,
+    mass: 1.05,
+    stiffness: 110,
+  },
+  bouncy: {
+    damping: 12,
+    mass: 0.9,
+    stiffness: 140,
+  },
+  lazy: {
+    damping: 19,
+    mass: 1,
+    stiffness: 90,
+  },
+  quick: {
+    damping: 24,
+    mass: 1,
+    stiffness: 360,
+  },
+});
+
 export const config = createTamagui({
   ...defaultConfig,
+  animations,
   themes: {
     ...defaultConfig.themes,
     light: {

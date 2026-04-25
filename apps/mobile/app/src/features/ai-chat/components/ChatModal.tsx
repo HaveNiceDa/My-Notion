@@ -5,10 +5,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Animated,
-  Dimensions,
   KeyboardAvoidingView,
-  Modal,
   Platform,
   Pressable,
   TextInput,
@@ -19,11 +16,9 @@ import {
   Text,
   View,
   useTheme,
-  TamaguiProvider,
-  Theme,
+  Sheet
 } from "tamagui";
 import tw from "twrnc";
-import { config as tamaguiConfig } from "@tamagui/config";
 import { useAppTheme } from "@/theme/AppThemeProvider";
 
 import { api } from "@convex/_generated/api";
@@ -41,8 +36,6 @@ type Props = {
   visible: boolean;
   onClose: () => void;
 };
-
-const MODAL_HEIGHT_RATIO = 0.65;
 
 export function ChatModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
@@ -65,45 +58,6 @@ export function ChatModal({ visible, onClose }: Props) {
 
   const isCreatingNewRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
-
-  const slideAnim = useRef(new Animated.Value(0)).current;
-  const overlayAnim = useRef(new Animated.Value(0)).current;
-  const [modalVisible, setModalVisible] = useState(false);
-
-  useEffect(() => {
-    if (visible) {
-      setModalVisible(true);
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 1,
-          useNativeDriver: true,
-          tension: 65,
-          friction: 14,
-        }),
-        Animated.timing(overlayAnim, {
-          toValue: 1,
-          duration: 250,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else if (modalVisible) {
-      Animated.parallel([
-        Animated.spring(slideAnim, {
-          toValue: 0,
-          useNativeDriver: true,
-          tension: 65,
-          friction: 14,
-        }),
-        Animated.timing(overlayAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setModalVisible(false);
-      });
-    }
-  }, [visible]);
 
   const createConversation = useMutation(api.aiChat.createConversation);
   const addMessage = useMutation(api.aiChat.addMessage);
@@ -271,9 +225,6 @@ export function ChatModal({ visible, onClose }: Props) {
       console.error("Failed to delete conversation:", error);
     }
   };
-
-  const screenHeight = Dimensions.get("screen").height;
-  const modalHeight = screenHeight * MODAL_HEIGHT_RATIO;
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
   const displayReasoning = reasoningContent || completedReasoning;
@@ -638,76 +589,43 @@ export function ChatModal({ visible, onClose }: Props) {
   );
 
   return (
-    <Modal
-      visible={modalVisible}
-      animationType="none"
-      transparent
-      onRequestClose={onClose}
+    <Sheet
+      modal
+      open={visible}
+      onOpenChange={(open: boolean) => {
+        if (!open) onClose();
+      }}
+      snapPoints={[70]}
+      dismissOnSnapToBottom
+      zIndex={100_000}
     >
-      <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
-        <Theme name={appTheme}>
-          <View flex={1}>
-            <Animated.View
-              style={{
-                flex: 1,
-                backgroundColor: "rgba(0, 0, 0, 0.4)",
-                opacity: overlayAnim,
-              }}
-            >
-              <Pressable
-                style={{ flex: 1 }}
-                onPress={() => {
-                  if (showModelPicker) {
-                    setShowModelPicker(false);
-                  } else {
-                    onClose();
-                  }
-                }}
-              />
-            </Animated.View>
-            <Animated.View
-              style={{
-                height: modalHeight,
-                borderTopLeftRadius: 24,
-                borderTopRightRadius: 24,
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: -6 },
-                shadowOpacity: 0.3,
-                shadowRadius: 16,
-                elevation: 24,
-                backgroundColor: theme.background.val,
-                transform: [
-                  {
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [modalHeight, 0],
-                    }),
-                  },
-                ],
-              }}
-            >
-              <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{
-                  height: modalHeight,
-                }}
-              >
-                <View
-                  flex={1}
-                  bg="$background"
-                  style={{
-                    borderTopLeftRadius: 24,
-                    borderTopRightRadius: 24,
-                    paddingBottom: insets.bottom,
-                  }}
-                >
-                  {showHistory ? renderHistory() : renderChat()}
-                </View>
-              </KeyboardAvoidingView>
-            </Animated.View>
+      <Sheet.Overlay
+        bg="$shadow6"
+        enterStyle={{ opacity: 0 }}
+        exitStyle={{ opacity: 0 }}
+      />
+      <Sheet.Handle />
+      <Sheet.Frame
+        borderTopLeftRadius="$6"
+        borderTopRightRadius="$6"
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View
+            flex={1}
+            bg="$background"
+            style={{
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              paddingBottom: insets.bottom,
+            }}
+          >
+            {showHistory ? renderHistory() : renderChat()}
           </View>
-        </Theme>
-      </TamaguiProvider>
-    </Modal>
+        </KeyboardAvoidingView>
+      </Sheet.Frame>
+    </Sheet>
   );
 }
