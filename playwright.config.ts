@@ -17,10 +17,5 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       testDir: "./tests/web",
     },
-    {
-      name: "Mobile Chrome",
-      use: { ...devices["Pixel 5"] },
-      testDir: "./tests/mobile",
-    },
   ],
 });

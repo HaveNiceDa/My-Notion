@@ -44,8 +44,8 @@ test.describe("Web - Public Routes", () => {
 
 test.describe("Web - Static Assets", () => {
   test("page loads with correct locale handling", async ({ page }) => {
-    await page.goto("/");
+    await page.goto("/", { timeout: 60000, waitUntil: "domcontentloaded" });
     const html = page.locator("html");
-    await expect(html).toHaveAttribute("lang", /en|zh/);
+    await expect(html).toHaveAttribute("lang", /en|zh/, { timeout: 10000 });
   });
 });

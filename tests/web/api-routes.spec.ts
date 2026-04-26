@@ -29,5 +29,6 @@ test.describe("Web - API Routes", () => {
     const response = await page.goto("/api/edgestore/test");
     expect(response).toBeDefined();
     expect(response!.status()).toBeGreaterThanOrEqual(400);
+    expect(response!.status()).toBeLessThan(600);
   });
 });
