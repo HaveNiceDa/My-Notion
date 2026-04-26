@@ -65,6 +65,8 @@ export function ChatModal({ visible, onClose }: Props) {
   const [stepsExpanded, setStepsExpanded] = useState(true);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<Id<"aiConversations"> | null>(null);
+  const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
 
   const isCreatingNewRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -72,6 +74,7 @@ export function ChatModal({ visible, onClose }: Props) {
   const createConversation = useMutation(api.aiChat.createConversation);
   const addMessage = useMutation(api.aiChat.addMessage);
   const deleteConversation = useMutation(api.aiChat.deleteConversation);
+  const updateConversationTitle = useMutation(api.aiChat.updateConversationTitle);
 
   const conversations = useQuery(api.aiChat.getConversations, user ? { userId: user.id } : "skip");
 
@@ -113,13 +116,15 @@ export function ChatModal({ visible, onClose }: Props) {
     }
   }, [streamingContent, reasoningContent]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || !user || isSending) return;
+  const handleSend = useCallback(async (retryInput?: string) => {
+    const messageText = retryInput ?? input.trim();
+    if (!messageText || !user || isSending) return;
 
     setIsSending(true);
+    setLastFailedInput(null);
     isCreatingNewRef.current = false;
-    const userMessage = input.trim();
-    setInput("");
+    const userMessage = messageText;
+    if (!retryInput) setInput("");
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
@@ -127,11 +132,12 @@ export function ChatModal({ visible, onClose }: Props) {
 
     try {
       let conversationId = activeConversationId;
+      const isNewConversation = !conversationId;
 
       if (!conversationId) {
         conversationId = await createConversation({
           userId: user.id,
-          title: userMessage.slice(0, 20),
+          title: userMessage.slice(0, 30),
         });
         setActiveConversationId(conversationId);
       }
@@ -141,6 +147,15 @@ export function ChatModal({ visible, onClose }: Props) {
         content: userMessage,
         role: "user",
       });
+
+      if (isNewConversation) {
+        try {
+          await updateConversationTitle({
+            conversationId,
+            title: userMessage.slice(0, 30),
+          });
+        } catch {}
+      }
 
       const history: ChatMessage[] = (convexMessages ?? [])
         .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
@@ -170,6 +185,7 @@ export function ChatModal({ visible, onClose }: Props) {
           setIsSending(false);
           setStreamingContent("");
           setReasoningContent("");
+          setLastFailedInput(userMessage);
         },
         onComplete: async () => {
           if (fullReasoning) {
@@ -220,8 +236,9 @@ export function ChatModal({ visible, onClose }: Props) {
       setIsSending(false);
       setStreamingContent("");
       setReasoningContent("");
+      setLastFailedInput(userMessage);
     }
-  }, [input, user, isSending, activeConversationId, createConversation, addMessage, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled]);
+  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled]);
 
   const handleNewConversation = () => {
     isCreatingNewRef.current = true;
@@ -256,6 +273,8 @@ export function ChatModal({ visible, onClose }: Props) {
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -304,7 +323,7 @@ export function ChatModal({ visible, onClose }: Props) {
               <Text flex={1} fontSize={14} color="$color" numberOfLines={1}>
                 {conv.title}
               </Text>
-              <Pressable onPress={() => handleDeleteConversation(conv._id)} hitSlop={8}>
+              <Pressable onPress={() => setDeleteConfirmId(conv._id)} hitSlop={8}>
                 <Ionicons name="trash-outline" size={16} color={theme.placeholderColor.val} />
               </Pressable>
             </Pressable>
@@ -315,6 +334,60 @@ export function ChatModal({ visible, onClose }: Props) {
           </View>
         )}
       </ScrollView>
+
+      {deleteConfirmId && (
+        <View
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.4)",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 200,
+          }}
+        >
+          <View
+            style={{
+              width: 280,
+              borderRadius: 16,
+              backgroundColor: theme.background.val,
+              padding: 20,
+              gap: 12,
+            }}
+          >
+            <Text fontSize={17} fontWeight="bold" color="$color">
+              {t("AI.deleteConversation")}
+            </Text>
+            <Text fontSize={14} lineHeight={20} color="$placeholderColor">
+              {t("AI.deleteConversationConfirm")}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+              <Pressable
+                onPress={() => setDeleteConfirmId(null)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  backgroundColor: theme.backgroundHover.val,
+                }}
+              >
+                <Text fontSize={14} color="$color">{t("Error.ok")}</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => handleDeleteConversation(deleteConfirmId)}
+                style={{
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 8,
+                  backgroundColor: "#ef4444",
+                }}
+              >
+                <Text fontSize={14} color="#fff">{t("Menu.delete")}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 
@@ -545,6 +618,30 @@ export function ChatModal({ visible, onClose }: Props) {
             <Text fontSize={14} color="$placeholderColor" style={{ textAlign: "center", maxWidth: "80%" }}>
               {t("AI.useAIToHandleTasks")}
             </Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 8 }}>
+              {[
+                t("AI.writeMeetingAgenda"),
+                t("AI.analyzePDFOrImage"),
+                t("AI.createTaskReminder"),
+              ].map((suggestion) => (
+                <Pressable
+                  key={suggestion}
+                  onPress={() => {
+                    setInput(suggestion);
+                  }}
+                  style={{
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    borderRadius: 16,
+                    backgroundColor: theme.backgroundHover.val,
+                    borderWidth: 1,
+                    borderColor: theme.borderColor.val,
+                  }}
+                >
+                  <Text fontSize={13} color="$color">{suggestion}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         )}
 
@@ -589,6 +686,44 @@ export function ChatModal({ visible, onClose }: Props) {
           <View style={tw`flex-row justify-start`}>
             <View style={[tw`px-4 py-2.5`, { borderRadius: 20, borderTopLeftRadius: 0, backgroundColor: theme.backgroundPress.val }]}>
               <ActivityIndicator size="small" color={theme.placeholderColor.val} />
+            </View>
+          </View>
+        )}
+
+        {lastFailedInput && !isSending && (
+          <View style={tw`flex-row justify-start`}>
+            <View
+              style={{
+                maxWidth: "85%",
+                borderRadius: 20,
+                borderTopLeftRadius: 0,
+                backgroundColor: theme.backgroundPress.val,
+                paddingHorizontal: 16,
+                paddingVertical: 10,
+                gap: 8,
+              }}
+            >
+              <Text fontSize={13} color="$placeholderColor">
+                {t("AI.sendFailed")}
+              </Text>
+              <Pressable
+                onPress={() => handleSend(lastFailedInput)}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                  backgroundColor: theme.backgroundHover.val,
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  alignSelf: "flex-start",
+                }}
+              >
+                <Ionicons name="refresh-outline" size={14} color={theme.primary.val} />
+                <Text fontSize={13} fontWeight="bold" color="$primary">
+                  {t("AI.retry")}
+                </Text>
+              </Pressable>
             </View>
           </View>
         )}
@@ -694,7 +829,7 @@ export function ChatModal({ visible, onClose }: Props) {
             maxLength={500}
           />
           <Pressable
-            onPress={handleSend}
+            onPress={() => handleSend()}
             disabled={!input.trim() || isSending}
             style={({ pressed }) => ({
               width: 32,

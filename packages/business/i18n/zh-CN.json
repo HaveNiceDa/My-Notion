@@ -225,7 +225,11 @@
     "deepThinkingEnabled": "深度思考已开启",
     "deepThinkingDisabled": "深度思考已关闭",
     "deepThinkingTooltip": "深度思考",
-    "modelSelect": "模型选择"
+    "modelSelect": "模型选择",
+    "deleteConversation": "删除对话",
+    "deleteConversationConfirm": "确定要删除这个对话吗？删除后无法恢复。",
+    "sendFailed": "发送失败，请重试",
+    "retry": "重试"
   },
   "Auth": {
     "signIn": "登录",
