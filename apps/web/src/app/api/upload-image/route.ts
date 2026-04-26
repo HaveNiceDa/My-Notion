@@ -6,6 +6,16 @@ const edgestoreClient = initEdgeStoreClient({
   router: edgeStoreRouter,
 });
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+export async function OPTIONS() {
+  return NextResponse.json(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -14,7 +24,7 @@ export async function POST(request: NextRequest) {
     if (!file || !(file instanceof Blob)) {
       return NextResponse.json(
         { error: "No file provided" },
-        { status: 400 },
+        { status: 400, headers: CORS_HEADERS },
       );
     }
 
@@ -31,12 +41,12 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ url: res.url });
+    return NextResponse.json({ url: res.url }, { headers: CORS_HEADERS });
   } catch (error) {
     console.error("Upload failed:", error);
     return NextResponse.json(
       { error: "Upload failed" },
-      { status: 500 },
+      { status: 500, headers: CORS_HEADERS },
     );
   }
 }
