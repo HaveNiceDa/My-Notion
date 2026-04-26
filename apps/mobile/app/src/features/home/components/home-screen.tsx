@@ -8,7 +8,7 @@ import tw, { style as twStyle } from "twrnc";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { useSearch } from "@notion/business/hooks";
+import { useSearch, useNavigation } from "@notion/business/hooks";
 
 import { CollapsibleSection } from "./collapsible-section";
 import { HomeBottomBar } from "./home-bottom-bar";
@@ -39,11 +39,10 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
 
   const create = useMutation(api.documents.create);
 
-  const [aiModalVisible, setAiModalVisible] = useState(false);
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
-  const [inboxDialogOpen, setInboxDialogOpen] = useState(false);
 
   const { onOpen: openSearch } = useSearch();
+  const { isAiChatOpen, closeAiChat, isInboxOpen, closeInbox } = useNavigation();
 
   const workspaceTitle =
     user?.firstName != null && user.firstName.length > 0
@@ -116,7 +115,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         settingsLabel={t("Navigation.settings")}
         inboxLabel={t("Home.inbox")}
         trashLabel={t("Navigation.trash")}
-        onPressInbox={() => setInboxDialogOpen(true)}
+        onPressInbox={() => useNavigation.getState().openInbox()}
         onPressTrash={() => router.push("/(home)/trash" as Href)}
       />
 
@@ -193,13 +192,13 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
 
       <HomeBottomBar
         onPressSearch={openSearch}
-        onPressAi={() => setAiModalVisible(true)}
+        onPressAi={() => useNavigation.getState().openAiChat()}
         onPressNewPage={handleCreateNew}
       />
 
       <ChatModal
-        visible={aiModalVisible}
-        onClose={() => setAiModalVisible(false)}
+        visible={isAiChatOpen}
+        onClose={closeAiChat}
       />
       <SearchModal />
       <SettingsModal signOut={signOut} />
@@ -225,7 +224,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
         </Dialog.Portal>
       </Dialog>
 
-      <Dialog open={inboxDialogOpen} onOpenChange={setInboxDialogOpen} modal>
+      <Dialog open={isInboxOpen} onOpenChange={(open) => { if (!open) closeInbox(); }} modal>
         <Dialog.Portal>
           <Dialog.Overlay key="inbox-overlay" opacity={0.5} />
           <Dialog.Content
@@ -239,7 +238,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
           >
             <Dialog.Title>{t("Home.inbox")}</Dialog.Title>
             <Text>{t("Marketing.comingSoon")}</Text>
-            <Button onPress={() => setInboxDialogOpen(false)} style={tw`mt-4`}>
+            <Button onPress={closeInbox} style={tw`mt-4`}>
               <Text width="100%">{t("Error.ok")}</Text>
             </Button>
           </Dialog.Content>
