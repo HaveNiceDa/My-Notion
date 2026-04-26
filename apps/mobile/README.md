@@ -1,40 +1,56 @@
 # My-Notion Mobile
 
-基于 Expo 的 Notion 克隆移动应用，提供类似 Notion 的文档管理和移动端体验。
+基于 Expo 54 + React Native 0.81 的 Notion 克隆移动应用，与 Web 端共享 AI、业务逻辑和 Convex 数据层。
 
-## 功能特性
+## ✨ 核心特性
 
-- 📝 **文档管理**：支持文档的创建、编辑和管理
-- 🔐 **用户认证**：使用 Clerk 实现安全的用户登录和注册
-- 🗄️ **数据存储**：使用 Convex 作为后端数据库，提供实时数据同步
-- 🎨 **主题色切换**：支持亮色和深色主题切换
-- 🌐 **多语言支持**：集成 i18next 实现多语言支持（中、英、繁体）
-- 📱 **移动端优化**：适配 iOS 和 Android 的原生体验
-- 🤖 **AI 智能对话**：基于 RAG 技术的移动端 AI 助手功能
+### 文档管理
+- 📝 **文档编辑** — 基于 TenTap (TipTap) 的富文本编辑器
+- 📁 **文档树导航** — 侧边栏文档树 + 面包屑导航
+- 🔍 **快速搜索** — 全局文档搜索
+- ⭐ **收藏 & 归档** — 文档收藏、归档、恢复
+- 🎨 **封面图 & 图标** — 通过 Web API 代理上传至 EdgeStore
+
+### AI 智能对话
+- 🤖 **RAG 对话** — 通过 Hono AI 网关代理，API Key 安全隐藏
+- 💬 **流式响应** — 实时渲染 AI 回复
+- 🧠 **深度思考** — 思考过程可视化
+- 🔄 **失败重试** — 发送失败后一键重试
+- 💡 **快捷建议** — 空状态下的推荐提问气泡
+- 🗑️ **会话管理** — 删除确认弹窗、自动标题更新
+
+### 跨端共享
+- 📦 **@notion/ai** — RAG、Chat、Embeddings 逻辑复用
+- 📦 **@notion/business** — AI 模型/知识库/深度思考 Zustand Store 共享
+- 📦 **@notion/convex** — Documents/Chat 业务逻辑共享，零重复代码
+
+### 体验优化
+- 🌙 **主题切换** — 亮色/深色主题
+- 🌐 **多语言** — i18next 中/英/繁体
+- 📱 **原生体验** — Haptics 反馈、手势操作、原生动画
 
 ## 技术栈
 
-### 前端
-
-- **Expo** 54 - 现代化 React Native 开发框架
-- **React Native** 0.81 - 移动端跨平台框架
-- **Expo Router** 6 - 基于文件系统的路由
-- **Tamagui** 2.0 - 高性能 UI 组件库
-- **React Native Reanimated** 4.1 - 流畅动画库
-- **React Native Gesture Handler** 2.28 - 手势处理
-- **Clerk** - 用户认证和管理
-- **i18next** - 国际化解决方案
-
-### 后端
-
-- **Convex** - 实时后端数据库
+| 层级 | 技术 | 版本 |
+|------|------|------|
+| **框架** | Expo | 54 |
+| **UI 库** | React Native | 0.81 |
+| **路由** | Expo Router | 6 |
+| **UI 组件** | Tamagui | 2.0 RC |
+| **动画** | React Native Reanimated | 4.1 |
+| **手势** | React Native Gesture Handler | 2.28 |
+| **认证** | Clerk (Expo) | 3.x |
+| **数据库** | Convex | 1.31+ |
+| **编辑器** | TenTap (TipTap) | 1.0 |
+| **状态管理** | Zustand | 5.x |
+| **国际化** | i18next + react-i18next | 26.x |
+| **AI 网关** | Hono AI Service (代理) | — |
 
 ## 快速开始
 
 ### 前提条件
-
-- Node.js 20.0 或更高版本
-- pnpm 包管理器
+- Node.js 22.0+
+- pnpm 10+
 - Expo CLI
 - Convex 账号
 - Clerk 账号
@@ -42,21 +58,14 @@
 ### 安装步骤
 
 1. **克隆仓库**
-
    ```bash
-   git clone https://github.com/HaveNiceDa/Notion.git
-   cd notion/apps/mobile
+   git clone https://github.com/HaveNiceDa/My-Notion.git
+   cd My-Notion
+   pnpm i
    ```
 
-2. **安装依赖**
-
-   ```bash
-   pnpm install
-   ```
-
-3. **配置环境变量**
-   创建 `.env.local` 文件并添加以下环境变量：
-
+2. **配置环境变量**
+   在 `apps/mobile/` 下创建 `.env` 文件：
    ```env
    # Convex
    CONVEX_DEPLOYMENT=your-convex-deployment
@@ -67,62 +76,72 @@
    EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
    ```
 
-4. **启动开发服务器**
-
+3. **启动开发服务器**
    ```bash
+   cd apps/mobile
    pnpm start
    ```
-
-   或者分别启动：
-
-   ```bash
-   pnpm run dev    # 启动 Expo 开发服务器
-   npx convex dev  # 启动 Convex 后端
-   ```
-
-   在终端中，选择运行平台：
+   在终端中选择运行平台：
    - 按 `i` 启动 iOS 模拟器
    - 按 `a` 启动 Android 模拟器
-   - 按 `w` 启动 Web
-
-## 环境变量配置
-
-### Convex
-
-- `CONVEX_DEPLOYMENT` - Convex 部署 ID
-- `EXPO_PUBLIC_CONVEX_URL` - Convex 应用 URL
-- `EXPO_PUBLIC_CONVEX_SITE_URL` - Convex 站点 URL
-
-### Clerk
-
-- `EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk 可发布密钥
 
 ## 项目结构
 
 ```
 mobile/
-├── app/                          # Expo Router 应用目录
-│   ├── (auth)/                   # 认证页面
-│   ├── (home)/                  # 首页路由
-│   ├── _layout.tsx              # 根布局
-│   └── index.tsx                # 入口页面
-├── app/src/
-│   ├── components/               # 可复用组件
-│   ├── features/                 # 功能模块
-│   │   ├── ai-chat/             # AI 聊天功能
-│   │   └── home/                # 首页功能
-│   ├── hooks/                    # 自定义 Hooks
-│   ├── i18n/                     # 国际化相关
-│   ├── theme/                    # 主题配置
-│   └── lib/                      # 工具函数库
-├── convex/                        # Convex 后端
-├── assets/                        # 静态资源
-└── README.md
+├── app/                          # Expo Router 文件路由
+│   ├── (auth)/                   # 认证页面 (登录/注册/第三方)
+│   ├── (home)/                   # 主页路由
+│   │   ├── document/[documentId] # 文档编辑页
+│   │   ├── index.tsx             # 首页
+│   │   └── trash.tsx             # 回收站
+│   ├── src/
+│   │   ├── components/           # 通用 UI 组件
+│   │   ├── features/
+│   │   │   ├── ai-chat/          # AI 聊天模块 (ChatModal)
+│   │   │   └── home/             # 首页功能模块
+│   │   │       ├── components/   # 首页组件 (侧边栏/搜索/文档树...)
+│   │   │       └── hooks/        # 文档树/最近文档 Hooks
+│   │   ├── hooks/                # 通用 Hooks
+│   │   ├── i18n/                 # i18next 配置
+│   │   ├── lib/
+│   │   │   ├── ai/               # AI 聊天客户端
+│   │   │   └── convex/           # Convex 客户端
+│   │   └── theme/                # 主题 Provider
+│   ├── _layout.tsx               # 根布局
+│   └── index.tsx                 # 入口
+├── convex/                       # Convex 后端 (入口导出 @notion/convex)
+├── assets/                       # 静态资源
+├── app.json                      # Expo 配置
+├── tamagui.config.ts             # Tamagui 主题配置
+└── eslint.config.js              # ESLint 配置
 ```
+
+## 架构说明
+
+### 图片上传代理
+
+Mobile 端文件上传通过 Web 端 API 代理转发至 EdgeStore，避免在客户端暴露密钥：
+
+```
+Mobile → Web API (/api/upload-image) → EdgeStore
+```
+
+### AI 调用代理
+
+Mobile 端 AI 请求通过 Hono AI 网关转发，API Key 仅存储在服务端：
+
+```
+Mobile → Hono AI Service → @notion/ai → LLM API
+```
+
+### 状态管理
+
+AI 核心状态（模型选择、知识库开关、深度思考）使用 `@notion/business` 共享 Zustand Store，Web/Mobile 行为一致。
 
 ## 注意事项
 
 - **Clerk 配置**：确保在 Clerk 控制台中正确配置移动端应用
 - **Convex 部署**：运行 `npx convex dev` 确保 Convex 后端正确部署
 - **平台特定**：部分功能（如 Haptics）仅在真机上可用
-- **React Native 版本**：确保与 Expo SDK 版本兼容
+- **Web API 依赖**：图片上传功能需要 Web 端服务运行中
