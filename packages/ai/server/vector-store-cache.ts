@@ -50,7 +50,13 @@ export async function getOrCreateVectorStore(
 export function clearVectorStoreCache(userId?: string): void {
   if (userId) {
     vectorStoreCache.delete(userId);
+    for (const key of documentSyncCache.keys()) {
+      if (key.startsWith(`${userId}:`)) {
+        documentSyncCache.delete(key);
+      }
+    }
   } else {
     vectorStoreCache.clear();
+    documentSyncCache.clear();
   }
 }
