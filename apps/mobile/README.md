@@ -139,6 +139,25 @@ Mobile → Hono AI Service → @notion/ai → LLM API
 
 AI 核心状态（模型选择、知识库开关、深度思考）使用 `@notion/business` 共享 Zustand Store，Web/Mobile 行为一致。
 
+## 🗺️ Roadmap
+
+### 📱 应用商店上线
+
+从开发环境走向用户手中：
+
+- **iOS App Store** — TestFlight 内测 → 正式发布
+- **Android Google Play** — 内部测试 → 公开发布
+- **原生体验打磨** — 推送通知、离线缓存、手势交互优化
+- **EAS Build** — Expo Application Services 云端构建 + 自动化发布
+
+### 🤖 AI 能力对齐
+
+与 Web 端 AI 原生编辑器能力对齐：
+
+- **选中即 AI** — 长按选中文字，弹出 AI 操作菜单（翻译、润色、提问）
+- **Inline AI** — 输入区 AI 辅助建议
+- **RAG 增强** — 分层检索、混合检索、多格式文档支持
+
 ## 注意事项
 
 - **Clerk 配置**：确保在 Clerk 控制台中正确配置移动端应用

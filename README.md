@@ -1,15 +1,15 @@
 # My-Notion
 
-全栈 AI 驱动的 Notion 克隆应用 — 覆盖 Web、Mobile 双端，采用 Monorepo 架构实现跨端代码共享与工程化闭环。
+定制化的个人版 Notion，内置 AI 能力的全栈知识管理工具。
 
-## ✨ 项目亮点
+## ✨ 项目特色
 
-- 🏗️ **全栈 Monorepo** — pnpm workspace 统一管理 Web / Mobile / AI Service / 共享包，一套代码多端复用
-- 🤖 **RAG 增强对话** — 基于 Qdrant 向量检索 + LangChain 的文档知识库问答，支持流式响应、深度思考、工具调用
-- 📱 **跨端架构收敛** — AI 状态（Zustand）、Convex 业务逻辑、i18n 翻译均抽离至共享包，Web/Mobile 零重复
-- ⚡ **最新技术栈** — Next.js 16 (Turbopack) / React 19 / Expo 54 / TypeScript 5.9 / Hono
-- 🔒 **工程化闭环** — GitHub Actions CI/CD（Build + Lint + TypeCheck + Unit Test + E2E）、Sentry 错误监控、Bundle 优化
-- 🌐 **全栈国际化** — next-intl (Web) + i18next (Mobile)，中/英/繁体三语支持，PascalCase 命名规范
+- 🧠 **AI 深度集成** — RAG 知识库问答、深度思考可视化、工具调用系统与编辑器紧密结合，选中文字即可翻译、润色、提问
+- 🏗️ **跨端共享架构** — AI 逻辑 (`@notion/ai`)、业务状态 (`@notion/business`)、数据层 (`@notion/convex`) 抽离为共享包，Web 和 Mobile 零重复代码
+- ⚡ **紧跟最新技术栈** — Next.js 16 + React 19 + Expo 54 + TypeScript 5.9，同时通过完整 CI/CD 和监控体系保障稳定性
+- 🔒 **安全代理设计** — Mobile 端 AI 调用通过 Hono 网关代理、文件上传通过 Web API 转发，客户端零密钥暴露
+- 📊 **完整工程化** — GitHub Actions CI/CD（Build / Lint / TypeCheck / Unit Test / E2E）、Vitest 单测、Sentry 监控、Bundle 优化
+- 🌐 **双端国际化** — next-intl (Web) + i18next (Mobile)，中/英/繁体三语支持
 
 ## 📦 项目结构
 
@@ -58,6 +58,28 @@ My-Notion/
 → Vercel 自动部署
 → Sentry 线上监控
 ```
+
+## 🗺️ Roadmap
+
+### 🎯 近期 — AI 原生编辑器
+
+- **选中即 AI** — BlockNote 中选中文字，右键即可翻译、润色、扩写、缩写、提问
+- **自定义 BlockNote Tool** — 扩展编辑器工具栏，集成 AI 驱动的文档操作（智能续写、风格转换、语法修正）
+- **Inline AI Assist** — 行内 AI 建议，类似 Copilot 的补全体验
+
+### 🚀 中期 — RAG 增强 & Mobile 上线
+
+- **分层检索** — 粗筛 + 精排两阶段，提升召回率和准确率
+- **混合检索** — 向量检索 + 关键词检索融合
+- **多格式文档** — PDF、Markdown、Word 直接入库
+- **检索溯源** — 展示 RAG 引用的文档片段，支持跳转原文
+- **Mobile 上架** — iOS App Store / Android Google Play 发布
+
+### 🔮 远期 — CLI & Agent 生态
+
+- **My-Notion CLI** — 命令行工具，支持 `notion create`、`notion search`、`notion ask`
+- **Agent 可调用** — 开放 CLI 接口，让 AI Agent 读写文档、查询知识库
+- **MCP 协议** — 接入 Model Context Protocol，成为 AI Agent 的标准工具
 
 ## 🚀 快速开始
 

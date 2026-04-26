@@ -174,6 +174,26 @@ web/
 | Sentry | `removeDebugLogging` tree-shaking | 移除调试日志代码 |
 | @blocknote/core | `optimizePackageImports` | 按需导入减少 bundle |
 
+## 🗺️ Roadmap
+
+### 🎯 AI 原生编辑器
+
+让 AI 从独立对话框走进编辑器内部，成为文档操作的一等公民：
+
+- **选中即 AI** — 在 BlockNote 中选中文字，右键菜单即可翻译、润色、扩写、缩写、对 AI 提问
+- **自定义 BlockNote Tool** — 扩展编辑器工具栏，注册 AI 驱动的自定义操作（智能续写、风格转换、语法修正、摘要生成）
+- **Inline AI Assist** — 行内 AI 建议，输入 `/ai` 触发 AI 辅助，类似 Copilot 的实时补全体验
+- **AI 操作历史** — 记录每次 AI 修改，支持一键撤销/重做 AI 变更
+
+### 🚀 RAG 能力增强
+
+从"能用"到"好用"的 RAG 进化：
+
+- **分层检索** — 粗筛 + 精排两阶段，提升召回率和准确率
+- **混合检索** — 向量检索 + BM25 关键词检索融合
+- **多格式入库** — PDF、Markdown、Word 直接解析入库
+- **溯源验证** — 展示 RAG 引用的文档片段，支持点击跳转原文
+
 ## 注意事项
 
 - **React 19 严格模式**：BlockNote 尚不兼容 StrictMode，已在 `next.config.js` 中禁用
