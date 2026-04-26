@@ -33,7 +33,6 @@ interface MessageListProps {
   knowledgeBaseEnabled: boolean;
 }
 
-// 优化步骤项组件
 const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
   const t = useTranslations("AI");
 
@@ -155,8 +154,7 @@ const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
   );
 });
 
-// 优化消息项组件
-const MessageItem = React.memo(({ message }: { message: Message }) => {
+const MessageItem = ({ message }: { message: Message }) => {
   const t = useTranslations("AI");
   const [showThinking, setShowThinking] = useState(true);
 
@@ -337,7 +335,7 @@ const MessageItem = React.memo(({ message }: { message: Message }) => {
       </div>
     </div>
   );
-});
+};
 
 export const MessageList = React.memo(
   ({
@@ -404,11 +402,9 @@ export const MessageList = React.memo(
     }, [steps, isLoadingSteps]);
 
     // 渲染消息列表
-    const renderMessages = useMemo(() => {
-      return messages.map((message) => (
-        <MessageItem key={message.id} message={message} />
-      ));
-    }, [messages]);
+    const renderMessages = messages.map((message) => (
+      <MessageItem key={message.id} message={message} />
+    ));
 
     return (
       <div className="flex-1 flex p-8 overflow-hidden min-h-0 mb-10">
