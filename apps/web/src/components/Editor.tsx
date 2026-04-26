@@ -11,7 +11,6 @@ import { useParams } from "next/navigation";
 import * as locales from "@blocknote/core/locales";
 
 import { useEdgeStore } from "@/src/lib/edgestore";
-import { getBlockNoteLocale } from "@/src/lib/utils";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -21,6 +20,14 @@ interface EditorProps {
 
 export interface EditorRef {
   focus: () => void;
+}
+
+function getBlockNoteLocale(lang: string): keyof typeof locales {
+  const langCode = lang.split("-")[0];
+  if (langCode in locales) {
+    return langCode as keyof typeof locales;
+  }
+  return "en";
 }
 
 const Editor = forwardRef<EditorRef, EditorProps>(
@@ -41,7 +48,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(
         ? (JSON.parse(initialContent) as PartialBlock[])
         : undefined,
       uploadFile: handleUpload,
-      dictionary: locales[getBlockNoteLocale(locale)] || locales.en,
+      dictionary: locales[getBlockNoteLocale(locale)],
     });
 
     useEffect(() => {
@@ -56,12 +63,10 @@ const Editor = forwardRef<EditorRef, EditorProps>(
       };
     }, [editor, onChange]);
 
-    // 聚焦到编辑器的方法
     const focusEditor = () => {
       editor.focus();
     };
 
-    // 将focus方法暴露给父组件
     useImperativeHandle(ref, () => ({
       focus: focusEditor,
     }));
