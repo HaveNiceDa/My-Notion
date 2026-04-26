@@ -18,6 +18,7 @@ export const update = mutation({
     title: v.optional(v.string()),
     content: v.optional(v.string()),
     coverImage: v.optional(v.string()),
+    coverImageStorageId: v.optional(v.id("_storage")),
     icon: v.optional(v.string()),
     isPublished: v.optional(v.boolean()),
     isStarred: v.optional(v.boolean()),

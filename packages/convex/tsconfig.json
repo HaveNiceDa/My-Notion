@@ -18,7 +18,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./*"],
-      "@convex/*": ["../../apps/web/convex/_generated/*"]
+      "@convex/server": ["../../apps/web/convex/_generated/server"],
+      "@convex/dataModel": ["../../apps/web/convex/_generated/dataModel"]
     }
   },
   "include": ["**/*"],

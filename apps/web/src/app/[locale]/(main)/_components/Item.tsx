@@ -103,25 +103,24 @@ export function Item({
     if (draggedDocumentId === id) return;
 
     // 执行移动操作
+    const toastId = toast.loading(t("movingDocument"));
     try {
-      toast.loading(t("movingDocument"));
       await move({
         id: draggedDocumentId as Id<"documents">,
         parentDocument: id,
       });
-      toast.success(t("documentMoved"));
+      toast.success(t("documentMoved"), { id: toastId });
     } catch (error) {
-      // 捕获并显示具体的错误原因
       if (error instanceof Error) {
         if (
           error.message.includes("Cannot move document into its own subtree")
         ) {
-          toast.error(t("cannotMoveIntoOwnSubtree"));
+          toast.error(t("cannotMoveIntoOwnSubtree"), { id: toastId });
         } else {
-          toast.error(error.message);
+          toast.error(error.message, { id: toastId });
         }
       } else {
-        toast.error(t("failedToMoveDocument"));
+        toast.error(t("failedToMoveDocument"), { id: toastId });
       }
     }
   };

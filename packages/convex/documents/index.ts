@@ -1,5 +1,6 @@
 export * from "./logic/archive";
 export * from "./logic/getSidebar";
+export * from "./logic/getAllSidebarDocuments";
 export * from "./logic/getStarred";
 export * from "./logic/create";
 export * from "./logic/getTrash";
@@ -9,6 +10,7 @@ export * from "./logic/batchRemove";
 export * from "./logic/getSearch";
 export * from "./logic/getById";
 export * from "./logic/update";
+export * from "./logic/setCoverImage";
 export * from "./logic/removeIcon";
 export * from "./logic/removeCoverImage";
 export * from "./logic/move";
