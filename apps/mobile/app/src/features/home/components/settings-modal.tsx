@@ -223,7 +223,7 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
           }}
           style={tw`w-full rounded-xl`}
         >
-          <Text style={tw`font-semibold`}>{t("common.logOut")}</Text>
+          <Text style={tw`font-semibold`}>{t("Common.logOut")}</Text>
         </Button>
       </View>
     </>

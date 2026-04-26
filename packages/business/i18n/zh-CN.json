@@ -74,9 +74,6 @@
     "starredSuccess": "收藏成功",
     "unstarredSuccess": "取消收藏",
     "errorToToggleStar": "切换收藏状态失败",
-    "justNow": "刚刚",
-    "minutesAgo": "{count}分钟前",
-    "hoursAgo": "{count}小时前",
     "createdBy": "{user}于{time}创建",
     "editedBy": "{user}于{time}修改",
     "linkCopiedToClipboard": "链接已复制到剪贴板"
@@ -176,7 +173,7 @@
     "addCover": "添加封面",
     "insertImage": "插入图片"
   },
-  "common": {
+  "Common": {
     "saved": "保存成功！",
     "saving": "保存中...",
     "userProfile": "用户资料",

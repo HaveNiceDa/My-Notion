@@ -84,13 +84,13 @@ export default function MainLayout({
 
   const handleSave = () => {
     // 显示保存中提示
-    const toastId = toast.loading(t("common.saving"), {
+    const toastId = toast.loading(t("Common.saving"), {
       duration: 500
     });
 
     // 500ms后显示保存成功提示
     setTimeout(() => {
-      toast.success(t("common.saved"), {
+      toast.success(t("Common.saved"), {
         id: toastId
       });
     }, 500);

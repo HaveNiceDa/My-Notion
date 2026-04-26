@@ -66,14 +66,14 @@ export function UserItem() {
           onClick={() => openUserProfile()}
         >
           <User className="w-4 h-4 mr-2" />
-          {t('common.userProfile')}
+          {t('Common.userProfile')}
         </DropdownMenuItem>
         <DropdownMenuItem
           className="w-full cursor-pointer flex items-center"
           onClick={() => signOut()}
         >
           <LogOut className="w-4 h-4 mr-2" />
-          {t('common.logOut')}
+          {t('Common.logOut')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

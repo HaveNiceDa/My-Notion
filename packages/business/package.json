@@ -25,7 +25,8 @@
     "tailwind-merge": "^1.14.0"
   },
   "peerDependencies": {
-    "zustand": "^5.0.10"
+    "zustand": "^5.0.10",
+    "@notion/ai": "workspace:*"
   },
   "devDependencies": {
     "typescript": "^5.0.0"

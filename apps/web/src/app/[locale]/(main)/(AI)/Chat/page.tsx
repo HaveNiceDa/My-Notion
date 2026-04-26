@@ -43,7 +43,7 @@ if (typeof window !== "undefined") {
 
 const AIPage = () => {
   const searchParams = useSearchParams();
-  const tc = useTranslations("common");
+  const tc = useTranslations("Common");
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
 
   const {

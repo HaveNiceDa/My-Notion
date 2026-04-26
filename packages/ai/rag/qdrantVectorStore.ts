@@ -59,21 +59,20 @@ export class QdrantVectorStoreWrapper {
           field_name: "metadata.title",
           field_schema: "keyword",
         });
-      } else {
-        try {
-          await this.qdrantClient.createPayloadIndex(this.collectionName, {
-            field_name: "metadata.documentId",
-            field_schema: "keyword",
-          });
-        } catch {
-        }
 
-        try {
-          await this.qdrantClient.createPayloadIndex(this.collectionName, {
-            field_name: "metadata.title",
-            field_schema: "keyword",
-          });
-        } catch {
+        await this.qdrantClient.createPayloadIndex(this.collectionName, {
+          field_name: "metadata.contentHash",
+          field_schema: "keyword",
+        });
+      } else {
+        for (const field of ["metadata.documentId", "metadata.title", "metadata.contentHash"]) {
+          try {
+            await this.qdrantClient.createPayloadIndex(this.collectionName, {
+              field_name: field,
+              field_schema: "keyword",
+            });
+          } catch {
+          }
         }
       }
     } catch (error) {
@@ -180,6 +179,7 @@ export class QdrantVectorStoreWrapper {
       metadata: any;
       embedding: number[];
     }>,
+    contentHash?: string,
   ): Promise<void> {
     await this.ensureCollectionExists();
 
@@ -193,6 +193,7 @@ export class QdrantVectorStoreWrapper {
           userId,
           documentId,
           chunkIndex: chunk.chunkIndex,
+          ...(contentHash ? { contentHash } : {}),
         },
       },
     }));
@@ -217,6 +218,7 @@ export class QdrantVectorStoreWrapper {
     documentId: string,
     content: string,
     title: string,
+    contentHash?: string,
   ): Promise<void> {
     await this.ensureCollectionExists();
 
@@ -244,7 +246,7 @@ export class QdrantVectorStoreWrapper {
       embedding: embeddingResults[index],
     }));
 
-    await this.addDocumentChunks(userId, documentId, chunks);
+    await this.addDocumentChunks(userId, documentId, chunks, contentHash);
   }
 
   async deleteDocumentChunks(documentId: string): Promise<void> {
@@ -277,10 +279,52 @@ export class QdrantVectorStoreWrapper {
   async needsReembedding(
     documentId: string,
     content: string,
+    contentHash?: string,
   ): Promise<boolean> {
     await this.ensureCollectionExists();
 
     try {
+      if (contentHash) {
+        const scrollResult = await this.qdrantClient.scroll(
+          this.collectionName,
+          {
+            filter: {
+              must: [
+                {
+                  key: "metadata.documentId",
+                  match: { value: documentId },
+                },
+                {
+                  key: "metadata.contentHash",
+                  match: { value: contentHash },
+                },
+              ],
+            },
+            limit: 1,
+          },
+        );
+
+        if (scrollResult.points.length > 0) {
+          return false;
+        }
+
+        const countResult = await this.qdrantClient.count(
+          this.collectionName,
+          {
+            filter: {
+              must: [
+                {
+                  key: "metadata.documentId",
+                  match: { value: documentId },
+                },
+              ],
+            },
+          },
+        );
+
+        return countResult.count > 0;
+      }
+
       const countResult = await this.qdrantClient.count(this.collectionName, {
         filter: {
           must: [

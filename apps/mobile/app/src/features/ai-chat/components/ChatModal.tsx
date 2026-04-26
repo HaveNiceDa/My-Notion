@@ -32,6 +32,11 @@ import {
   DEFAULT_MODEL,
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
+import {
+  useAIModelStore,
+  useKnowledgeBaseStore,
+  useDeepThinkingStore,
+} from "@notion/business/hooks";
 
 type Props = {
   visible: boolean;
@@ -58,9 +63,9 @@ export function ChatModal({ visible, onClose }: Props) {
   const [completedReasoning, setCompletedReasoning] = useState("");
   const [reasoningExpanded, setReasoningExpanded] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<Id<"aiConversations"> | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL);
-  const [enableThinking, setEnableThinking] = useState(false);
-  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(false);
+  const { model: selectedModel, setModel: setSelectedModel } = useAIModelStore();
+  const { enabled: enableThinking, toggle: toggleDeepThinking } = useDeepThinkingStore();
+  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [stepsExpanded, setStepsExpanded] = useState(true);
   const [showModelPicker, setShowModelPicker] = useState(false);
@@ -743,7 +748,7 @@ export function ChatModal({ visible, onClose }: Props) {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => setKnowledgeBaseEnabled(!knowledgeBaseEnabled)}>
+          <Pressable onPress={() => toggleKnowledgeBase()}>
             <View
               style={[
                 tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
@@ -764,7 +769,7 @@ export function ChatModal({ visible, onClose }: Props) {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => setEnableThinking(!enableThinking)}>
+          <Pressable onPress={() => toggleDeepThinking()}>
             <View
               style={[
                 tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,

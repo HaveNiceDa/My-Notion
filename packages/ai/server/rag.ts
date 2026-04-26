@@ -1,30 +1,14 @@
 import { Document } from "@langchain/core/documents";
-import { CustomEmbeddings } from "../embeddings";
-import { QdrantVectorStoreWrapper } from "../rag";
 import { promptLoader } from "../prompts";
 import { getActualModelId, MODEL_DISPLAY_NAMES, type AIModel } from "../config";
 import { streamChat } from "./chat";
+import { getOrCreateVectorStore } from "./vector-store-cache";
 import type {
   AIStreamCallback,
   ChatMessage,
   RAGOptions,
 } from "./types";
 import type { DataSource } from "./data-source";
-
-const vectorStoreCache = new Map<string, QdrantVectorStoreWrapper>();
-
-async function getVectorStore(userId: string): Promise<QdrantVectorStoreWrapper> {
-  const cached = vectorStoreCache.get(userId);
-  if (cached) return cached;
-
-  const vectorStore = new QdrantVectorStoreWrapper(
-    userId,
-    new CustomEmbeddings(),
-  );
-  await vectorStore.ensureCollectionExists();
-  vectorStoreCache.set(userId, vectorStore);
-  return vectorStore;
-}
 
 function emitThinkingStep(
   onEvent: AIStreamCallback,
@@ -88,7 +72,7 @@ export async function streamRAG(
 
   if (knowledgeBaseEnabled) {
     try {
-      const vectorStore = await getVectorStore(userId);
+      const vectorStore = await getOrCreateVectorStore(userId);
 
       emitThinkingStep(
         onEvent,

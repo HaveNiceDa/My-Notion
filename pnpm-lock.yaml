@@ -412,6 +412,9 @@ importers:
 
   packages/business:
     dependencies:
+      '@notion/ai':
+        specifier: workspace:*
+        version: link:../ai
       clsx:
         specifier: ^2.0.0
         version: 2.1.1

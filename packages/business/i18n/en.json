@@ -74,9 +74,6 @@
     "starredSuccess": "Starred successfully",
     "unstarredSuccess": "Unstarred successfully",
     "errorToToggleStar": "Failed to toggle star",
-    "justNow": "Just now",
-    "minutesAgo": "{count} minutes ago",
-    "hoursAgo": "{count} hours ago",
     "createdBy": "Created by {user} on {time}",
     "editedBy": "Edited by {user} on {time}",
     "linkCopiedToClipboard": "Link copied to clipboard"
@@ -176,7 +173,7 @@
     "insertImage": "Insert image"
   },
 
-  "common": {
+  "Common": {
     "saved": "Saved successfully!",
     "saving": "Saving...",
     "userProfile": "User Profile",
