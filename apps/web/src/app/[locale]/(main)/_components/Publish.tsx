@@ -34,6 +34,7 @@ export function Publish({ initialData }: PublishProps) {
   const toggleStarDoc = useMutation(api.documents.toggleStar);
   const toggleKnowledgeBaseDoc = useMutation(api.documents.toggleKnowledgeBase);
   const t = useTranslations("Publish");
+  const tc = useTranslations("Common");
   const tNav = useTranslations("Navigation");
   const { user, isLoaded: isUserLoaded } = useUser();
 
@@ -48,9 +49,9 @@ export function Publish({ initialData }: PublishProps) {
 
   const lastEditedTime = formatTime(
     initialData.lastEditedTime || initialData._creationTime,
-    t,
+    tc,
   );
-  const createdTime = formatTime(initialData._creationTime, t);
+  const createdTime = formatTime(initialData._creationTime, tc);
 
   // 获取当前用户名（从Clerk获取）
   const getCurrentUserName = () => {

@@ -36,17 +36,13 @@ import {
   useAIModelStore,
   useKnowledgeBaseStore,
   useDeepThinkingStore,
+  useThinkingProcessStore,
+  useToolCallStore,
 } from "@notion/business/hooks";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-};
-
-type ThinkingStep = {
-  type: string;
-  content: string;
-  details?: string;
 };
 
 export function ChatModal({ visible, onClose }: Props) {
@@ -66,8 +62,8 @@ export function ChatModal({ visible, onClose }: Props) {
   const { model: selectedModel, setModel: setSelectedModel } = useAIModelStore();
   const { enabled: enableThinking, toggle: toggleDeepThinking } = useDeepThinkingStore();
   const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
-  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
-  const [stepsExpanded, setStepsExpanded] = useState(true);
+  const { steps: thinkingSteps, addStep: addThinkingStep, clearSteps: clearThinkingSteps, isExpanded: stepsExpanded, toggleExpanded: toggleStepsExpanded } = useThinkingProcessStore();
+  const { clearToolCalls } = useToolCallStore();
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<"aiConversations"> | null>(null);
@@ -133,7 +129,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
-    setThinkingSteps([]);
+    clearThinkingSteps();
 
     try {
       let conversationId = activeConversationId;
@@ -182,8 +178,8 @@ export function ChatModal({ visible, onClose }: Props) {
           setReasoningContent(fullReasoning);
           setReasoningExpanded(true);
         },
-        onThinkingStep: (step: ThinkingStep) => {
-          setThinkingSteps((prev) => [...prev, step]);
+        onThinkingStep: (step: { type: string; content: string; details?: string }) => {
+          addThinkingStep(step.type, step.content, step.details);
         },
         onError: (error: Error) => {
           console.error("AI stream error:", error);
@@ -251,7 +247,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
-    setThinkingSteps([]);
+    clearThinkingSteps();
     setShowHistory(false);
   };
 
@@ -261,7 +257,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
-    setThinkingSteps([]);
+    clearThinkingSteps();
     setShowHistory(false);
   };
 
@@ -274,7 +270,7 @@ export function ChatModal({ visible, onClose }: Props) {
         setStreamingContent("");
         setReasoningContent("");
         setCompletedReasoning("");
-        setThinkingSteps([]);
+        clearThinkingSteps();
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
@@ -503,7 +499,7 @@ export function ChatModal({ visible, onClose }: Props) {
           }}
         >
           <Pressable
-            onPress={() => setStepsExpanded(!stepsExpanded)}
+            onPress={() => toggleStepsExpanded()}
             style={tw`flex-row items-center gap-1.5 px-3.5 pt-2.5 pb-1`}
           >
             <Ionicons name="search-outline" size={14} color="#3b82f6" />

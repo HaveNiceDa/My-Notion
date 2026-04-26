@@ -14,7 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
-import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
+import { useThinkingProcessStore, loadThinkingStepsFromDB } from "@/src/lib/store/use-thinking-process-store";
 
 interface Message {
   id: string;
@@ -347,25 +347,23 @@ export const MessageList = React.memo(
     knowledgeBaseEnabled,
   }: MessageListProps) => {
     const t = useTranslations("AI");
+    const [isLoadingSteps, setIsLoadingSteps] = useState(false);
     const {
       steps,
       isExpanded,
       isVisible,
       toggleExpanded,
-      loadSteps,
       clearSteps,
-      isLoading: isLoadingSteps,
-      isLoaded,
     } = useThinkingProcessStore();
 
-    // 当conversationId变化时，加载思考过程或清除步骤
     useEffect(() => {
       if (conversationId) {
-        loadSteps(conversationId);
+        setIsLoadingSteps(true);
+        loadThinkingStepsFromDB(conversationId).finally(() => setIsLoadingSteps(false));
       } else {
         clearSteps();
       }
-    }, [conversationId, loadSteps, clearSteps]);
+    }, [conversationId, clearSteps]);
 
     // 格式化日期
     const formatDate = useMemo(() => {

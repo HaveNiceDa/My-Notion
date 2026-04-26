@@ -158,6 +158,8 @@ export function useAIChat() {
   const { userLoadingStatus } = useVectorStoreStore();
   const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
   const { enabled: deepThinkingEnabled } = useDeepThinkingStore();
+  const { clearSteps } = useThinkingProcessStore();
+  const { addToolCall, setToolCallResult, setToolCallError } = useToolCallStore();
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -360,7 +362,6 @@ export function useAIChat() {
       conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
       if (currentConversationId) {
-        const { clearSteps } = useThinkingProcessStore.getState();
         clearSteps();
       }
 
@@ -372,7 +373,6 @@ export function useAIChat() {
         (chunk) => { if (deepThinkingEnabled) { currentReasoningContent += chunk; scheduleRender(); } },
         (data: any) => {
           if (!data) return;
-          const { addToolCall, setToolCallResult, setToolCallError } = useToolCallStore.getState();
           if (!data.type) return;
           switch (data.type) {
             case "tool_call_start":
