@@ -12,9 +12,10 @@
   "dependencies": {
     "@hono/node-server": "^1.14.0",
     "@notion/ai": "workspace:*",
+    "@sentry/node": "^10.50.0",
     "convex": "^1.24.6",
-    "hono": "^4.7.9",
-    "dotenv": "^16.5.0"
+    "dotenv": "^16.5.0",
+    "hono": "^4.7.9"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",

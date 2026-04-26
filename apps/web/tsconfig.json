@@ -20,7 +20,9 @@
     ],
     "paths": {
       "@/*": ["./*"],
-      "@notion-i18n/*": ["../../packages/business/i18n/*"]
+      "@notion-i18n/*": ["../../packages/business/i18n/*"],
+      "@convex/server": ["./convex/_generated/server"],
+      "@convex/dataModel": ["./convex/_generated/dataModel"]
     }
   },
   "include": [

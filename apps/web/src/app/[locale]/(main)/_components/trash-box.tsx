@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { Id, Doc } from "@/convex/_generated/dataModel";
 import { Spinner } from "@/src/components/spinner";
 import { Input } from "@/src/components/ui/input";
 import { Checkbox } from "@/src/components/ui/checkbox";
@@ -26,7 +26,7 @@ export function TrashBox() {
   const [search, setSearch] = useState("");
   const [selectedDocuments, setSelectedDocuments] = useState<Set<Id<"documents">>>(new Set());
 
-  const filteredDocuments = documents?.filter((document) => {
+  const filteredDocuments = documents?.filter((document: Doc<"documents">) => {
     return document.title.toLowerCase().includes(search.toLocaleLowerCase());
   });
 
@@ -78,7 +78,7 @@ export function TrashBox() {
     if (selectedDocuments.size === (filteredDocuments?.length || 0)) {
       setSelectedDocuments(new Set());
     } else {
-      setSelectedDocuments(new Set(filteredDocuments?.map(doc => doc._id) || []));
+      setSelectedDocuments(new Set(filteredDocuments?.map((doc: Doc<"documents">) => doc._id) || []));
     }
   };
 
@@ -150,7 +150,7 @@ export function TrashBox() {
         <p className="hidden last:block text-xs text-center text-muted-foreground pb-2">
             {t('noDocumentsFound')}
           </p>
-        {filteredDocuments?.map((document) => (
+        {filteredDocuments?.map((document: Doc<"documents">) => (
           <div
             className={`text-sm rounded-sm w-full hover:bg-primary/5 flex items-center text-primary ${selectedDocuments.has(document._id) ? 'bg-primary/10' : ''} py-2 px-2`}
             key={document._id}

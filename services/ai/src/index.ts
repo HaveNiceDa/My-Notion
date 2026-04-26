@@ -14,6 +14,7 @@ import {
   type RAGOptions,
 } from "@notion/ai/server";
 import { ConvexDataSource } from "./convex-data-source";
+import { captureException, startSpan } from "./sentry";
 
 const app = new Hono();
 
@@ -45,12 +46,22 @@ app.post("/api/chat", async (c) => {
   };
 
   return streamSSE(c, async (stream) => {
-    await streamChat(messages, options, (event: AIStreamEvent) => {
-      stream.writeSSE({
-        event: event.type,
-        data: JSON.stringify(event),
+    try {
+      await startSpan("ai.chat.stream", async () => {
+        await streamChat(messages, options, (event: AIStreamEvent) => {
+          stream.writeSSE({
+            event: event.type,
+            data: JSON.stringify(event),
+          });
+        });
       });
-    });
+    } catch (error) {
+      captureException(error, { endpoint: "chat", model });
+      stream.writeSSE({
+        event: "error",
+        data: JSON.stringify({ type: "error", error: "Stream failed" }),
+      });
+    }
   });
 });
 
@@ -97,12 +108,22 @@ app.post("/api/rag", async (c) => {
   };
 
   return streamSSE(c, async (stream) => {
-    await streamRAG(query, options, (event: AIStreamEvent) => {
-      stream.writeSSE({
-        event: event.type,
-        data: JSON.stringify(event),
+    try {
+      await startSpan("ai.rag.stream", async () => {
+        await streamRAG(query, options, (event: AIStreamEvent) => {
+          stream.writeSSE({
+            event: event.type,
+            data: JSON.stringify(event),
+          });
+        });
       });
-    });
+    } catch (error) {
+      captureException(error, { endpoint: "rag", model, userId });
+      stream.writeSSE({
+        event: "error",
+        data: JSON.stringify({ type: "error", error: "RAG stream failed" }),
+      });
+    }
   });
 });
 
@@ -142,6 +163,7 @@ app.post("/api/rag-documents", async (c) => {
         return c.json({ error: "Invalid action" }, 400);
     }
   } catch (error: any) {
+    captureException(error, { endpoint: "rag-documents", action });
     return c.json({ success: false, error: error.message }, 500);
   }
 });

@@ -16,6 +16,7 @@ import {
 } from "@/src/components/ui/command";
 import { useSearch } from "@notion/business/hooks";
 import { api } from "@/convex/_generated/api";
+import { Doc } from "@/convex/_generated/dataModel";
 import { useEffect, useState } from "react";
 
 export function SearchCommand() {
@@ -56,7 +57,7 @@ export function SearchCommand() {
       <CommandList>
         <CommandEmpty>{t("empty")}</CommandEmpty>
         <CommandGroup heading={t("documents")}>
-          {documents?.map((document) => (
+          {documents?.map((document: Doc<"documents">) => (
             <CommandItem
               key={document._id}
               value={document.title}

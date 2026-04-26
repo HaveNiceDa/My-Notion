@@ -85,7 +85,7 @@ export function Title({ initialData }: TitleProps) {
             // 层级 >= 4 时，显示省略号展开功能
             <>
               {/* 显示前两层 */}
-              {documentPath.slice(0, 2).map((doc, index) => (
+              {documentPath.slice(0, 2).map((doc: Doc<"documents">, index: number) => (
                 <React.Fragment key={doc._id}>
                   <Button
                     className="font-normal h-auto p-1 text-sm text-muted-foreground hover:text-foreground"
@@ -113,7 +113,7 @@ export function Title({ initialData }: TitleProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-2">
                   <div className="flex flex-col gap-1">
-                    {documentPath.slice(2, -1).map((doc, index) => {
+                    {documentPath.slice(2, -1).map((doc: Doc<"documents">, index: number) => {
                       const isFirst = index === 0;
                       return (
                         <Button
@@ -142,7 +142,7 @@ export function Title({ initialData }: TitleProps) {
             </>
           ) : (
             // 层级 < 4 时，正常显示所有父文档
-            documentPath.slice(0, -1).map((doc, index) => (
+            documentPath.slice(0, -1).map((doc: Doc<"documents">, index: number) => (
               <React.Fragment key={doc._id}>
                 <Button
                   className="font-normal h-auto p-1 text-sm text-muted-foreground hover:text-foreground"

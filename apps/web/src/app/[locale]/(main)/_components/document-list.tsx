@@ -98,7 +98,7 @@ export function DocumentList({
           {t("Documents.noKnowledgeBasePages")}
         </p>
       )}
-      {documents.map((document) => (
+      {documents?.map((document: Doc<"documents">) => (
         <div key={document._id}>
           <Item
             id={document._id}

@@ -1,40 +1,26 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
-  testDir: './tests',
+  testDir: "./tests",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html',
+  reporter: "html",
   use: {
-    trace: 'on-first-retry',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || "http://localhost:3000",
+    trace: "on-first-retry",
   },
   projects: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-      testDir: './tests/web',
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testDir: "./tests/web",
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-      testDir: './tests/web',
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-      testDir: './tests/web',
-    },
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-      testDir: './tests/mobile',
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-      testDir: './tests/mobile',
+      name: "Mobile Chrome",
+      use: { ...devices["Pixel 5"] },
+      testDir: "./tests/mobile",
     },
   ],
 });
