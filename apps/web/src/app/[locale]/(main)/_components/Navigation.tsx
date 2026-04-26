@@ -96,19 +96,48 @@ export function Navigation() {
   const [isResetting, setIsResetting] = useState(false);
   const isCollapsed = navigation.isCollapsed;
 
+  const resetWidth = () => {
+    if (sidebarRef.current && navbarRef.current) {
+      navigation.setIsCollapsed(false);
+      setIsResetting(true);
+
+      sidebarRef.current.style.width = isMobile ? "100%" : "240px";
+      navbarRef.current.style.setProperty(
+        "width",
+        isMobile ? "0" : "calc(100% - 240px)",
+      );
+      navbarRef.current.style.setProperty("left", isMobile ? "100%" : "240px");
+      setTimeout(() => {
+        setIsResetting(false);
+      }, 300);
+    }
+  };
+
+  const collapse = () => {
+    if (sidebarRef.current && navbarRef.current) {
+      navigation.setIsCollapsed(true);
+      setIsResetting(true);
+
+      sidebarRef.current.style.width = "0";
+      navbarRef.current.style.setProperty("width", "100%");
+      navbarRef.current.style.setProperty("left", "0");
+      setTimeout(() => setIsResetting(false), 300);
+    }
+  };
+
   useEffect(() => {
     if (isMobile) {
       collapse();
     } else {
       resetWidth();
     }
-  }, [isMobile]);
+  }, [isMobile, collapse, resetWidth]);
 
   useEffect(() => {
     if (isMobile) {
       collapse();
     }
-  }, [pathname, isMobile]);
+  }, [pathname, isMobile, collapse]);
 
   const handleMouseDown = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -142,35 +171,6 @@ export function Navigation() {
     isResizingRef.current = false;
     document.removeEventListener("mousemove", handleMouseMove);
     document.removeEventListener("mouseup", handleMouseUp);
-  };
-
-  const resetWidth = () => {
-    if (sidebarRef.current && navbarRef.current) {
-      navigation.setIsCollapsed(false);
-      setIsResetting(true);
-
-      sidebarRef.current.style.width = isMobile ? "100%" : "240px";
-      navbarRef.current.style.setProperty(
-        "width",
-        isMobile ? "0" : "calc(100% - 240px)",
-      );
-      navbarRef.current.style.setProperty("left", isMobile ? "100%" : "240px");
-      setTimeout(() => {
-        setIsResetting(false);
-      }, 300);
-    }
-  };
-
-  const collapse = () => {
-    if (sidebarRef.current && navbarRef.current) {
-      navigation.setIsCollapsed(true);
-      setIsResetting(true);
-
-      sidebarRef.current.style.width = "0";
-      navbarRef.current.style.setProperty("width", "100%");
-      navbarRef.current.style.setProperty("left", "0");
-      setTimeout(() => setIsResetting(false), 300);
-    }
   };
 
   const handleCreate = () => {

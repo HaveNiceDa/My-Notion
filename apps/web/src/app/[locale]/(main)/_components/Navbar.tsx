@@ -21,9 +21,7 @@ export function Navbar ({isCollapsed,onResetWidth}:NavbarProps) {
   const params = useParams()
 
   const documentId = params.documentId as Id<'documents'>;
-  const document = documentId ? useQuery(api.documents.getById,{
-    documentId
-  }) : undefined;
+  const document = useQuery(api.documents.getById, documentId ? { documentId } : "skip");
 
   if (document === undefined) {
     return  (

@@ -10,7 +10,7 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint",
+    "lint": "eslint app/",
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "dependencies": {

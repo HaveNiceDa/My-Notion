@@ -5,6 +5,7 @@ import { useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
+import { useSyncExternalStore } from "react";
 
 import {
   CommandDialog,
@@ -17,22 +18,24 @@ import {
 import { useSearch } from "@notion/business/hooks";
 import { api } from "@/convex/_generated/api";
 import { Doc } from "@/convex/_generated/dataModel";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+const emptySubscribe = () => () => {};
 
 export function SearchCommand() {
   const { user } = useUser();
   const router = useRouter();
   const documents = useQuery(api.documents.getSearch);
-  const [isMounted, setIsMounted] = useState(false);
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const t = useTranslations("SearchCommand");
 
   const toggle = useSearch((store) => store.toggle);
   const isOpen = useSearch((store) => store.isOpen);
   const onClose = useSearch((store) => store.onClose);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {

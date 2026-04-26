@@ -6,7 +6,7 @@
     "dev": "next dev",
     "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
     "build": "next build",
-    "lint": "next lint",
+    "lint": "eslint src/ --max-warnings=50",
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "dependencies": {
@@ -65,6 +65,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@types/node": "^20",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",

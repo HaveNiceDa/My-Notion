@@ -157,14 +157,9 @@ const useImageUpload = (
   const uploadFiles = useMemoizedFn((files: File[]) => {
     const maxFiles = 10;
     if (files.length > maxFiles) {
-      // 只取前10张图片
       const selectedFiles = files.slice(0, maxFiles);
-      // 显示toast提示
       import("sonner").then(({ toast }) => {
-        import("next-intl").then(({ useTranslations }) => {
-          const t = useTranslations("AI");
-          toast.info(t("maxImagesUploaded", { count: maxFiles }));
-        });
+        toast.info(`最多只能上传 ${maxFiles} 张图片`);
       });
       selectedFiles.forEach((file) => uploadFile(file));
     } else {

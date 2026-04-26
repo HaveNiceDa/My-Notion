@@ -70,31 +70,33 @@ const StepItem = React.memo(({ step, index }: { step: any; index: number }) => {
     if (!step.details) return null;
 
     if (step.type === "documents") {
+      let details: { text?: string; docs?: { id: string; title: string; score: string }[] } | null = null;
       try {
-        const details = JSON.parse(step.details);
-        return (
-          <>
-            <p>{details.text}</p>
-            {details.docs && details.docs.length > 0 && (
-              <div className="mt-1 space-y-1">
-                {details.docs.map((doc: any, docIndex: number) => (
-                  <a
-                    key={docIndex}
-                    href={`/documents/${doc.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-blue-600 underline hover:text-blue-800 transition-colors"
-                  >
-                    {doc.title} (相关性:{parseFloat(doc.score).toFixed(2)})
-                  </a>
-                ))}
-              </div>
-            )}
-          </>
-        );
-      } catch (e) {
+        details = JSON.parse(step.details);
+      } catch {
         return <p>{step.details}</p>;
       }
+      if (!details) return <p>{step.details}</p>;
+      return (
+        <>
+          <p>{details.text}</p>
+          {details.docs && details.docs.length > 0 && (
+            <div className="mt-1 space-y-1">
+              {details.docs.map((doc, docIndex) => (
+                <a
+                  key={docIndex}
+                  href={`/documents/${doc.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 underline hover:text-blue-800 transition-colors"
+                >
+                  {doc.title} (相关性:{parseFloat(doc.score).toFixed(2)})
+                </a>
+              ))}
+            </div>
+          )}
+        </>
+      );
     } else if (
       step.type === "query" &&
       (step.details.includes("开始进行文本embedding处理") ||
@@ -358,8 +360,12 @@ export const MessageList = React.memo(
 
     useEffect(() => {
       if (conversationId) {
+        let cancelled = false;
         setIsLoadingSteps(true);
-        loadThinkingStepsFromDB(conversationId).finally(() => setIsLoadingSteps(false));
+        loadThinkingStepsFromDB(conversationId).finally(() => {
+          if (!cancelled) setIsLoadingSteps(false);
+        });
+        return () => { cancelled = true; };
       } else {
         clearSteps();
       }

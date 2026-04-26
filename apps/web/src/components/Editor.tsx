@@ -24,7 +24,7 @@ export interface EditorRef {
 }
 
 const Editor = forwardRef<EditorRef, EditorProps>(
-  ({ onChange, initialContent, editable = true }, ref) => {
+  function Editor({ onChange, initialContent, editable = true }, ref) {
     const { resolvedTheme } = useTheme();
     const { edgestore } = useEdgeStore();
     const params = useParams();

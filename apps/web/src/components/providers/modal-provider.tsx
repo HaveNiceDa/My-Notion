@@ -1,16 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 import { SettingsModal } from "@/src/components/modals/settings-modal";
 import { CoverImageModal } from "@/src/components/modals/cover-image-modal";
 
-export function ModalProvider() {
-  const [isMounted, setIsMounted] = useState(false);
+const emptySubscribe = () => () => {};
 
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
+export function ModalProvider() {
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
 
   if (!isMounted) {
     return null;

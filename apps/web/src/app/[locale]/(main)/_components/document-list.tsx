@@ -37,28 +37,30 @@ export function DocumentList({
     }));
   };
 
+  const knowledgeBaseRootQuery = useQuery(
+    api.documents.getKnowledgeBaseDocuments,
+    {},
+  );
+  const starredRootQuery = useQuery(api.documents.getStarred, {});
+  const sidebarQuery = useQuery(api.documents.getSidebar, {
+    parentDocument: parentDocumentId,
+  });
+
   const documents = isInKnowledgeBase
     ? parentDocumentId
-      ? useQuery(api.documents.getSidebar, {
-          parentDocument: parentDocumentId,
-        })
-      : useQuery(api.documents.getKnowledgeBaseDocuments, {})
+      ? sidebarQuery
+      : knowledgeBaseRootQuery
     : isStarred
       ? parentDocumentId
-        ? useQuery(api.documents.getSidebar, {
-            parentDocument: parentDocumentId,
-          })
-        : useQuery(api.documents.getStarred, {})
-      : useQuery(api.documents.getSidebar, {
-          parentDocument: parentDocumentId,
-        });
+        ? sidebarQuery
+        : starredRootQuery
+      : sidebarQuery;
 
   const onRedirect = (documentId: string) => {
     router.push(`/documents/${documentId}`);
   };
 
   const onMouseEnter = (documentId: string) => {
-    // 预加载页面
     router.prefetch(`/documents/${documentId}`);
   };
 
