@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { initEdgeStoreClient } from "@edgestore/server/core";
 import { edgeStoreRouter } from "@/src/lib/edgestore-router";
 
@@ -18,6 +19,14 @@ export async function OPTIONS() {
 
 export async function POST(request: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401, headers: CORS_HEADERS },
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file");
 

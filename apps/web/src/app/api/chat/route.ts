@@ -1,8 +1,17 @@
 import { NextRequest } from "next/server";
+import { auth } from "@clerk/nextjs/server";
 import { streamChat, type AIStreamEvent, type ChatMessage } from "@notion/ai/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const {
       messages,
       model,
