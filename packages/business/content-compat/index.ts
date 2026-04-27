@@ -4,6 +4,8 @@ type BlockNoteInlineContent = {
   styles?: Record<string, unknown>;
   content?: BlockNoteInlineContent[];
   href?: string;
+  url?: string;
+  caption?: string;
   children?: BlockNoteBlock[];
 };
 
@@ -89,8 +91,8 @@ function inlineContentToHtml(nodes: BlockNoteInlineContent[]): string {
   return nodes
     .map((node) => {
       if (node.type === "image") {
-        const url = (node as any).url ?? "";
-        const caption = (node as any).caption ?? "";
+        const url = node.url ?? "";
+        const caption = node.caption ?? "";
         const altAttr = caption ? ` alt="${escapeAttr(caption)}"` : "";
         return `<img src="${escapeAttr(url)}"${altAttr}>`;
       }

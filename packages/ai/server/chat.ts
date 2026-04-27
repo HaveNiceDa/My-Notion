@@ -27,15 +27,15 @@ export async function streamChat(
   const openai = getOpenAIClient();
   const tools = getToolDefinitions();
 
-  const requestParams: any = {
+  const requestParams: OpenAI.ChatCompletionCreateParamsStreaming = {
     model: options.model,
-    messages,
+    messages: messages as OpenAI.ChatCompletionMessageParam[],
     tools: tools.length > 0 ? tools : undefined,
     stream: true,
   };
 
   if (options.enableThinking) {
-    requestParams.extra_body = {
+    (requestParams as unknown as Record<string, unknown>).extra_body = {
       enable_thinking: true,
       thinking_budget: options.thinkingBudget ?? 50,
     };
@@ -49,25 +49,24 @@ export async function streamChat(
       const response = await openai.chat.completions.create(requestParams);
 
       let hasToolCalls = false;
-      let assistantMessage: any = { role: "assistant", content: "" };
+      let assistantMessage: Record<string, unknown> = { role: "assistant", content: "" };
 
-      for await (const chunk of response as any) {
+      for await (const chunk of response) {
         const delta = chunk.choices[0]?.delta;
 
         if (delta?.tool_calls) {
           hasToolCalls = true;
-          if (!assistantMessage.tool_calls) {
-            assistantMessage.tool_calls = [];
-          }
+          const toolCalls = (assistantMessage.tool_calls || []) as Record<string, unknown>[];
+          assistantMessage.tool_calls = toolCalls;
 
-          delta.tool_calls.forEach((toolCall: any, index: number) => {
-            if (!assistantMessage.tool_calls[index]) {
-              assistantMessage.tool_calls[index] = { ...toolCall };
+          delta.tool_calls.forEach((toolCall, index: number) => {
+            if (!toolCalls[index]) {
+              toolCalls[index] = { ...toolCall };
             } else {
-              if (toolCall.function?.arguments) {
-                assistantMessage.tool_calls[index].function.arguments =
-                  (assistantMessage.tool_calls[index].function.arguments ||
-                    "") + toolCall.function.arguments;
+              const fn = toolCall.function;
+              if (fn?.arguments) {
+                const existing = toolCalls[index].function as Record<string, unknown>;
+                existing.arguments = (existing.arguments || "") + fn.arguments;
               }
             }
           });
@@ -79,7 +78,7 @@ export async function streamChat(
         }
 
         const reasoningContent = options.enableThinking
-          ? (delta as any)?.reasoning_content
+          ? (delta as Record<string, unknown>)?.reasoning_content as string | undefined
           : undefined;
         if (reasoningContent) {
           onEvent({ type: "reasoning", text: reasoningContent });
@@ -87,7 +86,7 @@ export async function streamChat(
 
         const text = delta?.content;
         if (text) {
-          assistantMessage.content = (assistantMessage.content || "") + text;
+          assistantMessage.content = ((assistantMessage.content as string) || "") + text;
           onEvent({ type: "content", text });
         }
       }
@@ -97,11 +96,11 @@ export async function streamChat(
         break;
       }
 
-      currentMessages.push(assistantMessage);
+      currentMessages.push(assistantMessage as unknown as ChatMessage);
 
-      for (const toolCall of assistantMessage.tool_calls as ToolCallResult[]) {
+      for (const toolCall of (assistantMessage.tool_calls || []) as ToolCallResult[]) {
         const toolName = toolCall.function.name;
-        let toolArgs: any;
+        let toolArgs: Record<string, unknown>;
 
         try {
           toolArgs = JSON.parse(toolCall.function.arguments);
@@ -139,7 +138,7 @@ export async function streamChat(
         });
       }
 
-      requestParams.messages = currentMessages;
+      requestParams.messages = currentMessages as OpenAI.ChatCompletionMessageParam[];
     }
 
     onEvent({ type: "done" });

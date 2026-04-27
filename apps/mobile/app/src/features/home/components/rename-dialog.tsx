@@ -1,7 +1,7 @@
 import { useMutation } from "convex/react";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Dialog, Input, Text, View, useTheme } from "tamagui";
+import { Button, Dialog, Input, Text, View, useTheme, type ColorTokens } from "tamagui";
 import tw from "twrnc";
 
 import { api } from "@convex/_generated/api";
@@ -68,7 +68,7 @@ export function RenameDialog({
             value={newTitle}
             onChangeText={setNewTitle}
             placeholder={t("Modals.rename.documentName")}
-            placeholderTextColor={theme.placeholderColor.val as any}
+            placeholderTextColor={theme.placeholderColor.val as ColorTokens}
             autoFocus
             selectTextOnFocus
           />

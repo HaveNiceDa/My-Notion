@@ -21,7 +21,7 @@ export async function uploadFileToEdgeStore(
     uri,
     type: mimeType,
     name: fileName,
-  } as any);
+  } as unknown as Blob);
   formData.append("extension", extension);
   formData.append("name", fileName);
 

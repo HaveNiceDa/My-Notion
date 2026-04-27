@@ -16,6 +16,7 @@ import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store"
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import { useToolCallStore } from "@/src/lib/store/use-tool-call-store";
+import { devLog } from "@notion/business/utils";
 
 export interface Message {
   id: string;
@@ -107,13 +108,13 @@ async function runRAGQueryStream(
                   break;
                 case "error":
                   if (parsedData.message === "terminated") {
-                    console.log("[RAG System] 连接正常终止");
+                    devLog("[RAG] 连接正常终止");
                   } else {
                     onError(new Error(parsedData.message));
                   }
                   break;
                 case "done":
-                  console.log("[RAG System] 接收到结束事件");
+                  devLog("[RAG] 接收到结束事件");
                   break;
               }
             } catch (error) {

@@ -132,13 +132,14 @@ export class QdrantVectorStoreWrapper {
         { document: Document; score: number }
       >();
 
-      searchResults.forEach((result: any) => {
+      type QdrantSearchResult = { payload?: Record<string, unknown> | null; score: number };
+      searchResults.forEach((result: QdrantSearchResult) => {
         const document = new Document({
           pageContent: (result.payload?.pageContent as string) || "",
-          metadata: (result.payload?.metadata as any) || {},
+          metadata: (result.payload?.metadata as Record<string, unknown>) || {},
         });
 
-        const documentId = document.metadata?.documentId;
+        const documentId = document.metadata?.documentId as string | undefined;
         if (documentId) {
           if (
             !documentMap.has(documentId) ||

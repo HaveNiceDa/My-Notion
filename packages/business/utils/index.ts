@@ -5,6 +5,16 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+const isDev = process.env.NODE_ENV === "development";
+
+export function devLog(...args: unknown[]) {
+  if (isDev) console.log(...args);
+}
+
+export function devWarn(...args: unknown[]) {
+  if (isDev) console.warn(...args);
+}
+
 export function formatTime(timestamp: number | undefined, t: (key: string, params?: any) => string) {
   if (!timestamp) return null;
 

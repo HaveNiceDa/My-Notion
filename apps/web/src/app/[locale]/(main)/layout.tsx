@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
+import { devLog } from "@notion/business/utils";
 
 export default function MainLayout({
   children,
@@ -52,7 +53,7 @@ export default function MainLayout({
     const initializeVectorStore = async () => {
       try {
         setUserLoadingStatus(user.id, 'loading');
-        console.log(`[MainLayout] 开始提前加载向量存储: userId=${user.id}`);
+        devLog(`[MainLayout] 开始提前加载向量存储: userId=${user.id}`);
 
         // 调用后端API初始化知识库向量存储
         const response = await fetch("/api/rag-documents", {
@@ -71,7 +72,7 @@ export default function MainLayout({
         }
         
         setUserLoadingStatus(user.id, 'success');
-        console.log(`[MainLayout] 向量存储提前加载完成: userId=${user.id}`);
+        devLog(`[MainLayout] 向量存储提前加载完成: userId=${user.id}`);
       } catch (error) {
         console.error('[MainLayout] 向量存储提前加载失败:', error);
         setUserLoadingStatus(user.id, 'error');

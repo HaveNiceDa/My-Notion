@@ -42,7 +42,7 @@ export async function streamRAG(
   } = options;
 
   const dataSource = options.dataSource as DataSource | undefined;
-  const actualModelId = typeof model === "string" && (model as any) in MODEL_DISPLAY_NAMES
+  const actualModelId = typeof model === "string" && model in MODEL_DISPLAY_NAMES
     ? getActualModelId(model as AIModel)
     : model;
 
@@ -157,7 +157,7 @@ export async function streamRAG(
     { role: "user", content: userPrompt },
   ];
 
-  const displayModelName = (MODEL_DISPLAY_NAMES as any)[model] || model;
+  const displayModelName = MODEL_DISPLAY_NAMES[model as AIModel] || model;
   emitThinkingStep(
     onEvent,
     dataSource,

@@ -2,6 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useUser } from "@clerk/expo";
 import { useMutation, useQuery } from "convex/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import type { TextStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -819,7 +820,7 @@ export function ChatModal({ visible, onClose }: Props) {
                       boxShadow: "none",
                     }
                   : null,
-              ] as any
+              ] as unknown as TextStyle
             }
             placeholder={t("AI.pleaseEnterYourQuestion")}
             placeholderTextColor={theme.placeholderColor.val}

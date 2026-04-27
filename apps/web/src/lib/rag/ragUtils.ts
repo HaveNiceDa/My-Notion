@@ -19,6 +19,7 @@ export type { AIModel };
 
 import { buildEnhancedQuery } from "@notion/ai/rag";
 import { extractTextFromDocument } from "@notion/ai/utils";
+import { devLog } from "@notion/business/utils";
 import type { FunctionArgs, FunctionReference } from "convex/server";
 
 type ConvexClient = {
@@ -57,19 +58,17 @@ export const initKnowledgeBaseVectorStore = async (
   conversationId?: Id<"aiConversations">,
   skipDocumentCheck: boolean = false,
 ): Promise<ReturnType<typeof getOrCreateVectorStore>> => {
-  console.log(
-    `[RAG System] ===== 初始化知识库向量存储 - 用户: ${userId} =====`,
-  );
+  devLog(`[RAG] 初始化知识库向量存储 - 用户: ${userId}`);
 
   try {
     const vectorStore = await getOrCreateVectorStore(userId);
 
     if (skipDocumentCheck) {
-      console.log(`[RAG System] 跳过文档检查，直接返回缓存的向量存储`);
+      devLog(`[RAG] 跳过文档检查，直接返回缓存的向量存储`);
       return vectorStore;
     }
 
-    console.log(`[RAG System] 获取用户知识库文档...`);
+    devLog(`[RAG] 获取用户知识库文档...`);
     if (conversationId) {
       await addThinkingStep(
         convex,
@@ -83,7 +82,7 @@ export const initKnowledgeBaseVectorStore = async (
       api.aiChat.getKnowledgeBaseDocumentsForRAG,
       {},
     );
-    console.log(`[RAG System] 找到 ${documents.length} 个知识库文档`);
+    devLog(`[RAG] 找到 ${documents.length} 个知识库文档`);
 
     if (conversationId) {
       await addThinkingStep(
@@ -120,11 +119,11 @@ export const initKnowledgeBaseVectorStore = async (
       if (!needsReembed) {
         setCachedDocumentHash(userId, doc._id, currentHash);
         skippedCount++;
-        console.log(`[RAG System] 文档无需重新嵌入: ${doc.title}`);
+        devLog(`[RAG] 文档无需重新嵌入: ${doc.title}`);
         continue;
       }
 
-      console.log(`[RAG System] 文档需要重新嵌入: ${doc.title}`);
+      devLog(`[RAG] 文档需要重新嵌入: ${doc.title}`);
       reembeddedCount++;
 
       if (conversationId) {
@@ -138,7 +137,7 @@ export const initKnowledgeBaseVectorStore = async (
 
       const { textSplitter } = await import("@notion/ai/rag");
       const splits = await textSplitter.splitText(text);
-      console.log(`[RAG System] 文档分割为 ${splits.length} 个chunks`);
+      devLog(`[RAG] 文档分割为 ${splits.length} 个chunks`);
 
       const { CustomEmbeddings } = await import("@notion/ai/embeddings");
       const embeddings = await new CustomEmbeddings().embedDocuments(splits);
@@ -153,12 +152,10 @@ export const initKnowledgeBaseVectorStore = async (
       await vectorStore.addDocumentChunks(userId, doc._id, chunks, currentHash);
       setCachedDocumentHash(userId, doc._id, currentHash);
 
-      console.log(`[RAG System] 文档嵌入完成: ${doc.title}`);
+      devLog(`[RAG] 文档嵌入完成: ${doc.title}`);
     }
 
-    console.log(
-      `[RAG System] ===== 向量存储初始化完成 (重新嵌入: ${reembeddedCount}, 跳过: ${skippedCount}) =====`,
-    );
+    devLog(`[RAG] 向量存储初始化完成 (重新嵌入: ${reembeddedCount}, 跳过: ${skippedCount})`);
 
     if (conversationId) {
       await addThinkingStep(
@@ -172,7 +169,7 @@ export const initKnowledgeBaseVectorStore = async (
 
     return vectorStore;
   } catch (error) {
-    console.error("[RAG System] 初始化向量存储时出错:", error);
+    console.error("[RAG] 初始化向量存储时出错:", error);
     if (conversationId) {
       await addThinkingStep(
         convex,
@@ -196,11 +193,7 @@ export const runRAGQuery = async (
   knowledgeBaseEnabled: boolean = true,
   conversationId?: Id<"aiConversations">,
 ): Promise<string> => {
-  console.log(`[RAG System] ===== 执行RAG查询 =====`);
-  console.log(`[RAG System] 用户: ${userId}`);
-  console.log(`[RAG System] 查询: ${query}`);
-  console.log(`[RAG System] 模型: ${model}`);
-  console.log(`[RAG System] 最小相似度: ${minScore}`);
+  devLog(`[RAG] 执行RAG查询 - 模型: ${model}, 最小相似度: ${minScore}`);
 
   try {
     let searchResults: Array<{ document: Document; score: number }> = [];
@@ -210,7 +203,7 @@ export const runRAGQuery = async (
         api.aiChat.deleteThinkingSteps,
         { conversationId },
       );
-      console.log(`[RAG System] 删除了 ${deletedCount} 个旧的思考过程步骤`);
+      devLog(`[RAG] 删除了 ${deletedCount} 个旧的思考过程步骤`);
     }
 
     if (conversationId) {
@@ -229,12 +222,12 @@ export const runRAGQuery = async (
         conversationId,
         "query",
         "用户Query处理",
-        `用户输入: ${query}\n开始进行query embedding处理`,
+        `开始进行query embedding处理`,
       );
     }
 
     if (knowledgeBaseEnabled) {
-      console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
+      devLog(`[RAG] 知识库已启用，执行RAG检索...`);
 
       const vectorStore = await initKnowledgeBaseVectorStore(
         convex,
@@ -242,7 +235,7 @@ export const runRAGQuery = async (
         conversationId,
       );
 
-      console.log(`[RAG System] 执行语义检索...`);
+      devLog(`[RAG] 执行语义检索...`);
       if (conversationId) {
         await addThinkingStep(
           convex,
@@ -254,7 +247,7 @@ export const runRAGQuery = async (
       }
 
       const enhancedQuery = buildEnhancedQuery(query, conversationHistory);
-      console.log(`[RAG System] 增强查询: ${enhancedQuery}`);
+      devLog(`[RAG] 增强查询已生成`);
 
       searchResults = await vectorStore.similaritySearch(
         enhancedQuery,
@@ -302,10 +295,8 @@ export const runRAGQuery = async (
       query,
     );
 
-    console.log(`[RAG System] 系统提示长度: ${systemPrompt.length} 字符`);
-    console.log(`[RAG System] 用户提示长度: ${userPrompt.length} 字符`);
+    devLog(`[RAG] 提示词生成完成 - 系统: ${systemPrompt.length}字符, 用户: ${userPrompt.length}字符`);
 
-    console.log(`[RAG System] 调用聊天API...`);
     const displayModelName = MODEL_DISPLAY_NAMES[model] || model;
     if (conversationId) {
       await addThinkingStep(
@@ -344,10 +335,10 @@ export const runRAGQuery = async (
     }
 
     const data = await response.json();
-    console.log(`[RAG System] ===== RAG查询完成 =====`);
+    devLog(`[RAG] RAG查询完成`);
     return data.content;
   } catch (error) {
-    console.error("[RAG System] 执行RAG查询时出错:", error);
+    console.error("[RAG] 执行RAG查询时出错:", error);
     throw error;
   }
 };

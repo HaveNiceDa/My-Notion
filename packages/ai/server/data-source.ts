@@ -16,6 +16,12 @@ import { anyApi } from "convex/server";
 
 const api = anyApi;
 
+interface ConvexDocument {
+  _id: string;
+  title: string;
+  content: string;
+}
+
 export class ConvexDataSource implements DataSource {
   private convex: ConvexHttpClient;
 
@@ -31,7 +37,7 @@ export class ConvexDataSource implements DataSource {
       api.aiChat.getKnowledgeBaseDocumentsForRAG,
       {},
     );
-    return documents.map((doc: any) => ({
+    return (documents as ConvexDocument[]).map((doc) => ({
       _id: doc._id,
       title: doc.title,
       content: doc.content,
@@ -45,7 +51,7 @@ export class ConvexDataSource implements DataSource {
     details?: string,
   ): Promise<void> {
     await this.convex.mutation(api.aiChat.addThinkingStep, {
-      conversationId: conversationId as any,
+      conversationId,
       type,
       content,
       details,
@@ -54,7 +60,7 @@ export class ConvexDataSource implements DataSource {
 
   async deleteThinkingSteps(conversationId: string): Promise<number> {
     return await this.convex.mutation(api.aiChat.deleteThinkingSteps, {
-      conversationId: conversationId as any,
+      conversationId,
     });
   }
 }

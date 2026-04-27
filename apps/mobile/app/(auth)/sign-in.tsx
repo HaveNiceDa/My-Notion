@@ -24,7 +24,7 @@ export default function Page() {
       password,
     });
     if (error) {
-      if ((error as any)?.errors?.[0]?.code === "strategy_for_user_invalid") {
+      if ((error as { errors?: Array<{ code: string }> })?.errors?.[0]?.code === "strategy_for_user_invalid") {
         setCustomError(t("Auth.strategyForUserInvalid"));
       }
       return;
