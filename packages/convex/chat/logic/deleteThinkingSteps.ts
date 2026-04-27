@@ -1,13 +1,23 @@
 import { mutation } from "@convex/server";
 import { v } from "convex/values";
 
-/**
- * 删除对话的所有思考过程步骤
- */
 export const deleteThinkingSteps = mutation({
   args: { conversationId: v.id("aiConversations") },
   handler: async (ctx, args) => {
-    // 获取对话的所有思考过程步骤
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    const userId = identity.subject;
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+    if (conversation.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
     const steps = await ctx.db
       .query("aiThinkingSteps")
       .withIndex("by_conversation", (q) =>
@@ -15,7 +25,6 @@ export const deleteThinkingSteps = mutation({
       )
       .collect();
 
-    // 删除所有步骤
     for (const step of steps) {
       await ctx.db.delete(step._id);
     }

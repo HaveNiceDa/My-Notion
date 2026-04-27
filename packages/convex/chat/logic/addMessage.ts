@@ -1,9 +1,6 @@
 import { mutation } from "@convex/server";
 import { v } from "convex/values";
 
-/**
- * 添加消息到对话
- */
 export const addMessage = mutation({
   args: {
     conversationId: v.id("aiConversations"),
@@ -12,8 +9,21 @@ export const addMessage = mutation({
     documentId: v.optional(v.id("documents")),
   },
   handler: async (ctx, args) => {
-    const now = Date.now();
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    const userId = identity.subject;
 
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+    if (conversation.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
+    const now = Date.now();
     const messageId = await ctx.db.insert("aiMessages", {
       conversationId: args.conversationId,
       content: args.content,

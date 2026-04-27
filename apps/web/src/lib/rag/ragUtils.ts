@@ -1,5 +1,4 @@
 import { Document } from "@langchain/core/documents";
-import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { promptLoader } from "@notion/ai/prompts";
@@ -20,10 +19,21 @@ export type { AIModel };
 
 import { buildEnhancedQuery } from "@notion/ai/rag";
 import { extractTextFromDocument } from "@notion/ai/utils";
+import type { FunctionArgs, FunctionReference } from "convex/server";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+type ConvexClient = {
+  query<Ref extends FunctionReference<"query">>(
+    ref: Ref,
+    args: FunctionArgs<Ref>,
+  ): Promise<any>;
+  mutation<Ref extends FunctionReference<"mutation">>(
+    ref: Ref,
+    args: FunctionArgs<Ref>,
+  ): Promise<any>;
+};
 
 async function addThinkingStep(
+  convex: ConvexClient,
   conversationId: string | Id<"aiConversations">,
   type: string,
   content: string,
@@ -42,6 +52,7 @@ async function addThinkingStep(
 }
 
 export const initKnowledgeBaseVectorStore = async (
+  convex: ConvexClient,
   userId: string,
   conversationId?: Id<"aiConversations">,
   skipDocumentCheck: boolean = false,
@@ -61,6 +72,7 @@ export const initKnowledgeBaseVectorStore = async (
     console.log(`[RAG System] 获取用户知识库文档...`);
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "knowledge-base",
         "获取用户知识库文档",
@@ -69,12 +81,13 @@ export const initKnowledgeBaseVectorStore = async (
 
     const documents = await convex.query(
       api.aiChat.getKnowledgeBaseDocumentsForRAG,
-      { userId },
+      {},
     );
     console.log(`[RAG System] 找到 ${documents.length} 个知识库文档`);
 
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "knowledge-base",
         `找到 ${documents.length} 个知识库文档`,
@@ -116,6 +129,7 @@ export const initKnowledgeBaseVectorStore = async (
 
       if (conversationId) {
         await addThinkingStep(
+          convex,
           conversationId,
           "knowledge-base",
           `文档需要重新嵌入: ${doc.title}`,
@@ -148,6 +162,7 @@ export const initKnowledgeBaseVectorStore = async (
 
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "knowledge-base",
         `向量存储初始化完成`,
@@ -160,6 +175,7 @@ export const initKnowledgeBaseVectorStore = async (
     console.error("[RAG System] 初始化向量存储时出错:", error);
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "error",
         `初始化向量存储时出错`,
@@ -171,6 +187,7 @@ export const initKnowledgeBaseVectorStore = async (
 };
 
 export const runRAGQuery = async (
+  convex: ConvexClient,
   userId: string,
   query: string,
   model: AIModel = DEFAULT_MODEL,
@@ -198,6 +215,7 @@ export const runRAGQuery = async (
 
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "knowledge-base",
         "检查知识库状态",
@@ -207,6 +225,7 @@ export const runRAGQuery = async (
 
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "query",
         "用户Query处理",
@@ -218,6 +237,7 @@ export const runRAGQuery = async (
       console.log(`[RAG System] 知识库已启用，执行RAG检索...`);
 
       const vectorStore = await initKnowledgeBaseVectorStore(
+        convex,
         userId,
         conversationId,
       );
@@ -225,6 +245,7 @@ export const runRAGQuery = async (
       console.log(`[RAG System] 执行语义检索...`);
       if (conversationId) {
         await addThinkingStep(
+          convex,
           conversationId,
           "retrieval",
           "执行语义检索策略",
@@ -250,6 +271,7 @@ export const runRAGQuery = async (
         const text = `检索了${docs.length}篇文档，根据${minScore}阈值筛选过滤并排序，得到${docs.length}个相关文档，相关性分数分别为${docs.map((d) => d.score).join(", ")}`;
         const details = JSON.stringify({ text, docs });
         await addThinkingStep(
+          convex,
           conversationId,
           "documents",
           "检索相关文档",
@@ -257,6 +279,7 @@ export const runRAGQuery = async (
         );
       } else if (conversationId) {
         await addThinkingStep(
+          convex,
           conversationId,
           "documents",
           "检索相关文档",
@@ -267,6 +290,7 @@ export const runRAGQuery = async (
 
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "prompt",
         "生成动态提示词",
@@ -285,6 +309,7 @@ export const runRAGQuery = async (
     const displayModelName = MODEL_DISPLAY_NAMES[model] || model;
     if (conversationId) {
       await addThinkingStep(
+        convex,
         conversationId,
         "api",
         "调用流式聊天API",

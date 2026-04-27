@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
-import { ConvexHttpClient } from "convex/browser";
+import { useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { type AIModel } from "@notion/ai/config";
@@ -16,8 +16,6 @@ import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store"
 import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
 import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
 import { useToolCallStore } from "@/src/lib/store/use-tool-call-store";
-
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
 export interface Message {
   id: string;
@@ -150,6 +148,7 @@ async function runRAGQueryStream(
 
 export function useAIChat() {
   const { user } = useUser();
+  const convex = useConvex();
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -178,7 +177,7 @@ export function useAIChat() {
     if (!user) return;
     try {
       setIsLoadingConversations(true);
-      const result = await convex.query(api.aiChat.getConversations, { userId: user.id });
+      const result = await convex.query(api.aiChat.getConversations, {});
       setConversations(result);
     } catch (error) {
       console.error("Error loading conversations:", error);
@@ -212,7 +211,7 @@ export function useAIChat() {
 
       let conversation = conversations.find((conv) => conv._id === convId);
       if (!conversation) {
-        const loadedConversations = await convex.query(api.aiChat.getConversations, { userId: user.id });
+        const loadedConversations = await convex.query(api.aiChat.getConversations, {});
         setConversations(loadedConversations);
         conversation = loadedConversations.find((conv: any) => conv._id === convId);
       }
@@ -243,7 +242,7 @@ export function useAIChat() {
       return;
     }
     try {
-      await convex.mutation(api.aiChat.deleteConversation, { conversationId: convId, userId: user.id });
+      await convex.mutation(api.aiChat.deleteConversation, { conversationId: convId });
       await loadConversations();
       toast.success(t("conversationDeleted"));
     } catch (error) {
@@ -269,7 +268,6 @@ export function useAIChat() {
     if (!currentConversationId) {
       try {
         currentConversationId = await convex.mutation(api.aiChat.createConversation, {
-          userId: user.id,
           title: t("newConversation"),
         });
         setConversationId(currentConversationId);
@@ -474,7 +472,7 @@ export function useAIChat() {
         }
         setTimeout(async () => {
           try {
-            const loadedConversations = await convex.query(api.aiChat.getConversations, { userId: user.id });
+            const loadedConversations = await convex.query(api.aiChat.getConversations, {});
             setConversations(loadedConversations);
           } catch (error) {
             console.error("Error loading conversations:", error);

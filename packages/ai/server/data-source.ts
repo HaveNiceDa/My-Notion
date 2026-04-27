@@ -19,14 +19,17 @@ const api = anyApi;
 export class ConvexDataSource implements DataSource {
   private convex: ConvexHttpClient;
 
-  constructor(convexUrl: string) {
+  constructor(convexUrl: string, authToken?: string) {
     this.convex = new ConvexHttpClient(convexUrl);
+    if (authToken) {
+      this.convex.setAuth(authToken);
+    }
   }
 
-  async getKnowledgeBaseDocuments(userId: string): Promise<KnowledgeBaseDocument[]> {
+  async getKnowledgeBaseDocuments(_userId: string): Promise<KnowledgeBaseDocument[]> {
     const documents = await this.convex.query(
       api.aiChat.getKnowledgeBaseDocumentsForRAG,
-      { userId },
+      {},
     );
     return documents.map((doc: any) => ({
       _id: doc._id,

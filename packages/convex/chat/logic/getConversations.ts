@@ -1,15 +1,16 @@
 import { query } from "@convex/server";
-import { v } from "convex/values";
 
-/**
- * 获取用户的所有AI对话
- */
 export const getConversations = query({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    const userId = identity.subject;
     return await ctx.db
       .query("aiConversations")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .collect();
   },

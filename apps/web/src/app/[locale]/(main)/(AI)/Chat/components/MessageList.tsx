@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, ReactNode, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
+import { useConvex } from "convex/react";
 import {
   Copy,
   ChevronDown,
@@ -349,6 +350,7 @@ export const MessageList = React.memo(
     knowledgeBaseEnabled,
   }: MessageListProps) => {
     const t = useTranslations("AI");
+    const convex = useConvex();
     const [isLoadingSteps, setIsLoadingSteps] = useState(false);
     const {
       steps,
@@ -362,7 +364,7 @@ export const MessageList = React.memo(
       if (conversationId) {
         let cancelled = false;
         setIsLoadingSteps(true);
-        loadThinkingStepsFromDB(conversationId).finally(() => {
+        loadThinkingStepsFromDB(convex, conversationId).finally(() => {
           if (!cancelled) setIsLoadingSteps(false);
         });
         return () => { cancelled = true; };

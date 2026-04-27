@@ -1,9 +1,6 @@
 import { mutation } from "@convex/server";
 import { v } from "convex/values";
 
-/**
- * 添加思考过程步骤
- */
 export const addThinkingStep = mutation({
   args: {
     conversationId: v.id("aiConversations"),
@@ -13,6 +10,20 @@ export const addThinkingStep = mutation({
     details: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    const userId = identity.subject;
+
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+    if (conversation.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
     const now = Date.now();
     return await ctx.db.insert("aiThinkingSteps", {
       conversationId: args.conversationId,

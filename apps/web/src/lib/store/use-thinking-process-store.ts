@@ -1,13 +1,23 @@
 export { useThinkingProcessStore, type ThinkingStep } from "@notion/business/hooks";
 
-import { ConvexHttpClient } from "convex/browser";
+import type { FunctionArgs, FunctionReference } from "convex/server";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import { useThinkingProcessStore } from "@notion/business/hooks";
 
-const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+type ConvexClient = {
+  query<Ref extends FunctionReference<"query">>(
+    ref: Ref,
+    args: FunctionArgs<Ref>,
+  ): Promise<any>;
+  mutation<Ref extends FunctionReference<"mutation">>(
+    ref: Ref,
+    args: FunctionArgs<Ref>,
+  ): Promise<any>;
+};
 
 export async function loadThinkingStepsFromDB(
+  convex: ConvexClient,
   conversationId: Id<"aiConversations">,
 ): Promise<void> {
   const store = useThinkingProcessStore.getState();
@@ -29,6 +39,7 @@ export async function loadThinkingStepsFromDB(
 }
 
 export async function addThinkingStepToDB(
+  convex: ConvexClient,
   conversationId: Id<"aiConversations">,
   type: string,
   content: string,

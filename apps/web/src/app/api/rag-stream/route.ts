@@ -1,11 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
 import { streamRAG, ConvexDataSource, type AIStreamEvent } from "@notion/ai/server";
+
+async function getAuthenticatedConvexClient(): Promise<ConvexHttpClient | null> {
+  const { getToken, userId } = await auth();
+  if (!userId) return null;
+  const token = await getToken({ template: "convex" });
+  const client = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
+  if (token) {
+    client.setAuth(token);
+  }
+  return client;
+}
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401 },
+      );
+    }
+
     const body = await req.json();
     const {
-      userId,
       query,
       conversationHistory,
       model,
@@ -15,14 +35,19 @@ export async function POST(req: NextRequest) {
       enableThinking = false,
     } = body;
 
-    if (!userId || !query) {
+    if (!query) {
       return NextResponse.json(
-        { success: false, error: "userId and query are required" },
+        { success: false, error: "query is required" },
         { status: 400 },
       );
     }
 
-    const dataSource = new ConvexDataSource(process.env.NEXT_PUBLIC_CONVEX_URL!);
+    const { getToken: getStreamToken } = await auth();
+    const streamToken = await getStreamToken({ template: "convex" });
+    const dataSource = new ConvexDataSource(
+      process.env.NEXT_PUBLIC_CONVEX_URL!,
+      streamToken ?? undefined,
+    );
 
     const stream = new ReadableStream({
       async start(controller) {

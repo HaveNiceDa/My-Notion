@@ -1,15 +1,16 @@
 import { query } from "@convex/server";
-import { v } from "convex/values";
 
-/**
- * 获取用户知识库文档（用于RAG处理）
- */
 export const getKnowledgeBaseDocumentsForRAG = query({
-  args: { userId: v.string() },
-  handler: async (ctx, args) => {
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+    const userId = identity.subject;
     return await ctx.db
       .query("documents")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .filter((q) =>
         q.and(
           q.eq(q.field("isArchived"), false),

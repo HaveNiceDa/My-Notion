@@ -1,15 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@clerk/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
 import { streamRAG, ConvexDataSource, type AIStreamEvent } from "@notion/ai/server";
 
 export async function POST(req: NextRequest) {
   try {
+    const { userId, getToken } = await auth();
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await req.json();
     const { action, ...params } = body;
 
     switch (action) {
       case "runRAGQuery": {
         const {
-          userId,
           query,
           model,
           minScore,
@@ -18,7 +24,11 @@ export async function POST(req: NextRequest) {
           conversationId,
         } = params;
 
-        const dataSource = new ConvexDataSource(process.env.NEXT_PUBLIC_CONVEX_URL!);
+        const token = await getToken({ template: "convex" });
+        const dataSource = new ConvexDataSource(
+          process.env.NEXT_PUBLIC_CONVEX_URL!,
+          token ?? undefined,
+        );
 
         let fullContent = "";
 

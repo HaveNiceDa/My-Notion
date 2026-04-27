@@ -77,7 +77,7 @@ export function ChatModal({ visible, onClose }: Props) {
   const deleteConversation = useMutation(api.aiChat.deleteConversation);
   const updateConversationTitle = useMutation(api.aiChat.updateConversationTitle);
 
-  const conversations = useQuery(api.aiChat.getConversations, user ? { userId: user.id } : "skip");
+  const conversations = useQuery(api.aiChat.getConversations, user ? {} : "skip");
 
   const convexMessages = useQuery(
     api.aiChat.getMessages,
@@ -137,7 +137,6 @@ export function ChatModal({ visible, onClose }: Props) {
 
       if (!conversationId) {
         conversationId = await createConversation({
-          userId: user.id,
           title: userMessage.slice(0, 30),
         });
         setActiveConversationId(conversationId);
@@ -264,7 +263,7 @@ export function ChatModal({ visible, onClose }: Props) {
   const handleDeleteConversation = async (id: Id<"aiConversations">) => {
     if (!user) return;
     try {
-      await deleteConversation({ conversationId: id, userId: user.id });
+      await deleteConversation({ conversationId: id });
       if (activeConversationId === id) {
         setActiveConversationId(null);
         setStreamingContent("");
