@@ -13,9 +13,27 @@ export default defineConfig({
   },
   projects: [
     {
+      name: "auth-setup",
+      testMatch: /auth-setup\.spec\.ts/,
+      testDir: "./tests/web",
+      use: { ...devices["Desktop Chrome"] },
+    },
+    {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
       testDir: "./tests/web",
+      testIgnore: /auth-setup\.spec\.ts|api-auth\.spec\.ts/,
+      dependencies: ["auth-setup"],
+    },
+    {
+      name: "chromium-authenticated",
+      testMatch: /api-auth\.spec\.ts/,
+      testDir: "./tests/web",
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: ".auth/storage-state.json",
+      },
+      dependencies: ["auth-setup"],
     },
   ],
 });
