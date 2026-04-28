@@ -18,9 +18,7 @@ export class QdrantVectorStoreWrapper {
     this.collectionName = `user_${cleanUserId}_knowledge_base`;
 
     this.qdrantClient = new QdrantClient({
-      url: process.env.NEXT_PUBLIC_QDRANT_URL?.endsWith(":6333")
-        ? process.env.NEXT_PUBLIC_QDRANT_URL
-        : `${process.env.NEXT_PUBLIC_QDRANT_URL}:6333`,
+      url: process.env.NEXT_PUBLIC_QDRANT_URL,
       apiKey: process.env.NEXT_PUBLIC_QDRANT_API_KEY,
       checkCompatibility: false,
     });

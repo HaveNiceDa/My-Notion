@@ -15,6 +15,17 @@ async function getAuthenticatedConvexClient(): Promise<ConvexHttpClient | null> 
   return client;
 }
 
+function isQdrantUnavailable(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes("QDRANT_URL") ||
+    msg.includes("ECONNREFUSED") ||
+    msg.includes("fetch failed") ||
+    msg.includes("connect") ||
+    msg.includes("timeout")
+  );
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -48,8 +59,18 @@ export async function POST(req: NextRequest) {
         if (!convex) {
           return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
         }
-        await initKnowledgeBase(userId);
-        await initKnowledgeBaseVectorStore(convex, userId, undefined, true);
+        try {
+          await initKnowledgeBase(userId);
+          await initKnowledgeBaseVectorStore(convex, userId, undefined, true);
+        } catch (error) {
+          if (isQdrantUnavailable(error)) {
+            return NextResponse.json({
+              success: true,
+              warning: "Vector store unavailable — knowledge base features disabled until Qdrant is reachable",
+            });
+          }
+          throw error;
+        }
         return NextResponse.json({ success: true });
       }
       case "runRAGQuery": {
@@ -72,8 +93,9 @@ export async function POST(req: NextRequest) {
       default:
         return NextResponse.json({ success: false, error: "Invalid action" }, { status: 400 });
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("RAG Documents API error:", error);
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import {
@@ -96,9 +96,9 @@ export function Navigation() {
   const [isResetting, setIsResetting] = useState(false);
   const isCollapsed = navigation.isCollapsed;
 
-  const resetWidth = () => {
+  const resetWidth = useCallback(() => {
     if (sidebarRef.current && navbarRef.current) {
-      navigation.setIsCollapsed(false);
+      useNavigation.getState().setIsCollapsed(false);
       setIsResetting(true);
 
       sidebarRef.current.style.width = isMobile ? "100%" : "240px";
@@ -111,11 +111,11 @@ export function Navigation() {
         setIsResetting(false);
       }, 300);
     }
-  };
+  }, [isMobile]);
 
-  const collapse = () => {
+  const collapse = useCallback(() => {
     if (sidebarRef.current && navbarRef.current) {
-      navigation.setIsCollapsed(true);
+      useNavigation.getState().setIsCollapsed(true);
       setIsResetting(true);
 
       sidebarRef.current.style.width = "0";
@@ -123,7 +123,7 @@ export function Navigation() {
       navbarRef.current.style.setProperty("left", "0");
       setTimeout(() => setIsResetting(false), 300);
     }
-  };
+  }, []);
 
   useEffect(() => {
     if (isMobile) {
