@@ -1,11 +1,15 @@
 import { test, expect } from "@playwright/test";
 
 const CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY!;
-const E2E_USER_EMAIL = process.env.E2E_CLERK_USER_EMAIL || "shijieli02@163.com";
-const E2E_USER_PASSWORD = process.env.E2E_CLERK_USER_PASSWORD || "@1280063538Ss";
+const E2E_USER_EMAIL = process.env.E2E_CLERK_USER_EMAIL;
+const E2E_USER_PASSWORD = process.env.E2E_CLERK_USER_PASSWORD;
 
 async function createClerkSessionViaApi(): Promise<string> {
-  const usersRes = await fetch("https://api.clerk.com/v1/users?limit=10&email_address=" + encodeURIComponent(E2E_USER_EMAIL), {
+  if (!CLERK_SECRET_KEY) {
+    throw new Error("CLERK_SECRET_KEY is required for auth setup");
+  }
+
+  const usersRes = await fetch("https://api.clerk.com/v1/users?limit=10", {
     headers: { Authorization: `Bearer ${CLERK_SECRET_KEY}` },
   });
   if (!usersRes.ok) {
@@ -13,12 +17,10 @@ async function createClerkSessionViaApi(): Promise<string> {
   }
   const users = await usersRes.json();
   const userList = Array.isArray(users) ? users : users.data;
-  const targetUser = userList.find((u: { email_addresses: Array<{ email_address: string }> }) =>
-    u.email_addresses.some((e: { email_address: string }) => e.email_address === E2E_USER_EMAIL)
-  );
-  if (!targetUser) {
-    throw new Error(`User ${E2E_USER_EMAIL} not found in Clerk`);
+  if (!userList || userList.length === 0) {
+    throw new Error("No Clerk users found");
   }
+  const userId = userList[0].id;
 
   const sessionRes = await fetch("https://api.clerk.com/v1/sessions", {
     method: "POST",
@@ -26,7 +28,7 @@ async function createClerkSessionViaApi(): Promise<string> {
       Authorization: `Bearer ${CLERK_SECRET_KEY}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ user_id: targetUser.id }),
+    body: JSON.stringify({ user_id: userId }),
   });
   if (!sessionRes.ok) {
     throw new Error(`Failed to create session: ${sessionRes.status} ${await sessionRes.text()}`);
@@ -48,34 +50,34 @@ async function createClerkSessionViaApi(): Promise<string> {
 }
 
 test.describe("Auth Setup", () => {
-  test("authenticate via Clerk UI and save storage state", async ({ page, context }) => {
+  test("authenticate and save storage state", async ({ page, context }) => {
     test.setTimeout(120000);
 
-    await page.goto("/en");
-    await page.waitForLoadState("networkidle");
+    if (E2E_USER_EMAIL && E2E_USER_PASSWORD) {
+      await page.goto("/en");
+      await page.waitForLoadState("networkidle");
 
-    const loginButton = page.getByRole("button", { name: /login/i }).first();
-    await loginButton.waitFor({ state: "visible", timeout: 15000 });
-    await loginButton.click();
+      const loginButton = page.getByRole("button", { name: /login/i }).first();
+      await loginButton.waitFor({ state: "visible", timeout: 15000 });
+      await loginButton.click();
 
-    const identifierInput = page.locator("input[name='identifier']").first();
-    await identifierInput.waitFor({ state: "visible", timeout: 15000 });
-    await identifierInput.fill(E2E_USER_EMAIL);
+      const identifierInput = page.locator("input[name='identifier']").first();
+      await identifierInput.waitFor({ state: "visible", timeout: 15000 });
+      await identifierInput.fill(E2E_USER_EMAIL);
 
-    const passwordInput = page.locator("input[name='password']").first();
-    await passwordInput.waitFor({ state: "visible", timeout: 10000 });
-    await passwordInput.fill(E2E_USER_PASSWORD);
+      const passwordInput = page.locator("input[name='password']").first();
+      await passwordInput.waitFor({ state: "visible", timeout: 10000 });
+      await passwordInput.fill(E2E_USER_PASSWORD);
 
-    const submitBtn = page.locator("button:visible").filter({ hasText: /continue/i }).first();
-    await submitBtn.click();
+      const submitBtn = page.locator("button:visible").filter({ hasText: /continue/i }).first();
+      await submitBtn.click();
 
-    await page.waitForTimeout(5000);
+      await page.waitForTimeout(5000);
 
-    const currentUrl = page.url();
-
-    if (currentUrl.includes("documents")) {
-      await context.storageState({ path: ".auth/storage-state.json" });
-      return;
+      if (page.url().includes("documents")) {
+        await context.storageState({ path: ".auth/storage-state.json" });
+        return;
+      }
     }
 
     const jwt = await createClerkSessionViaApi();
