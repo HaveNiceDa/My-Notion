@@ -26,7 +26,7 @@ const getDataSource = () => {
   return new ConvexDataSource(convexUrl);
 };
 
-app.post("/api/chat", async (c) => {
+app.post("/chat", async (c) => {
   const body = await c.req.json();
   const { messages, model, enableThinking, thinkingBudget } = body as {
     messages: ChatMessage[];
@@ -65,7 +65,7 @@ app.post("/api/chat", async (c) => {
   });
 });
 
-app.post("/api/rag", async (c) => {
+app.post("/rag", async (c) => {
   const body = await c.req.json();
   const {
     userId,
@@ -127,7 +127,7 @@ app.post("/api/rag", async (c) => {
   });
 });
 
-app.post("/api/rag-documents", async (c) => {
+app.post("/rag-documents", async (c) => {
   const body = await c.req.json();
   const { action, ...params } = body as {
     action: string;
