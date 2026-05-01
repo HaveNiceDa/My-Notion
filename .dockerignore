@@ -1,0 +1,8 @@
+.git
+apps/web/.next
+apps/mobile
+**/node_modules/.cache
+**/.env.local
+**/__tests__
+**/dist
+docs
