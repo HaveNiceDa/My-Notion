@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, forwardRef, useImperativeHandle } from "react";
+import { useEffect, forwardRef, useImperativeHandle, useMemo } from "react";
 import { BlockNoteEditor, PartialBlock } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
@@ -8,18 +8,18 @@ import "@blocknote/mantine/style.css";
 import "@blocknote/core/fonts/inter.css";
 import { useTheme } from "next-themes";
 import { useParams } from "next/navigation";
+import { useAuth, useClerk } from "@clerk/nextjs";
 import * as locales from "@blocknote/core/locales";
-import {
-  AIExtension,
-  AIMenuController,
-} from "@blocknote/xl-ai";
+import { AIExtension } from "@blocknote/xl-ai";
 import * as aiLocales from "@blocknote/xl-ai/locales";
 import "@blocknote/xl-ai/style.css";
 import { DefaultChatTransport } from "ai";
 
 import { useEdgeStore } from "@/src/lib/edgestore";
+import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
 import { EditorFormattingToolbar } from "./editor/EditorFormattingToolbar";
 import { EditorSlashMenu } from "./editor/EditorSlashMenu";
+import { EditorAIMenuController } from "./editor/EditorAIMenuController";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -56,12 +56,36 @@ const Editor = forwardRef<EditorRef, EditorProps>(
     const { edgestore } = useEdgeStore();
     const params = useParams();
     const locale = (params.locale as string) || "en";
+    const { isSignedIn, isLoaded } = useAuth();
+    const { openSignIn } = useClerk();
+    const { model } = useAIModelStore();
 
     const handleUpload = async (file: File) => {
       const response = await edgestore.publicFiles.upload({ file });
 
       return response.url;
     };
+
+    const transport = useMemo(() => {
+      const authFetch: typeof globalThis.fetch = async (input, init) => {
+        if (isLoaded && !isSignedIn) {
+          openSignIn({});
+          return new Response(
+            JSON.stringify({ error: "Authentication required" }),
+            { status: 401, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        return globalThis.fetch(input, init);
+      };
+
+      return new DefaultChatTransport({
+        api: "/api/editor-ai/streamText",
+        fetch: authFetch,
+        body: {
+          modelId: model,
+        },
+      });
+    }, [model, isSignedIn, isLoaded, openSignIn]);
 
     const editor: BlockNoteEditor = useCreateBlockNote({
       initialContent: initialContent
@@ -74,9 +98,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(
       },
       extensions: [
         AIExtension({
-          transport: new DefaultChatTransport({
-            api: "/api/editor-ai/streamText",
-          }),
+          transport,
         }),
       ],
     });
@@ -110,7 +132,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(
           formattingToolbar={false}
           slashMenu={false}
         >
-          <AIMenuController />
+          <EditorAIMenuController />
           <EditorFormattingToolbar />
           <EditorSlashMenu editor={editor} />
         </BlockNoteView>

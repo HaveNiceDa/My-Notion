@@ -4,8 +4,7 @@ import {
   createUIMessageStreamResponse,
   createUIMessageStream,
 } from "ai";
-import { DASHSCOPE_BASE_URL } from "@notion/ai/config";
-import { getActualModelId } from "@notion/ai/config";
+import { DASHSCOPE_BASE_URL, getActualModelId, DEFAULT_MODEL } from "@notion/ai/config";
 import type { AIModel } from "@notion/ai/config";
 
 const EDITOR_AI_SYSTEM_PROMPT = `You're manipulating a text document using HTML blocks.
@@ -21,6 +20,8 @@ IF there is no selection active in the latest state, first, determine what part 
 ---
  `;
 
+const CONTEXT_WINDOW = 5;
+
 type ToolDefinition = {
   description?: string;
   inputSchema: Record<string, unknown>;
@@ -28,6 +29,49 @@ type ToolDefinition = {
 };
 
 type ToolDefinitions = Record<string, ToolDefinition>;
+
+type BlockWithCursor = {
+  id: string;
+  type: string;
+  content?: unknown;
+  children?: unknown[];
+  cursor?: boolean;
+};
+
+function compressBlocks(
+  blocks: BlockWithCursor[],
+  contextWindow: number = CONTEXT_WINDOW,
+): { compressed: BlockWithCursor[]; wasCompressed: boolean } {
+  if (blocks.length <= contextWindow * 2 + 1) {
+    return { compressed: blocks, wasCompressed: false };
+  }
+
+  const cursorIndex = blocks.findIndex((b) => b.cursor);
+  if (cursorIndex === -1) {
+    return { compressed: blocks, wasCompressed: false };
+  }
+
+  const start = Math.max(0, cursorIndex - contextWindow);
+  const end = Math.min(blocks.length, cursorIndex + contextWindow + 1);
+  const compressed = blocks.slice(start, end);
+
+  if (start > 0) {
+    compressed.unshift({
+      id: `...${start}-blocks-omitted-before`,
+      type: "paragraph",
+      content: `[${start} block(s) omitted above]`,
+    });
+  }
+  if (end < blocks.length) {
+    compressed.push({
+      id: `...${blocks.length - end}-blocks-omitted-after`,
+      type: "paragraph",
+      content: `[${blocks.length - end} block(s) omitted below]`,
+    });
+  }
+
+  return { compressed, wasCompressed: true };
+}
 
 function injectDocumentStateMessages(
   messages: Array<Record<string, unknown>>,
@@ -40,22 +84,29 @@ function injectDocumentStateMessages(
       const documentState = (message.metadata as Record<string, unknown>)
         .documentState as {
         selection: boolean;
-        selectedBlocks?: unknown[];
-        blocks: unknown[];
+        selectedBlocks?: BlockWithCursor[];
+        blocks: BlockWithCursor[];
         isEmptyDocument: boolean;
       };
 
-      const stateText = documentState.selection
-        ? `This is the latest state of the selection (ignore previous selections, you MUST issue operations against this latest version of the selection):\n${JSON.stringify(documentState.selectedBlocks)}\n\nThis is the latest state of the entire document (INCLUDING the selected text), \nyou can use this to find the selected text to understand the context (but you MUST NOT issue operations against this document, you MUST issue operations against the selection):\n${JSON.stringify(documentState.blocks)}`
-        : `There is no active selection. This is the latest state of the document (ignore previous documents, you MUST issue operations against this latest version of the document). \nThe cursor is BETWEEN two blocks as indicated by cursor: true.\n${documentState.isEmptyDocument ? "Because the document is empty, YOU MUST first update the empty block before adding new blocks." : "Prefer updating existing blocks over removing and adding (but this also depends on the user's question)."}\n${JSON.stringify(documentState.blocks)}`;
+      if (documentState.selection) {
+        const selectedBlocks = documentState.selectedBlocks || [];
+        const { compressed: docBlocks, wasCompressed } = compressBlocks(
+          documentState.blocks,
+        );
 
-      return [
-        {
-          role: "assistant",
-          content: stateText,
-        },
-        message,
-      ];
+        const stateText = `This is the latest state of the selection (ignore previous selections, you MUST issue operations against this latest version of the selection):\n${JSON.stringify(selectedBlocks)}\n\nThis is the latest state of the entire document (INCLUDING the selected text), \nyou can use this to find the selected text to understand the context (but you MUST NOT issue operations against this document, you MUST issue operations against the selection):${wasCompressed ? " [COMPRESSED - some blocks omitted for brevity]" : ""}\n${JSON.stringify(docBlocks)}`;
+
+        return [{ role: "assistant", content: stateText }, message];
+      }
+
+      const { compressed: docBlocks, wasCompressed } = compressBlocks(
+        documentState.blocks,
+      );
+
+      const stateText = `There is no active selection. This is the latest state of the document (ignore previous documents, you MUST issue operations against this latest version of the document). \nThe cursor is BETWEEN two blocks as indicated by cursor: true.\n${documentState.isEmptyDocument ? "Because the document is empty, YOU MUST first update the empty block before adding new blocks." : "Prefer updating existing blocks over removing and adding (but this also depends on the user's question)."}${wasCompressed ? " [COMPRESSED - some blocks omitted for brevity]" : ""}\n${JSON.stringify(docBlocks)}`;
+
+      return [{ role: "assistant", content: stateText }, message];
     }
     return [message];
   });
@@ -171,7 +222,7 @@ export async function POST(req: Request) {
     });
   }
 
-  const { messages, toolDefinitions } = await req.json();
+  const { messages, toolDefinitions, modelId } = await req.json();
 
   if (!messages || !Array.isArray(messages)) {
     return new Response(JSON.stringify({ error: "Invalid messages format" }), {
@@ -191,6 +242,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const resolvedModelId = (modelId || DEFAULT_MODEL) as AIModel;
+
   const openai = new OpenAI({
     apiKey,
     baseURL: DASHSCOPE_BASE_URL,
@@ -203,7 +256,7 @@ export async function POST(req: Request) {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       const response = await openai.chat.completions.create({
-        model: getActualModelId("Model-1" as AIModel),
+        model: getActualModelId(resolvedModelId),
         messages: [
           { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
           ...openaiMessages,
