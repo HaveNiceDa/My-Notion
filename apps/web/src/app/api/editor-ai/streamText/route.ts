@@ -6,6 +6,8 @@ import {
 } from "ai";
 import { DASHSCOPE_BASE_URL, getActualModelId, DEFAULT_MODEL } from "@notion/ai/config";
 import type { AIModel } from "@notion/ai/config";
+import { compressBlocks } from "@notion/ai/utils";
+import type { BlockWithCursor } from "@notion/ai/utils";
 
 const EDITOR_AI_SYSTEM_PROMPT = `You're manipulating a text document using HTML blocks.
 Make sure to follow the json schema provided. When referencing ids they MUST be EXACTLY the same (including the trailing $).
@@ -20,8 +22,6 @@ IF there is no selection active in the latest state, first, determine what part 
 ---
  `;
 
-const CONTEXT_WINDOW = 5;
-
 type ToolDefinition = {
   description?: string;
   inputSchema: Record<string, unknown>;
@@ -29,49 +29,6 @@ type ToolDefinition = {
 };
 
 type ToolDefinitions = Record<string, ToolDefinition>;
-
-type BlockWithCursor = {
-  id: string;
-  type: string;
-  content?: unknown;
-  children?: unknown[];
-  cursor?: boolean;
-};
-
-function compressBlocks(
-  blocks: BlockWithCursor[],
-  contextWindow: number = CONTEXT_WINDOW,
-): { compressed: BlockWithCursor[]; wasCompressed: boolean } {
-  if (blocks.length <= contextWindow * 2 + 1) {
-    return { compressed: blocks, wasCompressed: false };
-  }
-
-  const cursorIndex = blocks.findIndex((b) => b.cursor);
-  if (cursorIndex === -1) {
-    return { compressed: blocks, wasCompressed: false };
-  }
-
-  const start = Math.max(0, cursorIndex - contextWindow);
-  const end = Math.min(blocks.length, cursorIndex + contextWindow + 1);
-  const compressed = blocks.slice(start, end);
-
-  if (start > 0) {
-    compressed.unshift({
-      id: `...${start}-blocks-omitted-before`,
-      type: "paragraph",
-      content: `[${start} block(s) omitted above]`,
-    });
-  }
-  if (end < blocks.length) {
-    compressed.push({
-      id: `...${blocks.length - end}-blocks-omitted-after`,
-      type: "paragraph",
-      content: `[${blocks.length - end} block(s) omitted below]`,
-    });
-  }
-
-  return { compressed, wasCompressed: true };
-}
 
 function injectDocumentStateMessages(
   messages: Array<Record<string, unknown>>,

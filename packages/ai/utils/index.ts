@@ -1,3 +1,11 @@
+export { compressBlocks, DEFAULT_CONTEXT_WINDOW } from "./compress-blocks";
+export type { BlockWithCursor } from "./compress-blocks";
+export {
+  CUSTOM_AI_MENU_ITEMS,
+  getCustomItemsForContext,
+} from "./custom-ai-menu-items";
+export type { CustomAIMenuItemDef } from "./custom-ai-menu-items";
+
 export const extractTextFromDocument = (content: string): string => {
   try {
     const parsedContent = JSON.parse(content);
