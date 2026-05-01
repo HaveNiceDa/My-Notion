@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "mobile",
-    "slug": "mobile",
+    "slug": "my-notion",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -47,7 +47,12 @@
       "reactCompiler": true
     },
     "extra": {
-      "webUrl": "https://notion-j9zj.vercel.app"
-    }
+      "webUrl": "https://notion-j9zj.vercel.app",
+      "router": {},
+      "eas": {
+        "projectId": "dcb56b1c-2ff0-4bac-b02d-58d2b5f8afeb"
+      }
+    },
+    "owner": "bytel"
   }
 }
