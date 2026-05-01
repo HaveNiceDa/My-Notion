@@ -16,7 +16,7 @@ import {
 import { ConvexDataSource } from "./convex-data-source";
 import { captureException, startSpan } from "./sentry";
 
-const app = new Hono();
+const app = new Hono().basePath("/api");
 
 app.use("*", cors());
 
