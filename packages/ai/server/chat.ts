@@ -8,6 +8,20 @@ import type {
   ToolCallResult,
 } from "./types";
 
+type StreamChatStage =
+  | "request_prepared"
+  | "model_request_started"
+  | "first_event_received"
+  | "tool_execution_started"
+  | "tool_execution_finished"
+  | "turn_completed"
+  | "stream_completed";
+
+type StreamChatControl = {
+  firstEventTimeoutMs?: number;
+  onStage?: (stage: StreamChatStage, details?: Record<string, unknown>) => void;
+};
+
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) {
@@ -23,9 +37,11 @@ export async function streamChat(
   messages: ChatMessage[],
   options: ChatOptions,
   onEvent: AIStreamCallback,
+  control?: StreamChatControl,
 ): Promise<void> {
   const openai = getOpenAIClient();
   const tools = getToolDefinitions();
+  const firstEventTimeoutMs = control?.firstEventTimeoutMs ?? 20_000;
 
   const requestParams: OpenAI.ChatCompletionCreateParamsStreaming = {
     model: options.model,
@@ -44,15 +60,52 @@ export async function streamChat(
   try {
     let currentMessages = [...messages];
     let toolCallHandled = false;
+    control?.onStage?.("request_prepared", {
+      model: options.model,
+      messageCount: messages.length,
+      enableThinking: Boolean(options.enableThinking),
+      firstEventTimeoutMs,
+    });
 
     while (!toolCallHandled) {
-      const response = await openai.chat.completions.create(requestParams);
+      control?.onStage?.("model_request_started", {
+        messageCount: currentMessages.length,
+      });
+
+      const abortController = new AbortController();
+      let didReceiveFirstEvent = false;
+      let didTimeoutBeforeFirstEvent = false;
+      const firstEventTimer = setTimeout(() => {
+        if (!didReceiveFirstEvent) {
+          didTimeoutBeforeFirstEvent = true;
+          abortController.abort();
+        }
+      }, firstEventTimeoutMs);
+
+      const response = await openai.chat.completions.create(
+        requestParams,
+        { signal: abortController.signal },
+      );
 
       let hasToolCalls = false;
       let assistantMessage: Record<string, unknown> = { role: "assistant", content: "" };
 
       for await (const chunk of response) {
         const delta = chunk.choices[0]?.delta;
+
+        if (!didReceiveFirstEvent && delta) {
+          didReceiveFirstEvent = true;
+          clearTimeout(firstEventTimer);
+          control?.onStage?.("first_event_received", {
+            hasContent: Boolean(delta.content),
+            hasReasoning: Boolean(
+              options.enableThinking
+                ? (delta as Record<string, unknown>)?.reasoning_content
+                : undefined,
+            ),
+            hasToolCalls: Boolean(delta.tool_calls?.length),
+          });
+        }
 
         if (delta?.tool_calls) {
           hasToolCalls = true;
@@ -91,7 +144,16 @@ export async function streamChat(
         }
       }
 
+      clearTimeout(firstEventTimer);
+
+      if (didTimeoutBeforeFirstEvent) {
+        throw new Error(
+          `AI upstream first event timeout after ${firstEventTimeoutMs}ms`,
+        );
+      }
+
       if (!hasToolCalls) {
+        control?.onStage?.("turn_completed", { hasToolCalls: false });
         toolCallHandled = true;
         break;
       }
@@ -108,6 +170,7 @@ export async function streamChat(
           toolArgs = {};
         }
 
+        control?.onStage?.("tool_execution_started", { toolName });
         onEvent({
           type: "tool_executing",
           tool_name: toolName,
@@ -129,6 +192,11 @@ export async function streamChat(
           toolResult = `Error executing tool ${toolName}: ${error}`;
         }
 
+        control?.onStage?.("tool_execution_finished", {
+          toolName,
+          resultLength: toolResult.length,
+        });
+
         onEvent({ type: "tool_result", tool_name: toolName, result: toolResult });
 
         currentMessages.push({
@@ -139,8 +207,10 @@ export async function streamChat(
       }
 
       requestParams.messages = currentMessages as OpenAI.ChatCompletionMessageParam[];
+      control?.onStage?.("turn_completed", { hasToolCalls: true });
     }
 
+    control?.onStage?.("stream_completed");
     onEvent({ type: "done" });
   } catch (error) {
     onEvent({

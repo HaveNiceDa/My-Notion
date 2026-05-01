@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { randomUUID } from "crypto";
 import { Hono } from "hono";
 import { streamSSE } from "hono/streaming";
 import { cors } from "hono/cors";
@@ -19,8 +20,18 @@ import { ConvexDataSource } from "./convex-data-source";
 import { captureException, startSpan } from "./sentry";
 
 const app = new Hono().basePath("/api");
+const CHAT_FIRST_EVENT_TIMEOUT_MS = 20_000;
 
 app.use("*", cors());
+
+function logChatStage(
+  requestId: string,
+  stage: string,
+  details?: Record<string, unknown>,
+): void {
+  const payload = details ? ` ${JSON.stringify(details)}` : "";
+  console.log(`[services/ai][chat][${requestId}] ${stage}${payload}`);
+}
 
 const getDataSource = () => {
   const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
@@ -29,6 +40,8 @@ const getDataSource = () => {
 };
 
 app.post("/chat", async (c) => {
+  const requestId = c.req.header("x-vercel-id") ?? randomUUID();
+  const startedAt = Date.now();
   const body = await c.req.json();
   const { messages, model, enableThinking, thinkingBudget } = body as {
     messages: ChatMessage[];
@@ -38,8 +51,18 @@ app.post("/chat", async (c) => {
   };
 
   if (!messages || !Array.isArray(messages)) {
+    logChatStage(requestId, "request_invalid", {
+      reason: "messages_not_array",
+    });
     return c.json({ error: "Invalid messages format" }, 400);
   }
+
+  logChatStage(requestId, "request_received", {
+    model,
+    messageCount: messages.length,
+    enableThinking: Boolean(enableThinking),
+    thinkingBudget: thinkingBudget ?? null,
+  });
 
   const options: ChatOptions = {
     model,
@@ -50,15 +73,52 @@ app.post("/chat", async (c) => {
   return streamSSE(c, async (stream) => {
     try {
       await startSpan("ai.chat.stream", async () => {
-        await streamChat(messages, options, (event: AIStreamEvent) => {
-          stream.writeSSE({
-            event: event.type,
-            data: JSON.stringify(event),
-          });
+        logChatStage(requestId, "sse_opened", {
+          timeoutMs: CHAT_FIRST_EVENT_TIMEOUT_MS,
         });
+
+        await streamChat(
+          messages,
+          options,
+          (event: AIStreamEvent) => {
+            if (event.type === "content") {
+              logChatStage(requestId, "sse_event_content", {
+                chunkLength: event.text.length,
+                elapsedMs: Date.now() - startedAt,
+              });
+            } else if (event.type === "error") {
+              logChatStage(requestId, "sse_event_error", {
+                message: event.message,
+                elapsedMs: Date.now() - startedAt,
+              });
+            } else if (event.type === "done") {
+              logChatStage(requestId, "sse_event_done", {
+                elapsedMs: Date.now() - startedAt,
+              });
+            }
+
+            stream.writeSSE({
+              event: event.type,
+              data: JSON.stringify(event),
+            });
+          },
+          {
+            firstEventTimeoutMs: CHAT_FIRST_EVENT_TIMEOUT_MS,
+            onStage: (stage, details) => {
+              logChatStage(requestId, stage, {
+                elapsedMs: Date.now() - startedAt,
+                ...details,
+              });
+            },
+          },
+        );
       });
     } catch (error) {
       captureException(error, { endpoint: "chat", model });
+      logChatStage(requestId, "route_catch_error", {
+        elapsedMs: Date.now() - startedAt,
+        error: error instanceof Error ? error.message : String(error),
+      });
       stream.writeSSE({
         event: "error",
         data: JSON.stringify({ type: "error", error: "Stream failed" }),
