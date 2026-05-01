@@ -168,6 +168,8 @@ function extractTextContent(msg: Record<string, unknown>): string {
   return (msg.content as string) || "";
 }
 
+export const runtime = "edge";
+export const preferredRegion = "hkg1";
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
