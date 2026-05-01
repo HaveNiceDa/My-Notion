@@ -8,12 +8,19 @@ import {
   type CustomAIMenuItemDef,
 } from "@notion/ai/utils";
 
-function toItem(itemDef: CustomAIMenuItemDef): AIMenuSuggestionItem {
+function toItem(
+  itemDef: CustomAIMenuItemDef & {
+    resolvedTitle: string;
+    resolvedSubtext: string;
+  },
+): AIMenuSuggestionItem {
   return {
     key: itemDef.key,
-    title: itemDef.title,
-    subtext: itemDef.subtext,
-    onItemClick: (setPrompt) => setPrompt(itemDef.prompt),
+    title: itemDef.resolvedTitle,
+    subtext: itemDef.resolvedSubtext,
+    onItemClick: (setPrompt: (userPrompt: string) => void) => {
+      setPrompt(itemDef.prompt);
+    },
     icon: <span>{itemDef.icon}</span>,
   } as AIMenuSuggestionItem;
 }
@@ -27,13 +34,14 @@ export function getCustomAIMenuItems(
     | "error"
     | "user-reviewing"
     | "closed",
+  locale: string = "en",
 ): AIMenuSuggestionItem[] {
   if (aiResponseStatus !== "user-input") {
     return getDefaultAIMenuItems(editor, aiResponseStatus);
   }
 
   const hasSelection = !!editor.getSelection();
-  const customItems = getCustomItemsForContext(hasSelection);
+  const customItems = getCustomItemsForContext(hasSelection, locale);
 
   return [
     ...getDefaultAIMenuItems(editor, aiResponseStatus),

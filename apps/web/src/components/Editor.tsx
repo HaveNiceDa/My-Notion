@@ -132,7 +132,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(
           formattingToolbar={false}
           slashMenu={false}
         >
-          <EditorAIMenuController />
+          <EditorAIMenuController editor={editor} locale={locale} />
           <EditorFormattingToolbar />
           <EditorSlashMenu editor={editor} />
         </BlockNoteView>

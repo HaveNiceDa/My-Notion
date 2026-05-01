@@ -3,6 +3,7 @@ export type { BlockWithCursor } from "./compress-blocks";
 export {
   CUSTOM_AI_MENU_ITEMS,
   getCustomItemsForContext,
+  resolveLocale,
 } from "./custom-ai-menu-items";
 export type { CustomAIMenuItemDef } from "./custom-ai-menu-items";
 

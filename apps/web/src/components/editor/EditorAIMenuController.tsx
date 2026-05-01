@@ -7,23 +7,35 @@ import {
 import type { BlockNoteEditor } from "@blocknote/core";
 import { getCustomAIMenuItems } from "./customAIMenuItems";
 
-function CustomAIMenu() {
-  return (
-    <AIMenu
-      items={(
-        editor: BlockNoteEditor<any, any, any>,
-        aiResponseStatus:
-          | "user-input"
-          | "thinking"
-          | "ai-writing"
-          | "error"
-          | "user-reviewing"
-          | "closed",
-      ) => getCustomAIMenuItems(editor, aiResponseStatus)}
-    />
-  );
+interface EditorAIMenuControllerProps {
+  editor: BlockNoteEditor<any, any, any>;
+  locale: string;
 }
 
-export function EditorAIMenuController() {
+function createCustomAIMenu(locale: string) {
+  function CustomAIMenu() {
+    return (
+      <AIMenu
+        items={(
+          editor: BlockNoteEditor<any, any, any>,
+          aiResponseStatus:
+            | "user-input"
+            | "thinking"
+            | "ai-writing"
+            | "error"
+            | "user-reviewing"
+            | "closed",
+        ) => getCustomAIMenuItems(editor, aiResponseStatus, locale)}
+      />
+    );
+  }
+  return CustomAIMenu;
+}
+
+export function EditorAIMenuController({
+  editor,
+  locale,
+}: EditorAIMenuControllerProps) {
+  const CustomAIMenu = createCustomAIMenu(locale);
   return <AIMenuController aiMenu={CustomAIMenu} />;
 }

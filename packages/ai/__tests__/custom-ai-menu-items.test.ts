@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   CUSTOM_AI_MENU_ITEMS,
   getCustomItemsForContext,
+  resolveLocale,
   type CustomAIMenuItemDef,
 } from "../utils/custom-ai-menu-items";
 
@@ -14,11 +15,14 @@ describe("custom-ai-menu-items", () => {
     it("every item has required fields", () => {
       CUSTOM_AI_MENU_ITEMS.forEach((item) => {
         expect(item.key).toBeTruthy();
-        expect(item.title).toBeTruthy();
-        expect(item.subtext).toBeTruthy();
-        expect(item.prompt).toBeTruthy();
         expect(item.icon).toBeTruthy();
+        expect(item.prompt).toBeTruthy();
         expect(typeof item.requiresSelection).toBe("boolean");
+        expect(typeof item.autoSubmit).toBe("boolean");
+        expect(item.title).toBeTypeOf("object");
+        expect(item.title.en).toBeTruthy();
+        expect(item.subtext).toBeTypeOf("object");
+        expect(item.subtext.en).toBeTruthy();
       });
     });
 
@@ -39,6 +43,12 @@ describe("custom-ai-menu-items", () => {
         (item) => !item.requiresSelection,
       );
       expect(cursorItems).toHaveLength(3);
+    });
+
+    it("all items have autoSubmit enabled", () => {
+      CUSTOM_AI_MENU_ITEMS.forEach((item) => {
+        expect(item.autoSubmit).toBe(true);
+      });
     });
 
     const SELECTION_KEYS = [
@@ -72,6 +82,26 @@ describe("custom-ai-menu-items", () => {
     });
   });
 
+  describe("resolveLocale", () => {
+    it("returns exact match for supported locale", () => {
+      expect(resolveLocale("en")).toBe("en");
+      expect(resolveLocale("zh-CN")).toBe("zh-CN");
+      expect(resolveLocale("zh-TW")).toBe("zh-TW");
+    });
+
+    it("falls back to zh-CN for zh-* variants", () => {
+      expect(resolveLocale("zh")).toBe("zh-CN");
+      expect(resolveLocale("zh-HK")).toBe("zh-CN");
+      expect(resolveLocale("zh-SG")).toBe("zh-CN");
+    });
+
+    it("falls back to en for unsupported locales", () => {
+      expect(resolveLocale("ja")).toBe("en");
+      expect(resolveLocale("ko")).toBe("en");
+      expect(resolveLocale("fr")).toBe("en");
+    });
+  });
+
   describe("getCustomItemsForContext", () => {
     it("returns only selection items when hasSelection is true", () => {
       const items = getCustomItemsForContext(true);
@@ -89,10 +119,54 @@ describe("custom-ai-menu-items", () => {
       });
     });
 
+    it("resolves titles to English by default", () => {
+      const items = getCustomItemsForContext(true);
+      const translateItem = items.find((i) => i.key === "translate-to-en");
+      expect(translateItem!.resolvedTitle).toBe("Translate to English");
+      expect(translateItem!.resolvedSubtext).toBe(
+        "Translate selected text to English",
+      );
+    });
+
+    it("resolves titles to zh-CN", () => {
+      const items = getCustomItemsForContext(true, "zh-CN");
+      const translateItem = items.find((i) => i.key === "translate-to-en");
+      expect(translateItem!.resolvedTitle).toBe("翻译为英文");
+      expect(translateItem!.resolvedSubtext).toBe("将选中文本翻译为英文");
+    });
+
+    it("resolves titles to zh-TW", () => {
+      const items = getCustomItemsForContext(true, "zh-TW");
+      const translateItem = items.find((i) => i.key === "translate-to-en");
+      expect(translateItem!.resolvedTitle).toBe("翻譯為英文");
+      expect(translateItem!.resolvedSubtext).toBe("將選中翻譯為英文");
+    });
+
+    it("falls back to English for unsupported locale", () => {
+      const items = getCustomItemsForContext(true, "ja");
+      const translateItem = items.find((i) => i.key === "translate-to-en");
+      expect(translateItem!.resolvedTitle).toBe("Translate to English");
+    });
+
     it("returns items with valid prompts", () => {
       const items = getCustomItemsForContext(true);
       items.forEach((item) => {
         expect(item.prompt.length).toBeGreaterThan(10);
+      });
+    });
+
+    it("includes autoSubmit flag in returned items", () => {
+      const items = getCustomItemsForContext(true);
+      items.forEach((item) => {
+        expect(item.autoSubmit).toBe(true);
+      });
+    });
+
+    it("all items have resolvedTitle and resolvedSubtext", () => {
+      const items = getCustomItemsForContext(true, "zh-CN");
+      items.forEach((item) => {
+        expect(item.resolvedTitle).toBeTruthy();
+        expect(item.resolvedSubtext).toBeTruthy();
       });
     });
   });
