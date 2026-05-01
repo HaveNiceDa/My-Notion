@@ -8,11 +8,13 @@ import {
   updateDocument,
   deleteDocumentChunks,
   initKnowledgeBase,
-  type AIStreamEvent,
-  type ChatMessage,
-  type ChatOptions,
-  type RAGOptions,
-} from "@notion/ai/server";
+} from "../../../packages/ai/server";
+import type {
+  AIStreamEvent,
+  ChatMessage,
+  ChatOptions,
+  RAGOptions,
+} from "../../../packages/ai/server/types";
 import { ConvexDataSource } from "./convex-data-source";
 import { captureException, startSpan } from "./sentry";
 

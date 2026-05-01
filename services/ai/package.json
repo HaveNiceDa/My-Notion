@@ -2,21 +2,26 @@
   "name": "@notion/ai-service",
   "version": "1.0.0",
   "description": "AI Service for My-Notion",
-  "type": "module",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/services/ai/src/server.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@langchain/core": "^1.1.18",
+    "@langchain/textsplitters": "^1.0.1",
     "@hono/node-server": "^1.14.0",
     "@notion/ai": "workspace:*",
+    "@qdrant/js-client-rest": "^1.17.0",
     "@sentry/node": "^10.50.0",
     "convex": "^1.24.6",
     "dotenv": "^16.5.0",
-    "hono": "^4.7.9"
+    "hono": "^4.7.9",
+    "openai": "^6.33.0",
+    "serpapi": "^2.2.1",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
