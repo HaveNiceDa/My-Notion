@@ -2,6 +2,7 @@
   "name": "@notion/ai-service",
   "version": "1.0.0",
   "description": "AI Service for My-Notion",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
