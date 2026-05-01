@@ -250,6 +250,21 @@
     "continueWithGithub": "Continue with GitHub",
     "alreadyHaveAccount": "Already have an account? "
   },
+  "EditorAI": {
+    "featureName": "Editor AI",
+    "aiToolbarTooltip": "Edit with AI",
+    "aiSlashMenuTitle": "Ask AI",
+    "aiSlashMenuSubtext": "Use AI to write",
+    "acceptChanges": "Accept",
+    "rejectChanges": "Reject",
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "revert": "Revert",
+    "thinking": "Thinking...",
+    "editing": "Editing...",
+    "error": "Oops! Something went wrong",
+    "inputPlaceholder": "Ask AI anything..."
+  },
   "Home": {
     "workspaceOwned": "{{name}}'s workspace",
     "myWorkspace": "My workspace",

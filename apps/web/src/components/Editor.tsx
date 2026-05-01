@@ -9,8 +9,17 @@ import "@blocknote/core/fonts/inter.css";
 import { useTheme } from "next-themes";
 import { useParams } from "next/navigation";
 import * as locales from "@blocknote/core/locales";
+import {
+  AIExtension,
+  AIMenuController,
+} from "@blocknote/xl-ai";
+import * as aiLocales from "@blocknote/xl-ai/locales";
+import "@blocknote/xl-ai/style.css";
+import { DefaultChatTransport } from "ai";
 
 import { useEdgeStore } from "@/src/lib/edgestore";
+import { EditorFormattingToolbar } from "./editor/EditorFormattingToolbar";
+import { EditorSlashMenu } from "./editor/EditorSlashMenu";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -28,6 +37,17 @@ function getBlockNoteLocale(lang: string): keyof typeof locales {
     return langCode as keyof typeof locales;
   }
   return "en";
+}
+
+function getAILocaleDict(locale: string) {
+  switch (locale) {
+    case "zh-CN":
+      return aiLocales.zh;
+    case "zh-TW":
+      return aiLocales.zhTw;
+    default:
+      return aiLocales.en;
+  }
 }
 
 const Editor = forwardRef<EditorRef, EditorProps>(
@@ -48,7 +68,17 @@ const Editor = forwardRef<EditorRef, EditorProps>(
         ? (JSON.parse(initialContent) as PartialBlock[])
         : undefined,
       uploadFile: handleUpload,
-      dictionary: locales[getBlockNoteLocale(locale)],
+      dictionary: {
+        ...locales[getBlockNoteLocale(locale)],
+        ai: getAILocaleDict(locale),
+      },
+      extensions: [
+        AIExtension({
+          transport: new DefaultChatTransport({
+            api: "/api/editor-ai/streamText",
+          }),
+        }),
+      ],
     });
 
     useEffect(() => {
@@ -77,7 +107,13 @@ const Editor = forwardRef<EditorRef, EditorProps>(
           editor={editor}
           theme={resolvedTheme === "dark" ? "dark" : "light"}
           editable={editable}
-        />
+          formattingToolbar={false}
+          slashMenu={false}
+        >
+          <AIMenuController />
+          <EditorFormattingToolbar />
+          <EditorSlashMenu editor={editor} />
+        </BlockNoteView>
       </div>
     );
   },

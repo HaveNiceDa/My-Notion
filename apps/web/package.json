@@ -10,10 +10,12 @@
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^3.0.55",
     "@ant-design/nextjs-registry": "^1.3.0",
-    "@blocknote/core": "0.41.0",
-    "@blocknote/mantine": "0.41.0",
-    "@blocknote/react": "0.41.0",
+    "@blocknote/core": "0.49.0",
+    "@blocknote/mantine": "0.49.0",
+    "@blocknote/react": "0.49.0",
+    "@blocknote/xl-ai": "0.49.0",
     "@clerk/nextjs": "^7.0.12",
     "@edgestore/react": "^0.6.0",
     "@edgestore/server": "^0.6.0",
@@ -38,6 +40,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sentry/nextjs": "^10.39.0",
     "ahooks": "^3.9.7",
+    "ai": "^6.0.172",
     "antd": "^6.2.2",
     "chromadb": "^3.2.2",
     "class-variance-authority": "^0.7.0",

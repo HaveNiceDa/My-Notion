@@ -250,6 +250,21 @@
     "continueWithGithub": "使用 GitHub 继续",
     "alreadyHaveAccount": "已有账号？"
   },
+  "EditorAI": {
+    "featureName": "编辑器 AI",
+    "aiToolbarTooltip": "使用 AI 编辑",
+    "aiSlashMenuTitle": "询问 AI",
+    "aiSlashMenuSubtext": "使用 AI 写作",
+    "acceptChanges": "接受",
+    "rejectChanges": "拒绝",
+    "retry": "重试",
+    "cancel": "取消",
+    "revert": "恢复",
+    "thinking": "思考中...",
+    "editing": "编辑中...",
+    "error": "哎呀！出了点问题",
+    "inputPlaceholder": "向 AI 提问任何问题..."
+  },
   "Home": {
     "workspaceOwned": "{{name}}的工作空间",
     "myWorkspace": "我的工作空间",
