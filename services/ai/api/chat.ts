@@ -1,6 +1,3 @@
-import { Hono } from "hono";
-import { streamSSE } from "hono/streaming";
-import { cors } from "hono/cors";
 import OpenAI from "openai";
 
 export const runtime = "edge";
@@ -12,28 +9,49 @@ const DASHSCOPE_BASE_URL =
 
 const CHAT_FIRST_EVENT_TIMEOUT_MS = 20_000;
 
-const app = new Hono().basePath("/api");
-app.use("*", cors());
-
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.LLM_API_KEY;
   if (!apiKey) throw new Error("LLM_API_KEY is not configured");
   return new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
 }
 
-app.post("/chat", async (c) => {
+export async function POST(request: Request): Promise<Response> {
   const requestId = crypto.randomUUID();
   const startedAt = Date.now();
-  const body = await c.req.json();
-  const { messages, model, enableThinking, thinkingBudget } = body as {
+
+  if (request.method === "OPTIONS") {
+    return new Response(null, {
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+      },
+    });
+  }
+
+  let body: {
     messages: Array<{ role: string; content: string }>;
     model: string;
     enableThinking?: boolean;
     thinkingBudget?: number;
   };
 
+  try {
+    body = await request.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+  const { messages, model, enableThinking, thinkingBudget } = body;
+
   if (!messages || !Array.isArray(messages)) {
-    return c.json({ error: "Invalid messages format" }, 400);
+    return new Response(JSON.stringify({ error: "Invalid messages format" }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   console.log(`[edge/chat][${requestId}] request_received`, {
@@ -56,97 +74,110 @@ app.post("/chat", async (c) => {
     };
   }
 
-  return streamSSE(c, async (stream) => {
-    try {
-      const abortController = new AbortController();
-      let didReceiveFirstEvent = false;
-      let didTimeoutBeforeFirstEvent = false;
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const abortController = new AbortController();
+        let didReceiveFirstEvent = false;
+        let didTimeoutBeforeFirstEvent = false;
 
-      const firstEventTimer = setTimeout(() => {
-        if (!didReceiveFirstEvent) {
-          didTimeoutBeforeFirstEvent = true;
-          abortController.abort();
+        const firstEventTimer = setTimeout(() => {
+          if (!didReceiveFirstEvent) {
+            didTimeoutBeforeFirstEvent = true;
+            abortController.abort();
+          }
+        }, CHAT_FIRST_EVENT_TIMEOUT_MS);
+
+        console.log(`[edge/chat][${requestId}] model_request_started`);
+
+        const response = await openai.chat.completions.create(
+          requestParams,
+          { signal: abortController.signal },
+        );
+
+        for await (const chunk of response) {
+          const delta = chunk.choices[0]?.delta;
+
+          if (!didReceiveFirstEvent && delta) {
+            didReceiveFirstEvent = true;
+            clearTimeout(firstEventTimer);
+            console.log(`[edge/chat][${requestId}] first_event_received`, {
+              elapsedMs: Date.now() - startedAt,
+            });
+          }
+
+          const reasoningContent = enableThinking
+            ? (delta as Record<string, unknown>)?.reasoning_content as string | undefined
+            : undefined;
+          if (reasoningContent) {
+            controller.enqueue(
+              encoder.encode(
+                `event: reasoning\ndata: ${JSON.stringify({ type: "reasoning", text: reasoningContent })}\n\n`,
+              ),
+            );
+          }
+
+          const text = delta?.content;
+          if (text) {
+            controller.enqueue(
+              encoder.encode(
+                `event: content\ndata: ${JSON.stringify({ type: "content", text })}\n\n`,
+              ),
+            );
+          }
+
+          if (delta?.tool_calls) {
+            controller.enqueue(
+              encoder.encode(
+                `event: tool_call_start\ndata: ${JSON.stringify({ type: "tool_call_start", tool_calls: delta.tool_calls })}\n\n`,
+              ),
+            );
+          }
         }
-      }, CHAT_FIRST_EVENT_TIMEOUT_MS);
 
-      console.log(`[edge/chat][${requestId}] model_request_started`);
+        clearTimeout(firstEventTimer);
 
-      const response = await openai.chat.completions.create(
-        requestParams,
-        { signal: abortController.signal },
-      );
-
-      for await (const chunk of response) {
-        const delta = chunk.choices[0]?.delta;
-
-        if (!didReceiveFirstEvent && delta) {
-          didReceiveFirstEvent = true;
-          clearTimeout(firstEventTimer);
-          console.log(`[edge/chat][${requestId}] first_event_received`, {
+        if (didTimeoutBeforeFirstEvent) {
+          console.log(`[edge/chat][${requestId}] first_event_timeout`);
+          controller.enqueue(
+            encoder.encode(
+              `event: error\ndata: ${JSON.stringify({ type: "error", message: `AI upstream first event timeout after ${CHAT_FIRST_EVENT_TIMEOUT_MS}ms` })}\n\n`,
+            ),
+          );
+        } else {
+          console.log(`[edge/chat][${requestId}] stream_completed`, {
             elapsedMs: Date.now() - startedAt,
           });
+          controller.enqueue(
+            encoder.encode(
+              `event: done\ndata: ${JSON.stringify({ type: "done" })}\n\n`,
+            ),
+          );
         }
 
-        const reasoningContent = enableThinking
-          ? (delta as Record<string, unknown>)?.reasoning_content as string | undefined
-          : undefined;
-        if (reasoningContent) {
-          stream.writeSSE({
-            event: "reasoning",
-            data: JSON.stringify({ type: "reasoning", text: reasoningContent }),
-          });
-        }
-
-        const text = delta?.content;
-        if (text) {
-          stream.writeSSE({
-            event: "content",
-            data: JSON.stringify({ type: "content", text }),
-          });
-        }
-
-        if (delta?.tool_calls) {
-          stream.writeSSE({
-            event: "tool_call_start",
-            data: JSON.stringify({ type: "tool_call_start", tool_calls: delta.tool_calls }),
-          });
-        }
-      }
-
-      clearTimeout(firstEventTimer);
-
-      if (didTimeoutBeforeFirstEvent) {
-        console.log(`[edge/chat][${requestId}] first_event_timeout`);
-        stream.writeSSE({
-          event: "error",
-          data: JSON.stringify({
-            type: "error",
-            message: `AI upstream first event timeout after ${CHAT_FIRST_EVENT_TIMEOUT_MS}ms`,
-          }),
-        });
-      } else {
-        console.log(`[edge/chat][${requestId}] stream_completed`, {
+        controller.close();
+      } catch (error) {
+        console.log(`[edge/chat][${requestId}] error`, {
           elapsedMs: Date.now() - startedAt,
+          error: error instanceof Error ? error.message : String(error),
         });
-        stream.writeSSE({
-          event: "done",
-          data: JSON.stringify({ type: "done" }),
-        });
+        controller.enqueue(
+          encoder.encode(
+            `event: error\ndata: ${JSON.stringify({ type: "error", message: error instanceof Error ? error.message : String(error) })}\n\n`,
+          ),
+        );
+        controller.close();
       }
-    } catch (error) {
-      console.log(`[edge/chat][${requestId}] error`, {
-        elapsedMs: Date.now() - startedAt,
-        error: error instanceof Error ? error.message : String(error),
-      });
-      stream.writeSSE({
-        event: "error",
-        data: JSON.stringify({
-          type: "error",
-          message: error instanceof Error ? error.message : String(error),
-        }),
-      });
-    }
+    },
   });
-});
 
-export default app;
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+}
