@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "build:web": "pnpm --filter @notion/web build",
-    "build:mobile": "pnpm --filter @notion/mobile build",
+    "build:mobile": "pnpm --filter @notion/mobile export",
     "dev": "pnpm run dev --filter 'apps/*'",
     "start:web": "pnpm --filter @notion/web start",
     "start:mobile": "pnpm --filter @notion/mobile dev:all",

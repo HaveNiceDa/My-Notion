@@ -7,6 +7,7 @@
     "dev:convex": "npx convex dev --typecheck=disable",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run dev:convex\"",
     "start": "expo start",
+    "export": "npx expo export",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
