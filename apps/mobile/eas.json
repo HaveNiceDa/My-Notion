@@ -7,6 +7,8 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://handsome-stoat-500.convex.cloud",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtYmFkZ2VyLTE5LmNsZXJrLmFjY291bnRzLmRldiQ",
         "EXPO_PUBLIC_AI_SERVICE_URL": "http://localhost:3001"
       }
     },
@@ -14,10 +16,17 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://handsome-stoat-500.convex.cloud",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtYmFkZ2VyLTE5LmNsZXJrLmFjY291bnRzLmRldiQ",
+        "EXPO_PUBLIC_AI_SERVICE_URL": "https://my-notion-ai.vercel.app"
       }
     },
     "production": {
       "env": {
+        "EXPO_PUBLIC_CONVEX_URL": "https://handsome-stoat-500.convex.cloud",
+        "EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY": "pk_test_d2hvbGUtYmFkZ2VyLTE5LmNsZXJrLmFjY291bnRzLmRldiQ",
         "EXPO_PUBLIC_AI_SERVICE_URL": "https://my-notion-ai.vercel.app"
       }
     }
