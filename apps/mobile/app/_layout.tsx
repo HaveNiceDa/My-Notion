@@ -10,6 +10,7 @@ import { convex } from "@/lib/convex";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { AppThemeProvider, useAppTheme } from "@/theme/AppThemeProvider";
 import { ToastProvider } from "@/features/home/components/toast-provider";
+import { RootErrorBoundary } from "@/components/root-error-boundary";
 import "@/i18n";
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
@@ -38,16 +39,18 @@ function AppStack() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
-        <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
-          <I18nProvider>
-            <AppThemeProvider>
-              <AppStack />
-            </AppThemeProvider>
-          </I18nProvider>
-        </ConvexProviderWithClerk>
-      </ClerkProvider>
-    </SafeAreaProvider>
+    <RootErrorBoundary>
+      <SafeAreaProvider>
+        <ClerkProvider publishableKey={publishableKey} tokenCache={tokenCache}>
+          <ConvexProviderWithClerk client={convex} useAuth={useAuth}>
+            <I18nProvider>
+              <AppThemeProvider>
+                <AppStack />
+              </AppThemeProvider>
+            </I18nProvider>
+          </ConvexProviderWithClerk>
+        </ClerkProvider>
+      </SafeAreaProvider>
+    </RootErrorBoundary>
   );
 }
