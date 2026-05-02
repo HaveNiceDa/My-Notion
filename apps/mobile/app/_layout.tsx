@@ -26,8 +26,7 @@ function AppStack() {
     <TamaguiProvider config={config} defaultTheme="light">
       <Theme name={theme}>
         <ToastProvider>
-          <Stack>
-            <Stack.Screen name="index" />
+          <Stack initialRouteName="(home)">
             <Stack.Screen name="(auth)" options={{ headerShown: false }} />
             <Stack.Screen name="(home)" options={{ headerShown: false }} />
           </Stack>
