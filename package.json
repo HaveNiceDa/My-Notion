@@ -10,7 +10,7 @@
     "build:mobile": "pnpm --filter @notion/mobile build",
     "dev": "pnpm run dev --filter 'apps/*'",
     "start:web": "pnpm --filter @notion/web start",
-    "start:mobile": "pnpm --filter @notion/mobile start",
+    "start:mobile": "pnpm --filter @notion/mobile dev:all",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
