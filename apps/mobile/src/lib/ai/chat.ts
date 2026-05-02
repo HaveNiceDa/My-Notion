@@ -1,3 +1,4 @@
+import { Platform } from "react-native";
 import {
   type AIModel,
   DEFAULT_MODEL,
@@ -29,7 +30,59 @@ function getAIServiceUrl(): string {
   return AI_SERVICE_URL;
 }
 
-async function parseSSEStream(
+function processSSEBuffer(buffer: string, callbacks: StreamCallbacks): string {
+  const lines = buffer.split("\n");
+
+  for (let i = 0; i < lines.length - 1; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+
+    if (line.startsWith("data:")) {
+      const dataStr = line.slice(5).trim();
+      if (!dataStr) continue;
+
+      try {
+        const event: AIStreamEvent = JSON.parse(dataStr);
+
+        switch (event.type) {
+          case "content":
+            callbacks.onContent(event.text);
+            break;
+          case "reasoning":
+            callbacks.onReasoning?.(event.text);
+            break;
+          case "thinking_step":
+            callbacks.onThinkingStep?.({
+              type: event.step_type,
+              content: event.content,
+              details: event.details,
+            });
+            break;
+          case "tool_call_start":
+            callbacks.onToolCall?.(event);
+            break;
+          case "tool_executing":
+            callbacks.onToolCall?.(event);
+            break;
+          case "tool_result":
+            callbacks.onToolCall?.(event);
+            break;
+          case "error":
+            callbacks.onError?.(new Error(event.message));
+            break;
+          case "done":
+            break;
+        }
+      } catch {
+        // skip malformed JSON
+      }
+    }
+  }
+
+  return lines[lines.length - 1];
+}
+
+async function parseSSEStreamWeb(
   response: Response,
   callbacks: StreamCallbacks,
 ): Promise<void> {
@@ -44,58 +97,29 @@ async function parseSSEStream(
     if (done) break;
 
     buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-
-    for (let i = 0; i < lines.length - 1; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      if (line.startsWith("data:")) {
-        const dataStr = line.slice(5).trim();
-        if (!dataStr) continue;
-
-        try {
-          const event: AIStreamEvent = JSON.parse(dataStr);
-
-          switch (event.type) {
-            case "content":
-              callbacks.onContent(event.text);
-              break;
-            case "reasoning":
-              callbacks.onReasoning?.(event.text);
-              break;
-            case "thinking_step":
-              callbacks.onThinkingStep?.({
-                type: event.step_type,
-                content: event.content,
-                details: event.details,
-              });
-              break;
-            case "tool_call_start":
-              callbacks.onToolCall?.(event);
-              break;
-            case "tool_executing":
-              callbacks.onToolCall?.(event);
-              break;
-            case "tool_result":
-              callbacks.onToolCall?.(event);
-              break;
-            case "error":
-              callbacks.onError?.(new Error(event.message));
-              break;
-            case "done":
-              break;
-          }
-        } catch {
-          // skip malformed JSON
-        }
-      }
-    }
-
-    buffer = lines[lines.length - 1];
+    buffer = processSSEBuffer(buffer, callbacks);
   }
 
   reader.releaseLock();
+}
+
+async function parseSSEStreamNative(
+  response: Response,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  const text = await response.text();
+  processSSEBuffer(text + "\n", callbacks);
+}
+
+async function parseSSEStream(
+  response: Response,
+  callbacks: StreamCallbacks,
+): Promise<void> {
+  if (Platform.OS === "web") {
+    await parseSSEStreamWeb(response, callbacks);
+  } else {
+    await parseSSEStreamNative(response, callbacks);
+  }
 }
 
 export async function streamChat(
