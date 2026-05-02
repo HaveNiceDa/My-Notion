@@ -10,7 +10,7 @@
     "dev:all:local": "concurrently \"pnpm run dev:local\" \"pnpm run dev:convex\"",
     "start": "expo start",
     "export": "npx expo export",
-    "reset-project": "node ./scripts/reset-project.js",
+    "build:preview": "eas build --platform android --profile preview",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
