@@ -12,9 +12,10 @@
 - 🎨 **封面图 & 图标** — 通过 Web API 代理上传至 EdgeStore
 
 ### AI 智能对话
-- 🤖 **RAG 对话** — 通过 Hono AI 网关代理，API Key 安全隐藏
-- 💬 **流式响应** — 实时渲染 AI 回复
+- 🤖 **RAG 对话** — 通过 Vercel Edge Function 代理，API Key 安全隐藏
+- 💬 **SSE 流式响应** — Web 端 `ReadableStream` 逐块读取，Native 端 `response.text()` 兼容方案
 - 🧠 **深度思考** — 思考过程可视化
+- 🔍 **知识库检索** — 知识库搜索步骤可视化
 - 🔄 **失败重试** — 发送失败后一键重试
 - 💡 **快捷建议** — 空状态下的推荐提问气泡
 - 🗑️ **会话管理** — 删除确认弹窗、自动标题更新
@@ -44,7 +45,7 @@
 | **编辑器** | TenTap (TipTap) | 1.0 |
 | **状态管理** | Zustand | 5.x |
 | **国际化** | i18next + react-i18next | 26.x |
-| **AI 网关** | Hono AI Service (代理) | — |
+| **AI 网关** | Vercel Edge Function (代理) | — |
 
 ## 快速开始
 
@@ -79,11 +80,21 @@
 3. **启动开发服务器**
    ```bash
    cd apps/mobile
-   pnpm start
+
+   # 默认走线上 AI 服务
+   pnpm dev
+
+   # 走本地 AI 源码（需同时启动 services/ai）
+   pnpm dev:local
    ```
    在终端中选择运行平台：
    - 按 `i` 启动 iOS 模拟器
    - 按 `a` 启动 Android 模拟器
+
+4. **构建 Android APK**
+   ```bash
+   pnpm build:preview
+   ```
 
 ## 项目结构
 
@@ -129,11 +140,23 @@ Mobile → Web API (/api/upload-image) → EdgeStore
 
 ### AI 调用代理
 
-Mobile 端 AI 请求通过 Hono AI 网关转发，API Key 仅存储在服务端：
+Mobile 端 AI 请求通过 Vercel Edge Function 代理，API Key 仅存储在服务端：
 
 ```
-Mobile → Hono AI Service → @notion/ai → LLM API
+Mobile → Vercel Edge Function (/api/chat) → DashScope LLM API
 ```
+
+SSE 流式响应按平台分流：Web 端使用 `ReadableStream` 逐块读取实现真正流式，Native 端使用 `response.text()` 一次性读取确保兼容性。
+
+### 环境变量管理
+
+| 文件/配置 | AI 地址 | 场景 |
+|---|---|---|
+| `.env` | `https://my-notion-ai.vercel.app` | 默认走线上 |
+| `pnpm dev:local` | `http://localhost:3001`（行内覆盖） | 走本地 AI 源码 |
+| `eas.json` preview/production | `https://my-notion-ai.vercel.app` | EAS 云端构建 |
+
+真机调试本地 AI 时，需将 `localhost` 替换为局域网 IP（如 `http://192.168.x.x:3001`）。
 
 ### 状态管理
 
@@ -141,14 +164,20 @@ AI 核心状态（模型选择、知识库开关、深度思考）使用 `@notio
 
 ## 🗺️ Roadmap
 
+### ✅ 已完成
+
+- **EAS Build Android** — Preview APK 打包通过，`eas.json` 环境变量配置完成
+- **AI 服务 Edge Runtime** — 从 Hono Serverless 迁移至 Vercel 原生 Edge Function
+- **SSE 平台分流** — Web 端 `ReadableStream` 流式，Native 端 `response.text()` 兼容
+- **环境变量管理** — `dev:local` 命令行内覆盖，EAS 构建走线上域名
+- **Error Boundary** — 生产模式错误捕获，Clerk 加载状态优化
+
 ### 📱 应用商店上线
 
-从开发环境走向用户手中：
-
+- **Mobile 自定义域名** — AI 服务绑定自定义域名，解决国内 `.vercel.app` 不可达问题
 - **iOS App Store** — TestFlight 内测 → 正式发布
 - **Android Google Play** — 内部测试 → 公开发布
 - **原生体验打磨** — 推送通知、离线缓存、手势交互优化
-- **EAS Build** — Expo Application Services 云端构建 + 自动化发布
 
 ### 🤖 AI 能力对齐
 
@@ -164,3 +193,5 @@ AI 核心状态（模型选择、知识库开关、深度思考）使用 `@notio
 - **Convex 部署**：运行 `npx convex dev` 确保 Convex 后端正确部署
 - **平台特定**：部分功能（如 Haptics）仅在真机上可用
 - **Web API 依赖**：图片上传功能需要 Web 端服务运行中
+- **国内网络**：`.vercel.app` 域名在国内可能不可达，真机测试需开代理或绑定自定义域名
+- **Metro 缓存**：修改 `.env` 后需 `npx expo start --clear` 清缓存

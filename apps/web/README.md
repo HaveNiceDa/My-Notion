@@ -40,6 +40,13 @@
 - 📚 **增量更新** — SHA-256 内容哈希 + 向量存储缓存，避免重复嵌入
 - 💾 **持久化对话** — 用户隔离的对话历史，自动标题更新
 
+### 编辑器 AI（@blocknote/xl-ai）
+- ✍️ **选中即 AI** — 选中文字后弹出 AI 菜单，支持翻译（中/英）、润色、扩写、缩写
+- 📝 **光标续写** — 光标处触发续写、生成大纲、总结上方内容
+- 🌐 **三语菜单** — AI 操作菜单支持中/英/繁体，自定义菜单项定义在 `@notion/ai` 共享包
+- 🔧 **格式化工具栏 AI** — 工具栏集成 AI 按钮，选中文字即可触发
+- /️ **斜杠菜单 AI** — 输入 `/` 触发 AI 相关操作项
+
 ### 工程化
 - 🔒 **CI/CD 闭环** — GitHub Actions 自动化：Build + Lint + TypeCheck + Unit Test + E2E
 - 📊 **Bundle 优化** — @next/bundle-analyzer 分析 + 动态导入重型组件（emoji-mart、BlockNote）
@@ -137,6 +144,7 @@ web/
 │   │   │   └── (public)/          # 公开预览页
 │   │   └── api/                   # API 路由
 │   │       ├── chat/              # AI 对话 API
+│   │       ├── editor-ai/         # 编辑器 AI API (BlockNote AI Transport)
 │   │       ├── edgestore/         # 文件存储代理
 │   │       ├── embeddings/        # 向量嵌入 API
 │   │       ├── qdrant/            # Qdrant 操作 API
@@ -176,14 +184,16 @@ web/
 
 ## 🗺️ Roadmap
 
-### 🎯 AI 原生编辑器
+### ✅ 已完成
 
-让 AI 从独立对话框走进编辑器内部，成为文档操作的一等公民：
+- **编辑器 AI** — 基于 `@blocknote/xl-ai`，选中文字可翻译（中/英）、润色、扩写、缩写；光标处可续写、生成大纲、总结内容
+- **自定义 AI 菜单项** — 8 个自定义 AI 操作（翻译/润色/扩写/缩写/续写/大纲/总结），定义在 `@notion/ai` 共享包，支持中/英/繁三语
+- **AI 服务 Edge Runtime 迁移** — 从 Hono Serverless 迁移至 Vercel 原生 Edge Function，解决 DashScope 超时问题
 
-- **选中即 AI** — 在 BlockNote 中选中文字，右键菜单即可翻译、润色、扩写、缩写、对 AI 提问
-- **自定义 BlockNote Tool** — 扩展编辑器工具栏，注册 AI 驱动的自定义操作（智能续写、风格转换、语法修正、摘要生成）
-- **Inline AI Assist** — 行内 AI 建议，输入 `/ai` 触发 AI 辅助，类似 Copilot 的实时补全体验
+### 🎯 AI 编辑器增强
+
 - **AI 操作历史** — 记录每次 AI 修改，支持一键撤销/重做 AI 变更
+- **Inline AI Assist** — 行内 AI 建议，输入 `/ai` 触发 AI 辅助，类似 Copilot 的实时补全体验
 
 ### 🚀 RAG 能力增强
 

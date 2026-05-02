@@ -43,10 +43,12 @@ My-Notion/
 
 ```
 用户输入 → Web/Mobile UI
-  → Hono AI Service (API Key 代理)
-    → @notion/ai (RAG + Chat + Tools)
-      → Qdrant 向量检索 + LLM API
+  → AI Service (Edge Runtime, API Key 代理)
+    → @notion/ai (RAG + Chat + Tools + Editor AI)
+      → Qdrant 向量检索 + DashScope LLM API
 ```
+
+Web 端编辑器内置 AI 能力（`@blocknote/xl-ai`），选中文字即可翻译、润色、扩写、缩写，也可在光标处续写、生成大纲、总结内容。Mobile 端 AI 对话通过 Vercel Edge Function 代理，SSE 流式响应按平台分流（Web 用 `ReadableStream`，Native 用 `response.text()`）。
 
 ### 工程化体系
 
@@ -61,19 +63,25 @@ My-Notion/
 
 ## 🗺️ Roadmap
 
-### 🎯 近期 — AI 原生编辑器
+### ✅ 已完成
 
-- **选中即 AI** — BlockNote 中选中文字，右键即可翻译、润色、扩写、缩写、提问
-- **自定义 BlockNote Tool** — 扩展编辑器工具栏，集成 AI 驱动的文档操作（智能续写、风格转换、语法修正）
-- **Inline AI Assist** — 行内 AI 建议，类似 Copilot 的补全体验
+- **Web 编辑器 AI** — 基于 `@blocknote/xl-ai`，选中文字可翻译（中/英）、润色、扩写、缩写；光标处可续写、生成大纲、总结内容，支持中/英/繁三语菜单
+- **Mobile EAS 构建** — Android Preview APK 打包通过，EAS Build 环境变量配置完成
+- **AI 服务 Edge Runtime 迁移** — 从 Hono Serverless 迁移至 Vercel 原生 Edge Function，解决 DashScope 超时问题
+- **Mobile SSE 平台分流** — Web 端 `ReadableStream` 流式读取，Native 端 `response.text()` 兼容方案
 
-### 🚀 中期 — RAG 增强 & Mobile 上线
+### 🎯 近期 — AI 编辑器增强 & Mobile 上线
+
+- **编辑器 AI 操作历史** — 记录每次 AI 修改，支持一键撤销/重做 AI 变更
+- **Mobile 自定义域名** — AI 服务绑定自定义域名，解决国内 `.vercel.app` 不可达问题
+- **Mobile App Store 上架** — iOS TestFlight 内测 + Android Google Play 发布
+
+### 🚀 中期 — RAG 增强
 
 - **分层检索** — 粗筛 + 精排两阶段，提升召回率和准确率
-- **混合检索** — 向量检索 + 关键词检索融合
+- **混合检索** — 向量检索 + BM25 关键词检索融合
 - **多格式文档** — PDF、Markdown、Word 直接入库
 - **检索溯源** — 展示 RAG 引用的文档片段，支持跳转原文
-- **Mobile 上架** — iOS App Store / Android Google Play 发布
 
 ### 🔮 远期 — CLI & Agent 生态
 
@@ -131,7 +139,7 @@ pnpm exec playwright test
 | **Mobile 框架** | Expo 54 / React Native 0.81 / Tamagui 2.0 |
 | **AI/LLM** | LangChain / OpenAI SDK / 通义千问 / Qdrant |
 | **后端/数据库** | Convex (实时数据库) / EdgeStore (文件存储) |
-| **AI 网关** | Hono / Node.js |
+| **AI 网关** | Vercel Edge Function |
 | **认证** | Clerk |
 | **状态管理** | Zustand 5 |
 | **编辑器** | BlockNote 0.41 / TipTap (TenTap) |
@@ -146,4 +154,4 @@ pnpm exec playwright test
 
 - [Web 应用](./apps/web/README.md) — 基于 Next.js 16 的 Notion Web 应用
 - [移动应用](./apps/mobile/README.md) — 基于 Expo 54 的 Notion 移动应用
-- [AI 网关](./services/ai/) — 基于 Hono 的 AI API 代理服务
+- [AI 网关](./services/ai/) — Vercel Edge Function AI API 代理服务
