@@ -4,8 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev": "expo start",
+    "dev:local": "EXPO_PUBLIC_AI_SERVICE_URL=http://localhost:3001 expo start",
     "dev:convex": "npx convex dev --typecheck=disable",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run dev:convex\"",
+    "dev:all:local": "concurrently \"pnpm run dev:local\" \"pnpm run dev:convex\"",
     "start": "expo start",
     "export": "npx expo export",
     "reset-project": "node ./scripts/reset-project.js",
