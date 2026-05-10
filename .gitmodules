@@ -1,0 +1,3 @@
+[submodule "my-notion-go"]
+	path = my-notion-go
+	url = https://github.com/HaveNiceDa/My-Notion-Go.git
