@@ -26,6 +26,7 @@ import {
   PopoverContent,
 } from "@/src/components/ui/popover";
 import { useSearch, useSettings, useNavigation } from "@notion/business/hooks";
+import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
 
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";
@@ -75,6 +76,7 @@ export function Navigation() {
   const settings = useSettings();
   const search = useSearch();
   const navigation = useNavigation();
+  const { panelOpen, togglePanel } = useAIChatStore();
   const params = useParams();
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -223,7 +225,8 @@ export function Navigation() {
             <Item
               label="Notion AI"
               icon={Sparkles}
-              onClick={() => router.push(`/Chat`)}
+              onClick={togglePanel}
+              active={panelOpen}
             />
             <Item
               onClick={handleCreate}

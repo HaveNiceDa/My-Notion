@@ -43,7 +43,12 @@ export async function POST(req: NextRequest) {
     }
 
     const { getToken: getStreamToken } = await auth();
-    const streamToken = await getStreamToken({ template: "convex" });
+    let streamToken: string | null = null;
+    try {
+      streamToken = await getStreamToken({ template: "convex" });
+    } catch (tokenError) {
+      console.error("[RAG Stream] Clerk token 获取失败:", tokenError);
+    }
     const dataSource = new ConvexDataSource(
       process.env.NEXT_PUBLIC_CONVEX_URL!,
       streamToken ?? undefined,

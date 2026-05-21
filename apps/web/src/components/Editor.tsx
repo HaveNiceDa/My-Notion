@@ -16,7 +16,7 @@ import "@blocknote/xl-ai/style.css";
 import { DefaultChatTransport } from "ai";
 
 import { useEdgeStore } from "@/src/lib/edgestore";
-import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
+import { getInitialAIModelId } from "@/src/components/ai-chat/models";
 import { EditorFormattingToolbar } from "./editor/EditorFormattingToolbar";
 import { EditorSlashMenu } from "./editor/EditorSlashMenu";
 import { EditorAIMenuController } from "./editor/EditorAIMenuController";
@@ -58,7 +58,7 @@ const Editor = forwardRef<EditorRef, EditorProps>(
     const locale = (params.locale as string) || "en";
     const { isSignedIn, isLoaded } = useAuth();
     const { openSignIn } = useClerk();
-    const { model } = useAIModelStore();
+    const model = getInitialAIModelId();
 
     const handleUpload = async (file: File) => {
       const response = await edgestore.publicFiles.upload({ file });

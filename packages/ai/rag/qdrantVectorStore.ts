@@ -30,10 +30,6 @@ export class QdrantVectorStoreWrapper {
         throw new Error("QDRANT_URL 环境变量未设置");
       }
 
-      if (!process.env.NEXT_PUBLIC_QDRANT_API_KEY) {
-        throw new Error("QDRANT_API_KEY 环境变量未设置");
-      }
-
       const collections = await this.qdrantClient.getCollections();
 
       const exists = collections.collections.some(

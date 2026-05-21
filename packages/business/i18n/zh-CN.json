@@ -226,7 +226,8 @@
     "deleteConversation": "删除对话",
     "deleteConversationConfirm": "确定要删除这个对话吗？删除后无法恢复。",
     "sendFailed": "发送失败，请重试",
-    "retry": "重试"
+    "retry": "重试",
+    "generatingResponse": "正在生成响应..."
   },
   "Auth": {
     "signIn": "登录",

@@ -1,52 +1,32 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useConvex } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { type AIModel } from "@notion/ai/config";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useAIModelStore } from "@/src/lib/store/use-ai-model-store";
-import { useVectorStoreStore } from "@/src/lib/store/use-vector-store-store";
-import { useKnowledgeBaseStore } from "@/src/lib/store/use-knowledge-base-store";
-import { useThinkingProcessStore } from "@/src/lib/store/use-thinking-process-store";
-import { useDeepThinkingStore } from "@/src/lib/store/use-deep-thinking-store";
-import { useToolCallStore } from "@/src/lib/store/use-tool-call-store";
 import { devLog } from "@notion/business/utils";
+import type { ChatMessage, Conversation, ToolCall, SendMessageOptions } from "./types";
+import type { AIModelId, ChatMode } from "./models";
+import { getInitialAIModelId } from "./models";
 
-export interface Message {
-  id: string;
-  content: string;
-  reasoningContent?: string;
-  role: string;
-  timestamp: Date;
-}
-
-async function runRAGQueryStream(
+async function runRAGStream(
   userId: string,
   input: string,
-  conversationHistoryMessages: any[],
+  conversationHistoryMessages: unknown[],
   onChunk: (chunk: string) => void,
   onReasoningChunk: (chunk: string) => void,
-  onToolCall: (data: any) => void,
   onComplete: () => Promise<void>,
-  onError: (error: any) => void,
-  model: AIModel,
-  temperature: number,
-  knowledgeBaseEnabled: boolean,
-  conversationId: string | Id<"aiConversations">,
+  onError: (error: unknown) => void,
+  model: AIModelId,
+  mode: ChatMode,
+  conversationId: string,
   enableThinking: boolean,
 ) {
   try {
-    if (conversationId) {
-      const { clearSteps } = useThinkingProcessStore.getState();
-      clearSteps();
-    }
-
     const response = await fetch("/api/rag-stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,15 +36,15 @@ async function runRAGQueryStream(
         query: input,
         conversationHistory: conversationHistoryMessages,
         model,
-        minScore: temperature,
-        knowledgeBaseEnabled,
+        minScore: 0.6,
+        knowledgeBaseEnabled: mode === "rag",
         conversationId,
         enableThinking,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to get RAG response: ${response.statusText}`);
+      throw new Error(`RAG stream failed: ${response.statusText}`);
     }
 
     const reader = response.body?.getReader();
@@ -95,17 +75,6 @@ async function runRAGQueryStream(
                 case "reasoning":
                   if (parsedData.text) onReasoningChunk(parsedData.text);
                   break;
-                case "thinking_step":
-                  if (conversationId) {
-                    const { addStep } = useThinkingProcessStore.getState();
-                    addStep(parsedData.step_type, parsedData.content, parsedData.details);
-                  }
-                  break;
-                case "tool_call_start":
-                case "tool_executing":
-                case "tool_result":
-                  onToolCall(parsedData);
-                  break;
                 case "error":
                   if (parsedData.message === "terminated") {
                     devLog("[RAG] 连接正常终止");
@@ -118,7 +87,7 @@ async function runRAGQueryStream(
                   break;
               }
             } catch (error) {
-              console.error("[RAG System] 解析SSE数据出错:", error);
+              console.error("[RAG] 解析 SSE 数据出错:", error);
             }
           }
         }
@@ -142,7 +111,6 @@ async function runRAGQueryStream(
       reader.releaseLock();
     }
   } catch (error) {
-    console.error("Error in RAG API call:", error);
     onError(error);
   }
 }
@@ -150,36 +118,40 @@ async function runRAGQueryStream(
 export function useAIChat() {
   const { user } = useUser();
   const convex = useConvex();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
   const t = useTranslations("AI");
-  const { model } = useAIModelStore();
-  const { userLoadingStatus } = useVectorStoreStore();
-  const { enabled: knowledgeBaseEnabled } = useKnowledgeBaseStore();
-  const { enabled: deepThinkingEnabled } = useDeepThinkingStore();
-  const { clearSteps } = useThinkingProcessStore();
-  const { addToolCall, setToolCallResult, setToolCallError } = useToolCallStore();
 
   const [input, setInput] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<Id<"aiConversations"> | null>(null);
   const [conversationCreatedAt, setConversationCreatedAt] = useState<Date | null>(null);
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
-  const [showConversationList, setShowConversationList] = useState(false);
-  const [isConversationListPinned, setIsConversationListPinned] = useState(false);
+  const [modelId, setModelIdState] = useState<AIModelId>(getInitialAIModelId);
+  const [mode, setModeState] = useState<ChatMode>("chat");
+  const [enableThinking, setEnableThinking] = useState(false);
+  const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
-  const previousSearchParamsIdRef = useRef<string | null>(null);
+  const setModelId = useCallback((id: AIModelId) => {
+    setModelIdState(id);
+    localStorage.setItem("ai-model-id", id);
+  }, []);
+
+  const setMode = useCallback((m: ChatMode) => {
+    setModeState(m);
+  }, []);
+
+  const toggleThinking = useCallback(() => {
+    setEnableThinking((prev) => !prev);
+  }, []);
 
   const loadConversations = useMemoizedFn(async () => {
     if (!user) return;
     try {
       setIsLoadingConversations(true);
       const result = await convex.query(api.aiChat.getConversations, {});
-      setConversations(result);
+      setConversations(result as Conversation[]);
     } catch (error) {
       console.error("Error loading conversations:", error);
     } finally {
@@ -192,11 +164,9 @@ export function useAIChat() {
     try {
       setIsLoading(true);
       setConversationId(convId);
-      previousSearchParamsIdRef.current = convId;
-      router.push(`?id=${convId}`);
 
       const msgs = await convex.query(api.aiChat.getMessages, { conversationId: convId });
-      const formattedMessages: Message[] = msgs.map((msg: any) => {
+      const formattedMessages: ChatMessage[] = msgs.map((msg: any) => {
         let content = msg.content;
         let reasoningContent: string | undefined;
         try {
@@ -206,20 +176,25 @@ export function useAIChat() {
             reasoningContent = parsedContent.reasoningContent;
           }
         } catch {}
-        return { id: msg._id, content, reasoningContent, role: msg.role, timestamp: new Date(msg.createdAt) };
+        return {
+          id: msg._id,
+          content,
+          reasoningContent,
+          role: msg.role,
+          timestamp: new Date(msg.createdAt),
+        };
       });
       setMessages(formattedMessages);
 
       let conversation = conversations.find((conv) => conv._id === convId);
       if (!conversation) {
         const loadedConversations = await convex.query(api.aiChat.getConversations, {});
-        setConversations(loadedConversations);
-        conversation = loadedConversations.find((conv: any) => conv._id === convId);
+        setConversations(loadedConversations as Conversation[]);
+        conversation = (loadedConversations as Conversation[]).find((conv) => conv._id === convId);
       }
       if (conversation) {
         setConversationCreatedAt(new Date(conversation.createdAt));
       }
-      setShowConversationList(false);
     } catch (error) {
       console.error("Error loading conversation:", error);
     } finally {
@@ -228,12 +203,10 @@ export function useAIChat() {
   });
 
   const createNewConversation = useMemoizedFn(() => {
-    router.push(pathname);
     setConversationId(null);
     setMessages([]);
     setConversationCreatedAt(null);
-    previousSearchParamsIdRef.current = null;
-    setShowConversationList(false);
+    setToolCalls([]);
   });
 
   const deleteConversation = useMemoizedFn(async (convId: Id<"aiConversations">) => {
@@ -258,12 +231,6 @@ export function useAIChat() {
   const sendMessage = useMemoizedFn(async (images: string[] = []) => {
     if ((!input.trim() && images.length === 0) || isLoading || !user) return;
 
-    const vectorStoreStatus = userLoadingStatus[user.id];
-    if (vectorStoreStatus === "loading") {
-      toast.info(t("knowledgeBaseInitializing"));
-      return;
-    }
-
     let currentConversationId = conversationId;
 
     if (!currentConversationId) {
@@ -273,9 +240,7 @@ export function useAIChat() {
         });
         setConversationId(currentConversationId);
         setConversationCreatedAt(new Date());
-        previousSearchParamsIdRef.current = currentConversationId;
         await loadConversations();
-        router.push(`?id=${currentConversationId}`);
       } catch (error) {
         console.error("Error creating conversation:", error);
         toast.error("创建对话失败，请重试");
@@ -284,7 +249,7 @@ export function useAIChat() {
     }
 
     const messageContent = { text: input, images };
-    const userMessage: Message = {
+    const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: JSON.stringify(messageContent),
       role: "user",
@@ -295,9 +260,10 @@ export function useAIChat() {
     setInput("");
     setUploadedImages([]);
     setIsLoading(true);
+    setToolCalls([]);
 
     const assistantMessageId = (Date.now() + 1).toString();
-    const tempAssistantMessage: Message = {
+    const tempAssistantMessage: ChatMessage = {
       id: assistantMessageId,
       content: "",
       role: "assistant",
@@ -360,53 +326,12 @@ export function useAIChat() {
       ];
       conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
-      if (currentConversationId) {
-        clearSteps();
-      }
-
-      await runRAGQueryStream(
+      await runRAGStream(
         user.id,
         input,
         conversationHistoryMessages,
         (chunk) => { currentContent += chunk; scheduleRender(); },
-        (chunk) => { if (deepThinkingEnabled) { currentReasoningContent += chunk; scheduleRender(); } },
-        (data: any) => {
-          if (!data) return;
-          if (!data.type) return;
-          switch (data.type) {
-            case "tool_call_start":
-              if (data.tool_calls && Array.isArray(data.tool_calls)) {
-                data.tool_calls.forEach((toolCall: any) => {
-                  const toolCallId = toolCall.id || `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-                  addToolCall({
-                    id: toolCallId,
-                    name: toolCall.function?.name || "unknown",
-                    parameters: toolCall.function?.arguments ? JSON.parse(toolCall.function.arguments) : {},
-                    status: "calling",
-                  });
-                });
-              }
-              break;
-            case "tool_executing":
-              addToolCall({
-                id: `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-                name: data.tool_name || "unknown",
-                parameters: data.tool_args || {},
-                status: "executing",
-              });
-              break;
-            case "tool_result":
-              const resultToolCallId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              addToolCall({ id: resultToolCallId, name: data.tool_name || "unknown", parameters: {}, status: "completed" });
-              setToolCallResult(resultToolCallId, data.result);
-              break;
-            case "tool_error":
-              const errorToolCallId = `tool_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-              addToolCall({ id: errorToolCallId, name: data.tool_name || "unknown", parameters: {}, status: "error" });
-              setToolCallError(errorToolCallId, data.error);
-              break;
-          }
-        },
+        (chunk) => { if (enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
         async () => {
           pendingRender = false;
           setMessages((prev) =>
@@ -416,18 +341,18 @@ export function useAIChat() {
                 : msg,
             ),
           );
-          const messageData: any = { content: currentContent };
-          if (deepThinkingEnabled && currentReasoningContent) {
+          const messageData: Record<string, string> = { content: currentContent };
+          if (enableThinking && currentReasoningContent) {
             messageData.reasoningContent = currentReasoningContent;
           }
           try {
             await convex.mutation(api.aiChat.addMessage, {
-              conversationId: currentConversationId,
+              conversationId: currentConversationId!,
               content: JSON.stringify(messageData),
               role: "assistant" as "user" | "assistant",
             });
             await convex.mutation(api.aiChat.updateConversationTitle, {
-              conversationId: currentConversationId,
+              conversationId: currentConversationId!,
               title: input.length > 50 ? input.substring(0, 50) + "..." : input || "图片对话",
             });
             await loadConversations();
@@ -435,7 +360,7 @@ export function useAIChat() {
             console.error("[Chat] Failed to save message to Convex:", err);
           }
         },
-        (error: any) => {
+        (error: unknown) => {
           console.error("Error in RAG stream:", error);
           setMessages((prev) =>
             prev.map((msg) =>
@@ -445,11 +370,10 @@ export function useAIChat() {
             ),
           );
         },
-        model,
-        0.6,
-        knowledgeBaseEnabled,
+        modelId,
+        mode,
         currentConversationId!,
-        deepThinkingEnabled,
+        enableThinking,
       );
     } finally {
       setIsLoading(false);
@@ -464,43 +388,17 @@ export function useAIChat() {
   });
 
   useEffect(() => {
-    const initConversation = async () => {
-      if (!user) return;
+    if (!user) return;
+    const init = async () => {
       try {
-        const conversationIdFromUrl = searchParams.get("id");
-        if (conversationIdFromUrl) {
-          await loadConversation(conversationIdFromUrl as Id<"aiConversations">);
-        }
-        setTimeout(async () => {
-          try {
-            const loadedConversations = await convex.query(api.aiChat.getConversations, {});
-            setConversations(loadedConversations);
-          } catch (error) {
-            console.error("Error loading conversations:", error);
-          }
-        }, 500);
-        previousSearchParamsIdRef.current = conversationIdFromUrl;
+        const loadedConversations = await convex.query(api.aiChat.getConversations, {});
+        setConversations(loadedConversations as Conversation[]);
       } catch (error) {
-        console.error("Error initializing conversation:", error);
+        console.error("Error loading conversations:", error);
       }
     };
-    initConversation();
+    init();
   }, [user]);
-
-  useEffect(() => {
-    const currentId = searchParams.get("id");
-    const previousId = previousSearchParamsIdRef.current;
-    if (currentId !== previousId) {
-      previousSearchParamsIdRef.current = currentId;
-      if (currentId) {
-        loadConversation(currentId as Id<"aiConversations">);
-      } else if (previousId) {
-        setConversationId(null);
-        setMessages([]);
-        setConversationCreatedAt(null);
-      }
-    }
-  }, [searchParams.get("id")]);
 
   return {
     messages,
@@ -511,10 +409,13 @@ export function useAIChat() {
     conversationCreatedAt,
     conversations,
     isLoadingConversations,
-    showConversationList,
-    setShowConversationList,
-    isConversationListPinned,
-    setIsConversationListPinned,
+    modelId,
+    setModelId,
+    mode,
+    setMode,
+    enableThinking,
+    toggleThinking,
+    toolCalls,
     uploadedImages,
     setUploadedImages,
     sendMessage,
@@ -522,5 +423,6 @@ export function useAIChat() {
     createNewConversation,
     loadConversation,
     deleteConversation,
+    loadConversations,
   };
 }
