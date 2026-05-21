@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useUser } from "@clerk/nextjs";
 import { AIChatPanel } from "@/src/components/ai-chat/AIChatPanel";
+import { AIFloatingButton } from "@/src/components/ai-chat/AIFloatingButton";
 
 export default function MainLayout({
   children,
@@ -66,6 +67,7 @@ export default function MainLayout({
         {children}
       </main>
       <AIChatPanel />
+      <AIFloatingButton />
     </div>
   );
 }

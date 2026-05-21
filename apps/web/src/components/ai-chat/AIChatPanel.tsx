@@ -156,12 +156,12 @@ export function AIChatPanel() {
 
   return (
     <div
-      className="h-full border-l border-border bg-background flex flex-col shrink-0 relative"
+      className="h-full border-l border-border bg-muted/40 flex flex-col shrink-0 relative shadow-[-8px_0_24px_rgba(15,23,42,0.06)] dark:shadow-[-8px_0_24px_rgba(0,0,0,0.25)]"
       style={{ width: `${width}px` }}
     >
       {/* 拖拽调整宽度的手柄 */}
       <div
-        className="absolute left-0 top-0 h-full w-1 cursor-ew-resize hover:bg-primary/20 z-10"
+        className="absolute left-0 top-0 h-full w-1 cursor-ew-resize hover:bg-primary/30 active:bg-primary/50 z-10 transition-colors"
         onMouseDown={handleMouseDown}
       />
 

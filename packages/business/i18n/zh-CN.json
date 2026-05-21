@@ -227,7 +227,8 @@
     "deleteConversationConfirm": "确定要删除这个对话吗？删除后无法恢复。",
     "sendFailed": "发送失败，请重试",
     "retry": "重试",
-    "generatingResponse": "正在生成响应..."
+    "generatingResponse": "正在生成响应...",
+    "openAIChat": "打开 AI 助手"
   },
   "Auth": {
     "signIn": "登录",
