@@ -9,6 +9,8 @@ import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { devLog } from "@notion/business/utils";
+import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
+import type { CurrentDocumentContext } from "@/src/lib/store/use-current-document-store";
 import type { AgentStreamEvent, ChatMessage, Conversation, ToolCall } from "./types";
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
@@ -25,6 +27,7 @@ async function runAgentStream(
   model: AIModelId,
   conversationId: string,
   enableThinking: boolean,
+  currentDocument: CurrentDocumentContext | null,
 ) {
   try {
     const response = await fetch("/api/agent/stream", {
@@ -36,6 +39,7 @@ async function runAgentStream(
         mode: "auto",
         conversationId,
         enableThinking,
+        currentDocument,
       }),
     });
 
@@ -121,6 +125,7 @@ export function useAIChat() {
   const { user } = useUser();
   const convex = useConvex();
   const t = useTranslations("AI");
+  const currentDocument = useCurrentDocumentStore((state) => state.currentDocument);
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -404,6 +409,7 @@ export function useAIChat() {
         modelId,
         currentConversationId!,
         enableThinking,
+        currentDocument,
       );
     } finally {
       setIsLoading(false);

@@ -235,6 +235,7 @@
     "retry": "Retry",
     "generatingResponse": "Generating response...",
     "knowledgeSearchTool": "Knowledge search",
+    "documentReadTool": "Read current document",
     "toolRunning": "Running",
     "toolCompleted": "Completed",
     "openAIChat": "Open AI Assistant"

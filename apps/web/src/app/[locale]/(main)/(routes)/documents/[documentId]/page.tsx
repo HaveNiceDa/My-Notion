@@ -14,6 +14,7 @@ import { Toolbar } from "@/src/components/Toolbar";
 import { Cover } from "@/src/components/Cover";
 import { Skeleton } from "@/src/components/ui/skeleton";
 import { ErrorModal } from "@/src/components/modals/error-modal";
+import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
 // 触发文档更新的API调用
 const triggerDocumentUpdate = async (
   userId: string,
@@ -63,6 +64,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const { documentId } = use(params) as { documentId: Id<"documents"> };
   const t = useTranslations("Error");
   const { user } = useUser();
+  const { setCurrentDocument, clearCurrentDocument } = useCurrentDocumentStore();
 
   const document = useQuery(api.documents.getById, {
     documentId,
@@ -74,6 +76,16 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
       documentCache.set(documentId, document);
     }
   }, [document, documentId]);
+
+  useEffect(() => {
+    if (!document) return;
+    setCurrentDocument({
+      id: documentId,
+      title: document.title,
+      content: document.content,
+    });
+    return () => clearCurrentDocument(documentId);
+  }, [clearCurrentDocument, document, documentId, setCurrentDocument]);
 
   const update = useMutation(api.documents.update);
 
@@ -180,6 +192,12 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   }, [documentId]);
 
   const onChange = (content: string) => {
+    setCurrentDocument({
+      id: documentId,
+      title: document?.title ?? "",
+      content,
+    });
+
     // 使用防抖更新
     debouncedUpdate(documentId, content);
 
@@ -190,6 +208,12 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   };
 
   const onTitleChange = (title: string) => {
+    setCurrentDocument({
+      id: documentId,
+      title,
+      content: document?.content,
+    });
+
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
       debouncedRagUpdate(documentId, document.content!, title);

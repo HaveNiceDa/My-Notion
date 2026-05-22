@@ -217,6 +217,8 @@ export const MessageList = React.memo(
                 <span className="font-medium text-foreground">
                   {toolCall.name === "knowledge_search"
                     ? t("knowledgeSearchTool")
+                    : toolCall.name === "document_read"
+                      ? t("documentReadTool")
                     : toolCall.name}
                 </span>
                 <span>

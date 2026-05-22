@@ -235,6 +235,7 @@
     "retry": "重试",
     "generatingResponse": "正在生成响应...",
     "knowledgeSearchTool": "知识库检索",
+    "documentReadTool": "读取当前文档",
     "toolRunning": "执行中",
     "toolCompleted": "已完成",
     "openAIChat": "打开 AI 助手"

@@ -8,6 +8,7 @@ import {
 import {
   getOrCreateVectorStore,
 } from "@notion/ai/server";
+import { extractTextFromDocument } from "@notion/ai/utils";
 
 type AgentStreamEvent =
   | { type: "text-delta"; id: string; delta: string }
@@ -24,6 +25,13 @@ type AgentRequestBody = {
   mode?: "auto" | "chat" | "rag";
   enableThinking?: boolean;
   conversationId?: string;
+  currentDocument?: CurrentDocumentContext | null;
+};
+
+type CurrentDocumentContext = {
+  id: string;
+  title: string;
+  content?: string | null;
 };
 
 type PendingToolCall = {
@@ -68,15 +76,15 @@ function extractLastUserText(messages: OpenAI.ChatCompletionMessageParam[]): str
 }
 
 function buildSystemMessage(
-  hasKnowledgeContext: boolean,
+  hasToolContext: boolean,
 ): OpenAI.ChatCompletionSystemMessageParam {
   return {
     role: "system",
     content: [
       "You are the Notion AI assistant inside a personal workspace.",
       "Use the same language as the user's latest message unless the user asks otherwise.",
-      hasKnowledgeContext
-        ? "Knowledge base search results are provided as tool context. Answer based on that evidence first. If the evidence is empty or insufficient, say so clearly."
+      hasToolContext
+        ? "Tool results are provided as context. Answer based on that evidence first. If the evidence is empty or insufficient, say so clearly."
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
     ].join("\n"),
   };
@@ -111,6 +119,40 @@ function shouldUseKnowledgeSearch(query: string): boolean {
   ];
 
   return knowledgeSignals.some((signal) => normalizedQuery.includes(signal));
+}
+
+function shouldReadCurrentDocument(
+  query: string,
+  currentDocument?: CurrentDocumentContext | null,
+): boolean {
+  if (!currentDocument?.id) return false;
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return false;
+
+  const documentSignals = [
+    "当前页面",
+    "此页面",
+    "这个页面",
+    "当前文档",
+    "此文档",
+    "这篇文档",
+    "这篇笔记",
+    "总结",
+    "翻译",
+    "深度分析",
+    "深度剖析",
+    "任务跟踪器",
+    "current page",
+    "this page",
+    "current document",
+    "this document",
+    "summarize",
+    "translate",
+    "analyze",
+    "task tracker",
+  ];
+
+  return documentSignals.some((signal) => normalizedQuery.includes(signal));
 }
 
 function enqueueEvent(
@@ -151,6 +193,29 @@ async function executeKnowledgeSearch(
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+function executeDocumentRead(currentDocument?: CurrentDocumentContext | null): unknown {
+  if (!currentDocument?.id) {
+    return { document: null, error: "current document is not available" };
+  }
+
+  let text = "";
+  if (currentDocument.content) {
+    try {
+      text = extractTextFromDocument(currentDocument.content);
+    } catch {
+      text = currentDocument.content;
+    }
+  }
+
+  return {
+    document: {
+      id: currentDocument.id,
+      title: currentDocument.title || "Untitled",
+      content: text || "",
+    },
+  };
 }
 
 async function streamModelResponse(
@@ -244,7 +309,8 @@ export async function POST(req: NextRequest) {
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const mode = body.mode === "rag" || body.mode === "chat" ? body.mode : "auto";
     const userQuery = extractLastUserText(messages);
-    const shouldSearch = mode === "rag" || (mode === "auto" && shouldUseKnowledgeSearch(userQuery));
+    const shouldReadDocument = mode === "auto" && shouldReadCurrentDocument(userQuery, body.currentDocument);
+    const shouldSearch = mode === "rag" || (mode === "auto" && !shouldReadDocument && shouldUseKnowledgeSearch(userQuery));
     const enableThinking = Boolean(body.enableThinking);
     const openai = getOpenAIClient();
     const encoder = new TextEncoder();
@@ -254,38 +320,49 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           const baseMessages: OpenAI.ChatCompletionMessageParam[] = [
-            buildSystemMessage(shouldSearch),
+            buildSystemMessage(shouldReadDocument || shouldSearch),
             ...messages,
           ];
           const extraBody = createThinkingBody(enableThinking);
 
-          if (shouldSearch) {
-            const searchToolCall: PendingToolCall = {
-              id: `knowledge-search-${Date.now()}`,
-              type: "function",
-              function: {
-                name: "knowledge_search",
-                arguments: JSON.stringify({ query: userQuery, topK: 3 }),
-              },
-            };
+          if (shouldReadDocument || shouldSearch) {
+            const toolCall: PendingToolCall = shouldReadDocument
+              ? {
+                id: `document-read-${Date.now()}`,
+                type: "function",
+                function: {
+                  name: "document_read",
+                  arguments: JSON.stringify({ documentId: body.currentDocument?.id }),
+                },
+              }
+              : {
+                id: `knowledge-search-${Date.now()}`,
+                type: "function",
+                function: {
+                  name: "knowledge_search",
+                  arguments: JSON.stringify({ query: userQuery, topK: 3 }),
+                },
+              };
             const toolMessages: OpenAI.ChatCompletionMessageParam[] = [];
-            const parsedArgs = JSON.parse(searchToolCall.function.arguments);
+            const parsedArgs = JSON.parse(toolCall.function.arguments);
 
-            // Agent auto 直接执行知识库 tool，避免 DashScope thinking mode 与 tool_choice 的兼容限制。
+            // Agent auto 直接执行 tool，避免 DashScope thinking mode 与 tool_choice 的兼容限制。
             enqueueEvent(controller, encoder, {
               type: "tool-call-start",
-              toolCallId: searchToolCall.id,
-              toolName: searchToolCall.function.name,
+              toolCallId: toolCall.id,
+              toolName: toolCall.function.name,
             });
-            const result = await executeKnowledgeSearch(userId, parsedArgs);
+            const result = shouldReadDocument
+              ? executeDocumentRead(body.currentDocument)
+              : await executeKnowledgeSearch(userId, parsedArgs);
             enqueueEvent(controller, encoder, {
               type: "tool-call-result",
-              toolCallId: searchToolCall.id,
+              toolCallId: toolCall.id,
               result,
             });
             toolMessages.push({
               role: "tool",
-              tool_call_id: searchToolCall.id,
+              tool_call_id: toolCall.id,
               content: JSON.stringify(result),
             });
 
@@ -296,7 +373,7 @@ export async function POST(req: NextRequest) {
                 {
                   role: "assistant",
                   content: null,
-                  tool_calls: [searchToolCall],
+                  tool_calls: [toolCall],
                 },
                 ...toolMessages,
               ],
@@ -332,7 +409,6 @@ export async function POST(req: NextRequest) {
               enableThinking,
             );
           }
-
           enqueueEvent(controller, encoder, { type: "finish", model, usage: null });
         } catch (error) {
           enqueueEvent(controller, encoder, {
