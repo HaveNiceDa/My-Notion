@@ -8,9 +8,8 @@ import tw from "twrnc";
 import { config as tamaguiConfig } from "@tamagui/config";
 import { useUser } from "@clerk/expo";
 
-import { useAppTheme, type AppThemeName } from "@/theme/AppThemeProvider";
+import { useAppTheme } from "@/theme/AppThemeProvider";
 import { useLanguage } from "@/i18n/useLanguage";
-import type { SupportedLanguage } from "@/i18n";
 import { useSettings } from "@notion/business/hooks";
 
 export function SettingsModal({ signOut }: { signOut?: () => void }) {
@@ -22,28 +21,15 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
   const { currentLanguage, switchLanguage } = useLanguage();
   const { isOpen, onClose } = useSettings();
 
-  const [section, setSection] = useState<"main" | "language" | "theme" | "account">("main");
+  const [section, setSection] = useState<"main" | "account">("main");
 
-  const handleSwitchLanguage = async (lang: SupportedLanguage) => {
-    await switchLanguage(lang);
-    setSection("main");
+  const handleToggleLanguage = async () => {
+    await switchLanguage(currentLanguage === "zh-CN" ? "en" : "zh-CN");
   };
 
-  const handleSetTheme = async (nextTheme: AppThemeName) => {
-    await setTheme(nextTheme);
-    setSection("main");
+  const handleToggleTheme = async () => {
+    await setTheme(appTheme === "dark" ? "light" : "dark");
   };
-
-  const languageOptions: { value: SupportedLanguage; label: string }[] = [
-    { value: "zh-CN", label: t("Home.languageSimplifiedChinese") },
-    { value: "zh-TW", label: t("Home.languageTraditionalChinese") },
-    { value: "en", label: t("Home.languageEnglish") },
-  ];
-
-  const themeOptions: { value: AppThemeName; label: string }[] = [
-    { value: "light", label: t("Home.themeLight") },
-    { value: "light_blue", label: t("Home.themeBlueLight") },
-  ];
 
   const workspaceTitle =
     user?.firstName != null && user.firstName.length > 0
@@ -74,7 +60,7 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
       <View style={{ height: 1, backgroundColor: theme.borderColor.val }} />
 
       <Pressable
-        onPress={() => setSection("language")}
+        onPress={() => void handleToggleLanguage()}
         style={({ pressed }) => [
           tw`flex-row items-center justify-between px-4 py-3.5`,
           pressed ? { backgroundColor: theme.backgroundHover.val } : null,
@@ -86,11 +72,15 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
             {t("Home.changeLanguage")}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.placeholderColor.val} />
+        <Text style={[tw`text-sm`, { color: theme.placeholderColor.val }]}>
+          {currentLanguage === "zh-CN"
+            ? t("Home.languageSimplifiedChinese")
+            : t("Home.languageEnglish")}
+        </Text>
       </Pressable>
 
       <Pressable
-        onPress={() => setSection("theme")}
+        onPress={() => void handleToggleTheme()}
         style={({ pressed }) => [
           tw`flex-row items-center justify-between px-4 py-3.5`,
           pressed ? { backgroundColor: theme.backgroundHover.val } : null,
@@ -102,7 +92,9 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
             {t("Home.changeTheme")}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={theme.placeholderColor.val} />
+        <Text style={[tw`text-sm`, { color: theme.placeholderColor.val }]}>
+          {appTheme === "dark" ? t("Home.themeDark") : t("Home.themeLight")}
+        </Text>
       </Pressable>
 
       <Pressable
@@ -120,68 +112,6 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
         </View>
         <Ionicons name="chevron-forward" size={18} color={theme.placeholderColor.val} />
       </Pressable>
-    </>
-  );
-
-  const renderLanguage = () => (
-    <>
-      <View style={tw`flex-row items-center px-4 py-3`}>
-        <Pressable onPress={() => setSection("main")} hitSlop={10}>
-          <Ionicons name="chevron-back" size={22} color={theme.primary.val} />
-        </Pressable>
-        <Text style={[tw`text-base font-semibold flex-1 text-center mr-6`, { color: theme.color.val }]}>
-          {t("Home.selectLanguage")}
-        </Text>
-      </View>
-      <View style={{ height: 1, backgroundColor: theme.borderColor.val }} />
-      {languageOptions.map((option) => (
-        <Pressable
-          key={option.value}
-          onPress={() => void handleSwitchLanguage(option.value)}
-          style={({ pressed }) => [
-            tw`flex-row items-center justify-between px-4 py-3.5`,
-            pressed ? { backgroundColor: theme.backgroundHover.val } : null,
-          ]}
-        >
-          <Text style={[tw`text-base`, { color: theme.color.val }]}>
-            {option.label}
-          </Text>
-          {currentLanguage === option.value && (
-            <Ionicons name="checkmark" size={20} color={theme.primary.val} />
-          )}
-        </Pressable>
-      ))}
-    </>
-  );
-
-  const renderTheme = () => (
-    <>
-      <View style={tw`flex-row items-center px-4 py-3`}>
-        <Pressable onPress={() => setSection("main")} hitSlop={10}>
-          <Ionicons name="chevron-back" size={22} color={theme.primary.val} />
-        </Pressable>
-        <Text style={[tw`text-base font-semibold flex-1 text-center mr-6`, { color: theme.color.val }]}>
-          {t("Home.selectTheme")}
-        </Text>
-      </View>
-      <View style={{ height: 1, backgroundColor: theme.borderColor.val }} />
-      {themeOptions.map((option) => (
-        <Pressable
-          key={option.value}
-          onPress={() => void handleSetTheme(option.value)}
-          style={({ pressed }) => [
-            tw`flex-row items-center justify-between px-4 py-3.5`,
-            pressed ? { backgroundColor: theme.backgroundHover.val } : null,
-          ]}
-        >
-          <Text style={[tw`text-base`, { color: theme.color.val }]}>
-            {option.label}
-          </Text>
-          {appTheme === option.value && (
-            <Ionicons name="checkmark" size={20} color={theme.primary.val} />
-          )}
-        </Pressable>
-      ))}
     </>
   );
 
@@ -231,10 +161,6 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
 
   const getTitle = () => {
     switch (section) {
-      case "language":
-        return t("Home.selectLanguage");
-      case "theme":
-        return t("Home.selectTheme");
       case "account":
         return t("Home.account");
       default:
@@ -287,8 +213,6 @@ export function SettingsModal({ signOut }: { signOut?: () => void }) {
 
               <ScrollView style={tw`flex-1`} showsVerticalScrollIndicator={false}>
                 {section === "main" && renderMain()}
-                {section === "language" && renderLanguage()}
-                {section === "theme" && renderTheme()}
                 {section === "account" && renderAccount()}
               </ScrollView>
             </View>

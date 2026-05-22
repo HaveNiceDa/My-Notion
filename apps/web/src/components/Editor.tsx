@@ -43,8 +43,6 @@ function getAILocaleDict(locale: string) {
   switch (locale) {
     case "zh-CN":
       return aiLocales.zh;
-    case "zh-TW":
-      return aiLocales.zhTw;
     default:
       return aiLocales.en;
   }

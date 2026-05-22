@@ -76,7 +76,7 @@
 | 模块 | 状态 | 说明 |
 |---|---|---|
 | **`@notion/business/utils`** | ✅ 已扩展 | `cn` + `formatTime` + `formatRelativeTime`（已走 i18n） |
-| **`@notion/business/i18n`** | ✅ 已共享 | en.json / zh-CN.json / zh-TW.json |
+| **`@notion/business/i18n`** | ✅ 已共享 | en.json / zh-CN.json |
 | **`@notion/business/hooks`** | ✅ 已创建 | `useSettings` / `useSearch` / `useNavigation`，zustand 为 peerDependency |
 | **`@notion/business/content-compat`** | ✅ 已创建 | BlockNote JSON ↔ HTML 双向转换（536 行），Mobile 和 Web 均可引用 |
 | **`@notion/business/validation`** | ✅ 已创建 | `FileLike` 接口 + `validateImageFile` + `validateFiles`，平台无关 |

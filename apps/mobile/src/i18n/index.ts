@@ -4,15 +4,13 @@ import * as Localization from "expo-localization";
 
 import en from "@notion-i18n/en.json";
 import zhCN from "@notion-i18n/zh-CN.json";
-import zhTW from "@notion-i18n/zh-TW.json";
 
 export const resources = {
   en: { translation: en },
   "zh-CN": { translation: zhCN },
-  "zh-TW": { translation: zhTW },
 };
 
-export const supportedLanguages = ["en", "zh-CN", "zh-TW"] as const;
+export const supportedLanguages = ["en", "zh-CN"] as const;
 export type SupportedLanguage = (typeof supportedLanguages)[number];
 
 export const getDeviceLanguage = (): SupportedLanguage => {
@@ -23,7 +21,7 @@ export const getDeviceLanguage = (): SupportedLanguage => {
       return languageTag as SupportedLanguage;
     }
     if (languageCode === "zh") {
-      return "zh-TW";
+      return "zh-CN";
     }
   }
   return "en";

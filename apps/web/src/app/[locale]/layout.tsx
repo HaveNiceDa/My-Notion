@@ -67,8 +67,8 @@ export default async function RootLayout({
           <EdgeStoreProvider>
             <ThemeProvider
               attribute="class"
-              defaultTheme="system"
-              enableSystem
+              defaultTheme="light"
+              enableSystem={false}
               disableTransitionOnChange
               storageKey="notion-clone-2"
             >

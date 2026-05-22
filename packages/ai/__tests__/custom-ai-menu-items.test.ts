@@ -86,7 +86,6 @@ describe("custom-ai-menu-items", () => {
     it("returns exact match for supported locale", () => {
       expect(resolveLocale("en")).toBe("en");
       expect(resolveLocale("zh-CN")).toBe("zh-CN");
-      expect(resolveLocale("zh-TW")).toBe("zh-TW");
     });
 
     it("falls back to zh-CN for zh-* variants", () => {
@@ -133,13 +132,6 @@ describe("custom-ai-menu-items", () => {
       const translateItem = items.find((i) => i.key === "translate-to-en");
       expect(translateItem!.resolvedTitle).toBe("翻译为英文");
       expect(translateItem!.resolvedSubtext).toBe("将选中文本翻译为英文");
-    });
-
-    it("resolves titles to zh-TW", () => {
-      const items = getCustomItemsForContext(true, "zh-TW");
-      const translateItem = items.find((i) => i.key === "translate-to-en");
-      expect(translateItem!.resolvedTitle).toBe("翻譯為英文");
-      expect(translateItem!.resolvedSubtext).toBe("將選中翻譯為英文");
     });
 
     it("falls back to English for unsupported locale", () => {
