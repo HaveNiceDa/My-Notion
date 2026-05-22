@@ -8,7 +8,6 @@ import { Navigation } from "./_components/Navigation";
 import { SearchCommand } from "@/src/components/search-command";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { useUser } from "@clerk/nextjs";
 import { AIChatPanel } from "@/src/components/ai-chat/AIChatPanel";
 import { AIFloatingButton } from "@/src/components/ai-chat/AIFloatingButton";
 
@@ -18,8 +17,19 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const { isAuthenticated, isLoading } = useConvexAuth();
-  const { user } = useUser();
   const t = useTranslations();
+
+  const handleSave = React.useCallback(() => {
+    const toastId = toast.loading(t("Common.saving"), {
+      duration: 500
+    });
+
+    setTimeout(() => {
+      toast.success(t("Common.saved"), {
+        id: toastId
+      });
+    }, 500);
+  }, [t]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -33,19 +43,7 @@ export default function MainLayout({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
-
-  const handleSave = () => {
-    const toastId = toast.loading(t("Common.saving"), {
-      duration: 500
-    });
-
-    setTimeout(() => {
-      toast.success(t("Common.saved"), {
-        id: toastId
-      });
-    }, 500);
-  };
+  }, [handleSave]);
 
   if (isLoading) {
     return (
