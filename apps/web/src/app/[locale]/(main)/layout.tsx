@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AIChatPanel } from "@/src/components/ai-chat/AIChatPanel";
 import { AIFloatingButton } from "@/src/components/ai-chat/AIFloatingButton";
+import { MainContentNavbar } from "./_components/MainContentNavbar";
 
 export default function MainLayout({
   children,
@@ -60,7 +61,8 @@ export default function MainLayout({
   return (
     <div className="h-full flex dark:bg-[#1F1F1F]">
       <Navigation />
-      <main className="flex-1 h-full overflow-y-auto min-w-0">
+      <main className="relative flex-1 h-full overflow-y-auto min-w-0">
+        <MainContentNavbar />
         <SearchCommand />
         {children}
       </main>

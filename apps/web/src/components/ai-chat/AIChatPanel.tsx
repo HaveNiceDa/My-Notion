@@ -249,8 +249,8 @@ export function AIChatPanel() {
       className={cn(
         "h-full border-l border-border bg-background flex flex-col shadow-[-8px_0_24px_rgba(15,23,42,0.08)] dark:shadow-[-8px_0_24px_rgba(0,0,0,0.28)]",
         panelPinned
-          ? "shrink-0 relative z-[100000]"
-          : "absolute right-0 top-0 bottom-0 z-[100000]",
+          ? "shrink-0 relative z-10"
+          : "absolute right-0 top-0 bottom-0 z-50",
       )}
       style={{ width: `${width}px` }}
     >

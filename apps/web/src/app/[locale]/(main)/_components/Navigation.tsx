@@ -1,11 +1,10 @@
 "use client";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useParams, usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import {
   ChevronsLeft,
   ChevronsUp,
-  MenuIcon,
   Sparkles,
   Plus,
   PlusCircle,
@@ -31,7 +30,6 @@ import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";
 import { TrashBox } from "./trash-box";
-import { Navbar } from "./Navbar";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -75,11 +73,10 @@ export function Navigation() {
   const router = useRouter();
   const settings = useSettings();
   const search = useSearch();
-  const navigation = useNavigation();
   const { panelOpen, togglePanel } = useAIChatStore();
-  const params = useParams();
   const pathname = usePathname();
   const isMobile = useMediaQuery("(max-width:768px)");
+  const isCollapsed = useNavigation((state) => state.isCollapsed);
   const create = useMutation(api.documents.create);
   const starredDocuments = useQuery(api.documents.getStarred, {});
   const t = useTranslations("Navigation");
@@ -94,21 +91,14 @@ export function Navigation() {
 
   const isResizingRef = useRef(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const navbarRef = useRef<HTMLDivElement>(null);
   const [isResetting, setIsResetting] = useState(false);
-  const isCollapsed = navigation.isCollapsed;
 
   const resetWidth = useCallback(() => {
-    if (sidebarRef.current && navbarRef.current) {
+    if (sidebarRef.current) {
       useNavigation.getState().setIsCollapsed(false);
       setIsResetting(true);
 
       sidebarRef.current.style.width = isMobile ? "100%" : "240px";
-      navbarRef.current.style.setProperty(
-        "width",
-        isMobile ? "0" : "calc(100% - 240px)",
-      );
-      navbarRef.current.style.setProperty("left", isMobile ? "100%" : "240px");
       setTimeout(() => {
         setIsResetting(false);
       }, 300);
@@ -116,30 +106,33 @@ export function Navigation() {
   }, [isMobile]);
 
   const collapse = useCallback(() => {
-    if (sidebarRef.current && navbarRef.current) {
+    if (sidebarRef.current) {
       useNavigation.getState().setIsCollapsed(true);
       setIsResetting(true);
 
       sidebarRef.current.style.width = "0";
-      navbarRef.current.style.setProperty("width", "100%");
-      navbarRef.current.style.setProperty("left", "0");
       setTimeout(() => setIsResetting(false), 300);
     }
   }, []);
 
   useEffect(() => {
-    if (isMobile) {
-      collapse();
-    } else {
-      resetWidth();
-    }
-  }, [isMobile, collapse, resetWidth]);
+    if (!sidebarRef.current) return;
+    sidebarRef.current.style.width = isCollapsed
+      ? "0"
+      : isMobile
+        ? "100%"
+        : "240px";
+  }, [isCollapsed, isMobile]);
+
+  useEffect(() => {
+    useNavigation.getState().setIsCollapsed(isMobile);
+  }, [isMobile]);
 
   useEffect(() => {
     if (isMobile) {
-      collapse();
+      useNavigation.getState().setIsCollapsed(true);
     }
-  }, [pathname, isMobile, collapse]);
+  }, [pathname, isMobile]);
 
   const handleMouseDown = (
     event: React.MouseEvent<HTMLDivElement, MouseEvent>,
@@ -159,13 +152,8 @@ export function Navigation() {
     if (newWidth < 240) newWidth = 240;
     if (newWidth > 480) newWidth = 480;
 
-    if (sidebarRef.current && navbarRef.current) {
+    if (sidebarRef.current) {
       sidebarRef.current.style.width = `${newWidth}px`;
-      navbarRef.current.style.setProperty("left", `${newWidth}px`);
-      navbarRef.current.style.setProperty(
-        "width",
-        `calc(100% - ${newWidth}px)`,
-      );
     }
   };
 
@@ -277,28 +265,6 @@ export function Navigation() {
           ></div>
         </div>
       </aside>
-      <div
-        className={cn(
-          `absolute top-0 z-[99999] left-60 w-[calc(100%-240px)]`,
-          isResetting && "transition-all ease-in-out duration-300",
-          isMobile && "left-0 w-full",
-        )}
-        ref={navbarRef}
-      >
-        {!!params.documentId ? (
-          <Navbar isCollapsed={isCollapsed} onResetWidth={resetWidth} />
-        ) : (
-          <nav className="bg-transparent px-3 py-2 w-full">
-            {isCollapsed && (
-              <MenuIcon
-                className="w-6 h-6 text-muted-foreground"
-                onClick={resetWidth}
-                role="button"
-              />
-            )}
-          </nav>
-        )}
-      </div>
     </>
   );
 }
