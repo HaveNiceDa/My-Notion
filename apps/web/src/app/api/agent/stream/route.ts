@@ -6,9 +6,15 @@ import {
   getActualModelId,
 } from "@notion/ai/config";
 import {
-  getOrCreateVectorStore,
-} from "@notion/ai/server";
-import { extractTextFromDocument } from "@notion/ai/utils";
+  createDocumentReadToolCall,
+  createKnowledgeSearchToolCall,
+  executeDocumentRead,
+  executeKnowledgeSearch,
+  shouldReadCurrentDocument,
+  shouldUseKnowledgeSearch,
+  type CurrentDocumentContext,
+  type PendingToolCall,
+} from "@/src/lib/agent/tools";
 
 type AgentStreamEvent =
   | { type: "text-delta"; id: string; delta: string }
@@ -26,21 +32,6 @@ type AgentRequestBody = {
   enableThinking?: boolean;
   conversationId?: string;
   currentDocument?: CurrentDocumentContext | null;
-};
-
-type CurrentDocumentContext = {
-  id: string;
-  title: string;
-  content?: string | null;
-};
-
-type PendingToolCall = {
-  id: string;
-  type: "function";
-  function: {
-    name: string;
-    arguments: string;
-  };
 };
 
 function getOpenAIClient(): OpenAI {
@@ -90,132 +81,12 @@ function buildSystemMessage(
   };
 }
 
-function shouldUseKnowledgeSearch(query: string): boolean {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return false;
-
-  const knowledgeSignals = [
-    "知识库",
-    "文档",
-    "笔记",
-    "页面",
-    "资料",
-    "根据",
-    "查找",
-    "搜索",
-    "总结",
-    "之前",
-    "项目",
-    "notion",
-    "knowledge",
-    "document",
-    "docs",
-    "note",
-    "page",
-    "according to",
-    "based on",
-    "summarize",
-    "search",
-  ];
-
-  return knowledgeSignals.some((signal) => normalizedQuery.includes(signal));
-}
-
-function shouldReadCurrentDocument(
-  query: string,
-  currentDocument?: CurrentDocumentContext | null,
-): boolean {
-  if (!currentDocument?.id) return false;
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return false;
-
-  const documentSignals = [
-    "当前页面",
-    "此页面",
-    "这个页面",
-    "当前文档",
-    "此文档",
-    "这篇文档",
-    "这篇笔记",
-    "总结",
-    "翻译",
-    "深度分析",
-    "深度剖析",
-    "任务跟踪器",
-    "current page",
-    "this page",
-    "current document",
-    "this document",
-    "summarize",
-    "translate",
-    "analyze",
-    "task tracker",
-  ];
-
-  return documentSignals.some((signal) => normalizedQuery.includes(signal));
-}
-
 function enqueueEvent(
   controller: ReadableStreamDefaultController<Uint8Array>,
   encoder: TextEncoder,
   event: AgentStreamEvent,
 ): void {
   controller.enqueue(encoder.encode(`${JSON.stringify(event)}\n`));
-}
-
-async function executeKnowledgeSearch(
-  userId: string,
-  args: Record<string, unknown>,
-): Promise<unknown> {
-  const query = typeof args.query === "string" ? args.query : "";
-  if (!query.trim()) {
-    return { query, documents: [], error: "query is required" };
-  }
-
-  const topK = typeof args.topK === "number" ? Math.min(Math.max(args.topK, 1), 8) : 3;
-  try {
-    const vectorStore = await getOrCreateVectorStore(userId);
-    const results = await vectorStore.similaritySearch(query, topK, 0.6);
-
-    return {
-      query,
-      documents: results.map((result) => ({
-        documentId: result.document.metadata?.documentId ?? "",
-        title: result.document.metadata?.title ?? "",
-        score: Number(result.score.toFixed(4)),
-        content: result.document.pageContent,
-      })),
-    };
-  } catch (error) {
-    return {
-      query,
-      documents: [],
-      error: error instanceof Error ? error.message : String(error),
-    };
-  }
-}
-
-function executeDocumentRead(currentDocument?: CurrentDocumentContext | null): unknown {
-  if (!currentDocument?.id) {
-    return { document: null, error: "current document is not available" };
-  }
-
-  let text = "";
-  if (currentDocument.content) {
-    try {
-      text = extractTextFromDocument(currentDocument.content);
-    } catch {
-      text = currentDocument.content;
-    }
-  }
-
-  return {
-    document: {
-      id: currentDocument.id,
-      title: currentDocument.title || "Untitled",
-      content: text || "",
-    },
-  };
 }
 
 async function streamModelResponse(
@@ -327,22 +198,8 @@ export async function POST(req: NextRequest) {
 
           if (shouldReadDocument || shouldSearch) {
             const toolCall: PendingToolCall = shouldReadDocument
-              ? {
-                id: `document-read-${Date.now()}`,
-                type: "function",
-                function: {
-                  name: "document_read",
-                  arguments: JSON.stringify({ documentId: body.currentDocument?.id }),
-                },
-              }
-              : {
-                id: `knowledge-search-${Date.now()}`,
-                type: "function",
-                function: {
-                  name: "knowledge_search",
-                  arguments: JSON.stringify({ query: userQuery, topK: 3 }),
-                },
-              };
+              ? createDocumentReadToolCall(body.currentDocument)
+              : createKnowledgeSearchToolCall(userQuery, 3);
             const toolMessages: OpenAI.ChatCompletionMessageParam[] = [];
             const parsedArgs = JSON.parse(toolCall.function.arguments);
 
