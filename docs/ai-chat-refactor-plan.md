@@ -320,3 +320,162 @@ export const EMB_DIMENSION = 1024;
 | 编辑器 AI 不受影响 | 编辑器 AI 走 `/api/editor-ai/streamText`，独立于 Chat |
 | 旧 URL `/Chat` 兼容 | 加 redirect 到首页并自动打开面板 |
 | Embedding 模型切换 | 需重建 Qdrant collection（维度可能变化） |
+
+---
+
+## 7. Phase 5：ReAct Agent Loop（最高优先级）
+
+> Phase 1-4 已在 M10-M13 完成。Phase 5 是架构级重构，优先级高于所有待办。
+
+### 7.1 问题诊断
+
+当前 Agent 实现（M11-M13）存在根本性架构缺陷：
+
+| 问题 | 严重度 | 描述 |
+|---|---|---|
+| **硬编码关键词路由** | 🔴 致命 | `shouldUseKnowledgeSearch` / `shouldReadCurrentDocument` 用关键词列表判断，不智能，无法处理模糊意图 |
+| **无 ReAct 循环** | 🔴 致命 | 只做一次 tool 调用就结束，模型无法"观察结果→推理→再行动" |
+| **绕过 LLM tool_choice** | 🔴 致命 | 后端自行决定调哪个 tool，伪造 `assistant.tool_calls` 消息塞入 messages，LLM 完全没有参与决策 |
+| **tool 互斥** | 🟡 严重 | `shouldReadDocument` 优先级高于 `shouldSearch`，两者不能同时触发 |
+| **无迭代保护** | 🟡 严重 | 没有循环上限，理论上可能无限调用 |
+
+### 7.2 重构目标
+
+将硬编码 tool 路由替换为标准 ReAct（Reasoning + Acting）循环：
+
+```
+用户消息 → Agent Loop
+              │
+              ▼
+         ┌─────────────────────┐
+         │  LLM (with tools)   │ ◄── LLM 看到可用 tools 列表，自主决策
+         └─────────┬───────────┘
+                   │
+          ┌────────┴────────┐
+          │                 │
+     tool_calls=null    tool_calls=[...]
+          │                 │
+          ▼                 ▼
+     直接输出文本      执行所有 tools
+     (循环结束)            │
+                    ┌─────┴─────┐
+                    │           │
+                    ▼           ▼
+              tool result   tool result
+                    │           │
+                    └─────┬─────┘
+                          │
+                          ▼
+                   messages += [assistant.tool_calls, tool_results]
+                          │
+                          ▼
+                   回到循环顶部 ──► LLM (with tools)
+                          │
+                   ... 最多 MAX_ITERATIONS 轮 ...
+                          │
+                          ▼
+                     循环结束，输出 finish
+```
+
+### 7.3 核心改动
+
+#### Tool 定义标准化
+
+```typescript
+// lib/agent/tools/definitions.ts
+export interface AgentTool {
+  name: string;
+  description: string;
+  parameters: OpenAI.ChatCompletionTool.FunctionObject;
+  execute: (args: Record<string, unknown>, context: ToolContext) => Promise<unknown>;
+}
+```
+
+- 每个 tool 自带 OpenAI function schema，LLM 通过 description 自主判断何时调用
+- 删除所有 `should*` 关键词匹配函数和 `create*ToolCall` 伪造函数
+
+#### ReAct 循环引擎
+
+```typescript
+// lib/agent/react-loop.ts
+const MAX_ITERATIONS = 5;
+
+export async function runReActLoop(params: ReActLoopParams): Promise<void> {
+  for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
+    // 1. 调用 LLM（带 tools 列表，tool_choice="auto"）
+    // 2. 流式输出 text-delta / reasoning-delta / tool-call-start / tool-call-delta
+    // 3. 如果 LLM 没有返回 tool_calls → 循环结束
+    // 4. 执行所有 tool_calls，输出 tool-call-result
+    // 5. 将 assistant.tool_calls + tool results 加入 messages
+    // 6. 继续下一轮迭代
+  }
+}
+```
+
+#### Route 简化
+
+```typescript
+// route.ts — 重构后
+export async function POST(req: NextRequest) {
+  // auth + body 解析
+  const availableTools = buildAvailableTools(body.currentDocument);
+  const toolMap = new Map(availableTools.map(t => [t.name, t]));
+  const openaiTools = availableTools.map(t => ({
+    type: "function", function: { name: t.name, description: t.description, parameters: t.parameters },
+  }));
+
+  await runReActLoop({ openai, model, messages, tools: openaiTools, toolMap, ... });
+}
+```
+
+### 7.4 删除的代码
+
+| 文件 | 删除内容 |
+|---|---|
+| `knowledge-search.ts` | `KNOWLEDGE_SEARCH_SIGNALS`、`shouldUseKnowledgeSearch()`、`createKnowledgeSearchToolCall()` |
+| `document-read.ts` | `DOCUMENT_READ_SIGNALS`、`shouldReadCurrentDocument()`、`createDocumentReadToolCall()` |
+| `route.ts` | 所有 `should*` 判断、手动伪造 `tool_calls`、`mode` 参数处理 |
+| `types.ts` | `PendingToolCall`（改用 OpenAI 原生类型） |
+
+### 7.5 新增的代码
+
+| 文件 | 内容 |
+|---|---|
+| `lib/agent/tools/definitions.ts` | `AgentTool` 接口 + `knowledgeSearchTool` / `documentReadTool` 定义 |
+| `lib/agent/react-loop.ts` | ReAct 循环引擎（`runReActLoop`） |
+| `lib/agent/tools/registry.ts` | `buildAvailableTools()` — 根据上下文决定哪些 tool 可用 |
+| `lib/agent/stream.ts` | `streamModelResponse` + `enqueueEvent`（从 route.ts 抽出） |
+
+### 7.6 DashScope 兼容性
+
+| 场景 | 处理方式 |
+|---|---|
+| `enable_thinking` + `tool_choice` | `tool_choice` 始终为 `"auto"`（默认值），不传 `object`/`required`，规避 400 错误 |
+| 多 tool_calls | DashScope 支持单轮返回多个 tool_calls，ReAct 循环并行执行后统一加入 messages |
+| thinking mode 首轮 | 不需要特殊处理，LLM 在 thinking 模式下可以正常返回 tool_calls |
+
+### 7.7 前端兼容性
+
+前端无需改动。NDJSON 事件协议不变，唯一变化是单次请求可能出现多轮 tool-call 事件。
+
+### 7.8 实施步骤
+
+| Step | 内容 |
+|---|---|
+| 1 | 创建 `AgentTool` 接口 + `definitions.ts` |
+| 2 | 创建 `registry.ts`（`buildAvailableTools`） |
+| 3 | 创建 `react-loop.ts`（`runReActLoop`） |
+| 4 | 抽取 `stream.ts`（`streamModelResponse` + `enqueueEvent`） |
+| 5 | 重写 `route.ts`（精简为 auth → 解析 → buildTools → runReActLoop） |
+| 6 | 删除 `should*` / `create*ToolCall` / `KNOWLEDGE_SEARCH_SIGNALS` / `DOCUMENT_READ_SIGNALS` |
+| 7 | 验证：typecheck + build + 功能测试 |
+
+### 7.9 后续演进（本次不做）
+
+| 模式 | 描述 | 优先级 |
+|---|---|---|
+| Spec 模式 | LLM 先输出规格说明，用户确认后再执行 | P1 |
+| Plan 模式 | LLM 先输出执行计划，逐步执行 | P1 |
+| web_search tool | 接入网络搜索能力 | P2 |
+| MCP 接入 | 通过 Responses API 接入百炼托管 MCP 服务 | P2 |
+| Tool 结果缓存 | 相同 query 短时间内复用 tool result | P3 |

@@ -9,12 +9,18 @@
 ## 阅读顺序
 
 1. `M10-ai-chat-sidebar.md`：AI Chat 从独立页面重构为右侧可拖拽侧边栏面板。
-2. `M11-ai-agent-architecture.md`：AI Chat 后端从单一 RAG pipeline 重构为 Agent + Tool 架构。
+2. `M11-agent-stream-rag-tool.md`：AI Chat 后端从单一 RAG pipeline 重构为 Agent + Tool 架构。
+3. `M12-agent-auto-tool-routing.md`：移除显式 RAG 开关，Agent 统一 auto 模式。
+4. `M13-document-read-tool.md`：当前文档读取能力接入 Agent 体系。
+5. `M14-react-agent-loop.md`：硬编码 tool 路由重构为标准 ReAct 循环，LLM 自主决策工具调用。
 
 ## 当前总状态
 
-- M10 已启动：AI Chat 侧边栏重构方案已确定，待实施。
-- M11 规划中：Agent 架构依赖 M10 完成后启动。
+- M10 ✅ 已完成：AI Chat 侧边栏重构。
+- M11 ✅ 已完成：Agent Stream + Knowledge Search Tool。
+- M12 ✅ 已完成：Agent Auto Tool Routing。
+- M13 ✅ 已完成：Document Read Tool。
+- M14 🔴 待实施：ReAct Agent Loop 重构（最高优先级，架构级改动）。
 
 ## 关键验证命令
 
