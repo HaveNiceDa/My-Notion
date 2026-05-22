@@ -237,6 +237,9 @@
     "sendFailed": "Failed to send, please retry",
     "retry": "Retry",
     "generatingResponse": "Generating response...",
+    "knowledgeSearchTool": "Knowledge search",
+    "toolRunning": "Running",
+    "toolCompleted": "Completed",
     "openAIChat": "Open AI Assistant"
   },
   "Auth": {

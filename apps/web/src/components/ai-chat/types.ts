@@ -25,6 +25,11 @@ export interface ToolCall {
   error?: string;
 }
 
-export interface SendMessageOptions {
-  images?: string[];
-}
+export type AgentStreamEvent =
+  | { type: "text-delta"; id: string; delta: string }
+  | { type: "reasoning-delta"; id: string; delta: string }
+  | { type: "tool-call-start"; toolCallId: string; toolName: string }
+  | { type: "tool-call-delta"; toolCallId: string; delta: string }
+  | { type: "tool-call-result"; toolCallId: string; result: unknown }
+  | { type: "finish"; model: string; usage: null }
+  | { type: "error"; message: string };

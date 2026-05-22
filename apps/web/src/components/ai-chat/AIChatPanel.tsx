@@ -200,6 +200,7 @@ export function AIChatPanel() {
     setMode,
     enableThinking,
     toggleThinking,
+    toolCalls,
     sendMessage,
     createNewConversation,
     loadConversation,
@@ -346,6 +347,7 @@ export function AIChatPanel() {
         <MessageList
           messages={messages}
           isLoading={isLoading}
+          toolCalls={toolCalls}
           messagesEndRef={messagesEndRef}
           conversationCreatedAt={conversationCreatedAt}
         />

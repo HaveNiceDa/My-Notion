@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy, ChevronDown, ChevronUp, Brain } from "lucide-react";
-import type { ChatMessage } from "./types";
+import { Copy, ChevronDown, ChevronUp, Brain, Wrench } from "lucide-react";
+import type { ChatMessage, ToolCall } from "./types";
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -167,6 +167,7 @@ MessageItem.displayName = "MessageItem";
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  toolCalls?: ToolCall[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
 }
@@ -175,6 +176,7 @@ export const MessageList = React.memo(
   ({
     messages,
     isLoading,
+    toolCalls = [],
     messagesEndRef,
     conversationCreatedAt,
   }: MessageListProps) => {
@@ -203,6 +205,29 @@ export const MessageList = React.memo(
         {messages.map((message) => (
           <MessageItem key={message.id} message={message} />
         ))}
+
+        {toolCalls.length > 0 && (
+          <div className="mb-3 space-y-1.5">
+            {toolCalls.map((toolCall) => (
+              <div
+                key={toolCall.id}
+                className="inline-flex max-w-[90%] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+              >
+                <Wrench className="h-3.5 w-3.5" />
+                <span className="font-medium text-foreground">
+                  {toolCall.name === "knowledge_search"
+                    ? t("knowledgeSearchTool")
+                    : toolCall.name}
+                </span>
+                <span>
+                  {toolCall.status === "completed"
+                    ? t("toolCompleted")
+                    : t("toolRunning")}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {isLoading && (
           <div className="flex justify-start mb-4">

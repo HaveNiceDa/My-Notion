@@ -9,16 +9,17 @@ import { Id } from "@/convex/_generated/dataModel";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { devLog } from "@notion/business/utils";
-import type { ChatMessage, Conversation, ToolCall, SendMessageOptions } from "./types";
+import type { AgentStreamEvent, ChatMessage, Conversation, ToolCall } from "./types";
 import type { AIModelId, ChatMode } from "./models";
 import { getInitialAIModelId } from "./models";
 
-async function runRAGStream(
-  userId: string,
-  input: string,
+async function runAgentStream(
   conversationHistoryMessages: unknown[],
   onChunk: (chunk: string) => void,
   onReasoningChunk: (chunk: string) => void,
+  onToolCallStart: (toolCallId: string, toolName: string) => void,
+  onToolCallDelta: (toolCallId: string, delta: string) => void,
+  onToolCallResult: (toolCallId: string, result: unknown) => void,
   onComplete: () => Promise<void>,
   onError: (error: unknown) => void,
   model: AIModelId,
@@ -27,24 +28,20 @@ async function runRAGStream(
   enableThinking: boolean,
 ) {
   try {
-    const response = await fetch("/api/rag-stream", {
+    const response = await fetch("/api/agent/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        action: "runRAGQueryStream",
-        userId,
-        query: input,
-        conversationHistory: conversationHistoryMessages,
-        model,
-        minScore: 0.6,
-        knowledgeBaseEnabled: mode === "rag",
+        messages: conversationHistoryMessages,
+        modelId: model,
+        mode,
         conversationId,
         enableThinking,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`RAG stream failed: ${response.statusText}`);
+      throw new Error(`Agent stream failed: ${response.statusText}`);
     }
 
     const reader = response.body?.getReader();
@@ -54,42 +51,46 @@ async function runRAGStream(
 
     const decoder = new TextDecoder();
     let buffer = "";
+    let streamFailed = false;
+
+    function handleEvent(event: AgentStreamEvent) {
+      switch (event.type) {
+        case "text-delta":
+          onChunk(event.delta);
+          break;
+        case "reasoning-delta":
+          onReasoningChunk(event.delta);
+          break;
+        case "tool-call-start":
+          onToolCallStart(event.toolCallId, event.toolName);
+          break;
+        case "tool-call-delta":
+          onToolCallDelta(event.toolCallId, event.delta);
+          break;
+        case "tool-call-result":
+          onToolCallResult(event.toolCallId, event.result);
+          break;
+        case "error":
+          streamFailed = true;
+          onError(new Error(event.message));
+          break;
+        case "finish":
+          devLog("[Agent] 接收到结束事件");
+          break;
+      }
+    }
 
     function processBuffer(isFinal: boolean = false) {
       const lines = buffer.split("\n");
       const endIdx = isFinal ? lines.length : lines.length - 1;
 
       for (let i = 0; i < endIdx; i++) {
-        const line = lines[i];
-        if (line.startsWith("event: ")) {
-          const eventType = line.substring(7).trim();
-          const dataLine = lines[i + 1];
-          if (dataLine && dataLine.startsWith("data: ")) {
-            const data = dataLine.substring(6);
-            try {
-              const parsedData = JSON.parse(data);
-              switch (eventType) {
-                case "content":
-                  if (parsedData.text) onChunk(parsedData.text);
-                  break;
-                case "reasoning":
-                  if (parsedData.text) onReasoningChunk(parsedData.text);
-                  break;
-                case "error":
-                  if (parsedData.message === "terminated") {
-                    devLog("[RAG] 连接正常终止");
-                  } else {
-                    onError(new Error(parsedData.message));
-                  }
-                  break;
-                case "done":
-                  devLog("[RAG] 接收到结束事件");
-                  break;
-              }
-            } catch (error) {
-              console.error("[RAG] 解析 SSE 数据出错:", error);
-            }
-          }
+        const line = lines[i].trim();
+        if (!line) continue;
+        try {
+          handleEvent(JSON.parse(line) as AgentStreamEvent);
+        } catch (error) {
+          console.error("[Agent] 解析流式事件出错:", error);
         }
       }
       buffer = isFinal ? "" : lines[lines.length - 1];
@@ -100,7 +101,9 @@ async function runRAGStream(
         const { done, value } = await reader.read();
         if (done) {
           if (buffer.trim()) processBuffer(true);
-          await onComplete();
+          if (!streamFailed) {
+            await onComplete();
+          }
           break;
         }
         const chunk = decoder.decode(value, { stream: true });
@@ -326,12 +329,46 @@ export function useAIChat() {
       ];
       conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
-      await runRAGStream(
-        user.id,
-        input,
+      await runAgentStream(
         conversationHistoryMessages,
-        (chunk) => { currentContent += chunk; scheduleRender(); },
-        (chunk) => { if (enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
+        (chunk: string) => { currentContent += chunk; scheduleRender(); },
+        (chunk: string) => { if (enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
+        (toolCallId: string, toolName: string) => {
+          setToolCalls((prev) => [
+            ...prev.filter((toolCall) => toolCall.id !== toolCallId),
+            {
+              id: toolCallId,
+              name: toolName,
+              parameters: {},
+              status: "calling",
+            },
+          ]);
+        },
+        (toolCallId: string, delta: string) => {
+          setToolCalls((prev) =>
+            prev.map((toolCall) =>
+              toolCall.id === toolCallId
+                ? {
+                    ...toolCall,
+                    parameters: {
+                      ...toolCall.parameters,
+                      arguments: `${toolCall.parameters.arguments ?? ""}${delta}`,
+                    },
+                    status: "executing",
+                  }
+                : toolCall,
+            ),
+          );
+        },
+        (toolCallId: string, result: unknown) => {
+          setToolCalls((prev) =>
+            prev.map((toolCall) =>
+              toolCall.id === toolCallId
+                ? { ...toolCall, result, status: "completed" }
+                : toolCall,
+            ),
+          );
+        },
         async () => {
           pendingRender = false;
           setMessages((prev) =>
