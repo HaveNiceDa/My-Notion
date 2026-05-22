@@ -196,8 +196,6 @@ export function AIChatPanel() {
     isLoadingConversations,
     modelId,
     setModelId,
-    mode,
-    setMode,
     enableThinking,
     toggleThinking,
     toolCalls,
@@ -361,8 +359,6 @@ export function AIChatPanel() {
           onSend={sendMessage}
           modelId={modelId}
           onModelChange={setModelId}
-          mode={mode}
-          onModeChange={setMode}
           enableThinking={enableThinking}
           onToggleThinking={toggleThinking}
           isSending={isLoading}

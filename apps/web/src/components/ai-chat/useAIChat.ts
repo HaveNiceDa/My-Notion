@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useConvex } from "convex/react";
@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 import { devLog } from "@notion/business/utils";
 import type { AgentStreamEvent, ChatMessage, Conversation, ToolCall } from "./types";
-import type { AIModelId, ChatMode } from "./models";
+import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
 
 async function runAgentStream(
@@ -23,7 +23,6 @@ async function runAgentStream(
   onComplete: () => Promise<void>,
   onError: (error: unknown) => void,
   model: AIModelId,
-  mode: ChatMode,
   conversationId: string,
   enableThinking: boolean,
 ) {
@@ -34,7 +33,7 @@ async function runAgentStream(
       body: JSON.stringify({
         messages: conversationHistoryMessages,
         modelId: model,
-        mode,
+        mode: "auto",
         conversationId,
         enableThinking,
       }),
@@ -131,7 +130,6 @@ export function useAIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [modelId, setModelIdState] = useState<AIModelId>(getInitialAIModelId);
-  const [mode, setModeState] = useState<ChatMode>("chat");
   const [enableThinking, setEnableThinking] = useState(false);
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -139,10 +137,6 @@ export function useAIChat() {
   const setModelId = useCallback((id: AIModelId) => {
     setModelIdState(id);
     localStorage.setItem("ai-model-id", id);
-  }, []);
-
-  const setMode = useCallback((m: ChatMode) => {
-    setModeState(m);
   }, []);
 
   const toggleThinking = useCallback(() => {
@@ -408,7 +402,6 @@ export function useAIChat() {
           );
         },
         modelId,
-        mode,
         currentConversationId!,
         enableThinking,
       );
@@ -448,8 +441,6 @@ export function useAIChat() {
     isLoadingConversations,
     modelId,
     setModelId,
-    mode,
-    setMode,
     enableThinking,
     toggleThinking,
     toolCalls,

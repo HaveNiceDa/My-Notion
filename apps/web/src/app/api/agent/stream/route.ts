@@ -21,7 +21,7 @@ type AgentStreamEvent =
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
   modelId?: string;
-  mode?: "chat" | "rag";
+  mode?: "auto" | "chat" | "rag";
   enableThinking?: boolean;
   conversationId?: string;
 };
@@ -67,20 +67,50 @@ function extractLastUserText(messages: OpenAI.ChatCompletionMessageParam[]): str
   return "";
 }
 
-function buildSystemMessage(mode: "chat" | "rag"): OpenAI.ChatCompletionSystemMessageParam {
-  const ragInstruction =
-    mode === "rag"
-      ? "You must first use knowledge_search to retrieve relevant knowledge base context, then answer based on the returned evidence. If no evidence is found, say so clearly and answer from general knowledge only when appropriate."
-      : "Answer directly and concisely.";
-
+function buildSystemMessage(
+  hasKnowledgeContext: boolean,
+): OpenAI.ChatCompletionSystemMessageParam {
   return {
     role: "system",
     content: [
       "You are the Notion AI assistant inside a personal workspace.",
       "Use the same language as the user's latest message unless the user asks otherwise.",
-      ragInstruction,
+      hasKnowledgeContext
+        ? "Knowledge base search results are provided as tool context. Answer based on that evidence first. If the evidence is empty or insufficient, say so clearly."
+        : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
     ].join("\n"),
   };
+}
+
+function shouldUseKnowledgeSearch(query: string): boolean {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return false;
+
+  const knowledgeSignals = [
+    "知识库",
+    "文档",
+    "笔记",
+    "页面",
+    "资料",
+    "根据",
+    "查找",
+    "搜索",
+    "总结",
+    "之前",
+    "项目",
+    "notion",
+    "knowledge",
+    "document",
+    "docs",
+    "note",
+    "page",
+    "according to",
+    "based on",
+    "summarize",
+    "search",
+  ];
+
+  return knowledgeSignals.some((signal) => normalizedQuery.includes(signal));
 }
 
 function enqueueEvent(
@@ -101,18 +131,26 @@ async function executeKnowledgeSearch(
   }
 
   const topK = typeof args.topK === "number" ? Math.min(Math.max(args.topK, 1), 8) : 3;
-  const vectorStore = await getOrCreateVectorStore(userId);
-  const results = await vectorStore.similaritySearch(query, topK, 0.6);
+  try {
+    const vectorStore = await getOrCreateVectorStore(userId);
+    const results = await vectorStore.similaritySearch(query, topK, 0.6);
 
-  return {
-    query,
-    documents: results.map((result) => ({
-      documentId: result.document.metadata?.documentId ?? "",
-      title: result.document.metadata?.title ?? "",
-      score: Number(result.score.toFixed(4)),
-      content: result.document.pageContent,
-    })),
-  };
+    return {
+      query,
+      documents: results.map((result) => ({
+        documentId: result.document.metadata?.documentId ?? "",
+        title: result.document.metadata?.title ?? "",
+        score: Number(result.score.toFixed(4)),
+        content: result.document.pageContent,
+      })),
+    };
+  } catch (error) {
+    return {
+      query,
+      documents: [],
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }
 
 async function streamModelResponse(
@@ -204,7 +242,9 @@ export async function POST(req: NextRequest) {
     }
 
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
-    const mode = body.mode === "rag" ? "rag" : "chat";
+    const mode = body.mode === "rag" || body.mode === "chat" ? body.mode : "auto";
+    const userQuery = extractLastUserText(messages);
+    const shouldSearch = mode === "rag" || (mode === "auto" && shouldUseKnowledgeSearch(userQuery));
     const enableThinking = Boolean(body.enableThinking);
     const openai = getOpenAIClient();
     const encoder = new TextEncoder();
@@ -214,24 +254,24 @@ export async function POST(req: NextRequest) {
       async start(controller) {
         try {
           const baseMessages: OpenAI.ChatCompletionMessageParam[] = [
-            buildSystemMessage(mode),
+            buildSystemMessage(shouldSearch),
             ...messages,
           ];
           const extraBody = createThinkingBody(enableThinking);
 
-          if (mode === "rag") {
+          if (shouldSearch) {
             const searchToolCall: PendingToolCall = {
               id: `knowledge-search-${Date.now()}`,
               type: "function",
               function: {
                 name: "knowledge_search",
-                arguments: JSON.stringify({ query: extractLastUserText(messages), topK: 3 }),
+                arguments: JSON.stringify({ query: userQuery, topK: 3 }),
               },
             };
             const toolMessages: OpenAI.ChatCompletionMessageParam[] = [];
             const parsedArgs = JSON.parse(searchToolCall.function.arguments);
 
-            // 显式 RAG 模式直接执行知识库 tool，避免 DashScope thinking mode 与 tool_choice 的兼容限制。
+            // Agent auto 直接执行知识库 tool，避免 DashScope thinking mode 与 tool_choice 的兼容限制。
             enqueueEvent(controller, encoder, {
               type: "tool-call-start",
               toolCallId: searchToolCall.id,

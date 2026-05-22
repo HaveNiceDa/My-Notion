@@ -4,9 +4,6 @@ import {
   Send,
   Bot,
   Check,
-  Database,
-  Plus,
-  X,
   Brain,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
@@ -26,10 +23,10 @@ import {
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@notion/business/utils";
-import { useState, memo, useRef, useEffect } from "react";
+import { memo } from "react";
 import { useMemoizedFn } from "ahooks";
 import { AI_MODELS, MODEL_DISPLAY_NAMES } from "./models";
-import type { AIModelId, ChatMode } from "./models";
+import type { AIModelId } from "./models";
 
 interface MessageInputProps {
   input: string;
@@ -37,8 +34,6 @@ interface MessageInputProps {
   onSend: (images?: string[]) => Promise<void>;
   modelId: AIModelId;
   onModelChange: (id: AIModelId) => void;
-  mode: ChatMode;
-  onModeChange: (mode: ChatMode) => void;
   enableThinking: boolean;
   onToggleThinking: () => void;
   isSending: boolean;
@@ -51,8 +46,6 @@ const MessageInput = memo(
     onSend,
     modelId,
     onModelChange,
-    mode,
-    onModeChange,
     enableThinking,
     onToggleThinking,
     isSending,
@@ -117,31 +110,6 @@ const MessageInput = memo(
                 </TooltipTrigger>
                 <TooltipContent>
                   <p>{t("deepThinkingTooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            <TooltipProvider>
-              <Tooltip delayDuration={1}>
-                <TooltipTrigger asChild>
-                  <Button
-                    className={cn(
-                      "rounded-full transition-all duration-200 h-7 w-7 p-0 bg-transparent",
-                      mode === "rag"
-                        ? "hover:bg-blue-200 text-blue-600"
-                        : "hover:bg-muted text-muted-foreground",
-                      isSending && "opacity-50",
-                    )}
-                    onClick={() => {
-                      if (!isSending) onModeChange(mode === "rag" ? "chat" : "rag");
-                    }}
-                    disabled={isSending}
-                  >
-                    <Database className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("knowledgeBaseTooltip")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>

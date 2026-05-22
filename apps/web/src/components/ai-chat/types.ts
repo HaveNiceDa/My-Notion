@@ -1,5 +1,4 @@
 import type { Id } from "@/convex/_generated/dataModel";
-import type { AIModelId, ChatMode } from "./models";
 
 export interface ChatMessage {
   id: string;

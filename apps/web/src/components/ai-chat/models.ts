@@ -16,9 +16,6 @@ export const MODEL_DISPLAY_NAMES: Record<AIModelId, string> = {
   "glm-5.1": "GLM 5.1",
 };
 
-export const CHAT_MODES = ["chat", "rag"] as const;
-export type ChatMode = (typeof CHAT_MODES)[number];
-
 export function getInitialAIModelId(): AIModelId {
   if (typeof window === "undefined") return DEFAULT_AI_MODEL_ID;
   const saved = localStorage.getItem("ai-model-id");
