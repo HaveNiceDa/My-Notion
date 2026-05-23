@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { AgentTool } from "./tools/definitions";
 import type { ToolContext } from "./tools/types";
-import { enqueueEvent, streamModelResponse, createThinkingBody } from "./stream";
+import { enqueueEvent, streamModelResponse, applyThinkingParams } from "./stream";
 
 const MAX_ITERATIONS = 5;
 
@@ -42,23 +42,24 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
     console.log(`[ReAct] 迭代 ${iteration + 1}/${MAX_ITERATIONS}`);
 
-    const createParams: OpenAI.ChatCompletionCreateParamsStreaming = {
+    // 用 Record 类型构建参数，以便合并 DashScope 扩展参数
+    const createParams: Record<string, unknown> = {
       model,
       messages,
-      // tool_choice 始终 "auto"：规避 DashScope thinking mode 与 object/required 的 400 冲突
       tools: tools.length > 0 ? tools : undefined,
+      // tool_choice 始终 "auto"：规避 DashScope thinking mode 与 object/required 的 400 冲突
       tool_choice: tools.length > 0 ? "auto" : undefined,
+      // 限制最大输出 token，防止无限生成
+      max_tokens: 4096,
       stream: true,
     };
 
-    const extraBody = createThinkingBody(enableThinking);
-    if (extraBody) {
-      (createParams as unknown as Record<string, unknown>).extra_body = extraBody;
-    }
+    // 将 enable_thinking 和 thinking_budget 作为顶层参数合并（Node.js SDK 做法）
+    applyThinkingParams(createParams, enableThinking);
 
     const pendingToolCalls = await streamModelResponse(
       openai,
-      createParams,
+      createParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
       controller,
       encoder,
       responseId,

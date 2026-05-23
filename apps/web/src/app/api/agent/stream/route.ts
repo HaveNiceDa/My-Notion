@@ -32,8 +32,9 @@ function buildSystemMessage(
       "You are the Notion AI assistant inside a personal workspace.",
       "Use the same language as the user's latest message unless the user asks otherwise.",
       hasToolContext
-        ? "Tool results are provided as context. Answer based on that evidence first. If the evidence is empty or insufficient, say so clearly."
+        ? "When the user's question requires information from multiple sources, call multiple tools in the same response instead of making separate calls. For example, if the user asks about both their notes and current events, call knowledge_search and web_search together."
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
+      "Keep your answers concise and well-structured. Avoid overly long responses.",
     ].join("\n"),
   };
 }
