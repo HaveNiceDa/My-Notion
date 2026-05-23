@@ -1,53 +1,7 @@
 import { extractTextFromDocument } from "@notion/ai/utils";
-import type { CurrentDocumentContext, PendingToolCall } from "./types";
+import type { CurrentDocumentContext } from "./types";
 
-const DOCUMENT_READ_SIGNALS = [
-  "当前页面",
-  "此页面",
-  "这个页面",
-  "当前文档",
-  "此文档",
-  "这篇文档",
-  "这篇笔记",
-  "总结",
-  "翻译",
-  "深度分析",
-  "深度剖析",
-  "任务跟踪器",
-  "current page",
-  "this page",
-  "current document",
-  "this document",
-  "summarize",
-  "translate",
-  "analyze",
-  "task tracker",
-];
-
-export function shouldReadCurrentDocument(
-  query: string,
-  currentDocument?: CurrentDocumentContext | null,
-): boolean {
-  if (!currentDocument?.id) return false;
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return false;
-
-  return DOCUMENT_READ_SIGNALS.some((signal) => normalizedQuery.includes(signal));
-}
-
-export function createDocumentReadToolCall(
-  currentDocument?: CurrentDocumentContext | null,
-): PendingToolCall {
-  return {
-    id: `document-read-${Date.now()}`,
-    type: "function",
-    function: {
-      name: "document_read",
-      arguments: JSON.stringify({ documentId: currentDocument?.id }),
-    },
-  };
-}
-
+// 文档阅读：将 BlockNote JSON 内容转成纯文本后返回
 export function executeDocumentRead(
   currentDocument?: CurrentDocumentContext | null,
 ): unknown {

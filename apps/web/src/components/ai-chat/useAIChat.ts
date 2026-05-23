@@ -36,7 +36,6 @@ async function runAgentStream(
       body: JSON.stringify({
         messages: conversationHistoryMessages,
         modelId: model,
-        mode: "auto",
         conversationId,
         enableThinking,
         currentDocument,
@@ -314,6 +313,8 @@ export function useAIChat() {
               })),
             ];
             return { role: msg.role, content };
+          } else if (typeof parsedContent.text === "string") {
+            return { role: msg.role, content: parsedContent.text };
           } else {
             return { role: msg.role, content: msg.content };
           }
@@ -322,6 +323,7 @@ export function useAIChat() {
         }
       });
 
+      // 当前用户消息不在 messages state 中（setMessages 是异步的），需要单独添加
       const currentMessageContent = [
         { type: "text", text: input || "" },
         ...images.map((image) => ({ type: "image_url", image_url: { url: image } })),

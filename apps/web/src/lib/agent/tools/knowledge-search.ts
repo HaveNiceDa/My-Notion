@@ -1,48 +1,6 @@
 import { getOrCreateVectorStore } from "@notion/ai/server";
-import type { PendingToolCall } from "./types";
 
-const KNOWLEDGE_SEARCH_SIGNALS = [
-  "知识库",
-  "文档",
-  "笔记",
-  "页面",
-  "资料",
-  "根据",
-  "查找",
-  "搜索",
-  "总结",
-  "之前",
-  "项目",
-  "notion",
-  "knowledge",
-  "document",
-  "docs",
-  "note",
-  "page",
-  "according to",
-  "based on",
-  "summarize",
-  "search",
-];
-
-export function shouldUseKnowledgeSearch(query: string): boolean {
-  const normalizedQuery = query.trim().toLowerCase();
-  if (!normalizedQuery) return false;
-
-  return KNOWLEDGE_SEARCH_SIGNALS.some((signal) => normalizedQuery.includes(signal));
-}
-
-export function createKnowledgeSearchToolCall(query: string, topK = 3): PendingToolCall {
-  return {
-    id: `knowledge-search-${Date.now()}`,
-    type: "function",
-    function: {
-      name: "knowledge_search",
-      arguments: JSON.stringify({ query, topK }),
-    },
-  };
-}
-
+// 知识库检索：搜索用户个人知识库中的文档和笔记
 export async function executeKnowledgeSearch(
   userId: string,
   args: Record<string, unknown>,

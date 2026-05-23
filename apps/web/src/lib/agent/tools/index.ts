@@ -1,15 +1,6 @@
-export {
-  createDocumentReadToolCall,
-  executeDocumentRead,
-  shouldReadCurrentDocument,
-} from "./document-read";
-export {
-  createKnowledgeSearchToolCall,
-  executeKnowledgeSearch,
-  shouldUseKnowledgeSearch,
-} from "./knowledge-search";
-export type {
-  CurrentDocumentContext,
-  PendingToolCall,
-  ToolExecutionResult,
-} from "./types";
+export { knowledgeSearchTool, documentReadTool } from "./definitions";
+export type { AgentTool } from "./definitions";
+export { buildAvailableTools } from "./registry";
+export { executeDocumentRead } from "./document-read";
+export { executeKnowledgeSearch } from "./knowledge-search";
+export type { CurrentDocumentContext, ToolContext } from "./types";

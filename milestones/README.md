@@ -20,7 +20,7 @@
 - M11 ✅ 已完成：Agent Stream + Knowledge Search Tool。
 - M12 ✅ 已完成：Agent Auto Tool Routing。
 - M13 ✅ 已完成：Document Read Tool。
-- M14 🔴 待实施：ReAct Agent Loop 重构（最高优先级，架构级改动）。
+- M14 ✅ 已完成：ReAct Agent Loop 重构。
 
 ## 关键验证命令
 
