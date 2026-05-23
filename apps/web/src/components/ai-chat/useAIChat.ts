@@ -21,6 +21,7 @@ async function runAgentStream(
   onReasoningChunk: (chunk: string) => void,
   onToolCallStart: (toolCallId: string, toolName: string) => void,
   onToolCallDelta: (toolCallId: string, delta: string) => void,
+  onToolResultDelta: (toolCallId: string, delta: string) => void,
   onToolCallResult: (toolCallId: string, result: unknown) => void,
   onComplete: () => Promise<void>,
   onError: (error: unknown) => void,
@@ -68,6 +69,9 @@ async function runAgentStream(
           break;
         case "tool-call-delta":
           onToolCallDelta(event.toolCallId, event.delta);
+          break;
+        case "tool-result-delta":
+          onToolResultDelta(event.toolCallId, event.delta);
           break;
         case "tool-call-result":
           onToolCallResult(event.toolCallId, event.result);
@@ -355,6 +359,19 @@ export function useAIChat() {
                       ...toolCall.parameters,
                       arguments: `${toolCall.parameters.arguments ?? ""}${delta}`,
                     },
+                    status: "executing",
+                  }
+                : toolCall,
+            ),
+          );
+        },
+        (toolCallId: string, delta: string) => {
+          setToolCalls((prev) =>
+            prev.map((toolCall) =>
+              toolCall.id === toolCallId
+                ? {
+                    ...toolCall,
+                    streamingResult: `${toolCall.streamingResult ?? ""}${delta}`,
                     status: "executing",
                   }
                 : toolCall,

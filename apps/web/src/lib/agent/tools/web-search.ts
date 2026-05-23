@@ -1,11 +1,13 @@
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL } from "@notion/ai/config";
+import type { ToolContext } from "./types";
+import { enqueueEvent } from "../stream";
 
-// 联网搜索：通过 DashScope enable_search 能力搜索互联网实时信息
-// 内部发起一次独立的 LLM 调用（带 enable_search），让平台执行搜索并返回结果
+// 联网搜索：通过 DashScope enable_search 流式搜索互联网实时信息
+// 使用流式调用降低延迟，同时向前端推送 tool-result-delta 事件展示搜索进度
 export async function executeWebSearch(
   args: Record<string, unknown>,
-  model: string,
+  ctx: ToolContext,
 ): Promise<unknown> {
   const query = typeof args.query === "string" ? args.query : "";
   if (!query.trim()) {
@@ -22,9 +24,8 @@ export async function executeWebSearch(
   try {
     const openai = new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
 
-    // DashScope 扩展参数，不在 OpenAI SDK 类型中，需要类型断言
     const createParams = {
-      model,
+      model: ctx.model,
       messages: [
         {
           role: "system" as const,
@@ -35,13 +36,31 @@ export async function executeWebSearch(
       ],
       enable_search: true,
       search_options: { search_strategy: strategy },
+      stream: true,
     };
 
-    const completion = await openai.chat.completions.create(
-      createParams as OpenAI.ChatCompletionCreateParamsNonStreaming,
+    const stream = await openai.chat.completions.create(
+      createParams as OpenAI.ChatCompletionCreateParamsStreaming,
     );
 
-    const content = completion.choices[0]?.message?.content || "";
+    let content = "";
+    const { stream: streamOutput } = ctx;
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content;
+      if (delta) {
+        content += delta;
+        // 向前端推送搜索结果增量，用户可实时看到搜索内容
+        if (streamOutput) {
+          enqueueEvent(streamOutput.controller, streamOutput.encoder, {
+            type: "tool-result-delta",
+            toolCallId: streamOutput.toolCallId,
+            delta,
+          });
+        }
+      }
+    }
+
     return { query, strategy, content };
   } catch (error) {
     return {

@@ -110,10 +110,16 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
       console.log(`[ReAct] 执行 tool: ${toolCall.function.name} args=${JSON.stringify(args)}`);
 
+      // 注入流式输出能力到 tool 上下文，tool 可向前端推送 tool-result-delta 事件
+      const toolContextWithStream: ToolContext = {
+        ...toolContext,
+        stream: { controller, encoder, toolCallId: toolCall.id },
+      };
+
       // tool 执行失败时返回 error 作为 result，LLM 可据此决定是否重试
       let result: unknown;
       try {
-        result = await tool.execute(args, toolContext);
+        result = await tool.execute(args, toolContextWithStream);
       } catch (error) {
         result = { error: error instanceof Error ? error.message : String(error) };
       }

@@ -67,5 +67,5 @@ export const webSearchTool: AgentTool = {
     },
     required: ["query"],
   },
-  execute: async (args, ctx) => executeWebSearch(args, ctx.model),
+  execute: async (args, ctx) => executeWebSearch(args, ctx),
 };
