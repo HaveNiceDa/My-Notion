@@ -5,6 +5,7 @@ import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
+import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
 import type { ChatMessage, Conversation, ToolCall, ToolCallResult } from "./types";
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
@@ -16,6 +17,7 @@ export function useAIChat() {
   const { user } = useUser();
   const t = useTranslations("AI");
   const currentDocument = useCurrentDocumentStore((state) => state.currentDocument);
+  const panelOpen = useAIChatStore((state) => state.panelOpen);
   const persistence = useAIChatPersistence();
 
   const [input, setInput] = useState("");
@@ -267,9 +269,9 @@ export function useAIChat() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !panelOpen) return;
     refreshConversations();
-  }, [user, refreshConversations]);
+  }, [user, panelOpen, refreshConversations]);
 
   return {
     messages,
