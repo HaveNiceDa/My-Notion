@@ -216,6 +216,7 @@
     "pinSidebar": "固定",
     "unpinSidebar": "取消固定",
     "closeSidebar": "关闭",
+    "hideSidebar": "隐藏对话",
     "goHome": "回到首页",
     "searchConversationHistory": "搜索历史对话",
     "noMatchingConversations": "没有找到匹配的对话",

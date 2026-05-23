@@ -40,7 +40,7 @@ interface ItemProps {
   onMouseEnter?: () => void;
   label: string;
   onClick?: () => void;
-  icon: LucideIcon;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
 }
 
 export function Item({

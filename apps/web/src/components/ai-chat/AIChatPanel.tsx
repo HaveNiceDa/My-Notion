@@ -1,18 +1,16 @@
 "use client";
 
-import React, { useRef, useEffect, useMemo, useState } from "react";
+import React, { useRef, useEffect, useMemo, useState, useCallback } from "react";
 import { useMemoizedFn } from "ahooks";
 import { formatRelativeTime } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import {
-  X,
   Plus,
   Clock,
   Trash2,
   ChevronDown,
   History,
-  Pin,
-  PinOff,
+  PanelRightClose,
   FileText,
   Languages,
   Search,
@@ -24,6 +22,12 @@ import { cn } from "@notion/business/utils";
 import { Id } from "@/convex/_generated/dataModel";
 import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
 import { useResizableWidth } from "@/src/hooks/useResizableWidth";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { useAIChat } from "./useAIChat";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
@@ -174,7 +178,7 @@ const EmptyHome = React.memo(({ onPromptSelect }: EmptyHomeProps) => {
 EmptyHome.displayName = "EmptyHome";
 
 export function AIChatPanel() {
-  const { panelOpen, panelPinned, closePanel, togglePinned } = useAIChatStore();
+  const { panelOpen, closePanel } = useAIChatStore();
   const { width, handleMouseDown } = useResizableWidth({
     initialWidth: 400,
     minWidth: 320,
@@ -197,9 +201,8 @@ export function AIChatPanel() {
     modelId,
     setModelId,
     enableThinking,
-    toggleThinking,
-    toolCalls,
     sendMessage,
+    toolCalls,
     createNewConversation,
     loadConversation,
     deleteConversation,
@@ -241,16 +244,35 @@ export function AIChatPanel() {
     setInput(prompt);
   });
 
+  // 点击对话列表外部区域收起
+  const convListRef = useRef<HTMLDivElement>(null);
+  const convButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleClickOutside = useCallback((e: MouseEvent) => {
+    if (
+      convListRef.current &&
+      !convListRef.current.contains(e.target as Node) &&
+      convButtonRef.current &&
+      !convButtonRef.current.contains(e.target as Node)
+    ) {
+      setShowConvList(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (showConvList) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showConvList, handleClickOutside]);
+
   if (!panelOpen) return null;
 
   return (
     <div
-      className={cn(
-        "h-full border-l border-border bg-background flex flex-col shadow-[-8px_0_24px_rgba(15,23,42,0.08)] dark:shadow-[-8px_0_24px_rgba(0,0,0,0.28)]",
-        panelPinned
-          ? "shrink-0 relative z-10"
-          : "absolute right-0 top-0 bottom-0 z-50",
-      )}
+      className="h-full border-l border-border bg-background flex flex-col shrink-0 relative z-10 shadow-[-8px_0_24px_rgba(15,23,42,0.08)] dark:shadow-[-8px_0_24px_rgba(0,0,0,0.28)]"
       style={{ width: `${width}px` }}
     >
       {/* 拖拽调整宽度的手柄 */}
@@ -259,10 +281,11 @@ export function AIChatPanel() {
         onMouseDown={handleMouseDown}
       />
 
-      {/* 顶部常驻操作区：历史、新建、固定和关闭在首页/对话态都保持可用。 */}
+      {/* 顶部常驻操作区 */}
       <div className="relative z-20 flex items-center justify-between px-3 py-2 border-b border-border bg-background/95 backdrop-blur shrink-0">
         <div className="flex min-w-0 items-center gap-1.5">
           <Button
+            ref={convButtonRef}
             variant="ghost"
             size="sm"
             className="h-8 min-w-0 px-2 text-sm font-medium"
@@ -277,48 +300,51 @@ export function AIChatPanel() {
               )}
             />
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={createNewConversation}
-            title={t("newConversation")}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
         </div>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              "h-8 w-8 p-0",
-              panelPinned && "bg-muted text-foreground",
-            )}
-            onClick={togglePinned}
-            title={panelPinned ? t("unpinSidebar") : t("pinSidebar")}
-          >
-            {panelPinned ? (
-              <PinOff className="h-4 w-4" />
-            ) : (
-              <Pin className="h-4 w-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0"
-            onClick={closePanel}
-            title={t("closeSidebar")}
-          >
-            <X className="h-4 w-4" />
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={createNewConversation}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("newConversation")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={closePanel}
+                >
+                  <PanelRightClose className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{t("hideSidebar")}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
-      {/* 历史对话从顶部浮层打开，避免挤压首页或当前对话内容。 */}
+      {/* 历史对话浮层 */}
       {showConvList && (
-        <div className="absolute left-3 right-3 top-12 z-30 rounded-xl border border-border bg-popover p-2 shadow-lg">
+        <div
+          ref={convListRef}
+          className="absolute left-3 right-3 top-12 z-30 rounded-xl border border-border bg-popover p-2 shadow-lg"
+        >
           <div className="relative mb-2">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -360,7 +386,6 @@ export function AIChatPanel() {
           modelId={modelId}
           onModelChange={setModelId}
           enableThinking={enableThinking}
-          onToggleThinking={toggleThinking}
           isSending={isLoading}
         />
       </div>

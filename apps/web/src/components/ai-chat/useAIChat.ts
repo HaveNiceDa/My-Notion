@@ -138,7 +138,7 @@ export function useAIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [modelId, setModelIdState] = useState<AIModelId>(getInitialAIModelId);
-  const [enableThinking, setEnableThinking] = useState(false);
+  const [enableThinking, setEnableThinking] = useState(true);
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
@@ -467,7 +467,6 @@ export function useAIChat() {
     modelId,
     setModelId,
     enableThinking,
-    toggleThinking,
     toolCalls,
     uploadedImages,
     setUploadedImages,

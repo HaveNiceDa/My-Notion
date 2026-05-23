@@ -5,7 +5,6 @@ import { useMutation, useQuery } from "convex/react";
 import {
   ChevronsLeft,
   ChevronsUp,
-  Sparkles,
   Plus,
   PlusCircle,
   Search,
@@ -30,6 +29,33 @@ import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
 import { Item } from "./Item";
 import { DocumentList } from "./document-list";
 import { TrashBox } from "./trash-box";
+
+// Notion 风格 AI 图标：简约黑白，与 Notion 设计语言一致
+function NotionAIIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      {...props}
+    >
+      <path
+        d="M2 3.5C2 2.67 2.67 2 3.5 2H6L8 4.5H12.5C13.33 4.5 14 5.17 14 6V12.5C14 13.33 13.33 14 12.5 14H3.5C2.67 14 2 13.33 2 12.5V3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        fill="none"
+      />
+      <path
+        d="M5.5 8H10.5M8 5.5V10.5"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
 
 interface CollapsibleSectionProps {
   title: string;
@@ -212,7 +238,7 @@ export function Navigation() {
             />
             <Item
               label="Notion AI"
-              icon={Sparkles}
+              icon={NotionAIIcon}
               onClick={togglePanel}
               active={panelOpen}
             />

@@ -216,6 +216,7 @@
     "pinSidebar": "Pin",
     "unpinSidebar": "Unpin",
     "closeSidebar": "Close",
+    "hideSidebar": "Hide Chat",
     "goHome": "Go Home",
     "searchConversationHistory": "Search conversation history",
     "noMatchingConversations": "No matching conversations found",

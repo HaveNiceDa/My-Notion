@@ -2,28 +2,19 @@
 
 import {
   Send,
-  Bot,
   Check,
-  Brain,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/src/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/src/components/ui/tooltip";
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/src/components/ui/popover";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { cn } from "@notion/business/utils";
-import { memo } from "react";
+import { memo, useState } from "react";
 import { useMemoizedFn } from "ahooks";
 import { AI_MODELS, MODEL_DISPLAY_NAMES } from "./models";
 import type { AIModelId } from "./models";
@@ -35,7 +26,6 @@ interface MessageInputProps {
   modelId: AIModelId;
   onModelChange: (id: AIModelId) => void;
   enableThinking: boolean;
-  onToggleThinking: () => void;
   isSending: boolean;
 }
 
@@ -46,11 +36,10 @@ const MessageInput = memo(
     onSend,
     modelId,
     onModelChange,
-    enableThinking,
-    onToggleThinking,
     isSending,
   }: MessageInputProps) => {
     const t = useTranslations("AI");
+    const [modelOpen, setModelOpen] = useState(false);
 
     const handleSend = useMemoizedFn(async () => {
       if (isSending || !input.trim()) {
@@ -89,68 +78,43 @@ const MessageInput = memo(
         />
         <div className="flex items-center justify-between -ml-1 mt-1">
           <div className="flex items-center gap-0.5">
-            <TooltipProvider>
-              <Tooltip delayDuration={1}>
-                <TooltipTrigger asChild>
-                  <Button
-                    className={cn(
-                      "rounded-full transition-all duration-200 h-7 w-7 p-0 bg-transparent",
-                      enableThinking
-                        ? "hover:bg-purple-200 text-purple-600"
-                        : "hover:bg-muted text-muted-foreground",
-                      isSending && "opacity-50",
-                    )}
-                    onClick={() => {
-                      if (!isSending) onToggleThinking();
-                    }}
-                    disabled={isSending}
-                  >
-                    <Brain className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>{t("deepThinkingTooltip")}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <DropdownMenu>
-              <TooltipProvider>
-                <Tooltip delayDuration={1}>
-                  <TooltipTrigger asChild>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        className="hover:bg-muted text-foreground rounded-full transition-all duration-200 h-7 w-7 p-0 bg-transparent"
-                        variant="ghost"
-                        disabled={isSending}
-                      >
-                        <Bot className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{t("modelSelect")}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <DropdownMenuContent align="end">
+            <Popover open={modelOpen} onOpenChange={setModelOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  className="h-7 rounded-md px-2 text-xs font-medium bg-transparent hover:bg-muted text-muted-foreground transition-colors"
+                  variant="ghost"
+                  disabled={isSending}
+                >
+                  {MODEL_DISPLAY_NAMES[modelId]}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-48 p-1"
+              >
                 {AI_MODELS.map((m) => (
-                  <DropdownMenuItem
+                  <button
                     key={m}
-                    onClick={() => onModelChange(m)}
+                    type="button"
+                    onClick={() => {
+                      onModelChange(m);
+                      setModelOpen(false);
+                    }}
                     className={cn(
-                      "cursor-pointer flex items-center justify-between",
-                      modelId === m && "bg-muted font-medium",
+                      "flex w-full items-center justify-between rounded-md px-2 py-1.5 text-sm cursor-pointer transition-colors",
+                      modelId === m
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground",
                     )}
                   >
                     <span>{MODEL_DISPLAY_NAMES[m]}</span>
-                    {modelId === m && <Check className="h-3 w-3" />}
-                  </DropdownMenuItem>
+                    {modelId === m && <Check className="h-3.5 w-3.5" />}
+                  </button>
                 ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
+              </PopoverContent>
+            </Popover>
+          </div>
+          <div className="flex items-center gap-0.5">
             <Button
               onClick={handleSend}
               disabled={!input.trim() || isSending}
