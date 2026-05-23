@@ -51,6 +51,8 @@ const MessageInput = memo(
 
     const handleKeyPress = useMemoizedFn(
       (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        // IME 组合输入中（如中文拼音）不触发发送
+        if (e.nativeEvent.isComposing) return;
         if (e.key === "Enter" && !e.shiftKey) {
           e.preventDefault();
           handleSend();

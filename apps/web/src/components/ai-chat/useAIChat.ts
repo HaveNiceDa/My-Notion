@@ -236,24 +236,12 @@ export function useAIChat() {
   const sendMessage = useMemoizedFn(async (images: string[] = []) => {
     if ((!input.trim() && images.length === 0) || isLoading || !user) return;
 
-    let currentConversationId = conversationId;
+    // 立即捕获当前输入值，避免闭包问题
+    const currentInput = input;
+    const currentImages = [...images];
 
-    if (!currentConversationId) {
-      try {
-        currentConversationId = await convex.mutation(api.aiChat.createConversation, {
-          title: t("newConversation"),
-        });
-        setConversationId(currentConversationId);
-        setConversationCreatedAt(new Date());
-        await loadConversations();
-      } catch (error) {
-        console.error("Error creating conversation:", error);
-        toast.error("创建对话失败，请重试");
-        return;
-      }
-    }
-
-    const messageContent = { text: input, images };
+    // 先更新 UI：清空输入、添加用户消息和助手占位消息
+    const messageContent = { text: currentInput, images: currentImages };
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       content: JSON.stringify(messageContent),
@@ -261,11 +249,11 @@ export function useAIChat() {
       timestamp: new Date(),
     };
 
-    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setUploadedImages([]);
     setIsLoading(true);
     setToolCalls([]);
+    setMessages((prev) => [...prev, userMessage]);
 
     const assistantMessageId = (Date.now() + 1).toString();
     const tempAssistantMessage: ChatMessage = {
@@ -299,7 +287,19 @@ export function useAIChat() {
     };
 
     try {
-      await convex.mutation(api.aiChat.addMessage, {
+      // 后台创建对话（如需），不阻塞 UI
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        currentConversationId = await convex.mutation(api.aiChat.createConversation, {
+          title: t("newConversation"),
+        });
+        setConversationId(currentConversationId);
+        setConversationCreatedAt(new Date());
+        loadConversations();
+      }
+
+      // 后台保存用户消息，不阻塞 AI 流
+      convex.mutation(api.aiChat.addMessage, {
         conversationId: currentConversationId,
         content: JSON.stringify(messageContent),
         role: "user" as "user" | "assistant",
@@ -329,8 +329,8 @@ export function useAIChat() {
 
       // 当前用户消息不在 messages state 中（setMessages 是异步的），需要单独添加
       const currentMessageContent = [
-        { type: "text", text: input || "" },
-        ...images.map((image) => ({ type: "image_url", image_url: { url: image } })),
+        { type: "text", text: currentInput || "" },
+        ...currentImages.map((image) => ({ type: "image_url", image_url: { url: image } })),
       ];
       conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
@@ -408,7 +408,7 @@ export function useAIChat() {
             });
             await convex.mutation(api.aiChat.updateConversationTitle, {
               conversationId: currentConversationId!,
-              title: input.length > 50 ? input.substring(0, 50) + "..." : input || "图片对话",
+              title: currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话",
             });
             await loadConversations();
           } catch (err) {

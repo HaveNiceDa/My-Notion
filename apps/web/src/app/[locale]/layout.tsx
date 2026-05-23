@@ -26,16 +26,12 @@ export async function generateMetadata({
     description: t("description"),
     icons: {
       icon: [
-        {
-          media: "(prefers-color-scheme: light)",
-          url: "/logo.svg",
-          href: "/logo.svg",
-        },
-        {
-          media: "(prefers-color-scheme: dark)",
-          url: "/logo-dark.svg",
-          href: "/logo-dark.svg",
-        },
+        { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+        { url: "/favicon-dark-32x32.png", sizes: "32x32", type: "image/png", media: "(prefers-color-scheme: dark)" },
+        { url: "/favicon.ico", sizes: "48x48" },
+      ],
+      apple: [
+        { url: "/apple-touch-icon.png" },
       ],
     },
   };
