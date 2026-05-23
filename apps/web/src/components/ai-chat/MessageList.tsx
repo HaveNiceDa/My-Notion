@@ -4,15 +4,17 @@ import React, { useMemo, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy, ChevronDown, ChevronUp, Brain, Wrench } from "lucide-react";
-import type { ChatMessage, ToolCall } from "./types";
+import { Copy, ChevronDown, ChevronUp, Brain } from "lucide-react";
+import type { ChatMessage, ToolCall, ToolCallResult } from "./types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
+import { ToolCallCard } from "./ToolCallCard";
 
 interface MessageItemProps {
   message: ChatMessage;
+  activeToolCalls?: ToolCall[];
 }
 
-const MessageItem = React.memo(({ message }: MessageItemProps) => {
+const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) => {
   const t = useTranslations("AI");
   const [showThinking, setShowThinking] = useState(true);
 
@@ -68,6 +70,36 @@ const MessageItem = React.memo(({ message }: MessageItemProps) => {
     }
   };
 
+  const renderToolResults = () => {
+    if (message.role !== "assistant") return null;
+
+    const persistedResults = message.toolResults;
+    if (persistedResults && persistedResults.length > 0) {
+      return (
+        <div className="space-y-1.5 mt-2">
+          {persistedResults.map((tr) => (
+            <ToolCallCard key={tr.id} toolResult={tr} />
+          ))}
+        </div>
+      );
+    }
+
+    if (activeToolCalls && activeToolCalls.length > 0) {
+      return (
+        <div className="space-y-1.5 mt-2">
+          {activeToolCalls.map((tc) => (
+            <ToolCallCard
+              key={tc.id}
+              toolResult={{ id: tc.id, name: tc.name, status: tc.status, result: tc.result }}
+            />
+          ))}
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div className={cn("mb-4", message.role === "user" ? "flex justify-end" : "")}>
       <div
@@ -115,6 +147,7 @@ const MessageItem = React.memo(({ message }: MessageItemProps) => {
           )}
         >
           {renderMessageContent()}
+          {renderToolResults()}
         </div>
 
         <div
@@ -173,6 +206,8 @@ export const MessageList = React.memo(
       });
     }, [conversationCreatedAt]);
 
+    const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
+
     return (
       <div className="flex-1 overflow-y-auto px-4 py-2">
         {conversationCreatedAt && (
@@ -184,35 +219,14 @@ export const MessageList = React.memo(
         )}
 
         {messages.map((message) => (
-          <MessageItem key={message.id} message={message} />
+          <MessageItem
+            key={message.id}
+            message={message}
+            activeToolCalls={message.role === "assistant" && message.id === lastAssistantId && !message.toolResults?.length ? toolCalls : undefined}
+          />
         ))}
 
-        {toolCalls.length > 0 && (
-          <div className="mb-3 space-y-1.5">
-            {toolCalls.map((toolCall) => (
-              <div
-                key={toolCall.id}
-                className="inline-flex max-w-[90%] items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
-              >
-                <Wrench className="h-3.5 w-3.5" />
-                <span className="font-medium text-foreground">
-                  {toolCall.name === "knowledge_search"
-                    ? t("knowledgeSearchTool")
-                    : toolCall.name === "document_read"
-                      ? t("documentReadTool")
-                    : toolCall.name}
-                </span>
-                <span>
-                  {toolCall.status === "completed"
-                    ? t("toolCompleted")
-                    : t("toolRunning")}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {isLoading && (
+        {isLoading && !messages.some((m) => m.role === "assistant" && m.id === lastAssistantId && m.toolResults?.length) && (
           <div className="flex justify-start mb-4">
             <div className="max-w-[90%]">
               <div className="p-3 break-words bg-background text-foreground pb-1">

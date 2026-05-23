@@ -1,11 +1,26 @@
 import type { Id } from "@/convex/_generated/dataModel";
 
+export interface KnowledgeSearchDoc {
+  documentId: string;
+  title: string;
+  score: number;
+  content: string;
+}
+
+export interface ToolCallResult {
+  id: string;
+  name: string;
+  status: "calling" | "executing" | "completed" | "error";
+  result?: unknown;
+}
+
 export interface ChatMessage {
   id: string;
   content: string;
   reasoningContent?: string;
   role: "user" | "assistant";
   timestamp: Date;
+  toolResults?: ToolCallResult[];
 }
 
 export interface Conversation {

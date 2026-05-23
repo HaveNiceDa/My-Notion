@@ -5,7 +5,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import type { ChatMessage, Conversation } from "./types";
+import type { ChatMessage, Conversation, ToolCallResult } from "./types";
 
 export function useAIChatPersistence() {
   const { user } = useUser();
@@ -29,11 +29,19 @@ export function useAIChatPersistence() {
     return msgs.map((msg: any) => {
       let content = msg.content;
       let reasoningContent: string | undefined;
+      let toolResults: ToolCallResult[] | undefined;
       try {
         const parsedContent = JSON.parse(msg.content);
         if (parsedContent.content !== undefined) {
           content = parsedContent.content;
           reasoningContent = parsedContent.reasoningContent;
+          if (parsedContent.toolResults) {
+            try {
+              toolResults = typeof parsedContent.toolResults === "string"
+                ? JSON.parse(parsedContent.toolResults)
+                : parsedContent.toolResults;
+            } catch {}
+          }
         }
       } catch {}
       return {
@@ -42,6 +50,7 @@ export function useAIChatPersistence() {
         reasoningContent,
         role: msg.role,
         timestamp: new Date(msg.createdAt),
+        toolResults,
       };
     });
   });

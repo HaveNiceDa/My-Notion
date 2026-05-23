@@ -5,7 +5,7 @@ import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
-import type { ChatMessage, Conversation, ToolCall } from "./types";
+import type { ChatMessage, Conversation, ToolCall, ToolCallResult } from "./types";
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
 import { runAgentStream } from "./stream-client";
@@ -113,6 +113,7 @@ export function useAIChat() {
     let currentContent = "";
     let currentReasoningContent = "";
     let pendingRender = false;
+    let completedToolResults: ToolCallResult[] = [];
 
     const flushMessages = () => {
       pendingRender = false;
@@ -187,6 +188,7 @@ export function useAIChat() {
               ...prev.filter((tc) => tc.id !== toolCallId),
               { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
             ]);
+            completedToolResults.push({ id: toolCallId, name: toolName, status: "calling" });
           },
           onToolCallDelta: (toolCallId: string, delta: string) => {
             setToolCalls((prev) =>
@@ -212,19 +214,27 @@ export function useAIChat() {
                 tc.id === toolCallId ? { ...tc, result, status: "completed" } : tc,
               ),
             );
+            const existingIdx = completedToolResults.findIndex((r) => r.id === toolCallId);
+            if (existingIdx >= 0) {
+              completedToolResults[existingIdx] = { ...completedToolResults[existingIdx], status: "completed", result };
+            }
           },
           onComplete: async () => {
             pendingRender = false;
+            const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMessageId
-                  ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined }
+                  ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined, toolResults: finalToolResults }
                   : msg,
               ),
             );
             const messageData: Record<string, string> = { content: currentContent };
             if (enableThinking && currentReasoningContent) {
               messageData.reasoningContent = currentReasoningContent;
+            }
+            if (finalToolResults) {
+              messageData.toolResults = JSON.stringify(finalToolResults);
             }
             await persistence.saveMessage(currentConversationId!, JSON.stringify(messageData), "assistant");
             const title = currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话";
@@ -245,10 +255,11 @@ export function useAIChat() {
       });
     } finally {
       setIsLoading(false);
+      const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === assistantMessageId
-            ? { ...msg, content: currentContent || msg.content, reasoningContent: currentReasoningContent || msg.reasoningContent }
+            ? { ...msg, content: currentContent || msg.content, reasoningContent: currentReasoningContent || msg.reasoningContent, toolResults: finalToolResults ?? msg.toolResults }
             : msg,
         ),
       );
