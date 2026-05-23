@@ -6,15 +6,10 @@ import { formatRelativeTime } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import {
   Plus,
-  Clock,
-  Trash2,
   ChevronDown,
   History,
   PanelRightClose,
-  FileText,
-  Languages,
   Search,
-  CircleCheck,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
@@ -31,151 +26,8 @@ import {
 import { useAIChat } from "./useAIChat";
 import { MessageList } from "./MessageList";
 import { MessageInput } from "./MessageInput";
-import type { Conversation } from "./types";
-
-interface ConversationListProps {
-  conversations: Conversation[];
-  currentConversationId: Id<"aiConversations"> | null;
-  isLoading: boolean;
-  onSelect: (id: Id<"aiConversations">) => void;
-  onDelete: (id: Id<"aiConversations">) => void;
-  formatTime: (ts: number) => string;
-}
-
-const ConversationList = React.memo(
-  ({
-    conversations,
-    currentConversationId,
-    isLoading,
-    onSelect,
-    onDelete,
-    formatTime,
-  }: ConversationListProps) => {
-    const t = useTranslations("AI");
-
-    if (isLoading) {
-      return (
-        <div className="p-3 text-center text-muted-foreground text-xs">
-          {t("loading")}
-        </div>
-      );
-    }
-
-    if (conversations.length === 0) {
-      return (
-        <div className="p-3 text-center text-muted-foreground text-xs">
-          {t("noConversationRecords")}
-        </div>
-      );
-    }
-
-    return (
-      <div className="max-h-48 overflow-y-auto">
-        {conversations.map((conv) => (
-          <div
-            key={conv._id}
-            className={cn(
-              "flex items-center justify-between p-2 rounded-md cursor-pointer text-xs transition-colors",
-              currentConversationId === conv._id
-                ? "bg-accent"
-                : "hover:bg-muted",
-            )}
-            onClick={() => onSelect(conv._id)}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="truncate font-medium">{conv.title}</p>
-              <div className="flex items-center gap-1 mt-0.5">
-                <Clock className="h-2.5 w-2.5 text-muted-foreground" />
-                <span className="text-muted-foreground">
-                  {formatTime(conv.updatedAt)}
-                </span>
-              </div>
-            </div>
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(conv._id);
-              }}
-              size="sm"
-              variant="ghost"
-              className="h-5 w-5 p-0 text-muted-foreground hover:text-red-500 shrink-0"
-            >
-              <Trash2 className="h-2.5 w-2.5" />
-            </Button>
-          </div>
-        ))}
-      </div>
-    );
-  },
-);
-
-ConversationList.displayName = "ConversationList";
-
-interface EmptyHomeProps {
-  onPromptSelect: (prompt: string) => void;
-}
-
-const EmptyHome = React.memo(({ onPromptSelect }: EmptyHomeProps) => {
-  const t = useTranslations("AI");
-
-  const actions = useMemo(
-    () => [
-      {
-        icon: FileText,
-        label: t("summarizeThisPage"),
-        prompt: t("summarizeThisPagePrompt"),
-      },
-      {
-        icon: Languages,
-        label: t("translateThisPage"),
-        prompt: t("translateThisPagePrompt"),
-      },
-      {
-        icon: Search,
-        label: t("deepAnalyze"),
-        prompt: t("deepAnalyzePrompt"),
-      },
-      {
-        icon: CircleCheck,
-        label: t("createTaskTracker"),
-        prompt: t("createTaskTrackerPrompt"),
-      },
-    ],
-    [t],
-  );
-
-  return (
-    <div className="flex-1 overflow-y-auto px-5 py-6">
-      <div className="min-h-full flex flex-col justify-end gap-5 pb-2">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {t("todayIWillHelp")}
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("aiSidebarHomeSubtitle")}
-          </p>
-        </div>
-
-        <div className="space-y-1.5">
-          {actions.map(({ icon: Icon, label, prompt }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={() => onPromptSelect(prompt)}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
-            >
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-
-      </div>
-    </div>
-  );
-});
-
-EmptyHome.displayName = "EmptyHome";
+import { ConversationList } from "./ConversationList";
+import { EmptyHome } from "./EmptyHome";
 
 export function AIChatPanel() {
   const { panelOpen, closePanel } = useAIChatStore();
@@ -244,7 +96,6 @@ export function AIChatPanel() {
     setInput(prompt);
   });
 
-  // 点击对话列表外部区域收起
   const convListRef = useRef<HTMLDivElement>(null);
   const convButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -275,13 +126,11 @@ export function AIChatPanel() {
       className="h-full border-l border-border bg-background flex flex-col shrink-0 relative z-10 shadow-[-8px_0_24px_rgba(15,23,42,0.08)] dark:shadow-[-8px_0_24px_rgba(0,0,0,0.28)]"
       style={{ width: `${width}px` }}
     >
-      {/* 拖拽调整宽度的手柄 */}
       <div
         className="absolute left-0 top-0 h-full w-1 cursor-ew-resize hover:bg-primary/30 active:bg-primary/50 z-10 transition-colors"
         onMouseDown={handleMouseDown}
       />
 
-      {/* 顶部常驻操作区 */}
       <div className="relative z-20 flex items-center justify-between px-3 py-2 border-b border-border bg-background/95 backdrop-blur shrink-0">
         <div className="flex min-w-0 items-center gap-1.5">
           <Button
@@ -339,7 +188,6 @@ export function AIChatPanel() {
         </div>
       </div>
 
-      {/* 历史对话浮层 */}
       {showConvList && (
         <div
           ref={convListRef}
@@ -377,7 +225,6 @@ export function AIChatPanel() {
         />
       )}
 
-      {/* 输入区域 */}
       <div className="px-3 pb-3 pt-1 shrink-0 bg-background">
         <MessageInput
           input={input}

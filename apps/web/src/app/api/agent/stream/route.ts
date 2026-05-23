@@ -6,6 +6,7 @@ import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
 import { runReActLoop } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
+import { compressContext } from "@/src/lib/agent/context-compression";
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -74,13 +75,16 @@ export async function POST(req: NextRequest) {
       ...messages,
     ];
 
+    // 长对话上下文压缩：token 超阈值时摘要旧消息 + 保留最近 N 轮
+    const compressedMessages = await compressContext(openai, model, allMessages);
+
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         try {
           await runReActLoop({
             openai,
             model,
-            messages: allMessages,
+            messages: compressedMessages,
             tools: openaiTools,
             toolMap,
             toolContext: { userId, model, currentDocument: body.currentDocument },

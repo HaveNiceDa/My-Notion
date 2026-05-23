@@ -7,7 +7,9 @@
     "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
     "build": "next build",
     "lint": "eslint src/ --max-warnings=50",
-    "clean": "rd /s /q node_modules 2>nul || exit 0"
+    "clean": "rd /s /q node_modules 2>nul || exit 0",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.55",
@@ -82,6 +84,7 @@
     "eslint-config-next": "^16.1.4",
     "postcss": "^8",
     "tailwindcss": "^3.3.0",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.5"
   }
 }

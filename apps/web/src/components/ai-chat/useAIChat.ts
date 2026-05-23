@@ -3,132 +3,20 @@
 import { useState, useCallback, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
-import { useConvex } from "convex/react";
-import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
-import { toast } from "sonner";
 import { useTranslations } from "next-intl";
-import { devLog } from "@notion/business/utils";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
-import type { CurrentDocumentContext } from "@/src/lib/store/use-current-document-store";
-import type { AgentStreamEvent, ChatMessage, Conversation, ToolCall } from "./types";
+import type { ChatMessage, Conversation, ToolCall } from "./types";
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
-
-async function runAgentStream(
-  conversationHistoryMessages: unknown[],
-  onChunk: (chunk: string) => void,
-  onReasoningChunk: (chunk: string) => void,
-  onToolCallStart: (toolCallId: string, toolName: string) => void,
-  onToolCallDelta: (toolCallId: string, delta: string) => void,
-  onToolResultDelta: (toolCallId: string, delta: string) => void,
-  onToolCallResult: (toolCallId: string, result: unknown) => void,
-  onComplete: () => Promise<void>,
-  onError: (error: unknown) => void,
-  model: AIModelId,
-  conversationId: string,
-  enableThinking: boolean,
-  currentDocument: CurrentDocumentContext | null,
-) {
-  try {
-    const response = await fetch("/api/agent/stream", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messages: conversationHistoryMessages,
-        modelId: model,
-        conversationId,
-        enableThinking,
-        currentDocument,
-      }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Agent stream failed: ${response.statusText}`);
-    }
-
-    const reader = response.body?.getReader();
-    if (!reader) {
-      throw new Error("Response body is not readable");
-    }
-
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let streamFailed = false;
-
-    function handleEvent(event: AgentStreamEvent) {
-      switch (event.type) {
-        case "text-delta":
-          onChunk(event.delta);
-          break;
-        case "reasoning-delta":
-          onReasoningChunk(event.delta);
-          break;
-        case "tool-call-start":
-          onToolCallStart(event.toolCallId, event.toolName);
-          break;
-        case "tool-call-delta":
-          onToolCallDelta(event.toolCallId, event.delta);
-          break;
-        case "tool-result-delta":
-          onToolResultDelta(event.toolCallId, event.delta);
-          break;
-        case "tool-call-result":
-          onToolCallResult(event.toolCallId, event.result);
-          break;
-        case "error":
-          streamFailed = true;
-          onError(new Error(event.message));
-          break;
-        case "finish":
-          devLog("[Agent] 接收到结束事件");
-          break;
-      }
-    }
-
-    function processBuffer(isFinal: boolean = false) {
-      const lines = buffer.split("\n");
-      const endIdx = isFinal ? lines.length : lines.length - 1;
-
-      for (let i = 0; i < endIdx; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        try {
-          handleEvent(JSON.parse(line) as AgentStreamEvent);
-        } catch (error) {
-          console.error("[Agent] 解析流式事件出错:", error);
-        }
-      }
-      buffer = isFinal ? "" : lines[lines.length - 1];
-    }
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) {
-          if (buffer.trim()) processBuffer(true);
-          if (!streamFailed) {
-            await onComplete();
-          }
-          break;
-        }
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        processBuffer(false);
-      }
-    } finally {
-      reader.releaseLock();
-    }
-  } catch (error) {
-    onError(error);
-  }
-}
+import { runAgentStream } from "./stream-client";
+import { useAIChatPersistence } from "./useAIChatPersistence";
+import type { Id } from "@/convex/_generated/dataModel";
 
 export function useAIChat() {
   const { user } = useUser();
-  const convex = useConvex();
   const t = useTranslations("AI");
   const currentDocument = useCurrentDocumentStore((state) => state.currentDocument);
+  const persistence = useAIChatPersistence();
 
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -138,7 +26,7 @@ export function useAIChat() {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingConversations, setIsLoadingConversations] = useState(false);
   const [modelId, setModelIdState] = useState<AIModelId>(getInitialAIModelId);
-  const [enableThinking, setEnableThinking] = useState(true);
+  const [enableThinking] = useState(true);
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
 
@@ -147,21 +35,11 @@ export function useAIChat() {
     localStorage.setItem("ai-model-id", id);
   }, []);
 
-  const toggleThinking = useCallback(() => {
-    setEnableThinking((prev) => !prev);
-  }, []);
-
-  const loadConversations = useMemoizedFn(async () => {
-    if (!user) return;
-    try {
-      setIsLoadingConversations(true);
-      const result = await convex.query(api.aiChat.getConversations, {});
-      setConversations(result as Conversation[]);
-    } catch (error) {
-      console.error("Error loading conversations:", error);
-    } finally {
-      setIsLoadingConversations(false);
-    }
+  const refreshConversations = useMemoizedFn(async () => {
+    setIsLoadingConversations(true);
+    const loaded = await persistence.loadConversations();
+    setConversations(loaded);
+    setIsLoadingConversations(false);
   });
 
   const loadConversation = useMemoizedFn(async (convId: Id<"aiConversations">) => {
@@ -170,32 +48,14 @@ export function useAIChat() {
       setIsLoading(true);
       setConversationId(convId);
 
-      const msgs = await convex.query(api.aiChat.getMessages, { conversationId: convId });
-      const formattedMessages: ChatMessage[] = msgs.map((msg: any) => {
-        let content = msg.content;
-        let reasoningContent: string | undefined;
-        try {
-          const parsedContent = JSON.parse(msg.content);
-          if (parsedContent.content !== undefined) {
-            content = parsedContent.content;
-            reasoningContent = parsedContent.reasoningContent;
-          }
-        } catch {}
-        return {
-          id: msg._id,
-          content,
-          reasoningContent,
-          role: msg.role,
-          timestamp: new Date(msg.createdAt),
-        };
-      });
+      const formattedMessages = await persistence.loadMessages(convId);
       setMessages(formattedMessages);
 
       let conversation = conversations.find((conv) => conv._id === convId);
       if (!conversation) {
-        const loadedConversations = await convex.query(api.aiChat.getConversations, {});
-        setConversations(loadedConversations as Conversation[]);
-        conversation = (loadedConversations as Conversation[]).find((conv) => conv._id === convId);
+        const loadedConversations = await persistence.loadConversations();
+        setConversations(loadedConversations);
+        conversation = loadedConversations.find((conv) => conv._id === convId);
       }
       if (conversation) {
         setConversationCreatedAt(new Date(conversation.createdAt));
@@ -215,20 +75,8 @@ export function useAIChat() {
   });
 
   const deleteConversation = useMemoizedFn(async (convId: Id<"aiConversations">) => {
-    if (!user) return;
-    if (conversationId === convId) {
-      toast.error(t("cannotDeleteCurrentConversation"));
-      return;
-    }
-    try {
-      await convex.mutation(api.aiChat.deleteConversation, { conversationId: convId });
-      await loadConversations();
-      toast.success(t("conversationDeleted"));
-    } catch (error) {
-      console.error("Error deleting conversation:", error);
-      toast.error(t("deleteFailed"));
-      await loadConversations();
-    }
+    await persistence.deleteConversation(convId, conversationId === convId);
+    await refreshConversations();
   });
 
   const handleGetImages = useMemoizedFn(() => uploadedImages);
@@ -236,11 +84,9 @@ export function useAIChat() {
   const sendMessage = useMemoizedFn(async (images: string[] = []) => {
     if ((!input.trim() && images.length === 0) || isLoading || !user) return;
 
-    // 立即捕获当前输入值，避免闭包问题
     const currentInput = input;
     const currentImages = [...images];
 
-    // 先更新 UI：清空输入、添加用户消息和助手占位消息
     const messageContent = { text: currentInput, images: currentImages };
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -287,23 +133,17 @@ export function useAIChat() {
     };
 
     try {
-      // 后台创建对话（如需），不阻塞 UI
       let currentConversationId = conversationId;
       if (!currentConversationId) {
-        currentConversationId = await convex.mutation(api.aiChat.createConversation, {
-          title: t("newConversation"),
-        });
-        setConversationId(currentConversationId);
+        const newId = await persistence.createConversation(t("newConversation"));
+        if (!newId) throw new Error("Failed to create conversation");
+        currentConversationId = newId;
+        setConversationId(newId);
         setConversationCreatedAt(new Date());
-        loadConversations();
+        refreshConversations();
       }
 
-      // 后台保存用户消息，不阻塞 AI 流
-      convex.mutation(api.aiChat.addMessage, {
-        conversationId: currentConversationId,
-        content: JSON.stringify(messageContent),
-        role: "user" as "user" | "assistant",
-      });
+      persistence.saveMessage(currentConversationId, JSON.stringify(messageContent), "user");
 
       const conversationHistoryMessages = messages.map((msg) => {
         try {
@@ -327,109 +167,82 @@ export function useAIChat() {
         }
       });
 
-      // 当前用户消息不在 messages state 中（setMessages 是异步的），需要单独添加
       const currentMessageContent = [
         { type: "text", text: currentInput || "" },
         ...currentImages.map((image) => ({ type: "image_url", image_url: { url: image } })),
       ];
       conversationHistoryMessages.push({ role: "user", content: currentMessageContent });
 
-      await runAgentStream(
-        conversationHistoryMessages,
-        (chunk: string) => { currentContent += chunk; scheduleRender(); },
-        (chunk: string) => { if (enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
-        (toolCallId: string, toolName: string) => {
-          setToolCalls((prev) => [
-            ...prev.filter((toolCall) => toolCall.id !== toolCallId),
-            {
-              id: toolCallId,
-              name: toolName,
-              parameters: {},
-              status: "calling",
-            },
-          ]);
-        },
-        (toolCallId: string, delta: string) => {
-          setToolCalls((prev) =>
-            prev.map((toolCall) =>
-              toolCall.id === toolCallId
-                ? {
-                    ...toolCall,
-                    parameters: {
-                      ...toolCall.parameters,
-                      arguments: `${toolCall.parameters.arguments ?? ""}${delta}`,
-                    },
-                    status: "executing",
-                  }
-                : toolCall,
-            ),
-          );
-        },
-        (toolCallId: string, delta: string) => {
-          setToolCalls((prev) =>
-            prev.map((toolCall) =>
-              toolCall.id === toolCallId
-                ? {
-                    ...toolCall,
-                    streamingResult: `${toolCall.streamingResult ?? ""}${delta}`,
-                    status: "executing",
-                  }
-                : toolCall,
-            ),
-          );
-        },
-        (toolCallId: string, result: unknown) => {
-          setToolCalls((prev) =>
-            prev.map((toolCall) =>
-              toolCall.id === toolCallId
-                ? { ...toolCall, result, status: "completed" }
-                : toolCall,
-            ),
-          );
-        },
-        async () => {
-          pendingRender = false;
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined }
-                : msg,
-            ),
-          );
-          const messageData: Record<string, string> = { content: currentContent };
-          if (enableThinking && currentReasoningContent) {
-            messageData.reasoningContent = currentReasoningContent;
-          }
-          try {
-            await convex.mutation(api.aiChat.addMessage, {
-              conversationId: currentConversationId!,
-              content: JSON.stringify(messageData),
-              role: "assistant" as "user" | "assistant",
-            });
-            await convex.mutation(api.aiChat.updateConversationTitle, {
-              conversationId: currentConversationId!,
-              title: currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话",
-            });
-            await loadConversations();
-          } catch (err) {
-            console.error("[Chat] Failed to save message to Convex:", err);
-          }
-        },
-        (error: unknown) => {
-          console.error("Error in RAG stream:", error);
-          setMessages((prev) =>
-            prev.map((msg) =>
-              msg.id === assistantMessageId
-                ? { ...msg, content: "Sorry, something went wrong. Please try again." }
-                : msg,
-            ),
-          );
-        },
-        modelId,
-        currentConversationId!,
+      await runAgentStream({
+        messages: conversationHistoryMessages,
+        model: modelId,
+        conversationId: currentConversationId,
         enableThinking,
         currentDocument,
-      );
+        callbacks: {
+          onChunk: (chunk: string) => { currentContent += chunk; scheduleRender(); },
+          onReasoningChunk: (chunk: string) => { if (enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
+          onToolCallStart: (toolCallId: string, toolName: string) => {
+            setToolCalls((prev) => [
+              ...prev.filter((tc) => tc.id !== toolCallId),
+              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+            ]);
+          },
+          onToolCallDelta: (toolCallId: string, delta: string) => {
+            setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, parameters: { ...tc.parameters, arguments: `${tc.parameters.arguments ?? ""}${delta}` }, status: "executing" }
+                  : tc,
+              ),
+            );
+          },
+          onToolResultDelta: (toolCallId: string, delta: string) => {
+            setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, streamingResult: `${tc.streamingResult ?? ""}${delta}`, status: "executing" }
+                  : tc,
+              ),
+            );
+          },
+          onToolCallResult: (toolCallId: string, result: unknown) => {
+            setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId ? { ...tc, result, status: "completed" } : tc,
+              ),
+            );
+          },
+          onComplete: async () => {
+            pendingRender = false;
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined }
+                  : msg,
+              ),
+            );
+            const messageData: Record<string, string> = { content: currentContent };
+            if (enableThinking && currentReasoningContent) {
+              messageData.reasoningContent = currentReasoningContent;
+            }
+            await persistence.saveMessage(currentConversationId!, JSON.stringify(messageData), "assistant");
+            const title = currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话";
+            await persistence.updateConversationTitle(currentConversationId!, title);
+            await refreshConversations();
+          },
+          onError: (error: unknown) => {
+            console.error("Error in Agent stream:", error);
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: "Sorry, something went wrong. Please try again." }
+                  : msg,
+              ),
+            );
+          },
+        },
+      });
     } finally {
       setIsLoading(false);
       setMessages((prev) =>
@@ -444,16 +257,8 @@ export function useAIChat() {
 
   useEffect(() => {
     if (!user) return;
-    const init = async () => {
-      try {
-        const loadedConversations = await convex.query(api.aiChat.getConversations, {});
-        setConversations(loadedConversations as Conversation[]);
-      } catch (error) {
-        console.error("Error loading conversations:", error);
-      }
-    };
-    init();
-  }, [user]);
+    refreshConversations();
+  }, [user, refreshConversations]);
 
   return {
     messages,
@@ -475,6 +280,6 @@ export function useAIChat() {
     createNewConversation,
     loadConversation,
     deleteConversation,
-    loadConversations,
+    loadConversations: refreshConversations,
   };
 }
