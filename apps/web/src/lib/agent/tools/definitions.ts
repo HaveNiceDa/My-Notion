@@ -1,5 +1,6 @@
 import { executeKnowledgeSearch } from "./knowledge-search";
 import { executeDocumentRead } from "./document-read";
+import { executeWebSearch } from "./web-search";
 import type { ToolContext } from "./types";
 
 // Agent Tool 标准接口：每个 tool 自带 OpenAI function schema，LLM 通过 description 自主判断何时调用
@@ -43,4 +44,28 @@ export const documentReadTool: AgentTool = {
     properties: {},
   },
   execute: async (_args, ctx) => executeDocumentRead(ctx.currentDocument),
+};
+
+// 联网搜索 tool：通过 DashScope enable_search 搜索互联网实时信息
+export const webSearchTool: AgentTool = {
+  name: "web_search",
+  description:
+    "搜索互联网获取实时信息。当用户提问涉及最新新闻、天气、股票价格、时事热点等需要实时数据的问题时使用此工具。",
+  parameters: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "搜索查询关键词",
+      },
+      strategy: {
+        type: "string",
+        enum: ["turbo", "max", "agent"],
+        description:
+          "搜索策略：turbo（默认，兼顾速度与效果）、max（更全面搜索）、agent（多轮检索整合，适合复杂问题）",
+      },
+    },
+    required: ["query"],
+  },
+  execute: async (args, ctx) => executeWebSearch(args, ctx.model),
 };

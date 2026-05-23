@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
             messages: allMessages,
             tools: openaiTools,
             toolMap,
-            toolContext: { userId, currentDocument: body.currentDocument },
+            toolContext: { userId, model, currentDocument: body.currentDocument },
             enableThinking,
             controller,
             encoder,

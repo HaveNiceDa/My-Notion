@@ -5,8 +5,9 @@ export interface CurrentDocumentContext {
   content?: string | null;
 }
 
-// Tool 执行上下文，传递用户身份和当前文档信息
+// Tool 执行上下文，传递用户身份、当前文档和模型信息
 export interface ToolContext {
   userId: string;
+  model: string;
   currentDocument?: CurrentDocumentContext | null;
 }
