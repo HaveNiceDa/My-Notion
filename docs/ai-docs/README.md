@@ -19,3 +19,5 @@
 | [tool/dashscope-function-calling.md](./tool/dashscope-function-calling.md) | Function Calling | 开发 Agent 工具调用、新增 tool 定义、排查模型兼容性问题时 |
 | [tool/dashscope-mcp.md](./tool/dashscope-mcp.md) | MCP (Model Context Protocol) | 接入百炼托管 MCP 服务、评估 Responses API 迁移时 |
 | [tool/dashscope-web-search.md](./tool/dashscope-web-search.md) | 联网搜索 | Agent web_search tool 接入、实时信息查询、搜索策略配置时 |
+| [tool/dashscope-web-extractor.md](./tool/dashscope-web-extractor.md) | 网页抓取 | Agent 访问 URL 提取内容、网页总结、技术文档解析时 |
+| [tool/dashscope-code-interpreter.md](./tool/dashscope-code-interpreter.md) | 代码解释器 | Agent 数学计算、数据分析、复杂逻辑推理时 |
