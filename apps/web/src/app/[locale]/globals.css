@@ -81,3 +81,56 @@ body,
     @apply bg-background text-foreground;
   }
 }
+
+/* highlight.js 代码高亮主题 — 浅色模式 */
+.hljs {
+  background: transparent;
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal { color: #d73a49; }
+.hljs-title,
+.hljs-section { color: #6f42c1; }
+.hljs-string,
+.hljs-addition { color: #22863a; }
+.hljs-comment,
+.hljs-quote { color: #6a737d; font-style: italic; }
+.hljs-variable,
+.hljs-template-variable { color: #e36209; }
+.hljs-number { color: #005cc5; }
+.hljs-built_in { color: #005cc5; }
+.hljs-attr { color: #005cc5; }
+.hljs-type,
+.hljs-class { color: #6f42c1; }
+.hljs-function { color: #6f42c1; }
+.hljs-params { color: #24292e; }
+.hljs-meta { color: #005cc5; }
+.hljs-deletion { color: #b31d28; background-color: #ffeef0; }
+.hljs-symbol,
+.hljs-bullet { color: #e36209; }
+.hljs-link { color: #032f62; text-decoration: underline; }
+
+/* 暗色模式 */
+.dark .hljs-keyword,
+.dark .hljs-selector-tag,
+.dark .hljs-literal { color: #ff7b72; }
+.dark .hljs-title,
+.dark .hljs-section { color: #d2a8ff; }
+.dark .hljs-string,
+.dark .hljs-addition { color: #7ee787; }
+.dark .hljs-comment,
+.dark .hljs-quote { color: #8b949e; font-style: italic; }
+.dark .hljs-variable,
+.dark .hljs-template-variable { color: #ffa657; }
+.dark .hljs-number { color: #79c0ff; }
+.dark .hljs-built_in { color: #79c0ff; }
+.dark .hljs-attr { color: #79c0ff; }
+.dark .hljs-type,
+.dark .hljs-class { color: #d2a8ff; }
+.dark .hljs-function { color: #d2a8ff; }
+.dark .hljs-params { color: #c9d1d9; }
+.dark .hljs-meta { color: #79c0ff; }
+.dark .hljs-deletion { color: #ffa198; background-color: rgba(248,81,73,0.1); }
+.dark .hljs-symbol,
+.dark .hljs-bullet { color: #ffa657; }
+.dark .hljs-link { color: #a5d6ff; text-decoration: underline; }

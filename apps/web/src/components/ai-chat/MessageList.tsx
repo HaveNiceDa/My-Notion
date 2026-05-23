@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Copy, ChevronDown, ChevronUp, Brain, Wrench } from "lucide-react";
 import type { ChatMessage, ToolCall } from "./types";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -38,9 +39,7 @@ const MessageItem = React.memo(({ message }: MessageItemProps) => {
         return (
           <div className="space-y-3">
             {parsedContent.text && (
-              <p className="whitespace-pre-wrap text-sm break-all">
-                {parsedContent.text}
-              </p>
+              <MarkdownRenderer content={parsedContent.text} />
             )}
             <div className="grid grid-cols-2 gap-2">
               {parsedContent.images.map((image: string, index: number) => (
@@ -59,29 +58,13 @@ const MessageItem = React.memo(({ message }: MessageItemProps) => {
           </div>
         );
       } else if (parsedContent.text) {
-        return (
-          <p className="whitespace-pre-wrap text-sm break-all">
-            {parsedContent.text}
-          </p>
-        );
+        return <MarkdownRenderer content={parsedContent.text} />;
       } else if (parsedContent.content) {
-        return (
-          <p className="whitespace-pre-wrap text-sm break-all">
-            {parsedContent.content}
-          </p>
-        );
+        return <MarkdownRenderer content={parsedContent.content} />;
       }
-      return (
-        <p className="whitespace-pre-wrap text-sm break-all">
-          {message.content}
-        </p>
-      );
+      return <MarkdownRenderer content={message.content} />;
     } catch {
-      return (
-        <p className="whitespace-pre-wrap text-sm break-all">
-          {message.content}
-        </p>
-      );
+      return <MarkdownRenderer content={message.content} />;
     }
   };
 
@@ -115,9 +98,7 @@ const MessageItem = React.memo(({ message }: MessageItemProps) => {
               {showThinking && (
                 <div className="px-2 pb-2 text-xs text-gray-700 dark:text-gray-300 border-t border-purple-200 dark:border-purple-800/50">
                   <div className="bg-white/70 dark:bg-gray-900/50 rounded p-2 max-h-40 overflow-y-auto">
-                    <p className="whitespace-pre-wrap leading-relaxed">
-                      {message.reasoningContent}
-                    </p>
+                    <MarkdownRenderer content={message.reasoningContent} className="text-xs" />
                   </div>
                 </div>
               )}
