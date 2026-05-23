@@ -244,6 +244,7 @@
     "untitledDocument": "Untitled",
     "noDocumentAvailable": "No document available",
     "searchedFor": "Searched for",
+    "referencedDocsCount": "Referenced {count} documents",
     "openAIChat": "Open AI Assistant",
     "panelError": "AI Panel Error",
     "panelErrorDesc": "An unexpected error occurred. Please retry or try again later.",

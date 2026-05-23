@@ -8,13 +8,13 @@ export default defineConfig({
     environment: "node",
   },
   resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "src"),
-      "@notion/ai": path.resolve(__dirname, "../../packages/ai"),
-      "@notion/ai/server": path.resolve(__dirname, "../../packages/ai/server/index.ts"),
-      "@notion/ai/utils": path.resolve(__dirname, "../../packages/ai/utils/index.ts"),
-      "@notion/ai/config": path.resolve(__dirname, "../../packages/ai/config/index.ts"),
-      "@notion/business": path.resolve(__dirname, "../../packages/business/src"),
-    },
+    alias: [
+      { find: "@", replacement: path.resolve(__dirname, "src") },
+      { find: "@notion/ai/server", replacement: path.resolve(__dirname, "../../packages/ai/server/index.ts") },
+      { find: "@notion/ai/utils", replacement: path.resolve(__dirname, "../../packages/ai/utils/index.ts") },
+      { find: "@notion/ai/config", replacement: path.resolve(__dirname, "../../packages/ai/config/index.ts") },
+      { find: "@notion/ai", replacement: path.resolve(__dirname, "../../packages/ai") },
+      { find: "@notion/business", replacement: path.resolve(__dirname, "../../packages/business/src") },
+    ],
   },
 });

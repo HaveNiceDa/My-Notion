@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { BookOpen, FileText, Globe, Loader2, Check } from "lucide-react";
+import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@notion/business/utils";
 import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
 
@@ -92,6 +92,7 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
   const isRunning = toolResult.status === "calling" || toolResult.status === "executing";
+  const [expanded, setExpanded] = useState(false);
 
   const toolName = toolResult.name;
   const displayName =
@@ -111,26 +112,51 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
         : Globe;
 
   let resultContent: React.ReactNode = null;
+  let resultSummary: string | null = null;
   if (isCompleted && toolResult.result) {
     const result = toolResult.result as Record<string, unknown>;
     if (toolName === "knowledge_search") {
-      resultContent = <KnowledgeSearchResult result={result as unknown as { query?: string; documents?: KnowledgeSearchDoc[]; error?: string }} />;
+      const typedResult = result as unknown as { query?: string; documents?: KnowledgeSearchDoc[]; error?: string };
+      resultContent = <KnowledgeSearchResult result={typedResult} />;
+      const docCount = typedResult.documents?.length ?? 0;
+      resultSummary = docCount > 0 ? t("referencedDocsCount", { count: docCount }) : t("noDocumentsFound");
     } else if (toolName === "document_read") {
-      resultContent = <DocumentReadResult result={result as unknown as { document?: { id: string; title: string } }} />;
+      const typedResult = result as unknown as { document?: { id: string; title: string } };
+      resultContent = <DocumentReadResult result={typedResult} />;
+      resultSummary = typedResult.document?.title ?? null;
     } else if (toolName === "web_search") {
-      resultContent = <WebSearchResult result={result as unknown as { query?: string; strategy?: string; content?: string; error?: string }} />;
+      const typedResult = result as unknown as { query?: string; strategy?: string; content?: string; error?: string };
+      resultContent = <WebSearchResult result={typedResult} />;
+      resultSummary = typedResult.query ?? null;
     }
   }
 
+  const hasDetails = resultContent !== null;
+
   return (
     <div className="rounded-lg border border-border bg-muted/30 overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 text-xs">
+      <button
+        type="button"
+        className={cn(
+          "flex items-center gap-2 px-3 py-2 text-xs w-full text-left",
+          hasDetails && "cursor-pointer hover:bg-muted/50 transition-colors",
+        )}
+        onClick={() => hasDetails && setExpanded(!expanded)}
+      >
         <ToolIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <span className="font-medium text-foreground">{displayName}</span>
-        {isRunning && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />}
-        {isCompleted && <Check className="h-3 w-3 text-green-600 dark:text-green-400 ml-auto" />}
-      </div>
-      {resultContent && (
+        {isRunning && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-1" />}
+        {isCompleted && <Check className="h-3 w-3 text-green-600 dark:text-green-400 ml-1" />}
+        {resultSummary && !expanded && (
+          <span className="text-muted-foreground truncate ml-1">{resultSummary}</span>
+        )}
+        {hasDetails && (
+          expanded
+            ? <ChevronUp className="h-3 w-3 text-muted-foreground ml-auto shrink-0" />
+            : <ChevronDown className="h-3 w-3 text-muted-foreground ml-auto shrink-0" />
+        )}
+      </button>
+      {expanded && resultContent && (
         <div className="border-t border-border px-2 py-1.5">
           {resultContent}
         </div>

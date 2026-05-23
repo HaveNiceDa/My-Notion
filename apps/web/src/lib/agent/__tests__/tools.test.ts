@@ -5,7 +5,7 @@ vi.mock("@notion/ai/server", () => ({
 }));
 
 vi.mock("@notion/ai/utils", () => ({
-  extractTextFromDocument: vi.fn((content: string) => content),
+  extractTextFromDocument: vi.fn(),
 }));
 
 import { buildAvailableTools } from "../tools/registry";
@@ -45,7 +45,7 @@ describe("AgentTool 定义", () => {
     expect(knowledgeSearchTool.parameters.required).toContain("query");
   });
 
-  it("documentReadTool 不需要必填参数", () => {
+  it("documentReadTool 无必填参数", () => {
     expect(documentReadTool.name).toBe("document_read");
     expect(documentReadTool.parameters.required).toBeUndefined();
   });
