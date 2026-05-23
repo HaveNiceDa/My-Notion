@@ -10,6 +10,7 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { AIChatPanel } from "@/src/components/ai-chat/AIChatPanel";
 import { AIFloatingButton } from "@/src/components/ai-chat/AIFloatingButton";
+import { AIChatErrorBoundary } from "@/src/components/ai-chat/AIChatErrorBoundary";
 import { MainContentNavbar } from "./_components/MainContentNavbar";
 
 export default function MainLayout({
@@ -66,7 +67,9 @@ export default function MainLayout({
         <SearchCommand />
         {children}
       </main>
-      <AIChatPanel />
+      <AIChatErrorBoundary>
+        <AIChatPanel />
+      </AIChatErrorBoundary>
       <AIFloatingButton />
     </div>
   );

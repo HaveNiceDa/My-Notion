@@ -476,6 +476,52 @@ export async function POST(req: NextRequest) {
 |---|---|---|
 | Spec 模式 | LLM 先输出规格说明，用户确认后再执行 | P1 |
 | Plan 模式 | LLM 先输出执行计划，逐步执行 | P1 |
-| web_search tool | 接入网络搜索能力 | P2 |
 | MCP 接入 | 通过 Responses API 接入百炼托管 MCP 服务 | P2 |
 | Tool 结果缓存 | 相同 query 短时间内复用 tool result | P3 |
+
+---
+
+## 8. Phase 6：体验优化 + 工程化补齐（M15+）
+
+> Phase 1-5 已在 M10-M14 完成。Phase 6 聚焦技术债清理、AI 能力持续集成和工程化补齐。
+
+### 8.1 技术债清理
+
+| # | 项目 | 具体内容 | 优先级 |
+|---|---|---|---|
+| 1.1 | useAIChat.ts 拆分 | 480 行混合状态管理/流式处理/Convex 持久化/消息格式化，拆为 `useAIChatState` + `useAIChatStream` + `useAIChatPersistence` | P1 |
+| 1.2 | AIChatPanel.tsx 拆分 | 394 行混合面板布局/对话列表浮层/空首页，`ConversationList` 和 `EmptyHome` 拆为独立文件 | P2 |
+| 1.3 | Agent 后端测试 | `lib/agent/` 下 0 个测试文件，ReAct 循环/tool 执行/流式事件序列需单元测试 | P1 |
+| 1.4 | 前端 AI 组件测试 | `components/ai-chat/` 下 0 个测试文件，MarkdownRenderer/MessageList/useAIChat 核心路径需测试 | P2 |
+| 1.5 | 错误边界 | AI Chat 面板无 ErrorBoundary，流式请求失败时整个面板白屏 | P1 |
+| 1.6 | 类型安全 | `runAgentStream` 参数列表过长（13 个回调），重构为 options 对象 | P2 |
+
+### 8.2 AI 能力持续集成
+
+| # | 项目 | 具体内容 | 优先级 |
+|---|---|---|---|
+| 2.1 | Spec 模式 | LLM 先输出结构化规格说明（JSON Schema），用户确认后再执行 | P1 |
+| 2.2 | Plan 模式 | LLM 先输出执行计划（多步骤），逐步执行并展示进度 | P1 |
+| 2.3 | MCP 接入 | 通过 DashScope Responses API 接入百炼托管 MCP 服务 | P2 |
+| 2.4 | Tool 结果缓存 | 相同 query 5 分钟内复用 tool result，LRU 缓存 | P3 |
+| 2.5 | 对话上下文压缩 | 长对话 token 超限时自动压缩历史消息（摘要 + 保留最近 N 轮） | P1 |
+| 2.6 | 流式重试 | 网络中断时支持断点续传或自动重试 | P2 |
+
+### 8.3 工程化补齐
+
+| # | 项目 | 具体内容 | 优先级 |
+|---|---|---|---|
+| 3.1 | AI 模块 E2E 测试 | Playwright mock API 测试完整对话流程 | P2 |
+| 3.2 | Agent 性能监控 | Sentry 追踪 tool 执行耗时/LLM 响应延迟/ReAct 迭代次数 | P1 |
+| 3.3 | 环境变量校验 | `LLM_API_KEY` 等关键变量启动时校验，避免运行时才报错 | P2 |
+| 3.4 | API Rate Limiting | `/api/agent/stream` 无限流，需加 Clerk 认证 + 速率限制 | P1 |
+| 3.5 | Storybook 组件文档 | AI Chat 组件可视化文档和交互示例 | P3 |
+| 3.6 | CI 集成 AI 测试 | GitHub Actions 增加 AI 模块 typecheck + lint + 单元测试 | P2 |
+
+### 8.4 建议优先级排序
+
+1. **1.5 错误边界** — 防止面板白屏，投入小收益大
+2. **3.4 API 限流** — 安全刚需，防止配额被刷
+3. **2.5 对话上下文压缩** — 长对话必崩，用户体验关键
+4. **1.3 Agent 后端测试** — 核心逻辑无测试，重构风险高
+5. **2.1 Spec 模式** — AI 能力升级的下一个里程碑

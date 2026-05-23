@@ -239,7 +239,10 @@
     "documentReadTool": "Read current document",
     "toolRunning": "Running",
     "toolCompleted": "Completed",
-    "openAIChat": "Open AI Assistant"
+    "openAIChat": "Open AI Assistant",
+    "panelError": "AI Panel Error",
+    "panelErrorDesc": "An unexpected error occurred. Please retry or try again later.",
+    "retry": "Retry"
   },
   "Auth": {
     "signIn": "Sign in",
