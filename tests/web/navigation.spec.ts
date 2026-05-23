@@ -1,6 +1,4 @@
-import { test as base, expect } from "@playwright/test";
-
-const test = base.extend<{ authStorageState: string }>({});
+import { test, expect } from "@playwright/test";
 
 test.describe("Web - Core Navigation", () => {
   test.skip(({ browserName }) => browserName === "webkit", "Skip webkit in CI");
@@ -20,25 +18,13 @@ test.describe("Web - Public Routes", () => {
   }) => {
     const response = await page.goto("/preview/nonexistent-id");
     expect(response).toBeDefined();
-    expect(response!.status()).toBeLessThan(500);
+    expect(response!.status).toBeLessThan(500);
   });
 
-  test("API health check - chat endpoint rejects GET", async ({ page }) => {
-    const response = await page.goto("/api/chat");
+  test("API health check - agent stream endpoint rejects GET", async ({ page }) => {
+    const response = await page.goto("/api/agent/stream");
     expect(response).toBeDefined();
-    expect([401, 405, 400]).toContain(response!.status());
-  });
-
-  test("API health check - rag-stream endpoint rejects GET", async ({ page }) => {
-    const response = await page.goto("/api/rag-stream");
-    expect(response).toBeDefined();
-    expect([401, 405, 400]).toContain(response!.status());
-  });
-
-  test("API health check - embeddings endpoint rejects GET", async ({ page }) => {
-    const response = await page.goto("/api/embeddings");
-    expect(response).toBeDefined();
-    expect([401, 405, 400]).toContain(response!.status());
+    expect([401, 405, 400]).toContain(response!.status);
   });
 });
 

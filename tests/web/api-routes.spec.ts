@@ -13,14 +13,8 @@ test.describe("Web - API Routes", () => {
     expect([401, 405, 400]).toContain(response!.status());
   });
 
-  test("rag-complete endpoint requires POST", async ({ page }) => {
-    const response = await page.goto("/api/rag-complete");
-    expect(response).toBeDefined();
-    expect([401, 405, 400]).toContain(response!.status());
-  });
-
-  test("qdrant endpoint requires POST", async ({ page }) => {
-    const response = await page.goto("/api/qdrant");
+  test("agent stream endpoint requires POST", async ({ page }) => {
+    const response = await page.goto("/api/agent/stream");
     expect(response).toBeDefined();
     expect([401, 405, 400]).toContain(response!.status());
   });

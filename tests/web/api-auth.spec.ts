@@ -47,19 +47,19 @@ test.describe("Web - API Routes (Authenticated POST)", () => {
     expect((body as Record<string, unknown>).error).toContain("Invalid action");
   });
 
-  test("POST /api/chat with valid messages returns non-401", async ({
+  test("POST /api/agent/stream with valid messages returns non-401", async ({
     page,
   }) => {
     await page.goto("/documents");
     await page.waitForLoadState("domcontentloaded");
 
     const status = await page.evaluate(async () => {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/agent/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: "Hello" }],
-          model: "default",
+          modelId: "deepseek-v4-pro",
         }),
       });
       res.body?.cancel();
@@ -68,114 +68,11 @@ test.describe("Web - API Routes (Authenticated POST)", () => {
     expect(status).not.toBe(401);
   });
 
-  test("POST /api/chat without messages returns 400", async ({ page }) => {
+  test("POST /api/agent/stream without messages returns 400", async ({ page }) => {
     await page.goto("/documents");
     await page.waitForLoadState("domcontentloaded");
 
-    const { status } = await apiPost(page, "/api/chat", {});
-    expect(status).toBe(400);
-  });
-
-  test("POST /api/embeddings with input returns non-500", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status, body } = await apiPost(page, "/api/embeddings", {
-      input: "test embedding input",
-    });
-    expect(status).toBeLessThan(500);
-    if (status === 200) {
-      expect(body).toHaveProperty("embedding");
-    }
-  });
-
-  test("POST /api/embeddings without input returns 400", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/embeddings", {});
-    expect(status).toBe(400);
-  });
-
-  test("POST /api/qdrant with ensureCollectionExists returns non-500", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/qdrant", {
-      action: "ensureCollectionExists",
-    });
-    expect(status).toBeLessThan(500);
-  });
-
-  test("POST /api/qdrant with invalid action returns 400", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/qdrant", {
-      action: "invalidAction",
-    });
-    expect(status).toBe(400);
-  });
-
-  test("POST /api/rag-stream with query returns non-401", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const status = await page.evaluate(async () => {
-      const res = await fetch("/api/rag-stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "test query", model: "default" }),
-      });
-      res.body?.cancel();
-      return res.status;
-    });
-    expect(status).not.toBe(401);
-  });
-
-  test("POST /api/rag-stream without query returns 400", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/rag-stream", {});
-    expect(status).toBe(400);
-  });
-
-  test("POST /api/rag-complete with runRAGQuery returns non-500", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/rag-complete", {
-      action: "runRAGQuery",
-      query: "test query",
-      model: "default",
-    });
-    expect(status).toBeLessThan(500);
-  });
-
-  test("POST /api/rag-complete with invalid action returns 400", async ({
-    page,
-  }) => {
-    await page.goto("/documents");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await apiPost(page, "/api/rag-complete", {
-      action: "invalidAction",
-    });
+    const { status } = await apiPost(page, "/api/agent/stream", {});
     expect(status).toBe(400);
   });
 
@@ -213,81 +110,15 @@ test.describe("Web - API Routes (Unauthenticated POST)", () => {
     expect(status).toBe(401);
   });
 
-  test("POST /api/chat returns 401 without auth", async ({ page }) => {
+  test("POST /api/agent/stream returns 401 without auth", async ({ page }) => {
     await page.goto("/");
     await page.waitForLoadState("domcontentloaded");
 
     const { status } = await page.evaluate(async () => {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/agent/stream", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ messages: [{ role: "user", content: "test" }] }),
-      });
-      return { status: res.status };
-    });
-    expect(status).toBe(401);
-  });
-
-  test("POST /api/embeddings returns 401 without auth", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await page.evaluate(async () => {
-      const res = await fetch("/api/embeddings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: "test" }),
-      });
-      return { status: res.status };
-    });
-    expect(status).toBe(401);
-  });
-
-  test("POST /api/qdrant returns 401 without auth", async ({ page }) => {
-    await page.goto("/");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await page.evaluate(async () => {
-      const res = await fetch("/api/qdrant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "ensureCollectionExists" }),
-      });
-      return { status: res.status };
-    });
-    expect(status).toBe(401);
-  });
-
-  test("POST /api/rag-stream returns 401 without auth", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await page.evaluate(async () => {
-      const res = await fetch("/api/rag-stream", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: "test" }),
-      });
-      return { status: res.status };
-    });
-    expect(status).toBe(401);
-  });
-
-  test("POST /api/rag-complete returns 401 without auth", async ({
-    page,
-  }) => {
-    await page.goto("/");
-    await page.waitForLoadState("domcontentloaded");
-
-    const { status } = await page.evaluate(async () => {
-      const res = await fetch("/api/rag-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "runRAGQuery", query: "test" }),
       });
       return { status: res.status };
     });
