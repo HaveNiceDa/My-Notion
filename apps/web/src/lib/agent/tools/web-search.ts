@@ -1,10 +1,9 @@
-import OpenAI from "openai";
-import { DASHSCOPE_BASE_URL } from "@notion/ai/config";
+import { getJson } from "serpapi";
 import type { ToolContext } from "./types";
 import { enqueueEvent } from "../stream";
 
-// 联网搜索：通过 DashScope enable_search 流式搜索互联网实时信息
-// 使用流式调用降低延迟，同时向前端推送 tool-result-delta 事件展示搜索进度
+// 联网搜索：通过 SerpAPI 调用 Google 搜索获取实时信息
+// 返回结构化搜索结果（标题 + 链接 + 摘要），LLM 在 ReAct 循环中自主判断如何使用
 export async function executeWebSearch(
   args: Record<string, unknown>,
   ctx: ToolContext,
@@ -14,54 +13,41 @@ export async function executeWebSearch(
     return { query, results: [], error: "query is required" };
   }
 
-  const apiKey = process.env.LLM_API_KEY;
+  const apiKey = process.env.SERPAPI_API_KEY;
   if (!apiKey) {
-    return { query, results: [], error: "LLM_API_KEY is not configured" };
+    return { query, results: [], error: "SERPAPI_API_KEY is not configured" };
   }
 
-  const strategy = typeof args.strategy === "string" ? args.strategy : "turbo";
-
   try {
-    const openai = new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
+    const response = await getJson({
+      engine: "google",
+      q: query,
+      api_key: apiKey,
+      hl: "zh-cn",
+      gl: "cn",
+    });
 
-    const createParams = {
-      model: ctx.model,
-      messages: [
-        {
-          role: "system" as const,
-          content:
-            "你是一个搜索助手。根据用户查询，使用联网搜索获取最新信息，然后整理返回搜索结果。只返回搜索到的关键信息，不要添加个人观点。",
-        },
-        { role: "user" as const, content: query },
-      ],
-      enable_search: true,
-      search_options: { search_strategy: strategy },
-      stream: true,
-    };
+    const organicResults = (response.organic_results ?? []).slice(0, 5);
+    const formattedResults = organicResults.map((result: any) => ({
+      title: result.title,
+      link: result.link,
+      snippet: result.snippet,
+    }));
 
-    const stream = await openai.chat.completions.create(
-      createParams as OpenAI.ChatCompletionCreateParamsStreaming,
-    );
-
-    let content = "";
+    // 向前端推送搜索结果摘要
     const { stream: streamOutput } = ctx;
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content;
-      if (delta) {
-        content += delta;
-        // 向前端推送搜索结果增量，用户可实时看到搜索内容
-        if (streamOutput) {
-          enqueueEvent(streamOutput.controller, streamOutput.encoder, {
-            type: "tool-result-delta",
-            toolCallId: streamOutput.toolCallId,
-            delta,
-          });
-        }
-      }
+    if (streamOutput && formattedResults.length > 0) {
+      const summary = formattedResults
+        .map((r: { title: string; snippet: string }, i: number) => `${i + 1}. ${r.title}: ${r.snippet}`)
+        .join("\n");
+      enqueueEvent(streamOutput.controller, streamOutput.encoder, {
+        type: "tool-result-delta",
+        toolCallId: streamOutput.toolCallId,
+        delta: summary,
+      });
     }
 
-    return { query, strategy, content };
+    return { query, results: formattedResults };
   } catch (error) {
     return {
       query,

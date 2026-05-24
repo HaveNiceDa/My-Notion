@@ -74,17 +74,36 @@ function DocumentReadResult({ result }: { result: { document?: { id: string; tit
   );
 }
 
-function WebSearchResult({ result }: { result: { query?: string; strategy?: string; content?: string; error?: string } }) {
+function WebSearchResult({ result }: { result: { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string } }) {
   const t = useTranslations("AI");
 
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
   }
 
+  const results = result.results ?? [];
+  if (results.length === 0) {
+    return <span className="text-muted-foreground text-xs">{t("searchedFor")}: {result.query}</span>;
+  }
+
   return (
-    <span className="text-muted-foreground text-xs">
-      {t("searchedFor")}: {result.query}
-    </span>
+    <div className="space-y-1">
+      {results.map((item, idx) => (
+        <a
+          key={idx}
+          href={item.link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors cursor-pointer"
+        >
+          <Globe className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground" />
+          <div className="min-w-0">
+            <span className="truncate font-medium text-foreground block">{item.title}</span>
+            <span className="text-muted-foreground line-clamp-2">{item.snippet}</span>
+          </div>
+        </a>
+      ))}
+    </div>
   );
 }
 
@@ -125,7 +144,7 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
       resultContent = <DocumentReadResult result={typedResult} />;
       resultSummary = typedResult.document?.title ?? null;
     } else if (toolName === "web_search") {
-      const typedResult = result as unknown as { query?: string; strategy?: string; content?: string; error?: string };
+      const typedResult = result as unknown as { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string };
       resultContent = <WebSearchResult result={typedResult} />;
       resultSummary = typedResult.query ?? null;
     }

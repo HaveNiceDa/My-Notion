@@ -46,23 +46,17 @@ export const documentReadTool: AgentTool = {
   execute: async (_args, ctx) => executeDocumentRead(ctx.currentDocument),
 };
 
-// 联网搜索 tool：通过 DashScope enable_search 搜索互联网实时信息
+// 联网搜索 tool：通过 SerpAPI 调用 Google 搜索获取实时信息
 export const webSearchTool: AgentTool = {
   name: "web_search",
   description:
-    "搜索互联网获取实时信息。当用户提问涉及最新新闻、天气、股票价格、时事热点等需要实时数据的问题时使用此工具。",
+    "搜索互联网获取实时信息。当用户提问涉及最新新闻、天气、股票价格、时事热点等需要实时数据的问题时使用此工具。返回 Google 搜索结果（标题、链接、摘要）。",
   parameters: {
     type: "object",
     properties: {
       query: {
         type: "string",
         description: "搜索查询关键词",
-      },
-      strategy: {
-        type: "string",
-        enum: ["turbo", "max", "agent"],
-        description:
-          "搜索策略：turbo（默认，兼顾速度与效果）、max（更全面搜索）、agent（多轮检索整合，适合复杂问题）",
       },
     },
     required: ["query"],
