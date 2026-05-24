@@ -6,8 +6,12 @@ import {
 } from "ai";
 import { DASHSCOPE_BASE_URL, getActualModelId, DEFAULT_MODEL } from "@notion/ai/config";
 import type { AIModel } from "@notion/ai/config";
-import { compressBlocks } from "@notion/ai/utils";
-import type { BlockWithCursor } from "@notion/ai/utils";
+import {
+  injectDocumentStateMessages,
+  convertToOpenAIMessages,
+  toolDefinitionsToOpenAITools,
+} from "@notion/ai/server/editor-ai";
+import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
 
 const EDITOR_AI_SYSTEM_PROMPT = `You're manipulating a text document using HTML blocks.
 Make sure to follow the json schema provided. When referencing ids they MUST be EXACTLY the same (including the trailing $).
@@ -22,152 +26,6 @@ IF there is no selection active in the latest state, first, determine what part 
 ---
  `;
 
-type ToolDefinition = {
-  description?: string;
-  inputSchema: Record<string, unknown>;
-  outputSchema: Record<string, unknown>;
-};
-
-type ToolDefinitions = Record<string, ToolDefinition>;
-
-function injectDocumentStateMessages(
-  messages: Array<Record<string, unknown>>,
-): Array<Record<string, unknown>> {
-  return messages.flatMap((message) => {
-    if (
-      message.role === "user" &&
-      (message.metadata as Record<string, unknown>)?.documentState
-    ) {
-      const documentState = (message.metadata as Record<string, unknown>)
-        .documentState as {
-        selection: boolean;
-        selectedBlocks?: BlockWithCursor[];
-        blocks: BlockWithCursor[];
-        isEmptyDocument: boolean;
-      };
-
-      if (documentState.selection) {
-        const selectedBlocks = documentState.selectedBlocks || [];
-        const { compressed: docBlocks, wasCompressed } = compressBlocks(
-          documentState.blocks,
-        );
-
-        const stateText = `This is the latest state of the selection (ignore previous selections, you MUST issue operations against this latest version of the selection):\n${JSON.stringify(selectedBlocks)}\n\nThis is the latest state of the entire document (INCLUDING the selected text), \nyou can use this to find the selected text to understand the context (but you MUST NOT issue operations against this document, you MUST issue operations against the selection):${wasCompressed ? " [COMPRESSED - some blocks omitted for brevity]" : ""}\n${JSON.stringify(docBlocks)}`;
-
-        return [{ role: "assistant", content: stateText }, message];
-      }
-
-      const { compressed: docBlocks, wasCompressed } = compressBlocks(
-        documentState.blocks,
-      );
-
-      const stateText = `There is no active selection. This is the latest state of the document (ignore previous documents, you MUST issue operations against this latest version of the document). \nThe cursor is BETWEEN two blocks as indicated by cursor: true.\n${documentState.isEmptyDocument ? "Because the document is empty, YOU MUST first update the empty block before adding new blocks." : "Prefer updating existing blocks over removing and adding (but this also depends on the user's question)."}${wasCompressed ? " [COMPRESSED - some blocks omitted for brevity]" : ""}\n${JSON.stringify(docBlocks)}`;
-
-      return [{ role: "assistant", content: stateText }, message];
-    }
-    return [message];
-  });
-}
-
-function toolDefinitionsToOpenAITools(toolDefinitions: ToolDefinitions) {
-  return Object.entries(toolDefinitions).map(([name, definition]) => ({
-    type: "function" as const,
-    function: {
-      name,
-      description: definition.description || "",
-      parameters: definition.inputSchema,
-    },
-  }));
-}
-
-function convertToOpenAIMessages(
-  messages: Array<Record<string, unknown>>,
-): OpenAI.ChatCompletionMessageParam[] {
-  const result: OpenAI.ChatCompletionMessageParam[] = [];
-
-  for (const msg of messages) {
-    const role = msg.role as string;
-
-    if (role === "user") {
-      const parts = msg.parts as
-        | Array<{ type: string; text?: string }>
-        | undefined;
-      if (parts && Array.isArray(parts)) {
-        const text = parts
-          .filter((p) => p.type === "text" && p.text)
-          .map((p) => p.text!)
-          .join("\n");
-        result.push({ role: "user", content: text });
-      } else {
-        result.push({
-          role: "user",
-          content: (msg.content as string) || "",
-        });
-      }
-    } else if (role === "assistant") {
-      const toolInvocations = msg.toolInvocations as
-        | Array<{
-            toolCallId: string;
-            toolName: string;
-            args: Record<string, unknown>;
-            state?: string;
-            result?: unknown;
-          }>
-        | undefined;
-
-      if (toolInvocations && toolInvocations.length > 0) {
-        const textContent = extractTextContent(msg);
-        result.push({
-          role: "assistant",
-          content: textContent || null,
-          tool_calls: toolInvocations.map((tc) => ({
-            id: tc.toolCallId,
-            type: "function" as const,
-            function: {
-              name: tc.toolName,
-              arguments:
-                typeof tc.args === "string"
-                  ? tc.args
-                  : JSON.stringify(tc.args),
-            },
-          })),
-        });
-
-        for (const tc of toolInvocations) {
-          if (tc.state === "result" && tc.result !== undefined) {
-            result.push({
-              role: "tool" as const,
-              tool_call_id: tc.toolCallId,
-              content:
-                typeof tc.result === "string"
-                  ? tc.result
-                  : JSON.stringify(tc.result),
-            } as OpenAI.ChatCompletionToolMessageParam);
-          }
-        }
-      } else {
-        const textContent = extractTextContent(msg);
-        result.push({ role: "assistant", content: textContent || "" });
-      }
-    }
-  }
-
-  return result;
-}
-
-function extractTextContent(msg: Record<string, unknown>): string {
-  const parts = msg.parts as
-    | Array<{ type: string; text?: string }>
-    | undefined;
-  if (parts && Array.isArray(parts)) {
-    return parts
-      .filter((p) => p.type === "text" && p.text)
-      .map((p) => p.text!)
-      .join("\n");
-  }
-  return (msg.content as string) || "";
-}
-
 export const runtime = "edge";
 export const preferredRegion = "hkg1";
 export const maxDuration = 30;
@@ -179,6 +37,20 @@ export async function POST(req: Request) {
       status: 401,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  const rateLimitResult = await checkRateLimit(`editor-ai:${userId}`);
+  if (!rateLimitResult.success) {
+    return new Response(
+      JSON.stringify({ error: "Too many requests. Please try again later." }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(Math.ceil((rateLimitResult.reset - Date.now()) / 1000)),
+        },
+      },
+    );
   }
 
   const { messages, toolDefinitions, modelId } = await req.json();
@@ -221,7 +93,6 @@ export async function POST(req: Request) {
           ...openaiMessages,
         ],
         tools: tools.length > 0 ? tools : undefined,
-        tool_choice: tools.length > 0 ? "auto" : undefined,
         stream: true,
       });
 

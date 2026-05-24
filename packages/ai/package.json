@@ -12,6 +12,7 @@
     "./embeddings": "./embeddings/index.ts",
     "./rag": "./rag/index.ts",
     "./server": "./server/index.ts",
+    "./server/editor-ai": "./server/editor-ai/index.ts",
     "./utils": "./utils/index.ts"
   },
   "scripts": {
