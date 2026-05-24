@@ -28,6 +28,7 @@ export const create = mutation({
       isArchived: false,
       isPublished: false,
       isStarred: false,
+      isInKnowledgeBase: true,
       lastEditedTime: Date.now(),
     });
 
