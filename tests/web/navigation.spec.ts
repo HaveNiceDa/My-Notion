@@ -18,13 +18,13 @@ test.describe("Web - Public Routes", () => {
   }) => {
     const response = await page.goto("/preview/nonexistent-id");
     expect(response).toBeDefined();
-    expect(response!.status).toBeLessThan(500);
+    expect(response!.status()).toBeLessThan(500);
   });
 
   test("API health check - agent stream endpoint rejects GET", async ({ page }) => {
     const response = await page.goto("/api/agent/stream");
     expect(response).toBeDefined();
-    expect([401, 405, 400]).toContain(response!.status);
+    expect([401, 405, 400]).toContain(response!.status());
   });
 });
 
