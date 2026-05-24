@@ -40,6 +40,11 @@ export async function runAgentStream(options: AgentStreamOptions) {
     });
 
     if (!response.ok) {
+      if (response.status === 429) {
+        const retryAfter = response.headers.get("Retry-After");
+        const seconds = retryAfter ? parseInt(retryAfter, 10) : 60;
+        throw new Error(`请求过于频繁，请 ${seconds} 秒后再试`);
+      }
       throw new Error(`Agent stream failed: ${response.statusText}`);
     }
 

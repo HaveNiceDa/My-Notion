@@ -7,6 +7,7 @@ import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
 import { runReActLoop } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
 import { compressContext } from "@/src/lib/agent/context-compression";
+import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -45,6 +46,22 @@ export async function POST(req: NextRequest) {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rateLimitResult = await checkRateLimit(userId);
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "X-RateLimit-Limit": String(rateLimitResult.limit),
+            "X-RateLimit-Remaining": String(rateLimitResult.remaining),
+            "X-RateLimit-Reset": String(rateLimitResult.reset),
+            "Retry-After": String(Math.ceil((rateLimitResult.reset - Date.now()) / 1000)),
+          },
+        },
+      );
     }
 
     const body = (await req.json()) as AgentRequestBody;
