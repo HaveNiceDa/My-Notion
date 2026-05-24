@@ -37,7 +37,7 @@
 | 3.3 | 环境变量校验 | `LLM_API_KEY` 等关键变量启动时校验，避免运行时才报错 | P2 | ❌ 未做 |
 | 3.4 | API Rate Limiting | 纯内存滑动窗口限流（20 次/分钟/用户），零外部依赖 | P1 | ✅ 完成 |
 | 3.5 | Storybook 组件文档 | AI Chat 组件可视化文档和交互示例 | P3 | ❌ 未做 |
-| 3.6 | CI 集成 AI 测试 | GitHub Actions 增加 AI 模块 typecheck + lint + 单元测试 | P2 | ❌ 未做 |
+| 3.6 | CI 集成 AI 测试 | GitHub Actions lint-typecheck.yml 的 unit-test job 已包含 `pnpm --filter @notion/web test`，59 个 AI 用例纳入 CI | P2 | ✅ 完成 |
 
 ### 6.4 建议优先级排序
 

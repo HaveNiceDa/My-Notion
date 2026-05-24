@@ -77,6 +77,14 @@ jobs:
     name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: Packages
+            command: pnpm test
+          - target: Web (AI)
+            command: pnpm --filter @notion/web test
     steps:
       - uses: actions/checkout@v4
 
@@ -92,5 +100,5 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run unit tests
-        run: pnpm test
+      - name: Run unit tests (${{ matrix.target }})
+        run: ${{ matrix.command }}
