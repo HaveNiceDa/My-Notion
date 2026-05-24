@@ -110,7 +110,8 @@
     "creatingNewNote": "Creating new note...",
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note.",
-    "untitled": "Untitled"
+    "untitled": "Untitled",
+    "home": "Home"
   },
   "Item": {
     "movingToTrash": "Moving to trash...",

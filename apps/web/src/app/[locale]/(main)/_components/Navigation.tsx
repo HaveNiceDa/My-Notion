@@ -5,6 +5,7 @@ import { useMutation, useQuery } from "convex/react";
 import {
   ChevronsLeft,
   ChevronsUp,
+  Home,
   Plus,
   PlusCircle,
   Search,
@@ -218,6 +219,11 @@ export function Navigation() {
           </div>
           <div>
             <UserItem />
+            <Item
+              onClick={() => router.push("/")}
+              label={t("home")}
+              icon={Home}
+            />
             <Item
               label={t("search")}
               icon={Search}
