@@ -3,7 +3,7 @@
 import { useMutation, useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import React, { use, useMemo, useRef, useState, useEffect } from "react";
-import { useTitle } from "@/src/hooks/use-title";
+import { useTitle } from "ahooks";
 import { useTranslations } from "next-intl";
 import type { EditorRef } from "@/src/components/Editor";
 import { useUser } from "@clerk/nextjs";
@@ -142,7 +142,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   const [errorModalDescription, setErrorModalDescription] = useState("");
 
   // 将浏览器标题设置为文档标题
-  useTitle(document?.title);
+  useTitle(document?.title || "Notion");
 
   // 防抖处理的RAG更新函数
   const debouncedRagUpdate = (
