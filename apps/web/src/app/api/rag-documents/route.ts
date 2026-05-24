@@ -25,19 +25,39 @@ export async function POST(req: NextRequest) {
 
     switch (action) {
       case "triggerDocumentUpdate": {
-        await updateDocument({
-          userId,
-          documentId: params.documentId,
-          content: params.content,
-          title: params.title,
-        });
+        try {
+          await updateDocument({
+            userId,
+            documentId: params.documentId,
+            content: params.content,
+            title: params.title,
+          });
+        } catch (error) {
+          if (isQdrantUnavailable(error)) {
+            return NextResponse.json({
+              success: true,
+              warning: "Vector store unavailable — document not indexed",
+            });
+          }
+          throw error;
+        }
         return NextResponse.json({ success: true });
       }
       case "removeDocumentFromKnowledgeBase": {
-        await deleteDocumentChunks({
-          userId,
-          documentId: params.documentId,
-        });
+        try {
+          await deleteDocumentChunks({
+            userId,
+            documentId: params.documentId,
+          });
+        } catch (error) {
+          if (isQdrantUnavailable(error)) {
+            return NextResponse.json({
+              success: true,
+              warning: "Vector store unavailable — document chunks not removed",
+            });
+          }
+          throw error;
+        }
         return NextResponse.json({ success: true });
       }
       case "initKnowledgeBase":
