@@ -23,6 +23,11 @@ export interface AgentStreamOptions {
   callbacks: AgentStreamCallbacks;
 }
 
+/**
+ * Agent 流式客户端
+ * 向 /api/agent/stream 发起 NDJSON 流式请求，解析事件并分发到回调
+ * 事件类型：text-delta / reasoning-delta / tool-call-start / tool-call-delta / tool-result-delta / tool-call-result / finish / error
+ */
 export async function runAgentStream(options: AgentStreamOptions) {
   const { messages, model, conversationId, enableThinking, currentDocument, callbacks } = options;
 

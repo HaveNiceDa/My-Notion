@@ -10,7 +10,7 @@
 
 | # | 项目 | 具体内容 | 优先级 | 状态 |
 |---|---|---|---|---|
-| 1.1 | useAIChat.ts 拆分 | 已拆出 `useAIChatPersistence` + `stream-client`，主文件仍较大，需继续拆为 `useAIChatState` + `useAIChatStream` | P1 | 🟡 部分 |
+| 1.1 | useAIChat.ts 拆分 | 已拆为 `useAIChatState` + `useAIChatStream` + `useAIChatPersistence` + `stream-client`，主文件仅 34 行组合层 | P1 | ✅ 完成 |
 | 1.2 | AIChatPanel.tsx 拆分 | `ConversationList` 和 `EmptyHome` 已拆为独立文件 | P2 | ✅ 完成 |
 | 1.3 | Agent 后端测试 | 已有 4 个测试文件（tools / document-read / context-compression / stream），覆盖度需确认 | P1 | 🟡 部分 |
 | 1.4 | 前端 AI 组件测试 | `components/ai-chat/` 下 0 个测试文件，MarkdownRenderer/MessageList/useAIChat 核心路径需测试 | P2 | ❌ 未做 |
@@ -41,20 +41,19 @@
 
 ### 6.4 建议优先级排序
 
-1. **1.1 useAIChat.ts 继续拆分** — 主文件仍较大，维护困难
-2. **2.3 MCP 接入** — 扩展 AI 能力
-3. **1.3 Agent 后端测试补全** — 已有基础，覆盖度需确认
-4. **2.1 Spec 模式** — AI 能力升级的下一个里程碑
-5. **3.2 Agent 性能监控** — 上线后可观测性关键
-6. **1.4 前端 AI 组件测试** — 核心路径无测试
-7. **1.6 类型安全** — runAgentStream 参数重构
-8. **2.2 Plan 模式** — 与 Spec 模式互补
-9. **2.6 流式重试** — 网络不稳定场景体验
-10. **3.3 环境变量校验** — 开发体验改善
-11. **3.6 CI 集成 AI 测试** — 工程化保障
-12. **3.1 AI 模块 E2E 测试** — 全链路验证
-13. **2.4 Tool 结果缓存** — 性能优化
-14. **3.5 Storybook 组件文档** — 文档化
+1. **2.3 MCP 接入** — 扩展 AI 能力
+2. **1.3 Agent 后端测试补全** — 已有基础，覆盖度需确认
+3. **2.1 Spec 模式** — AI 能力升级的下一个里程碑
+4. **3.2 Agent 性能监控** — 上线后可观测性关键
+5. **1.4 前端 AI 组件测试** — 核心路径无测试
+6. **1.6 类型安全** — runAgentStream 参数重构
+7. **2.2 Plan 模式** — 与 Spec 模式互补
+8. **2.6 流式重试** — 网络不稳定场景体验
+9. **3.3 环境变量校验** — 开发体验改善
+10. **3.6 CI 集成 AI 测试** — 工程化保障
+11. **3.1 AI 模块 E2E 测试** — 全链路验证
+12. **2.4 Tool 结果缓存** — 性能优化
+13. **3.5 Storybook 组件文档** — 文档化
 
 ---
 

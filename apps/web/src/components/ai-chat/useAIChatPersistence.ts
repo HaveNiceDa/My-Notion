@@ -7,6 +7,10 @@ import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import type { ChatMessage, Conversation, ToolCallResult } from "./types";
 
+/**
+ * AI Chat 数据持久化 Hook
+ * 封装 Convex 读写操作：会话列表加载/创建/删除、消息保存/加载、标题更新
+ */
 export function useAIChatPersistence() {
   const { user } = useUser();
   const convex = useConvex();
