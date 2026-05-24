@@ -35,15 +35,28 @@ export function applyThinkingParams(
 
 // 流式调用 LLM 并输出事件，返回 LLM 产生的 function tool_calls（如有）
 // timeoutMs: 流式响应超时（毫秒），超时后终止请求
+export interface StreamModelOptions {
+  openai: OpenAI;
+  params: OpenAI.ChatCompletionCreateParamsStreaming;
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  encoder: TextEncoder;
+  responseId: string;
+  enableThinking: boolean;
+  timeoutMs?: number;
+}
+
 export async function streamModelResponse(
-  openai: OpenAI,
-  params: OpenAI.ChatCompletionCreateParamsStreaming,
-  controller: ReadableStreamDefaultController<Uint8Array>,
-  encoder: TextEncoder,
-  responseId: string,
-  enableThinking: boolean,
-  timeoutMs: number = 120_000,
+  options: StreamModelOptions,
 ): Promise<OpenAI.ChatCompletionMessageFunctionToolCall[]> {
+  const {
+    openai,
+    params,
+    controller,
+    encoder,
+    responseId,
+    enableThinking,
+    timeoutMs = 120_000,
+  } = options;
   const pendingToolCalls: Record<number, OpenAI.ChatCompletionMessageFunctionToolCall> = {};
   const startedToolCallIds = new Set<string>();
 

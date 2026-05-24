@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { compressContext } from "../context-compression";
 import type OpenAI from "openai";
 
@@ -14,8 +14,6 @@ function createMockOpenAI(summary: string): OpenAI {
   } as unknown as OpenAI;
 }
 
-// 生成超长消息列表，确保超过 MAX_CONTEXT_TOKENS (30000) 阈值
-// 估算：chars/2 = tokens，需要 > 60000 chars
 function generateLongMessages(count: number): OpenAI.ChatCompletionMessageParam[] {
   const messages: OpenAI.ChatCompletionMessageParam[] = [];
   const longContent = "这是一段很长的对话内容，用于测试上下文压缩功能。".repeat(100);
@@ -76,5 +74,102 @@ describe("compressContext", () => {
       (m) => m.role === "system" && typeof m.content === "string" && m.content.includes("对话历史摘要"),
     );
     expect(hasSummary).toBe(false);
+  });
+
+  it("包含 tool_calls 的消息正确估算 token", async () => {
+    const longContent = "这是一段很长的对话内容，用于测试上下文压缩功能。".repeat(100);
+    const messages: OpenAI.ChatCompletionMessageParam[] = [];
+
+    for (let i = 0; i < 10; i++) {
+      messages.push({ role: "user", content: longContent });
+      messages.push({
+        role: "assistant",
+        content: null,
+        tool_calls: [{
+          id: `call-${i}`,
+          type: "function" as const,
+          function: { name: "web_search", arguments: JSON.stringify({ query: longContent }) },
+        }],
+      });
+      messages.push({
+        role: "tool" as const,
+        tool_call_id: `call-${i}`,
+        content: longContent,
+      } as OpenAI.ChatCompletionMessageParam);
+      messages.push({ role: "assistant", content: longContent });
+    }
+
+    const result = await compressContext(createMockOpenAI("摘要"), model, messages);
+    expect(result.length).toBeLessThan(messages.length);
+  });
+
+  it("多模态内容（数组格式）正确估算 token", async () => {
+    const longText = "这是一段很长的对话内容，用于测试上下文压缩功能。".repeat(100);
+    const messages: OpenAI.ChatCompletionMessageParam[] = [];
+
+    for (let i = 0; i < 15; i++) {
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text" as const, text: longText },
+          { type: "image_url" as const, image_url: { url: "https://example.com/img.png" } },
+        ],
+      });
+      messages.push({ role: "assistant", content: longText });
+    }
+
+    const result = await compressContext(createMockOpenAI("摘要"), model, messages);
+    expect(result.length).toBeLessThan(messages.length);
+  });
+
+  it("tool 消息链不被切割：assistant(tool_calls) + tool 消息保持完整", async () => {
+    const longContent = "这是一段很长的对话内容，用于测试上下文压缩功能。".repeat(100);
+    const messages: OpenAI.ChatCompletionMessageParam[] = [];
+
+    for (let i = 0; i < 15; i++) {
+      messages.push({ role: "user", content: longContent });
+      messages.push({
+        role: "assistant",
+        content: null,
+        tool_calls: [{
+          id: `call-${i}`,
+          type: "function" as const,
+          function: { name: "web_search", arguments: '{"query":"test"}' },
+        }],
+      });
+      messages.push({
+        role: "tool" as const,
+        tool_call_id: `call-${i}`,
+        content: longContent,
+      } as OpenAI.ChatCompletionMessageParam);
+    }
+
+    const result = await compressContext(createMockOpenAI("摘要"), model, messages);
+
+    for (let i = 1; i < result.length; i++) {
+      if (result[i].role === "tool") {
+        const prev = result[i - 1];
+        const hasToolCalls = prev.role === "assistant" && "tool_calls" in prev && prev.tool_calls && prev.tool_calls.length > 0;
+        expect(hasToolCalls).toBe(true);
+      }
+    }
+  });
+
+  it("摘要内容为空时使用默认文本", async () => {
+    const messages = generateLongMessages(20);
+    const emptySummaryOpenAI = {
+      chat: {
+        completions: {
+          create: async () => ({
+            choices: [{ message: { content: null } }],
+          }),
+        },
+      },
+    } as unknown as OpenAI;
+
+    const result = await compressContext(emptySummaryOpenAI, model, messages);
+    expect(result[0].role).toBe("system");
+    const sysContent = typeof result[0].content === "string" ? result[0].content : "";
+    expect(sysContent).toContain("对话历史摘要不可用");
   });
 });

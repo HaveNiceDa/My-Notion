@@ -12,10 +12,10 @@
 |---|---|---|---|---|
 | 1.1 | useAIChat.ts 拆分 | 已拆为 `useAIChatState` + `useAIChatStream` + `useAIChatPersistence` + `stream-client`，主文件仅 34 行组合层 | P1 | ✅ 完成 |
 | 1.2 | AIChatPanel.tsx 拆分 | `ConversationList` 和 `EmptyHome` 已拆为独立文件 | P2 | ✅ 完成 |
-| 1.3 | Agent 后端测试 | 已有 4 个测试文件（tools / document-read / context-compression / stream），覆盖度需确认 | P1 | 🟡 部分 |
+| 1.3 | Agent 后端测试 | 5 个测试文件（tools / document-read / context-compression / stream / rate-limiter），59 个用例覆盖全部核心路径 | P1 | ✅ 完成 |
 | 1.4 | 前端 AI 组件测试 | `components/ai-chat/` 下 0 个测试文件，MarkdownRenderer/MessageList/useAIChat 核心路径需测试 | P2 | ❌ 未做 |
 | 1.5 | 错误边界 | `AIChatErrorBoundary` 已实现 | P1 | ✅ 完成 |
-| 1.6 | 类型安全 | `runAgentStream` 参数列表过长（13 个回调），重构为 options 对象 | P2 | ❌ 未做 |
+| 1.6 | 类型安全 | `runAgentStream` → `AgentStreamOptions`，`streamModelResponse` → `StreamModelOptions`，所有长参数列表已重构为 options 对象 | P2 | ✅ 完成 |
 
 ### 6.2 AI 能力持续集成
 
@@ -42,11 +42,11 @@
 ### 6.4 建议优先级排序
 
 1. **2.3 MCP 接入** — 扩展 AI 能力
-2. **1.3 Agent 后端测试补全** — 已有基础，覆盖度需确认
+2. ~~**1.3 Agent 后端测试补全** — 已有基础，覆盖度需确认~~ ✅ 已完成
 3. **2.1 Spec 模式** — AI 能力升级的下一个里程碑
 4. **3.2 Agent 性能监控** — 上线后可观测性关键
 5. **1.4 前端 AI 组件测试** — 核心路径无测试
-6. **1.6 类型安全** — runAgentStream 参数重构
+6. ~~**1.6 类型安全** — runAgentStream 参数重构~~ ✅ 已完成
 7. **2.2 Plan 模式** — 与 Spec 模式互补
 8. **2.6 流式重试** — 网络不稳定场景体验
 9. **3.3 环境变量校验** — 开发体验改善

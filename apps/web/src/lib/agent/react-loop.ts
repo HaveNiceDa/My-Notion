@@ -57,14 +57,14 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
     // 将 enable_thinking 和 thinking_budget 作为顶层参数合并（Node.js SDK 做法）
     applyThinkingParams(createParams, enableThinking);
 
-    const pendingToolCalls = await streamModelResponse(
+    const pendingToolCalls = await streamModelResponse({
       openai,
-      createParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
+      params: createParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
       controller,
       encoder,
       responseId,
       enableThinking,
-    );
+    });
 
     // LLM 没有调用任何 tool → 直接输出文本，循环结束
     if (pendingToolCalls.length === 0) {
