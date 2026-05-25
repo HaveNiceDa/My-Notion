@@ -2,11 +2,12 @@
 
 定制化的个人版 Notion，内置 Agent 驱动的 AI 知识管理、跨端文档编辑、CLI/Skills/MCP Agent 生态能力。
 
+**线上体验：** [https://notion-j9zj.vercel.app/](https://notion-j9zj.vercel.app/)
+
 ## 项目入口
 
 - [Web 应用说明](./apps/web/README.md) — Next.js Web 端、线上体验、截图、AI Agent 与文档编辑能力。
 - [Mobile 应用说明](./apps/mobile/README.md) — Expo 移动端、跨端共享架构、移动端运行与构建。
-- [线上体验 Web](https://notion-j9zj.vercel.app/) — 可直接访问当前 Web 版本。
 - [My-Notion CLI](./packages/my-notion-cli/) — 供终端和外部 Agent 调用的文档管理 CLI。
 - [My-Notion Skills](./packages/my-notion-skills/) — 供 Agent 学习如何调用 CLI/MCP 的技能说明。
 

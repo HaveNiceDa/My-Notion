@@ -4,36 +4,45 @@
 
 ## 线上体验
 
-- [https://notion-j9zj.vercel.app/](https://notion-j9zj.vercel.app/)
+- <https://notion-j9zj.vercel.app/>
 
 ## 项目截图
 
-### 1. 首页（亮色主题）
-![首页（亮色主题）](public/screenshots/1.png)
+### 1. 落地页亮色模式
 
-### 2. 首页（暗色主题）
-![首页（暗色主题）](public/screenshots/2.png)
+![落地页亮色模式](public/screenshots/1.png)
 
-### 3. 工作区空状态
-![工作区空状态](public/screenshots/3.png)
+### 2. 落地页暗色模式
 
-### 4. 设置弹窗与 AI 侧边栏场景
-![设置弹窗与 AI 侧边栏场景](public/screenshots/4.png)
+![落地页暗色模式](public/screenshots/2.png)
 
-### 5. 文档编辑与 AI 快捷任务
-![文档编辑与 AI 快捷任务](public/screenshots/5.png)
+### 3. 个人工作区首页
 
-### 6. 选区 AI 与 Agent 工具调用
-![选区 AI 与 Agent 工具调用](public/screenshots/6.png)
+![个人工作区首页](public/screenshots/3.png)
 
-### 7. 英文选区 AI 菜单
-![英文选区 AI 菜单](public/screenshots/7.png)
+### 4. 个性化设置与 AI 侧边栏
 
-### 8. Agent 文档阅读工具
-![Agent 文档阅读工具](public/screenshots/8.png)
+![个性化设置与 AI 侧边栏](public/screenshots/4.png)
 
-### 9. Agent 联网搜索结果
-![Agent 联网搜索结果](public/screenshots/9.png)
+### 5. 文档编辑器与 AI 快捷入口
+
+![文档编辑器与 AI 快捷入口](public/screenshots/5.png)
+
+### 6. 选区 AI 菜单
+
+![选区 AI 菜单与 Agent 推理过程](public/screenshots/6.png)
+
+### 7. AI 翻译操作
+
+![多语言选区 AI 操作](public/screenshots/7.png)
+
+### 8. Agent 读取当前文档上下文
+
+![Agent 读取当前文档上下文](public/screenshots/8.png)
+
+### 9. Agent 联网搜索与来源引用
+
+![Agent 联网搜索与来源引用](public/screenshots/9.png)
 
 ## 核心能力
 
@@ -59,16 +68,16 @@
 
 ## 技术栈
 
-| 层级 | 技术 |
-|---|---|
-| Web 框架 | Next.js 16, React 19, TypeScript |
-| UI | Tailwind CSS, shadcn/ui, Radix UI |
-| 编辑器 | BlockNote, `@blocknote/xl-ai` |
-| 数据与认证 | Convex, Clerk |
-| AI | DashScope/OpenAI Compatible API, LangChain, Qdrant, SerpAPI |
-| 状态与国际化 | Zustand, next-intl |
-| 监控与测试 | Sentry, Vitest, Playwright |
-| 机器访问 | PAT, Convex HTTP Actions, My-Notion CLI, MCP STDIO |
+| 层级     | 技术                                                          |
+| ------ | ----------------------------------------------------------- |
+| Web 框架 | Next.js 16, React 19, TypeScript                            |
+| UI     | Tailwind CSS, shadcn/ui, Radix UI                           |
+| 编辑器    | BlockNote, `@blocknote/xl-ai`                               |
+| 数据与认证  | Convex, Clerk                                               |
+| AI     | DashScope/OpenAI Compatible API, LangChain, Qdrant, SerpAPI |
+| 状态与国际化 | Zustand, next-intl                                          |
+| 监控与测试  | Sentry, Vitest, Playwright                                  |
+| 机器访问   | PAT, Convex HTTP Actions, My-Notion CLI, MCP STDIO          |
 
 ## 快速开始
 
@@ -144,3 +153,4 @@ apps/web/
 - CLI/MCP 的机器 API URL 应使用 Convex `.site` URL，而不是 `.cloud` URL。
 - Qdrant 离线时 RAG 能力会降级，但不应影响基础文档编辑。
 - `.vercel.app` 在部分网络环境可能不可达，生产使用建议绑定自定义域名。
+
