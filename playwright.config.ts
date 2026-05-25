@@ -18,7 +18,7 @@ export default defineConfig({
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
       testDir: "./tests/web",
-      testIgnore: /auth-setup\.spec\.ts|api-auth\.spec\.ts/,
+      testIgnore: /auth-setup\.spec\.ts|api-auth\.spec\.ts|pat-settings\.spec\.ts/,
     },
     ...(!isCI
       ? [
@@ -30,7 +30,7 @@ export default defineConfig({
           },
           {
             name: "chromium-authenticated",
-            testMatch: /api-auth\.spec\.ts/ as RegExp,
+            testMatch: /api-auth\.spec\.ts|pat-settings\.spec\.ts/ as RegExp,
             testDir: "./tests/web",
             use: {
               ...devices["Desktop Chrome"],
