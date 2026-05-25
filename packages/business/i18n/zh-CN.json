@@ -168,7 +168,22 @@
       "revokeTokenTitle": "撤销这个 API Token？",
       "revokeTokenDescription": "Token {tokenPrefix}... 将立即停止用于 CLI 和 Agent 访问。",
       "cancel": "取消",
-      "confirmRevoke": "确认撤销"
+      "confirmRevoke": "确认撤销",
+      "createApiToken": "创建 API Token",
+      "createApiTokenDescription": "为 My-Notion CLI 或可信 Agent 集成创建个人访问令牌。",
+      "tokenNamePlaceholder": "Token 名称，例如：工作电脑 CLI",
+      "createToken": "创建 Token",
+      "creatingToken": "创建中...",
+      "failedToCreateToken": "创建 API Token 失败。",
+      "tokenCreated": "API Token 已创建。",
+      "newTokenReady": "新 Token 已创建",
+      "newTokenVisibleOnce": "请立即复制此 Token。隐藏或关闭设置后将不再展示明文。",
+      "copyToken": "复制",
+      "tokenCopied": "Token 已复制。",
+      "failedToCopyToken": "复制 Token 失败。",
+      "iHaveSavedToken": "我已复制并安全保存此 Token。",
+      "hideSavedToken": "我已保存，隐藏 Token",
+      "saveTokenBeforeClosing": "关闭设置前，请先复制并确认已保存新 Token。"
     },
     "confirm": {
       "areYouAbsolutelySure": "您确定要这样做吗？",

@@ -168,7 +168,22 @@
       "revokeTokenTitle": "Revoke this API token?",
       "revokeTokenDescription": "Token {tokenPrefix}... will stop working for CLI and Agent access immediately.",
       "cancel": "Cancel",
-      "confirmRevoke": "Revoke"
+      "confirmRevoke": "Revoke",
+      "createApiToken": "Create API token",
+      "createApiTokenDescription": "Create a PAT for My-Notion CLI or trusted Agent integrations.",
+      "tokenNamePlaceholder": "Token name, e.g. Work laptop CLI",
+      "createToken": "Create token",
+      "creatingToken": "Creating...",
+      "failedToCreateToken": "Failed to create API token.",
+      "tokenCreated": "API token created.",
+      "newTokenReady": "New token created",
+      "newTokenVisibleOnce": "Copy this token now. It will not be shown again after you hide it or close settings.",
+      "copyToken": "Copy",
+      "tokenCopied": "Token copied.",
+      "failedToCopyToken": "Failed to copy token.",
+      "iHaveSavedToken": "I have copied and saved this token securely.",
+      "hideSavedToken": "I saved it, hide token",
+      "saveTokenBeforeClosing": "Copy and confirm you saved the new token before closing settings."
     },
     "confirm": {
       "areYouAbsolutelySure": "Are you absolutely sure?",
