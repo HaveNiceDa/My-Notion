@@ -183,7 +183,14 @@
       "failedToCopyToken": "Failed to copy token.",
       "iHaveSavedToken": "I have copied and saved this token securely.",
       "hideSavedToken": "I saved it, hide token",
-      "saveTokenBeforeClosing": "Copy and confirm you saved the new token before closing settings."
+      "saveTokenBeforeClosing": "Copy and confirm you saved the new token before closing settings.",
+      "tokenScopes": "Scopes",
+      "docsReadScope": "Allow reading, listing, and searching documents.",
+      "docsWriteScope": "Allow creating and updating documents.",
+      "selectAtLeastOneScope": "Select at least one scope.",
+      "tokenExpiresAt": "Expiration time",
+      "tokenExpiresAtDescription": "Optional. Leave empty to create a token without an expiration time.",
+      "invalidExpiresAt": "Expiration time must be in the future."
     },
     "confirm": {
       "areYouAbsolutelySure": "Are you absolutely sure?",

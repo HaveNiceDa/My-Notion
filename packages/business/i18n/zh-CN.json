@@ -183,7 +183,14 @@
       "failedToCopyToken": "复制 Token 失败。",
       "iHaveSavedToken": "我已复制并安全保存此 Token。",
       "hideSavedToken": "我已保存，隐藏 Token",
-      "saveTokenBeforeClosing": "关闭设置前，请先复制并确认已保存新 Token。"
+      "saveTokenBeforeClosing": "关闭设置前，请先复制并确认已保存新 Token。",
+      "tokenScopes": "权限范围",
+      "docsReadScope": "允许读取、列出和搜索文档。",
+      "docsWriteScope": "允许创建和更新文档。",
+      "selectAtLeastOneScope": "请至少选择一个权限范围。",
+      "tokenExpiresAt": "过期时间",
+      "tokenExpiresAtDescription": "可选。留空表示创建不过期的 Token。",
+      "invalidExpiresAt": "过期时间必须晚于当前时间。"
     },
     "confirm": {
       "areYouAbsolutelySure": "您确定要这样做吗？",

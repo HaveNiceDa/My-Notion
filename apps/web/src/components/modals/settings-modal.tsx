@@ -57,6 +57,11 @@ type ApiTokenCreateResponse =
   | { success: true; data: CreatedApiToken }
   | { success: false; error?: string };
 
+type TokenScope = "docs:read" | "docs:write";
+
+const TOKEN_SCOPE_OPTIONS: TokenScope[] = ["docs:read", "docs:write"];
+const DEFAULT_TOKEN_SCOPES: TokenScope[] = ["docs:read", "docs:write"];
+
 function formatDateTime(value: number | null, locale: string) {
   if (!value) return "—";
 
@@ -75,6 +80,8 @@ export function SettingsModal() {
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [revokingTokenId, setRevokingTokenId] = useState<string | null>(null);
   const [newTokenName, setNewTokenName] = useState("");
+  const [newTokenScopes, setNewTokenScopes] = useState<TokenScope[]>(DEFAULT_TOKEN_SCOPES);
+  const [newTokenExpiresAt, setNewTokenExpiresAt] = useState("");
   const [isCreatingToken, setIsCreatingToken] = useState(false);
   const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null);
   const [hasSavedCreatedToken, setHasSavedCreatedToken] = useState(false);
@@ -122,7 +129,27 @@ export function SettingsModal() {
     settings.onClose();
   };
 
+  const toggleNewTokenScope = (scope: TokenScope, checked: boolean) => {
+    setNewTokenScopes((current) => {
+      if (checked) return Array.from(new Set([...current, scope]));
+      return current.filter((item) => item !== scope);
+    });
+  };
+
   const createToken = async () => {
+    if (newTokenScopes.length === 0) {
+      toast.error(t("selectAtLeastOneScope"));
+      return;
+    }
+
+    const expiresAt = newTokenExpiresAt
+      ? new Date(newTokenExpiresAt).getTime()
+      : undefined;
+    if (expiresAt !== undefined && (!Number.isFinite(expiresAt) || expiresAt <= Date.now())) {
+      toast.error(t("invalidExpiresAt"));
+      return;
+    }
+
     setIsCreatingToken(true);
 
     try {
@@ -133,6 +160,8 @@ export function SettingsModal() {
         },
         body: JSON.stringify({
           name: newTokenName.trim() || undefined,
+          scopes: newTokenScopes,
+          expiresAt,
         }),
       });
       const payload = (await response.json()) as ApiTokenCreateResponse;
@@ -144,6 +173,8 @@ export function SettingsModal() {
       setCreatedToken(payload.data);
       setHasSavedCreatedToken(false);
       setNewTokenName("");
+      setNewTokenScopes(DEFAULT_TOKEN_SCOPES);
+      setNewTokenExpiresAt("");
       await loadTokens();
       toast.success(t("tokenCreated"));
     } catch (error) {
@@ -268,6 +299,49 @@ export function SettingsModal() {
               >
                 {isCreatingToken ? t("creatingToken") : t("createToken")}
               </Button>
+            </div>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <div className="mb-2 text-xs font-medium">{t("tokenScopes")}</div>
+                <div className="space-y-2">
+                  {TOKEN_SCOPE_OPTIONS.map((scope) => (
+                    <div className="flex items-start gap-2" key={scope}>
+                      <Checkbox
+                        checked={newTokenScopes.includes(scope)}
+                        disabled={isCreatingToken || Boolean(createdToken)}
+                        id={`new-api-token-scope-${scope}`}
+                        onCheckedChange={(checked) =>
+                          toggleNewTokenScope(scope, checked === true)
+                        }
+                      />
+                      <Label
+                        className="cursor-pointer text-xs"
+                        htmlFor={`new-api-token-scope-${scope}`}
+                      >
+                        <span className="block font-mono">{scope}</span>
+                        <span className="block text-muted-foreground">
+                          {t(scope === "docs:read" ? "docsReadScope" : "docsWriteScope")}
+                        </span>
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Label className="mb-2 block text-xs font-medium" htmlFor="new-api-token-expires-at">
+                  {t("tokenExpiresAt")}
+                </Label>
+                <Input
+                  disabled={isCreatingToken || Boolean(createdToken)}
+                  id="new-api-token-expires-at"
+                  onChange={(event) => setNewTokenExpiresAt(event.target.value)}
+                  type="datetime-local"
+                  value={newTokenExpiresAt}
+                />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {t("tokenExpiresAtDescription")}
+                </p>
+              </div>
             </div>
           </div>
 
