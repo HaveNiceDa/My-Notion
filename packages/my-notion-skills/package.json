@@ -9,7 +9,8 @@
     "my-notion-mcp"
   ],
   "scripts": {
-    "lint": "node -e \"console.log('No skills lint configured yet')\""
+    "lint": "node -e \"console.log('No skills lint configured yet')\"",
+    "sync": "node ../../scripts/sync-my-notion-skills.mjs"
   },
   "keywords": [
     "my-notion",
