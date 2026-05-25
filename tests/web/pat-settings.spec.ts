@@ -24,10 +24,12 @@ function toDateTimeLocalValue(date: Date) {
 
 test.describe("Web - PAT settings", () => {
   test("creates PAT with selected scopes and validates expiration time", async ({
+    context,
     page,
   }) => {
     const createRequests: CreateTokenBody[] = [];
     let tokenCreated = false;
+    await context.grantPermissions(["clipboard-write"]);
 
     await page.route("**/api/cli/tokens", async (route) => {
       const request = route.request();
@@ -77,8 +79,7 @@ test.describe("Web - PAT settings", () => {
       await route.fallback();
     });
 
-    await page.goto("/en/documents");
-    await page.getByText("Settings", { exact: true }).click();
+    await page.goto("/en/test-pat-settings");
     await expect(page.getByRole("dialog", { name: "My settings" })).toBeVisible();
 
     const createButton = page.getByRole("button", { name: "Create token" });
