@@ -20,7 +20,7 @@ function createClient(args: ParsedArgs) {
 function toToolResult(data: Record<string, unknown>): ToolResult {
   return {
     structuredContent: data,
-    // Some MCP clients still surface only text content, so keep a JSON fallback.
+    // 兼容只展示 text content 的 MCP 客户端，保留一份 JSON 文本兜底。
     content: [
       {
         type: "text",
@@ -42,7 +42,7 @@ function createDryRunDocument(input: {
   contentMarkdown?: string;
 }): DocumentResult {
   const now = Date.now();
-  // Dry-run must not touch the API; return a document-shaped preview for clients.
+  // dry-run 不能触发真实 API，只返回一个形似文档的预览结果。
   return {
     id: "dry-run",
     title: input.title,
@@ -56,15 +56,16 @@ function createDryRunDocument(input: {
 }
 
 function registerDocumentTools(server: McpServer, client: MyNotionClient) {
-  // Keep read tools side-effect free so MCP clients can call them without approval.
+  // 只读工具必须无副作用，MCP 客户端可以在无需用户确认时安全调用。
+  // my_notion_docs_search：按关键词搜索当前 PAT 用户的文档，返回文档列表。
   server.registerTool(
     "my_notion_docs_search",
     {
-      title: "Search My-Notion Documents",
-      description: "Search the current My-Notion user's documents by keyword.",
+      title: "搜索 My-Notion 文档",
+      description: "按关键词搜索当前 PAT 用户的 My-Notion 文档。",
       inputSchema: {
-        query: z.string().optional().describe("Search keyword. Omit to list recent documents."),
-        limit: z.number().int().min(1).max(50).optional().describe("Maximum documents to return."),
+        query: z.string().optional().describe("搜索关键词；不传时按后端搜索接口默认行为返回。"),
+        limit: z.number().int().min(1).max(50).optional().describe("最多返回的文档数量。"),
       },
       annotations: {
         readOnlyHint: true,
@@ -76,13 +77,14 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
     },
   );
 
+  // my_notion_docs_fetch：按文档 ID 读取单篇文档，返回结构化元信息和 Markdown 正文。
   server.registerTool(
     "my_notion_docs_fetch",
     {
-      title: "Fetch My-Notion Document",
-      description: "Fetch a document by id and return both structured metadata and Markdown content.",
+      title: "读取 My-Notion 文档",
+      description: "按文档 ID 读取单篇文档，并返回结构化元信息和 Markdown 正文。",
       inputSchema: {
-        id: z.string().min(1).describe("My-Notion document id."),
+        id: z.string().min(1).describe("My-Notion 文档 ID。"),
       },
       annotations: {
         readOnlyHint: true,
@@ -94,18 +96,19 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
     },
   );
 
+  // my_notion_docs_create：从 Markdown 创建新文档，默认 dry-run，显式授权后才真实写入。
   server.registerTool(
     "my_notion_docs_create",
     {
-      title: "Create My-Notion Document",
-      description: "Create a My-Notion document from Markdown. Use dryRun first unless the user approved writing.",
+      title: "创建 My-Notion 文档",
+      description: "使用 Markdown 创建新文档；除非用户已授权写入，否则应先使用 dryRun。",
       inputSchema: {
-        title: z.string().min(1).describe("Document title."),
-        contentMarkdown: z.string().optional().describe("Markdown content to write."),
+        title: z.string().min(1).describe("文档标题。"),
+        contentMarkdown: z.string().optional().describe("要写入的 Markdown 正文。"),
         dryRun: z
           .boolean()
           .default(true)
-          .describe("When true, validate and preview without creating a document."),
+          .describe("为 true 时只校验和预览，不创建真实文档。"),
       },
       annotations: {
         destructiveHint: false,
@@ -114,7 +117,7 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
     },
     async ({ title, contentMarkdown, dryRun }) => {
       if (dryRun) {
-        // Write tools default to dry-run; clients must opt in with explicit approval.
+        // 写入类工具默认 dry-run，客户端必须在用户明确授权后才关闭 dry-run。
         return toToolResult({
           dryRun: true,
           action: "create",
@@ -131,20 +134,21 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
     },
   );
 
+  // my_notion_docs_update：更新标题或正文，支持 append/overwrite，默认 dry-run 防止误覆盖。
   server.registerTool(
     "my_notion_docs_update",
     {
-      title: "Update My-Notion Document",
-      description: "Update a document title/content. Use dryRun first before append or overwrite writes.",
+      title: "更新 My-Notion 文档",
+      description: "更新文档标题或正文；追加/覆盖写入前应先使用 dryRun 预览。",
       inputSchema: {
-        id: z.string().min(1).describe("My-Notion document id."),
-        title: z.string().optional().describe("Optional new document title."),
-        contentMarkdown: z.string().optional().describe("Markdown content to append or overwrite."),
-        mode: z.enum(["append", "overwrite"]).default("append").describe("Content update mode."),
+        id: z.string().min(1).describe("My-Notion 文档 ID。"),
+        title: z.string().optional().describe("可选的新文档标题。"),
+        contentMarkdown: z.string().optional().describe("要追加或覆盖的 Markdown 正文。"),
+        mode: z.enum(["append", "overwrite"]).default("append").describe("正文更新模式。"),
         dryRun: z
           .boolean()
           .default(true)
-          .describe("When true, preview the intended update without changing the document."),
+          .describe("为 true 时只预览计划变更，不修改真实文档。"),
       },
       annotations: {
         destructiveHint: true,
@@ -153,7 +157,7 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
     },
     async ({ id, title, contentMarkdown, mode, dryRun }) => {
       if (dryRun) {
-        // For updates, dry-run echoes the intended mutation instead of fetching/writing.
+        // update 的 dry-run 只回显计划变更，不读取或写入真实文档。
         return toToolResult({
           dryRun: true,
           action: "update",
@@ -190,7 +194,7 @@ export async function runMcpStdioServer(args: ParsedArgs) {
 
   registerDocumentTools(server, client);
 
-  // STDIO is the only supported transport for the MVP; HTTP/OAuth are future work.
+  // MVP 阶段只支持 STDIO transport；HTTP/OAuth 后续单独设计，避免混淆鉴权边界。
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

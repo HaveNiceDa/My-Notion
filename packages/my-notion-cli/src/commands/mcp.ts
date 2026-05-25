@@ -11,7 +11,7 @@ export async function runMcpCommand(args: ParsedArgs) {
 
   const transport = readStringOption(args.options, "transport") ?? "stdio";
   if (transport !== "stdio") {
-    // Be explicit here: accepting unknown transports would imply unsupported auth semantics.
+    // 明确拒绝未知 transport，避免让调用方误以为已支持 HTTP/OAuth 鉴权语义。
     throw new Error("Unsupported MCP transport. Only `stdio` is available.");
   }
 

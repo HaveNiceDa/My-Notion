@@ -57,7 +57,7 @@ function parseLastJsonObject(output) {
     try {
       return JSON.parse(output.slice(index).trim());
     } catch {
-      // Convex can print progress lines before the final JSON payload.
+      // Convex 可能先打印进度日志，最后才输出 JSON 结果。
     }
   }
   throw new Error(`No JSON object found in output:\n${output}`);
@@ -101,7 +101,7 @@ class McpStdioClient {
     this.pending = new Map();
     this.stdoutBuffer = "";
     this.stderr = "";
-    // Spawn the built CLI exactly as an MCP client would: JSON-RPC over stdin/stdout.
+    // 像真实 MCP 客户端一样启动已构建 CLI：通过 stdin/stdout 传输 JSON-RPC。
     this.process = spawn("node", [cliEntry, "mcp", "serve", "--transport", "stdio"], {
       cwd: root,
       env: { ...process.env, ...env },
@@ -132,7 +132,7 @@ class McpStdioClient {
 
     for (const line of lines) {
       if (!line.trim()) continue;
-      // MCP STDIO messages are line-delimited JSON-RPC envelopes.
+      // MCP STDIO 消息是按行分隔的 JSON-RPC 信封。
       const message = JSON.parse(line);
       if (message.id === undefined) continue;
 
@@ -177,7 +177,7 @@ class McpStdioClient {
       });
     });
 
-    // Keep the transport framing explicit so the test catches STDIO regressions.
+    // 显式保留换行分帧，确保测试能捕获 STDIO 协议回归。
     this.process.stdin.write(`${JSON.stringify(payload)}\n`);
     return response;
   }
@@ -358,7 +358,7 @@ async function main() {
     if (tokenRecordId) {
       try {
         console.log("[cleanup] revoke PAT token");
-        // Revoke even on failures so test credentials do not accumulate in dev.
+        // 即使测试失败也撤销 PAT，避免 dev 环境积累可用测试凭据。
         run("pnpm", [
           "--filter",
           "@notion/web",
