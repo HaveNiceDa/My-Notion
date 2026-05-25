@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { internalMutation, internalQuery, mutation } from "@convex/server";
+import { internalMutation, internalQuery, mutation, query } from "@convex/server";
 
 const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
 
@@ -79,6 +79,28 @@ function toDocumentResult(document: {
   };
 }
 
+function toApiTokenResult(token: {
+  _id: string;
+  name: string;
+  tokenPrefix: string;
+  scopes: string[];
+  createdAt: number;
+  lastUsedAt?: number;
+  expiresAt?: number;
+  revokedAt?: number;
+}) {
+  return {
+    id: token._id,
+    name: token.name,
+    tokenPrefix: token.tokenPrefix,
+    scopes: token.scopes,
+    createdAt: token.createdAt,
+    lastUsedAt: token.lastUsedAt ?? null,
+    expiresAt: token.expiresAt ?? null,
+    revokedAt: token.revokedAt ?? null,
+  };
+}
+
 /** 登录态用户创建 PAT 时使用；明文 token 由调用方生成，只保存哈希。 */
 export const createApiTokenRecord = mutation({
   args: {
@@ -114,6 +136,48 @@ export const createApiTokenRecord = mutation({
     });
 
     return { id: tokenId, tokenPrefix: args.tokenPrefix };
+  },
+});
+
+/** 登录态用户列出自己的 PAT 元信息，不返回 token 明文或哈希。 */
+export const listApiTokenRecords = query({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const tokens = await ctx.db
+      .query("apiTokens")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .order("desc")
+      .collect();
+
+    return tokens.map(toApiTokenResult);
+  },
+});
+
+/** 登录态用户撤销自己的 PAT；撤销后该 token 立即无法访问 CLI API。 */
+export const revokeApiTokenRecord = mutation({
+  args: {
+    tokenId: v.id("apiTokens"),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const token = await ctx.db.get(args.tokenId);
+    if (!token || token.userId !== identity.subject) {
+      throw new Error("Token not found");
+    }
+
+    const revokedAt = token.revokedAt ?? now();
+    await ctx.db.patch(args.tokenId, { revokedAt });
+
+    return toApiTokenResult({ ...token, revokedAt });
   },
 });
 

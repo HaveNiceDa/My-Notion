@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "e2e:cli": "node scripts/e2e-my-notion-cli.mjs",
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "engines": {
