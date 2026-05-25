@@ -1,205 +1,93 @@
 # My-Notion
 
-定制化的个人版 Notion，内置 Agent 驱动的 AI 全栈知识管理工具。
+定制化的个人版 Notion，内置 Agent 驱动的 AI 知识管理、跨端文档编辑、CLI/Skills/MCP Agent 生态能力。
 
-## ✨ 项目特色
+## 项目入口
 
-- 🤖 **Agent 架构** — ReAct 循环引擎驱动，LLM 自主决策工具调用（知识库检索 / 联网搜索 / 文档阅读），多轮推理 + 工具执行 + 结果反馈，告别硬编码路由
-- 🧠 **RAG 知识库** — 向量检索 + LLM 深度思考，工具化设计让 Agent 按需调用，检索结果溯源展示，文档标题可点击跳转
-- 🛠️ **CLI & Skills 生态** — My-Notion CLI + Agent Skills 打通外部 Agent 读写文档能力，支持 PAT 认证、Convex HTTP Actions、端到端验证与自动同步
-- 🏗️ **跨端共享架构** — AI 逻辑 (`@notion/ai`)、业务状态 (`@notion/business`)、数据层 (`@notion/convex`) 抽离为共享包，Web 和 Mobile 零重复代码
-- ⚡ **紧跟最新技术栈** — Next.js 16 + React 19 + Expo 54 + TypeScript 5.9，同时通过完整 CI/CD 和监控体系保障稳定性
-- 🔒 **安全代理设计** — Mobile 端 AI 调用通过 Hono 网关代理、文件上传通过 Web API 转发，客户端零密钥暴露
-- 📊 **完整工程化** — GitHub Actions CI/CD（Build / Lint / TypeCheck / Unit Test / E2E）、Vitest 单测、Sentry 监控、Bundle 优化
-- 🌐 **双端国际化** — next-intl (Web) + i18next (Mobile)，中/英/繁体三语支持
+- [Web 应用说明](./apps/web/README.md) — Next.js Web 端、线上体验、截图、AI Agent 与文档编辑能力。
+- [Mobile 应用说明](./apps/mobile/README.md) — Expo 移动端、跨端共享架构、移动端运行与构建。
+- [线上体验 Web](https://notion-j9zj.vercel.app/) — 可直接访问当前 Web 版本。
+- [My-Notion CLI](./packages/my-notion-cli/) — 供终端和外部 Agent 调用的文档管理 CLI。
+- [My-Notion Skills](./packages/my-notion-skills/) — 供 Agent 学习如何调用 CLI/MCP 的技能说明。
 
-## 📦 项目结构
+## 核心技术优势
 
-```
+- **Agent ReAct Loop**：AI 侧边栏不再依赖硬编码关键词路由，由 LLM 自主判断是否调用 `knowledge_search`、`web_search`、`document_read` 等工具，支持多轮推理和多工具并行。
+- **RAG 知识库**：基于 Qdrant 向量检索与 DashScope Embedding，支持知识库检索、引用来源展示、文档标题跳转和 Qdrant 离线降级。
+- **编辑器 AI**：Web 端集成 BlockNote 与 `@blocknote/xl-ai`，支持选中文字润色、翻译、摘要、扩写、续写等原生编辑器 AI 操作。
+- **CLI / Skills / MCP 生态**：通过 PAT + Convex HTTP Actions 暴露机器 API，外部 Agent 可用 CLI 或 MCP STDIO server 创建、读取、搜索、更新 My-Notion 文档。
+- **跨端共享架构**：`@notion/ai`、`@notion/business`、`@notion/convex` 抽离为共享包，Web 与 Mobile 复用 AI、业务状态、Convex 数据逻辑。
+- **安全代理设计**：移动端 AI 调用和文件上传均通过服务端代理，避免在客户端暴露 LLM、EdgeStore 等敏感密钥。
+- **工程化闭环**：覆盖 TypeScript、ESLint、Vitest、Playwright、CLI E2E、MCP STDIO E2E、Sentry 与 GitHub Actions。
+
+## 项目结构
+
+```text
 My-Notion/
 ├── apps/
-│   ├── web/                    # Next.js 16 Web 应用 (Turbopack)
-│   │   └── src/lib/agent/      # Agent 核心引擎
-│   │       ├── react-loop.ts   # ReAct 循环：LLM 自主决策 → 工具执行 → 结果反馈
-│   │       ├── tools/          # 工具定义（knowledge_search / web_search / document_read）
-│   │       ├── stream.ts       # NDJSON 流式事件协议
-│   │       └── context-compression.ts  # 长对话自动压缩
-│   └── mobile/                 # Expo 54 移动应用 (React Native 0.81)
+│   ├── web/                    # Next.js 16 Web 应用
+│   └── mobile/                 # Expo 54 移动应用
 ├── packages/
-│   ├── ai/                     # AI 核心包 — RAG、Embeddings、Chat、Tools
-│   ├── business/               # 业务共享包 — Zustand Stores、i18n、Types、Utils
-│   ├── convex/                 # Convex 共享逻辑 — Schemas、Documents、Chat、CLI API Tokens
-│   ├── my-notion-cli/          # My-Notion CLI — auth/docs 命令，供 Agent 和终端调用
-│   └── my-notion-skills/       # Agent Skills — 指导 Agent 使用 My-Notion CLI
-├── services/
-│   └── ai/                     # Hono AI 网关服务 — API Key 代理 + Sentry 监控
+│   ├── ai/                     # AI、RAG、Embeddings、Agent 服务端逻辑
+│   ├── business/               # Zustand Stores、i18n、类型、工具函数
+│   ├── convex/                 # Convex Schema、Documents、Chat、CLI Token 逻辑
+│   ├── my-notion-cli/          # CLI：auth/docs/tokens/mcp 命令
+│   └── my-notion-skills/       # Agent Skills 源文件
+├── services/ai/                # AI 网关服务
 ├── scripts/
-│   ├── e2e-my-notion-cli.mjs   # CLI 端到端验证：PAT → 文档 CRUD → revoke
-│   └── sync-my-notion-skills.mjs # 同步 packages skills 到 .trae/skills
-├── .trae/skills/               # Agent 可发现的本地 Skills
-├── tests/                      # Playwright E2E 测试
-├── vitest.config.ts            # Vitest 单元测试配置
-└── playwright.config.ts        # Playwright E2E 配置
+│   ├── e2e-my-notion-cli.mjs   # CLI + Convex HTTP Actions E2E
+│   ├── e2e-my-notion-mcp.mjs   # MCP STDIO E2E
+│   └── sync-my-notion-skills.mjs
+├── tests/                      # Playwright E2E
+└── .trae/skills/               # Agent 可发现的本地 Skills
 ```
 
-## 🏗️ 架构设计
+## 技术架构
 
-### Agent 架构
+```text
+用户 / Agent
+  ├─ Web UI：Next.js + React + BlockNote
+  ├─ Mobile UI：Expo + React Native + Tamagui
+  ├─ CLI：my-notion auth/docs/tokens
+  └─ MCP：my-notion mcp serve --transport stdio
 
-```
-用户消息 → AI Sidebar
-  → /api/agent/stream (Next.js API Route)
-    → ReAct Loop Engine
-      ├─ LLM 自主决策（看到可用 tools 列表，判断是否需要调用）
-      ├─ 无 tool_calls → 直接输出文本，循环结束
-      └─ 有 tool_calls → 并行执行所有 tools → 结果反馈 LLM → 继续推理
-         ├─ knowledge_search  → Qdrant 向量检索 + DashScope Embedding
-         ├─ web_search        → SerpAPI Google Search（结构化来源）
-         └─ document_read     → 读取当前文档内容
-    → NDJSON 流式事件（text-delta / tool-call-start / tool-call-result / finish）
-    → 前端实时渲染（Markdown + 工具卡片 + 深度思考折叠）
-```
+共享能力层
+  ├─ @notion/ai：RAG、Agent、Editor AI 服务端逻辑
+  ├─ @notion/business：跨端状态、i18n、业务类型
+  └─ @notion/convex：Schema、文档、Chat、PAT 校验
 
-**核心设计原则**：
-- **LLM 自主决策** — 不硬编码关键词路由，LLM 通过 tool description 自主判断何时调用哪个工具
-- **ReAct 循环** — 推理（Reasoning）+ 行动（Acting）交替，最多 5 轮迭代，支持多工具并行
-- **工具标准化** — 每个 tool 自带 OpenAI function schema，新增 tool 只需实现 `AgentTool` 接口
-- **长对话压缩** — token 超阈值时自动摘要旧消息 + 保留最近 N 轮，防止上下文溢出
-
-### 跨端共享层
-
-| 共享包 | 职责 | 被依赖方 |
-|--------|------|----------|
-| `@notion/ai` | RAG 检索、Embeddings、流式 Chat、工具调用 | Web + Mobile + AI Service |
-| `@notion/business` | Zustand Stores（AI 模型/知识库/深度思考）、i18n、类型校验 | Web + Mobile |
-| `@notion/convex` | Convex Schema、Documents/Chat/CLI Token 业务逻辑 | Web + Mobile + CLI HTTP Actions |
-| `@notion/my-notion-cli` | PAT 登录、文档创建/读取/搜索/更新命令 | Agent + 终端用户 |
-| `@notion/my-notion-skills` | Agent Skills 源文件与 CLI 调用说明 | `.trae/skills` |
-
-### 工程化体系
-
-```
-代码提交 → GitHub Actions
-  ├─ Build (Web + AI Service)
-  ├─ Lint + TypeCheck + Unit Tests (Vitest, 20+ 用例)
-  └─ E2E Tests (Playwright)
-本地验证
-  ├─ pnpm e2e:cli       # CLI + Convex HTTP Actions 端到端验证
-  └─ pnpm sync:skills   # 同步 My-Notion Skills 到 Agent 可发现目录
-→ Vercel 自动部署
-→ Sentry 线上监控
+后端与外部服务
+  ├─ Convex：实时数据库 + HTTP Actions
+  ├─ Clerk：认证
+  ├─ Qdrant：向量数据库
+  ├─ DashScope/OpenAI Compatible API：LLM 与 Embedding
+  └─ EdgeStore：文件存储
 ```
 
-## 🗺️ Roadmap
-
-### ✅ 已完成
-
-- **Agent ReAct 循环** — 替换硬编码关键词路由，LLM 自主决策工具调用，支持多轮推理 + 多工具并行
-- **AI 侧边栏** — 从独立页面重构为右侧可折叠面板，工具调用结果持久化展示，文档标题可点击跳转
-- **工具卡片** — knowledge_search 展示引用文档列表，web_search 展示搜索关键词，document_read 展示文档标题
-- **长对话压缩** — token 超阈值时 LLM 摘要旧消息，保留最近 N 轮，摘要失败自动回退截断
-- **Web 编辑器 AI** — 基于 `@blocknote/xl-ai`，选中文字可翻译（中/英）、润色、扩写、缩写；光标处可续写、生成大纲、总结内容
-- **Mobile SSE 平台分流** — Web 端 `ReadableStream` 流式读取，Native 端 `response.text()` 兼容方案
-- **Markdown 渲染** — react-markdown + remark-gfm + rehype-highlight，代码高亮 + GFM 表格
-- **错误边界** — AIChatErrorBoundary 防止面板白屏，支持重试
-- **SerpAPI 联网搜索** — `web_search` 工具已从 DashScope 内置搜索切换为 SerpAPI Google Search，返回可溯源的结构化结果
-- **API Token + Convex HTTP Actions** — 新增 `apiTokens` 表、PAT 创建/列表/撤销、`/cli/v1/*` 机器 API，支持外部 CLI 安全访问文档
-- **My-Notion CLI** — 支持 `auth login/status` 与 `docs create/fetch/search/list/update`，可通过 `pnpm e2e:cli` 完整验证
-- **My-Notion Skills** — 新增 `my-notion-shared`、`my-notion-docs`，并通过 `pnpm sync:skills` 同步到 `.trae/skills`
-
-### 🎯 近期 — Agent 能力增强
-
-- **Spec 模式** — LLM 先输出结构化规格说明，用户确认后再执行
-- **Plan 模式** — LLM 先输出执行计划，逐步执行并展示进度
-- **MCP 接入** — 通过 DashScope Responses API 接入百炼托管 MCP 服务，支持跨文档读取
-- **对话上下文压缩优化** — 用 tiktoken 精确计数替代当前的 chars/2 粗略估算
-
-### 🚀 中期 — RAG 增强
-
-- **分层检索** — 粗筛 + 精排两阶段，提升召回率和准确率
-- **混合检索** — 向量检索 + BM25 关键词检索融合
-- **多格式文档** — PDF、Markdown、Word 直接入库
-- **检索溯源** — 展示 RAG 引用的文档片段，支持跳转原文
-
-### 🔮 远期 — CLI & Agent 生态
-
-- **CLI Token 管理增强** — 补齐终端侧 `tokens list/revoke` 命令，完善 PAT 管理闭环
-- **Agent 可调用增强** — 基于 My-Notion Skills 让外部 Agent 自动生成、读取、更新知识文档
-- **MCP 协议** — 接入 Model Context Protocol，成为 AI Agent 的标准工具
-
-## 🚀 快速开始
-
-### 前提条件
-
-- Node.js 22.0+
-- pnpm 10+
-
-### 安装
+## 常用命令
 
 ```bash
+# 安装依赖
 pnpm i
-```
 
-### 开发
+# Web / Mobile
+pnpm start:web
+pnpm start:mobile
 
-```bash
-# Web 应用
-cd apps/web && pnpm start
-
-# 移动应用
-cd apps/mobile && pnpm start
-
-# AI 网关服务
-cd services/ai && pnpm dev
-```
-
-### 构建
-
-```bash
+# 构建
 pnpm build:web
-```
+pnpm build:mobile
 
-### 测试
-
-```bash
-# 单元测试
+# 测试与验证
 pnpm test
-
-# E2E 测试（需先启动 dev server）
 pnpm exec playwright test
-
-# My-Notion CLI 端到端验证（自动创建并撤销测试 PAT）
 pnpm e2e:cli
-
-# 同步 Agent Skills 到 .trae/skills
+pnpm e2e:mcp
 pnpm sync:skills
 ```
 
-## 🛠️ 技术栈总览
+## 当前状态
 
-| 层级 | 技术 |
-|------|------|
-| **Web 框架** | Next.js 16 (Turbopack) / React 19 |
-| **Mobile 框架** | Expo 54 / React Native 0.81 / Tamagui 2.0 |
-| **Agent 引擎** | ReAct Loop / OpenAI Function Calling / NDJSON Streaming |
-| **AI/LLM** | LangChain / OpenAI SDK / DeepSeek-v4-pro / Qdrant |
-| **后端/数据库** | Convex (实时数据库) / EdgeStore (文件存储) |
-| **AI 网关** | Vercel Edge Function |
-| **CLI & Skills** | My-Notion CLI / Agent Skills / Convex HTTP Actions |
-| **认证** | Clerk |
-| **状态管理** | Zustand 5 |
-| **编辑器** | BlockNote 0.41 / TipTap (TenTap) |
-| **国际化** | next-intl (Web) / i18next (Mobile) |
-| **样式** | Tailwind CSS + Shadcn UI (Web) / Tamagui (Mobile) |
-| **测试** | Vitest (单元) / Playwright (E2E) |
-| **监控** | Sentry |
-| **CI/CD** | GitHub Actions |
-| **部署** | Vercel |
-
-## 📝 各应用说明
-
-- [Web 应用](./apps/web/README.md) — 基于 Next.js 16 的 Notion Web 应用
-- [移动应用](./apps/mobile/README.md) — 基于 Expo 54 的 Notion 移动应用
-- [AI 网关](./services/ai/) — Vercel Edge Function AI API 代理服务
-- [My-Notion CLI](./packages/my-notion-cli/) — 供 Agent 和终端调用的文档管理命令行工具
-- [My-Notion Skills](./packages/my-notion-skills/) — 供 Agent 学习和调用 CLI 的技能说明
+- Web 端已具备文档编辑、AI 侧边栏、RAG 检索、联网搜索、编辑器 AI、PAT 管理与 CLI/MCP 机器访问能力。
+- Mobile 端已具备文档树、文档编辑、AI Chat、跨端业务状态、Convex 数据访问与服务端代理能力。
+- Agent 生态已完成 CLI、Skills、MCP STDIO MVP，后续重点是文档清理 API、限流审计、远程 MCP/OAuth 与更强 RAG 检索。
