@@ -9,6 +9,7 @@
     "./schemas": "./schemas/index.ts",
     "./chat": "./chat/index.ts",
     "./documents": "./documents/index.ts",
+    "./cli": "./cli/index.ts",
     "./client": "./client/index.ts"
   },
   "scripts": {
