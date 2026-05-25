@@ -118,10 +118,10 @@ function main() {
   const identityArgs = JSON.stringify({ subject: testUserId, tokenIdentifier: testUserId });
 
   try {
-    console.log(`[1/8] Build CLI`);
+    console.log(`[1/9] Build CLI`);
     run("pnpm", ["--filter", "@notion/my-notion-cli", "build"]);
 
-    console.log(`[2/8] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/9] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
     "--filter",
     "@notion/web",
@@ -146,7 +146,7 @@ function main() {
 
     const cliEnv = { HOME: tempHome };
 
-    console.log(`[3/8] auth login`);
+    console.log(`[3/9] auth login`);
     const login = runJson("node", [
     cliEntry,
     "auth",
@@ -163,7 +163,7 @@ function main() {
       throw new Error("auth login did not authenticate");
     }
 
-    console.log(`[4/8] docs create`);
+    console.log(`[4/9] docs create`);
     created = runJson("node", [
     cliEntry,
     "docs",
@@ -180,7 +180,7 @@ function main() {
       throw new Error("docs create did not return document id");
     }
 
-    console.log(`[5/8] docs fetch`);
+    console.log(`[5/9] docs fetch`);
     const fetchedMarkdown = run("node", [
     cliEntry,
     "docs",
@@ -195,7 +195,7 @@ function main() {
       throw new Error("docs fetch did not include created content");
     }
 
-    console.log(`[6/8] docs update`);
+    console.log(`[6/9] docs update`);
     const updated = runJson("node", [
     cliEntry,
     "docs",
@@ -214,7 +214,7 @@ function main() {
       throw new Error("docs update did not append content");
     }
 
-    console.log(`[7/8] docs search`);
+    console.log(`[7/9] docs search`);
     searchResults = runJson("node", [
     cliEntry,
     "docs",
@@ -231,21 +231,14 @@ function main() {
       throw new Error("docs search did not find the created document");
     }
 
-    console.log(`[8/8] revoke PAT token`);
-    const revokeOutput = run("pnpm", [
-      "--filter",
-      "@notion/web",
-      "exec",
-      "convex",
-      "run",
-      "--deployment",
-      "dev",
-      "--identity",
-      identityArgs,
-      "cli:revokeApiTokenRecord",
-      JSON.stringify({ tokenId: tokenRecordId }),
-    ]);
-    revokedToken = parseLastJsonObject(revokeOutput);
+    console.log(`[8/9] tokens revoke-current`);
+    revokedToken = runJson("node", [
+      cliEntry,
+      "tokens",
+      "revoke-current",
+      "--format",
+      "json",
+    ], { env: cliEnv });
     tokenRecordId = undefined;
 
     const revokedStatus = spawnSync("node", [
@@ -268,6 +261,19 @@ function main() {
       throw new Error("revoked token still passed auth status");
     }
 
+    console.log(`[9/9] auth logout`);
+    const logout = runJson("node", [
+      cliEntry,
+      "auth",
+      "logout",
+      "--format",
+      "json",
+    ], { env: cliEnv });
+
+    if (!logout.loggedOut || logout.hasToken) {
+      throw new Error("auth logout did not clear the saved token");
+    }
+
     console.log(JSON.stringify({
     success: true,
     apiUrl,
@@ -277,6 +283,7 @@ function main() {
     searchHits: searchResults.length,
     revokedTokenId: revokedToken.id,
     revokedAt: revokedToken.revokedAt,
+    loggedOut: logout.loggedOut,
   }, null, 2));
   } finally {
     if (tokenRecordId) {

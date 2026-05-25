@@ -230,6 +230,23 @@ export const recordApiTokenUsed = internalMutation({
   },
 });
 
+export const revokeCurrentApiToken = internalMutation({
+  args: {
+    tokenId: v.id("apiTokens"),
+  },
+  handler: async (ctx, args) => {
+    const token = await ctx.db.get(args.tokenId);
+    if (!token) {
+      throw new Error("Token not found");
+    }
+
+    const revokedAt = token.revokedAt ?? now();
+    await ctx.db.patch(args.tokenId, { revokedAt });
+
+    return toApiTokenResult({ ...token, revokedAt });
+  },
+});
+
 export const createCliDocument = internalMutation({
   args: {
     userId: v.string(),

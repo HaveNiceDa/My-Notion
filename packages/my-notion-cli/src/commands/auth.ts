@@ -1,5 +1,6 @@
 import { MyNotionClient } from "../client/http-client.js";
 import {
+  clearSavedToken,
   getConfigPath,
   loadConfig,
   readStringOption,
@@ -23,7 +24,12 @@ export async function runAuthCommand(args: ParsedArgs) {
     return;
   }
 
-  throw new Error("Unknown auth command. Usage: my-notion auth <login|status>");
+  if (action === "logout") {
+    await logout(args);
+    return;
+  }
+
+  throw new Error("Unknown auth command. Usage: my-notion auth <login|status|logout>");
 }
 
 async function login(args: ParsedArgs) {
@@ -66,6 +72,20 @@ async function status(args: ParsedArgs) {
       token: showToken ? readStringOption(args.options, "token") ?? loadConfig().token : undefined,
       scopes: status.scopes,
       expiresAt: status.expiresAt,
+      configPath: getConfigPath(),
+    },
+    getOutputFormat(args.options, "pretty"),
+  );
+}
+
+async function logout(args: ParsedArgs) {
+  const nextConfig = clearSavedToken();
+
+  writeOutput(
+    {
+      loggedOut: true,
+      apiUrl: nextConfig.apiUrl,
+      hasToken: Boolean(nextConfig.token),
       configPath: getConfigPath(),
     },
     getOutputFormat(args.options, "pretty"),

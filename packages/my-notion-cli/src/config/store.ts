@@ -25,6 +25,13 @@ export function saveConfig(config: CliConfig) {
   });
 }
 
+export function clearSavedToken() {
+  const { token: _token, ...rest } = loadConfig();
+  const nextConfig: CliConfig = rest;
+  saveConfig(nextConfig);
+  return nextConfig;
+}
+
 export function resolveApiUrl(options: Record<string, string | boolean>) {
   const value =
     readStringOption(options, "api-url") ??

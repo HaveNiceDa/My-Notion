@@ -43,6 +43,18 @@ Status command:
 my-notion auth status
 ```
 
+Logout clears the saved local PAT from `~/.my-notion/config.json` but does not revoke it remotely:
+
+```bash
+my-notion auth logout
+```
+
+Revoke the currently configured PAT remotely when the user wants to invalidate this credential:
+
+```bash
+my-notion tokens revoke-current --format json
+```
+
 Configuration is stored in:
 
 ```text
@@ -79,6 +91,7 @@ Agents should prefer `--format json` for create, search, list, and update, and `
 - Never print full PAT tokens unless the user explicitly asks for token debugging.
 - Prefer temporary config by setting `HOME` in automated tests so local user config is not overwritten.
 - Do not store PAT tokens in repository files, docs, logs, or generated skills.
+- Use `auth logout` for local cleanup and `tokens revoke-current` when the PAT must be invalidated server-side.
 - Use `docs search` before creating duplicate documents if the requested document may already exist.
 - Use `docs update --mode append` when adding new notes to an existing document.
 - Use `docs update --mode overwrite` only when the user clearly asks to replace the document content.

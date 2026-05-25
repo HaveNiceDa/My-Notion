@@ -35,3 +35,14 @@ export type DocumentResult = {
   isInKnowledgeBase: boolean;
   lastEditedTime: number | null;
 };
+
+export type ApiTokenResult = {
+  id: string;
+  name: string;
+  tokenPrefix: string;
+  scopes: string[];
+  createdAt: number;
+  lastUsedAt: number | null;
+  expiresAt: number | null;
+  revokedAt: number | null;
+};

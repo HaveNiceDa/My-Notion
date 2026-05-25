@@ -53,6 +53,12 @@ Check current auth:
 my-notion auth status --format json
 ```
 
+Clear the saved local PAT:
+
+```bash
+my-notion auth logout --format json
+```
+
 Check with explicit credentials:
 
 ```bash
@@ -60,6 +66,31 @@ my-notion auth status --api-url https://<deployment>.convex.site --token <mnt_to
 ```
 
 Do not use `--show-token` unless debugging token storage with explicit user approval.
+
+## Tokens
+
+Revoke the current PAT on the server:
+
+```bash
+my-notion tokens revoke-current --format json
+```
+
+Typical output:
+
+```json
+{
+  "id": "kd7...",
+  "name": "My-Notion CLI Token",
+  "tokenPrefix": "mnt_xxxxxxxx",
+  "scopes": ["docs:read", "docs:write"],
+  "createdAt": 1779690000000,
+  "lastUsedAt": 1779690100000,
+  "expiresAt": null,
+  "revokedAt": 1779690200000
+}
+```
+
+Use `auth logout` for local cleanup only. Use `tokens revoke-current` when the credential should stop working remotely.
 
 ## Documents
 
@@ -212,9 +243,10 @@ The smoke test:
 - searches by a unique keyword
 - revokes the temporary PAT
 - verifies the revoked PAT no longer authenticates
+- clears the saved local PAT with `auth logout`
 
 ## Current Limitations
 
 - Markdown to BlockNote conversion currently stores content as paragraph blocks.
-- CLI token list/revoke commands are not implemented yet; token list/revoke currently exists through Web API and Convex functions.
+- CLI can revoke the current PAT, but arbitrary token list/revoke still belongs to the authenticated Web API/UI.
 - E2E cleans up the temporary PAT but does not delete the test document.

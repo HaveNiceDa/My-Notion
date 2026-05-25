@@ -2,6 +2,7 @@
 
 import { runAuthCommand } from "./commands/auth.js";
 import { runDocsCommand } from "./commands/docs.js";
+import { runTokensCommand } from "./commands/tokens.js";
 import { writeError } from "./format/output.js";
 import type { ParsedArgs } from "./types.js";
 
@@ -37,6 +38,8 @@ function printHelp() {
 Usage:
   my-notion auth login --api-url <url> --token <mnt_token>
   my-notion auth status
+  my-notion auth logout
+  my-notion tokens revoke-current
   my-notion docs create --title <title> [--content-file draft.md]
   my-notion docs fetch --id <documentId> [--format markdown]
   my-notion docs search --query <keyword> [--limit 10]
@@ -66,6 +69,11 @@ async function main() {
 
   if (command === "docs") {
     await runDocsCommand(args);
+    return;
+  }
+
+  if (command === "tokens") {
+    await runTokensCommand(args);
     return;
   }
 

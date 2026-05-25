@@ -1,4 +1,4 @@
-import type { ApiResponse, DocumentResult } from "../types.js";
+import type { ApiResponse, ApiTokenResult, DocumentResult } from "../types.js";
 
 export class MyNotionApiError extends Error {
   constructor(
@@ -85,6 +85,12 @@ export class MyNotionClient {
         },
       },
     );
+  }
+
+  revokeCurrentToken() {
+    return this.request<{ token: ApiTokenResult }>("/cli/v1/tokens/revoke-current", {
+      method: "POST",
+    });
   }
 
   private async request<T>(

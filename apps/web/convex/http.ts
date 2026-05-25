@@ -70,10 +70,12 @@ const cliHttpAction = httpAction(async (ctx, req) => {
     const method = req.method.toUpperCase();
     const pathname = url.pathname;
     const requiredScope = method === "GET" ? "docs:read" : "docs:write";
+    const skipScopeCheck =
+      pathname === "/cli/v1/auth/status" ||
+      pathname === "/cli/v1/tokens/revoke-current";
     const auth = await ctx.runQuery(internal.cli.authenticateApiToken, {
       tokenHash,
-      requiredScope:
-        pathname === "/cli/v1/auth/status" ? undefined : requiredScope,
+      requiredScope: skipScopeCheck ? undefined : requiredScope,
     });
 
     if (!auth.ok) {
@@ -91,6 +93,13 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         scopes: auth.scopes,
         expiresAt: auth.expiresAt,
       });
+    }
+
+    if (pathname === "/cli/v1/tokens/revoke-current" && method === "POST") {
+      const token = await ctx.runMutation(internal.cli.revokeCurrentApiToken, {
+        tokenId: auth.tokenId,
+      });
+      return successResponse({ token });
     }
 
     if (pathname === "/cli/v1/documents" && method === "GET") {
@@ -191,6 +200,12 @@ const http = httpRouter();
 http.route({
   path: "/cli/v1/auth/status",
   method: "GET",
+  handler: cliHttpAction,
+});
+
+http.route({
+  path: "/cli/v1/tokens/revoke-current",
+  method: "POST",
   handler: cliHttpAction,
 });
 
