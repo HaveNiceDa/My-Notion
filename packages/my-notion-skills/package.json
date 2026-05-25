@@ -1,0 +1,21 @@
+{
+  "name": "@notion/my-notion-skills",
+  "version": "0.1.0",
+  "description": "Agent skills for using the My-Notion CLI",
+  "private": true,
+  "files": [
+    "my-notion-shared",
+    "my-notion-docs",
+    "my-notion-mcp"
+  ],
+  "scripts": {
+    "lint": "node -e \"console.log('No skills lint configured yet')\""
+  },
+  "keywords": [
+    "my-notion",
+    "skills",
+    "agent"
+  ],
+  "author": "",
+  "license": "ISC"
+}
