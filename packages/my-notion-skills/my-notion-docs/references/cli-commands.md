@@ -13,7 +13,7 @@ my-notion <command>
 Monorepo development entry:
 
 ```bash
-pnpm --filter @notion/my-notion-cli dev -- <command>
+pnpm --filter @notion/my-notion-cli dev <command>
 ```
 
 Built entry:
@@ -189,6 +189,29 @@ Update title and append content:
 ```bash
 my-notion docs update --id <documentId> --title "New Title" --content-file /tmp/append.md --mode append --format json
 ```
+
+## MCP
+
+Start the STDIO MCP server:
+
+```bash
+my-notion mcp serve --transport stdio
+```
+
+Development entry:
+
+```bash
+pnpm --filter @notion/my-notion-cli dev mcp serve --transport stdio
+```
+
+The first MCP version exposes:
+
+- `my_notion_docs_search`
+- `my_notion_docs_fetch`
+- `my_notion_docs_create`
+- `my_notion_docs_update`
+
+Writing tools default to dry-run mode. Set `dryRun: false` only after explicit user approval.
 
 ## Recommended Agent Patterns
 

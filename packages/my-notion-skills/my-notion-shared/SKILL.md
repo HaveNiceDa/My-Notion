@@ -14,7 +14,7 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 - In this monorepo, the development entry can be run with:
 
 ```bash
-pnpm --filter @notion/my-notion-cli dev -- <command>
+pnpm --filter @notion/my-notion-cli dev <command>
 ```
 
 - For built output, run:

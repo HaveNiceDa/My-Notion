@@ -2,6 +2,7 @@
 
 import { runAuthCommand } from "./commands/auth.js";
 import { runDocsCommand } from "./commands/docs.js";
+import { runMcpCommand } from "./commands/mcp.js";
 import { runTokensCommand } from "./commands/tokens.js";
 import { writeError } from "./format/output.js";
 import type { ParsedArgs } from "./types.js";
@@ -45,6 +46,7 @@ Usage:
   my-notion docs search --query <keyword> [--limit 10]
   my-notion docs list [--limit 20]
   my-notion docs update --id <documentId> [--title <title>] [--content-file draft.md] [--mode overwrite|append]
+  my-notion mcp serve --transport stdio
 
 Global options:
   --api-url <url>      Override MY_NOTION_API_URL / saved config
@@ -69,6 +71,11 @@ async function main() {
 
   if (command === "docs") {
     await runDocsCommand(args);
+    return;
+  }
+
+  if (command === "mcp") {
+    await runMcpCommand(args);
     return;
   }
 
