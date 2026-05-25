@@ -14,15 +14,17 @@
 ### 首页（暗黑主题）
 ![首页-暗黑主题](public/screenshots/2.png)
 
+### 文档工作区
+![文档工作区](public/screenshots/3.png)
+
 ### 文档编辑页面
-![文档编辑页面](public/screenshots/3.png)
+![文档编辑页面](public/screenshots/4.png)
 
-### AI 聊天页面
-![AI 聊天页面](public/screenshots/4.png)
+### AI 侧边栏助手
+![AI 侧边栏助手](public/screenshots/5.png)
 
-### AI 思考过程可视化
-![AI 思考过程可视化](public/screenshots/5.png)
-![AI 思考过程可视化](public/screenshots/6.png)
+### 全局文档搜索
+![全局文档搜索](public/screenshots/6.png)
 
 ## ✨ 核心特性
 
