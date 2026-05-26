@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { MyNotionClient } from "../client/http-client.js";
 import {
   readStringOption,
@@ -41,8 +41,18 @@ export async function runDocsCommand(args: ParsedArgs) {
     return;
   }
 
+  if (action === "export") {
+    await exportDocument(args);
+    return;
+  }
+
+  if (action === "import") {
+    await importDocument(args);
+    return;
+  }
+
   throw new Error(
-    "Unknown docs command. Usage: my-notion docs <create|fetch|search|list|update|archive>",
+    "Unknown docs command. Usage: my-notion docs <create|fetch|search|list|update|archive|export|import>",
   );
 }
 
@@ -134,5 +144,53 @@ async function archive(args: ParsedArgs) {
   }
 
   const document = await createClient(args).archiveDocument(id);
+  writeOutput(document, getOutputFormat(args.options));
+}
+
+async function exportDocument(args: ParsedArgs) {
+  const id = readStringOption(args.options, "id") ?? args.positionals[2];
+  if (!id) {
+    throw new Error("Missing document id. Usage: my-notion docs export --id <id> [--output file.md]");
+  }
+
+  const document = await createClient(args).fetchDocument(id);
+  const format = getOutputFormat(args.options, "markdown");
+  const output = readStringOption(args.options, "output");
+
+  if (output) {
+    const content =
+      format === "json" || format === "pretty"
+        ? JSON.stringify(document, null, 2)
+        : document.contentMarkdown;
+    writeFileSync(output, content, "utf8");
+    const summaryFormat = format === "markdown" ? "json" : format;
+    writeOutput(
+      {
+        id: document.id,
+        title: document.title,
+        output,
+        format,
+        bytes: Buffer.byteLength(content, "utf8"),
+      },
+      summaryFormat,
+    );
+    return;
+  }
+
+  writeOutput(document, format);
+}
+
+async function importDocument(args: ParsedArgs) {
+  const title = readStringOption(args.options, "title");
+  const file = readStringOption(args.options, "file") ?? readStringOption(args.options, "content-file");
+  if (!title || !file) {
+    throw new Error("Missing title or file. Usage: my-notion docs import --title <title> --file <file.md>");
+  }
+
+  const document = await createClient(args).createDocument({
+    title,
+    contentMarkdown: readFileSync(file, "utf8"),
+  });
+
   writeOutput(document, getOutputFormat(args.options));
 }

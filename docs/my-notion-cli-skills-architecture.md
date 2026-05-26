@@ -494,11 +494,11 @@ pnpm --filter @notion/my-notion-skills lint
 
 #### P1：文档导入导出
 
-- [ ] 实现 `my-notion docs export --id <documentId> --output-file <path>`，默认导出 Markdown。
-- [ ] 实现 `my-notion docs import --title <title> --content-file <path>`，首版等价于 create，后续支持批量目录导入。
-- [ ] 支持 `--format markdown|json` 的导出结果，保证 Agent 可直接读取。
-- [ ] 增加 import/export 的 CLI E2E 覆盖，验证导出内容可再次导入。
-- [ ] 在 `my-notion-docs` skill 中补充长文档导入、导出再编辑、备份恢复示例。
+- [x] 实现 `my-notion docs export --id <documentId> --output <path>`，默认导出 Markdown。
+- [x] 实现 `my-notion docs import --title <title> --file <path>`，首版等价于 create，后续支持批量目录导入。
+- [x] 支持 `--format markdown|json` 的导出结果，保证 Agent 可直接读取。
+- [x] 增加 import/export 的 CLI E2E 覆盖，验证导出内容可再次导入。
+- [x] 在 `my-notion-docs` skill 中补充长文档导入、导出再编辑、备份恢复示例。
 
 #### P1：Knowledge Base 能力
 

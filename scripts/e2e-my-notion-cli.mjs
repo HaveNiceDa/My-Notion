@@ -97,6 +97,7 @@ function main() {
   const tempHome = mkdtempSync(join(tmpdir(), "my-notion-cli-e2e-"));
   const contentFile = join(tempHome, "draft.md");
   const updatedFile = join(tempHome, "updated.md");
+  const exportedFile = join(tempHome, "exported.md");
   const uniqueKeyword = `e2e-${Date.now()}`;
 
   writeFileSync(
@@ -112,18 +113,20 @@ function main() {
 
   let tokenRecordId;
   let created;
+  let imported;
   let searchResults = [];
   let revokedToken = null;
   let archivedDocument = null;
+  let archivedImportedDocument = null;
   const cliEnv = { HOME: tempHome };
 
   const identityArgs = JSON.stringify({ subject: testUserId, tokenIdentifier: testUserId });
 
   try {
-    console.log(`[1/10] Build CLI`);
+    console.log(`[1/12] Build CLI`);
     run("pnpm", ["--filter", "@notion/my-notion-cli", "build"]);
 
-    console.log(`[2/10] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/12] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
     "--filter",
     "@notion/web",
@@ -146,7 +149,7 @@ function main() {
     const seededToken = parseLastJsonObject(seedOutput);
     tokenRecordId = seededToken.id;
 
-    console.log(`[3/10] auth login`);
+    console.log(`[3/12] auth login`);
     const login = runJson("node", [
     cliEntry,
     "auth",
@@ -163,7 +166,7 @@ function main() {
       throw new Error("auth login did not authenticate");
     }
 
-    console.log(`[4/10] docs create`);
+    console.log(`[4/12] docs create`);
     created = runJson("node", [
     cliEntry,
     "docs",
@@ -180,7 +183,7 @@ function main() {
       throw new Error("docs create did not return document id");
     }
 
-    console.log(`[5/10] docs fetch`);
+    console.log(`[5/12] docs fetch`);
     const fetchedMarkdown = run("node", [
     cliEntry,
     "docs",
@@ -195,7 +198,7 @@ function main() {
       throw new Error("docs fetch did not include created content");
     }
 
-    console.log(`[6/10] docs update`);
+    console.log(`[6/12] docs update`);
     const updated = runJson("node", [
     cliEntry,
     "docs",
@@ -214,7 +217,7 @@ function main() {
       throw new Error("docs update did not append content");
     }
 
-    console.log(`[7/10] docs search`);
+    console.log(`[7/12] docs search`);
     searchResults = runJson("node", [
     cliEntry,
     "docs",
@@ -231,7 +234,42 @@ function main() {
       throw new Error("docs search did not find the created document");
     }
 
-    console.log(`[8/10] docs archive`);
+    console.log(`[8/12] docs export`);
+    const exportResult = runJson("node", [
+      cliEntry,
+      "docs",
+      "export",
+      "--id",
+      created.id,
+      "--output",
+      exportedFile,
+      "--format",
+      "markdown",
+    ], { env: cliEnv });
+
+    const exportedMarkdown = readFileSync(exportedFile, "utf8");
+    if (!exportResult.output || !exportedMarkdown.includes(uniqueKeyword) || !exportedMarkdown.includes("Appended content")) {
+      throw new Error("docs export did not write expected Markdown content");
+    }
+
+    console.log(`[9/12] docs import`);
+    imported = runJson("node", [
+      cliEntry,
+      "docs",
+      "import",
+      "--title",
+      `Imported CLI E2E ${uniqueKeyword}`,
+      "--file",
+      exportedFile,
+      "--format",
+      "json",
+    ], { env: cliEnv });
+
+    if (!imported.id || !imported.contentMarkdown.includes(uniqueKeyword)) {
+      throw new Error("docs import did not create expected document");
+    }
+
+    console.log(`[10/12] docs archive`);
     archivedDocument = runJson("node", [
       cliEntry,
       "docs",
@@ -244,6 +282,20 @@ function main() {
 
     if (!archivedDocument.isArchived) {
       throw new Error("docs archive did not mark the document as archived");
+    }
+
+    archivedImportedDocument = runJson("node", [
+      cliEntry,
+      "docs",
+      "archive",
+      "--id",
+      imported.id,
+      "--format",
+      "json",
+    ], { env: cliEnv });
+
+    if (!archivedImportedDocument.isArchived) {
+      throw new Error("docs archive did not mark the imported document as archived");
     }
 
     const postArchiveSearch = runJson("node", [
@@ -262,7 +314,7 @@ function main() {
       throw new Error("archived document still appeared in docs search");
     }
 
-    console.log(`[9/10] tokens revoke-current`);
+    console.log(`[11/12] tokens revoke-current`);
     revokedToken = runJson("node", [
       cliEntry,
       "tokens",
@@ -292,7 +344,7 @@ function main() {
       throw new Error("revoked token still passed auth status");
     }
 
-    console.log(`[10/10] auth logout`);
+    console.log(`[12/12] auth logout`);
     const logout = runJson("node", [
       cliEntry,
       "auth",
@@ -311,7 +363,9 @@ function main() {
     testUserId,
     tokenPrefix: pat.tokenPrefix,
     documentId: created.id,
+    importedDocumentId: imported.id,
     archived: archivedDocument.isArchived,
+    importedArchived: archivedImportedDocument.isArchived,
     searchHits: searchResults.length,
     revokedTokenId: revokedToken.id,
     revokedAt: revokedToken.revokedAt,
@@ -337,6 +391,28 @@ function main() {
         archivedDocument = cleanupArchive;
       } catch (error) {
         console.error(`Failed to archive test document: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
+    if (imported?.id && !archivedImportedDocument?.isArchived && tokenRecordId) {
+      try {
+        console.log(`[cleanup] archive imported test document`);
+        const cleanupArchive = runJson("node", [
+          cliEntry,
+          "docs",
+          "archive",
+          "--id",
+          imported.id,
+          "--api-url",
+          apiUrl,
+          "--token",
+          pat.token,
+          "--format",
+          "json",
+        ], { env: cliEnv });
+        archivedImportedDocument = cleanupArchive;
+      } catch (error) {
+        console.error(`Failed to archive imported test document: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 

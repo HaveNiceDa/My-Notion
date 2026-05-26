@@ -186,6 +186,38 @@ my-notion docs fetch --id <documentId> --format markdown
 
 Use Markdown output for summarization, rewriting, diffing, and append decisions.
 
+### Export
+
+Export Markdown to stdout:
+
+```bash
+my-notion docs export --id <documentId> --format markdown
+```
+
+Export Markdown to a local file:
+
+```bash
+my-notion docs export --id <documentId> --output /tmp/document.md --format markdown
+```
+
+Export JSON metadata and content to a local file:
+
+```bash
+my-notion docs export --id <documentId> --output /tmp/document.json --format json
+```
+
+When `--output` is provided, stdout returns a JSON summary containing `id`, `title`, `output`, `format`, and `bytes`.
+
+### Import
+
+Import a local Markdown file as a new document:
+
+```bash
+my-notion docs import --title "Imported Document" --file /tmp/document.md --format json
+```
+
+`--content-file` is accepted as an alias for `--file`. Import creates a new document and does not modify existing documents.
+
 ### Search
 
 Search by keyword:
@@ -322,7 +354,9 @@ The smoke test:
 - fetches it as Markdown
 - appends content
 - searches by a unique keyword
-- archives the test document
+- exports the test document to Markdown
+- imports the exported Markdown as a new document
+- archives both test documents
 - revokes the temporary PAT
 - verifies the revoked PAT no longer authenticates
 - clears the saved local PAT with `auth logout`

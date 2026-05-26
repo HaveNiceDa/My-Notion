@@ -1,11 +1,11 @@
 ---
 name: "my-notion-docs"
-description: "Uses My-Notion CLI to create, read, search, and update documents. Invoke when user asks an Agent to manage My-Notion docs."
+description: "Uses My-Notion CLI to create, read, search, update, import, and export documents. Invoke when user asks an Agent to manage My-Notion docs."
 ---
 
 # My-Notion Docs
 
-Use this skill when an Agent needs to create, read, search, list, update, or archive My-Notion documents through the My-Notion CLI.
+Use this skill when an Agent needs to create, read, search, list, update, import, export, or archive My-Notion documents through the My-Notion CLI.
 
 Before using this skill, ensure `my-notion-shared` authentication guidance is satisfied.
 
@@ -84,6 +84,22 @@ my-notion docs fetch --id <documentId> --format markdown
 
 Prefer `--format markdown` when the next step is summarization, rewriting, diffing, or appending content.
 
+## Import and Export Documents
+
+Use `docs export` when the user asks to back up, migrate, edit locally, or hand a My-Notion document to another tool:
+
+```bash
+my-notion docs export --id <documentId> --output /tmp/my-notion-doc.md --format markdown
+```
+
+Use `docs import` when the user provides a Markdown file that should become a new My-Notion document:
+
+```bash
+my-notion docs import --title "Imported Document" --file /tmp/my-notion-doc.md --format json
+```
+
+For edit-roundtrip workflows, export to a temporary Markdown file, modify the file, then import as a new document or update the original document explicitly.
+
 ## Search Documents
 
 Use `docs search` when the user asks to find existing documents or when you need to avoid duplicates.
@@ -132,6 +148,8 @@ my-notion docs archive --id <documentId> --format json
 - Prefer temporary Markdown files over shell-escaped inline content for non-trivial documents.
 - Use `--format json` when parsing command output.
 - Use `--format markdown` when reading document bodies for language tasks.
+- Use `docs export --output` for backup, local editing, or handoff to external tools.
+- Use `docs import --file` for Markdown files that should become new My-Notion documents.
 - Ask the user before overwriting existing document content unless they explicitly requested overwrite.
 - Ask the user before archiving a non-test document unless they explicitly requested removal.
 - Do not expose PAT tokens in final answers.

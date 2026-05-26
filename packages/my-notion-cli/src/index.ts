@@ -47,6 +47,8 @@ Usage:
   my-notion docs list [--limit 20]
   my-notion docs update --id <documentId> [--title <title>] [--content-file draft.md] [--mode overwrite|append]
   my-notion docs archive --id <documentId>
+  my-notion docs export --id <documentId> [--output document.md]
+  my-notion docs import --title <title> --file document.md
   my-notion mcp serve --transport stdio
 
 Global options:
