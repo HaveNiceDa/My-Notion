@@ -13,10 +13,12 @@ export type ParsedArgs = {
 export type ApiSuccess<T> = {
   success: true;
   data: T;
+  requestId?: string;
 };
 
 export type ApiFailure = {
   success: false;
+  requestId?: string;
   error?: {
     code?: string;
     message?: string;

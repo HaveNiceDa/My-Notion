@@ -12,26 +12,38 @@ type ApiErrorCode =
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
-function jsonResponse(body: unknown, init?: ResponseInit) {
+function createRequestId() {
+  return `req_${crypto.randomUUID().replace(/-/g, "")}`;
+}
+
+function jsonResponse(body: unknown, requestId: string, init?: ResponseInit) {
   return new Response(JSON.stringify(body), {
     ...init,
     headers: {
       "Content-Type": "application/json",
+      "x-request-id": requestId,
       ...init?.headers,
     },
   });
 }
 
-function successResponse(data: unknown, init?: ResponseInit) {
-  return jsonResponse({ success: true, data }, init);
+function successResponse(data: unknown, requestId: string, init?: ResponseInit) {
+  return jsonResponse({ success: true, data, requestId }, requestId, init);
 }
 
-function errorResponse(status: number, code: ApiErrorCode | string, message: string) {
+function errorResponse(
+  status: number,
+  code: ApiErrorCode | string,
+  message: string,
+  requestId: string,
+) {
   return jsonResponse(
     {
       success: false,
       error: { code, message },
+      requestId,
     },
+    requestId,
     { status },
   );
 }
@@ -59,11 +71,12 @@ async function parseJsonBody(req: Request) {
 }
 
 const cliHttpAction = httpAction(async (ctx, req) => {
+  const requestId = createRequestId();
   try {
     const url = new URL(req.url);
     const token = getBearerToken(req);
     if (!token) {
-      return errorResponse(401, "UNAUTHORIZED", "Missing Bearer token");
+      return errorResponse(401, "UNAUTHORIZED", "Missing Bearer token", requestId);
     }
 
     const tokenHash = await sha256Hex(token);
@@ -79,7 +92,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
     });
 
     if (!auth.ok) {
-      return errorResponse(auth.status, auth.code, auth.code);
+      return errorResponse(auth.status, auth.code, auth.code, requestId);
     }
 
     await ctx.runMutation(internal.cli.recordApiTokenUsed, {
@@ -92,14 +105,14 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         tokenPrefix: auth.tokenPrefix,
         scopes: auth.scopes,
         expiresAt: auth.expiresAt,
-      });
+      }, requestId);
     }
 
     if (pathname === "/cli/v1/tokens/revoke-current" && method === "POST") {
       const token = await ctx.runMutation(internal.cli.revokeCurrentApiToken, {
         tokenId: auth.tokenId,
       });
-      return successResponse({ token });
+      return successResponse({ token }, requestId);
     }
 
     if (pathname === "/cli/v1/documents" && method === "GET") {
@@ -108,7 +121,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         userId: auth.userId,
         limit: Number.isFinite(limit) ? limit : 20,
       });
-      return successResponse({ documents });
+      return successResponse({ documents }, requestId);
     }
 
     if (pathname === "/cli/v1/documents/search" && method === "GET") {
@@ -118,13 +131,13 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         query: url.searchParams.get("q") ?? undefined,
         limit: Number.isFinite(limit) ? limit : 20,
       });
-      return successResponse({ documents });
+      return successResponse({ documents }, requestId);
     }
 
     if (pathname === "/cli/v1/documents" && method === "POST") {
       const body = await parseJsonBody(req);
       if (typeof body.title !== "string" || body.title.trim().length === 0) {
-        return errorResponse(400, "BAD_REQUEST", "title is required");
+        return errorResponse(400, "BAD_REQUEST", "title is required", requestId);
       }
 
       const document = await ctx.runMutation(internal.cli.createCliDocument, {
@@ -136,7 +149,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
             : undefined,
       });
 
-      return successResponse(document, { status: 201 });
+      return successResponse(document, requestId, { status: 201 });
     }
 
     const documentPrefix = "/cli/v1/documents/";
@@ -145,7 +158,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         pathname.slice(documentPrefix.length),
       ) as Id<"documents">;
       if (!documentId || documentId === "search") {
-        return errorResponse(400, "BAD_REQUEST", "document id is required");
+        return errorResponse(400, "BAD_REQUEST", "document id is required", requestId);
       }
 
       if (method === "GET") {
@@ -154,9 +167,9 @@ const cliHttpAction = httpAction(async (ctx, req) => {
           documentId,
         });
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found");
+          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
         }
-        return successResponse(document);
+        return successResponse(document, requestId);
       }
 
       if (method === "PATCH") {
@@ -178,9 +191,9 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         });
 
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found");
+          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
         }
-        return successResponse(document);
+        return successResponse(document, requestId);
       }
 
       if (method === "DELETE") {
@@ -190,19 +203,20 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         });
 
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found");
+          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
         }
-        return successResponse(document);
+        return successResponse(document, requestId);
       }
     }
 
-    return errorResponse(404, "NOT_FOUND", "CLI endpoint not found");
+    return errorResponse(404, "NOT_FOUND", "CLI endpoint not found", requestId);
   } catch (error) {
-    console.error("[CLI HTTP] Error:", error);
+    console.error(`[CLI HTTP] Error requestId=${requestId}:`, error);
     return errorResponse(
       500,
       "INTERNAL_ERROR",
       error instanceof Error ? error.message : "Internal server error",
+      requestId,
     );
   }
 });

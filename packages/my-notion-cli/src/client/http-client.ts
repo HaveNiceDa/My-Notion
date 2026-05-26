@@ -5,8 +5,9 @@ export class MyNotionApiError extends Error {
     message: string,
     public readonly status: number,
     public readonly code?: string,
+    public readonly requestId?: string,
   ) {
-    super(message);
+    super(requestId ? `${message} (requestId: ${requestId})` : message);
     this.name = "MyNotionApiError";
   }
 }
@@ -119,11 +120,13 @@ export class MyNotionClient {
 
     if (!response.ok || !payload?.success) {
       const code = payload?.success === false ? payload.error?.code : undefined;
+      const requestId =
+        payload?.requestId ?? response.headers.get("x-request-id") ?? undefined;
       const message =
         payload?.success === false
           ? payload.error?.message ?? code ?? "Request failed"
           : `HTTP ${response.status}`;
-      throw new MyNotionApiError(message, response.status, code);
+      throw new MyNotionApiError(message, response.status, code, requestId);
     }
 
     return payload.data;

@@ -92,6 +92,18 @@ Typical output:
 
 Use `auth logout` for local cleanup only. Use `tokens revoke-current` when the credential should stop working remotely.
 
+## Error Output
+
+Machine API responses include a stable `requestId` in the JSON envelope and `x-request-id` response header.
+
+When the server returns a structured error, the CLI prints the request id with the error message:
+
+```text
+UNAUTHORIZED (requestId: req_xxx)
+```
+
+Use `requestId` to correlate CLI/MCP failures with server logs or future audit records. Network-level failures such as `fetch failed` may not have a request id because the server did not return a response.
+
 ## Documents
 
 ### Create
