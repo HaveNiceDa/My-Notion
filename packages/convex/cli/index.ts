@@ -2,9 +2,19 @@ import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "@convex/server";
 
 const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
+const RATE_LIMIT_WINDOW_MS = 60_000;
 
 function now() {
   return Date.now();
+}
+
+function createRateLimitWindow(timestamp: number, windowMs: number) {
+  const windowStart = Math.floor(timestamp / windowMs) * windowMs;
+  return {
+    windowStart,
+    expiresAt: windowStart + windowMs,
+    windowKey: String(windowStart),
+  };
 }
 
 function markdownToBlockNoteJson(markdown: string) {
@@ -285,6 +295,67 @@ export const recordCliAuditLog = internalMutation({
     });
 
     return { success: true };
+  },
+});
+
+export const checkAndIncrementCliRateLimit = internalMutation({
+  args: {
+    tokenId: v.id("apiTokens"),
+    endpointKey: v.string(),
+    limit: v.number(),
+    windowMs: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const timestamp = now();
+    const windowMs = args.windowMs ?? RATE_LIMIT_WINDOW_MS;
+    const { windowStart, expiresAt, windowKey } = createRateLimitWindow(
+      timestamp,
+      windowMs,
+    );
+    const existing = await ctx.db
+      .query("cliRateLimits")
+      .withIndex("by_token_endpoint_window", (q) =>
+        q
+          .eq("tokenId", args.tokenId)
+          .eq("endpointKey", args.endpointKey)
+          .eq("windowKey", windowKey),
+      )
+      .unique();
+
+    const currentCount = existing?.count ?? 0;
+    if (currentCount >= args.limit) {
+      return {
+        allowed: false as const,
+        limit: args.limit,
+        remaining: 0,
+        resetAt: expiresAt,
+      };
+    }
+
+    const nextCount = currentCount + 1;
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        count: nextCount,
+        updatedAt: timestamp,
+      });
+    } else {
+      await ctx.db.insert("cliRateLimits", {
+        tokenId: args.tokenId,
+        endpointKey: args.endpointKey,
+        windowKey,
+        count: nextCount,
+        windowStart,
+        expiresAt,
+        updatedAt: timestamp,
+      });
+    }
+
+    return {
+      allowed: true as const,
+      limit: args.limit,
+      remaining: Math.max(args.limit - nextCount, 0),
+      resetAt: expiresAt,
+    };
   },
 });
 

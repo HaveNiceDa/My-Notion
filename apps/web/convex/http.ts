@@ -9,6 +9,7 @@ type ApiErrorCode =
   | "TOKEN_REVOKED"
   | "TOKEN_EXPIRED"
   | "INSUFFICIENT_SCOPE"
+  | "RATE_LIMITED"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
 
@@ -36,6 +37,7 @@ function errorResponse(
   code: ApiErrorCode | string,
   message: string,
   requestId: string,
+  init?: ResponseInit,
 ) {
   return jsonResponse(
     {
@@ -44,7 +46,7 @@ function errorResponse(
       requestId,
     },
     requestId,
-    { status },
+    { ...init, status },
   );
 }
 
@@ -68,6 +70,35 @@ async function parseJsonBody(req: Request) {
   } catch {
     return {};
   }
+}
+
+function endpointKey(method: string, pathname: string) {
+  if (pathname === "/cli/v1/auth/status") {
+    return `${method} /cli/v1/auth/status`;
+  }
+  if (pathname === "/cli/v1/tokens/revoke-current") {
+    return `${method} /cli/v1/tokens/revoke-current`;
+  }
+  if (pathname === "/cli/v1/documents") {
+    return `${method} /cli/v1/documents`;
+  }
+  if (pathname === "/cli/v1/documents/search") {
+    return `${method} /cli/v1/documents/search`;
+  }
+  if (pathname.startsWith("/cli/v1/documents/")) {
+    return `${method} /cli/v1/documents/:id`;
+  }
+  return `${method} ${pathname}`;
+}
+
+function rateLimitForEndpoint(method: string, pathname: string) {
+  if (pathname === "/cli/v1/auth/status") {
+    return 60;
+  }
+  if (pathname === "/cli/v1/tokens/revoke-current") {
+    return 10;
+  }
+  return method === "GET" ? 120 : 30;
 }
 
 const cliHttpAction = httpAction(async (ctx, req) => {
@@ -118,9 +149,10 @@ const cliHttpAction = httpAction(async (ctx, req) => {
     status: number,
     code: ApiErrorCode | string,
     message: string,
+    init?: ResponseInit,
   ) {
     await recordAudit(status, code);
-    return errorResponse(status, code, message, requestId);
+    return errorResponse(status, code, message, requestId, init);
   }
 
   try {
@@ -154,6 +186,30 @@ const cliHttpAction = httpAction(async (ctx, req) => {
       tokenPrefix: auth.tokenPrefix,
       userId: auth.userId,
     };
+
+    const rateLimit = await ctx.runMutation(
+      internal.cli.checkAndIncrementCliRateLimit,
+      {
+        tokenId: auth.tokenId,
+        endpointKey: endpointKey(method, pathname),
+        limit: rateLimitForEndpoint(method, pathname),
+      },
+    );
+
+    if (!rateLimit.allowed) {
+      const retryAfterSeconds = Math.max(
+        Math.ceil((rateLimit.resetAt - Date.now()) / 1000),
+        1,
+      );
+      return auditedError(429, "RATE_LIMITED", "Rate limit exceeded", {
+        headers: {
+          "Retry-After": String(retryAfterSeconds),
+          "x-ratelimit-limit": String(rateLimit.limit),
+          "x-ratelimit-remaining": String(rateLimit.remaining),
+          "x-ratelimit-reset": String(rateLimit.resetAt),
+        },
+      });
+    }
 
     await ctx.runMutation(internal.cli.recordApiTokenUsed, {
       tokenId: auth.tokenId,

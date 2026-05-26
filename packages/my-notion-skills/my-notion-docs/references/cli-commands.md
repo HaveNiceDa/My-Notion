@@ -106,6 +106,15 @@ Use `requestId` to correlate CLI/MCP failures with server logs or Machine API au
 
 Machine API audit records include request id, token id, token prefix, user id, endpoint path, HTTP method, status, required scope, error code, duration, and timestamp. PAT plaintext and token hashes are never recorded.
 
+Rate-limited requests return HTTP `429` with structured code `RATE_LIMITED`, `requestId`, and rate-limit headers:
+
+```text
+Retry-After: 42
+x-ratelimit-limit: 30
+x-ratelimit-remaining: 0
+x-ratelimit-reset: 1779766800000
+```
+
 ## Retry and Timeout
 
 The CLI HTTP client uses a conservative retry policy for Machine API calls:
@@ -113,10 +122,22 @@ The CLI HTTP client uses a conservative retry policy for Machine API calls:
 - Each attempt times out after 10 seconds.
 - The CLI makes up to 3 attempts.
 - Retries use exponential backoff starting at 300ms.
-- Retries apply to network failures, timeouts, HTTP 408, HTTP 429, and HTTP 5xx responses.
+- Retries apply to network failures, timeouts, HTTP 408, generic HTTP 429, and HTTP 5xx responses.
+- Structured `RATE_LIMITED` errors are not retried by the CLI to avoid amplifying quota pressure.
 - Structured 4xx business errors such as `UNAUTHORIZED`, `TOKEN_REVOKED`, `TOKEN_EXPIRED`, `INSUFFICIENT_SCOPE`, and `NOT_FOUND` are not retried.
 
 Archive cleanup is idempotent: repeated `docs archive` calls for an already archived document return the archived document instead of failing.
+
+## Rate Limits
+
+Machine API rate limits use a fixed 60-second window and the dimension `tokenId + method + endpoint`.
+
+- Read endpoints: 120 requests per minute.
+- Write endpoints: 30 requests per minute.
+- `GET /cli/v1/auth/status`: 60 requests per minute.
+- `POST /cli/v1/tokens/revoke-current`: 10 requests per minute.
+
+Endpoint paths are normalized before counting. For example, `GET /cli/v1/documents/<id>` is counted as `GET /cli/v1/documents/:id`.
 
 ## Documents
 

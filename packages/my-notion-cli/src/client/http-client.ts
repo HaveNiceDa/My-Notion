@@ -33,6 +33,13 @@ function isRetryableStatus(status: number) {
   return status === 408 || status === 429 || status >= 500;
 }
 
+function isRetryableApiError(error: MyNotionApiError) {
+  if (error.code === "RATE_LIMITED") {
+    return false;
+  }
+  return error.status === 0 || isRetryableStatus(error.status);
+}
+
 function retryDelay(attempt: number) {
   return RETRY_BASE_DELAY_MS * 2 ** attempt;
 }
@@ -151,8 +158,7 @@ export class MyNotionClient {
         lastError = apiError;
 
         const shouldRetry =
-          attempt < DEFAULT_MAX_ATTEMPTS - 1 &&
-          (apiError.status === 0 || isRetryableStatus(apiError.status));
+          attempt < DEFAULT_MAX_ATTEMPTS - 1 && isRetryableApiError(apiError);
         if (!shouldRetry) {
           throw apiError;
         }
