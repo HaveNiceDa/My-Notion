@@ -13,6 +13,7 @@
 3. `M12-agent-auto-tool-routing.md`：移除显式 RAG 开关，Agent 统一 auto 模式。
 4. `M13-document-read-tool.md`：当前文档读取能力接入 Agent 体系。
 5. `M14-react-agent-loop.md`：硬编码 tool 路由重构为标准 ReAct 循环，LLM 自主决策工具调用。
+6. `M16-cli-skills-mcp-agent-docs.md`：CLI / Skills / MCP Agent 写文档能力交付。
 
 ## 当前总状态
 
@@ -21,6 +22,7 @@
 - M12 ✅ 已完成：Agent Auto Tool Routing。
 - M13 ✅ 已完成：Document Read Tool。
 - M14 ✅ 已完成：ReAct Agent Loop 重构。
+- M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档。
 
 ## 关键验证命令
 
@@ -28,4 +30,9 @@
 pnpm --filter @notion/web typecheck
 pnpm --filter @notion/web build
 pnpm --filter @notion/web lint
+pnpm e2e:cli
+pnpm e2e:cli:errors
+pnpm e2e:mcp
+pnpm sync:skills
+pnpm sync:skills:check
 ```

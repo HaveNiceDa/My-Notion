@@ -19,7 +19,7 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 
 ## Implementation Status
 
-截至 2026-05-26，CLI / Skills 方案已经从规划进入 MVP 落地状态：
+截至 2026-05-26，CLI / Skills / MCP 方案已经从规划进入可交付状态：
 
 - Phase 1 机器 API 与 Token 地基：已完成。已实现 `apiTokens` schema、PAT 创建/撤销/校验、`/cli/v1/*` Convex HTTP Actions、Web PAT 管理 API。
 - Phase 2 CLI MVP：已完成。当前包名为 `@notion/my-notion-cli`，路径为 `packages/my-notion-cli`，支持 `auth`、`tokens`、`docs` 命令和 JSON/pretty/table/markdown 输出。
@@ -27,8 +27,9 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 - Phase 4 MCP Adapter：已完成 STDIO MVP。`my-notion mcp serve --transport stdio` 已暴露 `my_notion_docs_search`、`my_notion_docs_fetch`、`my_notion_docs_create`、`my_notion_docs_update`，写操作默认 `dryRun: true`。
 - Agent 写文档链路：已闭环。Agent 可通过 Skills 选择 CLI，或通过 MCP STDIO tool，以 Markdown 为输入创建、读取、更新、导入、导出和搜索 My-Notion 文档；写操作有 dry-run / 显式命令边界。
 - E2E 验证：已新增 `pnpm e2e:cli`、`pnpm e2e:cli:errors` 与 `pnpm e2e:mcp`，覆盖 CLI 文档 CRUD、PAT 生命周期、MCP JSON-RPC STDIO 调用和 Machine API 错误契约。
+- 里程碑沉淀：已新增 `milestones/M16-cli-skills-mcp-agent-docs.md`，将 Agent 写文档能力标记为可交付版本。
 
-当前 CLI / MCP 的核心目标已经从“实现 Agent 写文档能力”推进到“发布与开发体验收口”。`kb search`、RAG/Qdrant 检索、`agent ask` 和 HTTP MCP/OAuth 都不是写文档链路的必要依赖，降级为后续按产品目标选择的增强能力。
+当前 CLI / MCP 的核心目标已经完成“Agent 写文档能力”与“发布开发体验收口”。后续进入维护和按需增强阶段；`kb search`、RAG/Qdrant 检索、`agent ask` 和 HTTP MCP/OAuth 都不是写文档链路的必要依赖，降级为后续按产品目标选择的增强能力。
 
 
 ## Latest Validation
@@ -38,6 +39,7 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 - `pnpm e2e:mcp`：通过。覆盖 CLI build、PAT 注入、MCP STDIO server 启动、`initialize`、`tools/list`、dry-run 写工具、真实 create/fetch/update/search 链路和 PAT cleanup。
 - `pnpm e2e:cli`：通过。覆盖 CLI build、PAT 注入、`auth login`、`docs create/fetch/update/search`、`docs import/export`、`docs archive`、`tokens revoke-current`、`auth logout`。
 - `pnpm e2e:cli:errors`：通过。覆盖 Machine API 错误契约，包括 `401/403/404/422/429`、revoked / expired token、`requestId` 与 rate-limit headers。
+- `pnpm sync:skills:check`：通过。确认 `packages/my-notion-skills` 与 `.trae/skills` 无漂移。
 - 结论：Agent 写文档链路已闭环。E2E 测试文档已通过 `docs archive` 在 cleanup 阶段软归档，测试 PAT 会被撤销；当前不需要为 CLI 引入 RAG/Qdrant 检索能力来完成写文档目标。
 
 ## Current State Analysis
@@ -473,9 +475,9 @@ pnpm --filter @notion/my-notion-skills lint
 - MCP tool 输出包含 `structuredContent` 和文本 fallback。
 - 写操作支持 client 侧确认或 dry-run。
 
-### Phase 5：发布收口与后续增强（进行中）
+### Phase 5：发布收口与后续增强（P0/P1 已完成）
 
-优先级原则：先确认 Agent 写文档链路闭环，再收口发布、文档和开发体验；知识检索、Agent Ask 和远程 MCP 仅在产品目标需要时推进。
+优先级原则：Agent 写文档链路、发布文档、E2E、错误契约、skills 漂移校验和 MCP 输出体验均已闭环。当前进入维护与后续规划阶段；知识检索、Agent Ask 和远程 MCP 仅在产品目标需要时推进。
 
 #### P0：E2E 副作用清理
 

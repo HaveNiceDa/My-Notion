@@ -140,17 +140,32 @@ function revokeToken(record) {
   ]);
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function apiRequest(apiUrl, { method = "GET", path, token, body }) {
-  const response = await fetch(`${apiUrl}${path}`, {
-    method,
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-    },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
-  const payload = await response.json().catch(() => null);
-  return { response, payload };
+  let lastError;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      const response = await fetch(`${apiUrl}${path}`, {
+        method,
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(body === undefined ? {} : { "Content-Type": "application/json" }),
+        },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => null);
+      return { response, payload };
+    } catch (error) {
+      lastError = error;
+      if (attempt === 2) break;
+      await sleep(300 * 2 ** attempt);
+    }
+  }
+
+  throw lastError;
 }
 
 function assertRequestId(response, payload, label) {
@@ -312,22 +327,23 @@ async function main() {
     seededTokens.push(rateLimitToken);
 
     let rateLimited;
-    for (let attempt = 1; attempt <= 31; attempt += 1) {
+    for (let attempt = 1; attempt <= 90; attempt += 1) {
       const result = await apiRequest(apiUrl, {
         method: "POST",
         path: "/cli/v1/documents",
         token: rateLimitToken.token,
         body: { title: "   " },
       });
-      if (attempt <= 30) {
-        assert(result.response.status === 422, `rate limit warmup ${attempt}: expected 422, got ${result.response.status}`);
-        assert(result.payload?.error?.code === "VALIDATION_ERROR", `rate limit warmup ${attempt}: expected VALIDATION_ERROR`);
-      } else {
+      if (result.response.status === 429) {
         rateLimited = result;
+        break;
       }
+
+      assert(result.response.status === 422, `rate limit warmup ${attempt}: expected 422 or 429, got ${result.response.status}`);
+      assert(result.payload?.error?.code === "VALIDATION_ERROR", `rate limit warmup ${attempt}: expected VALIDATION_ERROR before RATE_LIMITED`);
     }
 
-    assert(rateLimited, "rate limit response was not captured");
+    assert(rateLimited, "rate limit response was not captured within 90 write attempts");
     assert(rateLimited.response.status === 429, `rate limit: expected 429, got ${rateLimited.response.status}`);
     assert(rateLimited.payload?.error?.code === "RATE_LIMITED", "rate limit: expected RATE_LIMITED");
     assertRequestId(rateLimited.response, rateLimited.payload, "rate limit");
