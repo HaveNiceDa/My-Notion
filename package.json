@@ -18,6 +18,7 @@
     "e2e:cli:errors": "node scripts/e2e-my-notion-cli-errors.mjs",
     "e2e:mcp": "node scripts/e2e-my-notion-mcp.mjs",
     "sync:skills": "node scripts/sync-my-notion-skills.mjs",
+    "sync:skills:check": "node scripts/sync-my-notion-skills.mjs --check",
     "clean": "rd /s /q node_modules 2>nul || exit 0"
   },
   "engines": {

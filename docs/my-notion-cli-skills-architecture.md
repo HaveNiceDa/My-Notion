@@ -506,9 +506,9 @@ pnpm --filter @notion/my-notion-skills lint
 #### P1：发布、文档与开发体验
 
 - [x] 在根 `README.md` 增加 CLI/MCP 快速开始，覆盖 PAT 创建、`auth login`、`docs create/import/update/export` 和 MCP STDIO 启动。
-- [x] 增加 `docs/my-notion-cli-release-checklist.md`：typecheck、build、Convex codegen、Web tsc、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`。
+- [x] 增加 `docs/my-notion-cli-release-checklist.md`：typecheck、build、Convex codegen、Web tsc、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`、`pnpm sync:skills:check`。
 - [x] 在 release checklist 中明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
-- [ ] 为 `.trae/skills` 同步流程增加校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
+- [x] 为 `.trae/skills` 同步流程增加 `pnpm sync:skills:check` 校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
 - [ ] 复查 MCP 写文档工具的 dry-run 文案、`structuredContent` 和错误输出，确保 Agent 默认安全、可解释。
 
 #### 后续规划：Knowledge Base / RAG 检索

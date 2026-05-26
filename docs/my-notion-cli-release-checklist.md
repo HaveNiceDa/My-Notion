@@ -23,6 +23,7 @@ pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
 pnpm sync:skills
+pnpm sync:skills:check
 ```
 
 如改动影响 Web UI、PAT 管理入口或 Next.js API，再追加：
@@ -75,6 +76,7 @@ pnpm --filter @notion/web lint
 
 ```bash
 pnpm sync:skills
+pnpm sync:skills:check
 ```
 
 然后确认：
@@ -82,6 +84,7 @@ pnpm sync:skills
 - `packages/my-notion-skills/my-notion-docs` 已同步到 `.trae/skills/my-notion-docs`。
 - `packages/my-notion-skills/my-notion-mcp` 已同步到 `.trae/skills/my-notion-mcp`。
 - `packages/my-notion-skills/my-notion-shared` 已同步到 `.trae/skills/my-notion-shared`。
+- `pnpm sync:skills:check` 返回 `success: true`，不存在缺失、额外或内容不一致的文件。
 - skill 文档仍要求长内容使用临时 Markdown 文件。
 - skill 文档仍禁止在聊天或日志中输出完整 PAT。
 
@@ -121,6 +124,7 @@ pnpm sync:skills
 - `pnpm e2e:cli:errors`：通过
 - `pnpm e2e:mcp`：通过
 - `pnpm sync:skills`：通过
+- `pnpm sync:skills:check`：通过
 
 ## 发布判断
 

@@ -8,11 +8,12 @@ import {
   rmSync,
   statSync,
 } from "node:fs";
-import { basename, join, resolve } from "node:path";
+import { basename, join, relative, resolve } from "node:path";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const sourceRoot = join(root, "packages/my-notion-skills");
 const targetRoot = join(root, ".trae/skills");
+const checkOnly = process.argv.includes("--check");
 
 function readSkillFrontmatter(skillPath) {
   const content = readFileSync(skillPath, "utf8");
@@ -40,6 +41,25 @@ function findSkillDirs() {
     .filter((entryPath) => existsSync(join(entryPath, "SKILL.md")));
 }
 
+function listFiles(dir) {
+  if (!existsSync(dir)) return [];
+
+  const result = [];
+  for (const entry of readdirSync(dir)) {
+    if (entry === ".gitkeep") continue;
+
+    const entryPath = join(dir, entry);
+    const stat = statSync(entryPath);
+    if (stat.isDirectory()) {
+      result.push(...listFiles(entryPath));
+    } else if (stat.isFile()) {
+      result.push(entryPath);
+    }
+  }
+
+  return result;
+}
+
 function syncSkill(sourceDir) {
   const sourceSkillPath = join(sourceDir, "SKILL.md");
   const sourceDirName = basename(sourceDir);
@@ -64,22 +84,113 @@ function syncSkill(sourceDir) {
   };
 }
 
+function checkSkill(sourceDir) {
+  const sourceSkillPath = join(sourceDir, "SKILL.md");
+  const sourceDirName = basename(sourceDir);
+  const frontmatter = readSkillFrontmatter(sourceSkillPath);
+  if (frontmatter.name !== sourceDirName) {
+    throw new Error(
+      `Skill name mismatch: folder is ${sourceDirName}, frontmatter name is ${frontmatter.name}`,
+    );
+  }
+
+  const targetDir = join(targetRoot, sourceDirName);
+  const sourceFiles = listFiles(sourceDir);
+  const targetFiles = listFiles(targetDir);
+  const expected = new Map(
+    sourceFiles.map((filePath) => [relative(sourceDir, filePath), filePath]),
+  );
+  const actual = new Map(
+    targetFiles.map((filePath) => [relative(targetDir, filePath), filePath]),
+  );
+  const diffs = [];
+
+  for (const [relativePath, sourcePath] of expected) {
+    const targetPath = actual.get(relativePath);
+    if (!targetPath) {
+      diffs.push({
+        type: "missing",
+        skill: sourceDirName,
+        path: relativePath,
+      });
+      continue;
+    }
+
+    const sourceContent = readFileSync(sourcePath, "utf8");
+    const targetContent = readFileSync(targetPath, "utf8");
+    if (sourceContent !== targetContent) {
+      diffs.push({
+        type: "modified",
+        skill: sourceDirName,
+        path: relativePath,
+      });
+    }
+  }
+
+  for (const relativePath of actual.keys()) {
+    if (!expected.has(relativePath)) {
+      diffs.push({
+        type: "extra",
+        skill: sourceDirName,
+        path: relativePath,
+      });
+    }
+  }
+
+  return {
+    name: frontmatter.name,
+    description: frontmatter.description,
+    targetDir,
+    diffs,
+  };
+}
+
 function main() {
   if (!existsSync(sourceRoot)) {
     throw new Error(`Source skills directory not found: ${sourceRoot}`);
   }
 
   mkdirSync(targetRoot, { recursive: true });
-  const synced = findSkillDirs().map(syncSkill);
+  const skillDirs = findSkillDirs();
 
-  if (synced.length === 0) {
+  if (skillDirs.length === 0) {
     throw new Error(`No skills found under ${sourceRoot}`);
   }
 
+  if (checkOnly) {
+    const checked = skillDirs.map(checkSkill);
+    const diffs = checked.flatMap((skill) => skill.diffs);
+    const success = diffs.length === 0;
+    console.log(
+      JSON.stringify(
+        {
+          success,
+          mode: "check",
+          sourceRoot,
+          targetRoot,
+          checked: checked.map((skill) => ({
+            name: skill.name,
+            targetDir: skill.targetDir,
+            diffCount: skill.diffs.length,
+          })),
+          diffs,
+        },
+        null,
+        2,
+      ),
+    );
+    if (!success) {
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  const synced = skillDirs.map(syncSkill);
   console.log(
     JSON.stringify(
       {
         success: true,
+        mode: "sync",
         sourceRoot,
         targetRoot,
         synced: synced.map((skill) => ({
