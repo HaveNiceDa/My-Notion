@@ -505,9 +505,9 @@ pnpm --filter @notion/my-notion-skills lint
 
 #### P1：发布、文档与开发体验
 
-- [ ] 在根 `README.md` 增加 CLI/MCP 快速开始，覆盖 PAT 创建、`auth login`、`docs create/import/update/export` 和 MCP STDIO 启动。
-- [ ] 增加 CLI release checklist：typecheck、build、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`。
-- [ ] 明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
+- [x] 在根 `README.md` 增加 CLI/MCP 快速开始，覆盖 PAT 创建、`auth login`、`docs create/import/update/export` 和 MCP STDIO 启动。
+- [x] 增加 `docs/my-notion-cli-release-checklist.md`：typecheck、build、Convex codegen、Web tsc、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`。
+- [x] 在 release checklist 中明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
 - [ ] 为 `.trae/skills` 同步流程增加校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
 - [ ] 复查 MCP 写文档工具的 dry-run 文案、`structuredContent` 和错误输出，确保 Agent 默认安全、可解释。
 
@@ -575,6 +575,10 @@ pnpm --filter @notion/my-notion-skills lint
 - 检查 Convex/Web 类型：`pnpm --filter @notion/web typecheck`。
 - 检查 Web 构建：`pnpm --filter @notion/web build`。
 - 检查 Web lint：`pnpm --filter @notion/web lint`。
+
+发布检查：
+
+- 参考 `docs/my-notion-cli-release-checklist.md`。
 
 接口验收：
 
