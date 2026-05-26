@@ -25,9 +25,10 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 - Phase 2 CLI MVP：已完成。当前包名为 `@notion/my-notion-cli`，路径为 `packages/my-notion-cli`，支持 `auth`、`tokens`、`docs` 命令和 JSON/pretty/table/markdown 输出。
 - Phase 3 Skills MVP：已完成。当前包名为 `@notion/my-notion-skills`，路径为 `packages/my-notion-skills`，包含 `my-notion-shared`、`my-notion-docs`、`my-notion-mcp`，并通过 `pnpm sync:skills` 同步到 `.trae/skills`。
 - Phase 4 MCP Adapter：已完成 STDIO MVP。`my-notion mcp serve --transport stdio` 已暴露 `my_notion_docs_search`、`my_notion_docs_fetch`、`my_notion_docs_create`、`my_notion_docs_update`，写操作默认 `dryRun: true`。
-- E2E 验证：已新增 `pnpm e2e:cli` 与 `pnpm e2e:mcp`，覆盖 CLI 文档 CRUD、PAT 生命周期、MCP JSON-RPC STDIO 调用。
+- Agent 写文档链路：已闭环。Agent 可通过 Skills 选择 CLI，或通过 MCP STDIO tool，以 Markdown 为输入创建、读取、更新、导入、导出和搜索 My-Notion 文档；写操作有 dry-run / 显式命令边界。
+- E2E 验证：已新增 `pnpm e2e:cli`、`pnpm e2e:cli:errors` 与 `pnpm e2e:mcp`，覆盖 CLI 文档 CRUD、PAT 生命周期、MCP JSON-RPC STDIO 调用和 Machine API 错误契约。
 
-当前下一阶段重点不是继续补 MVP 主链路，而是进入 Phase 5 前的加固：测试文档清理、限流、审计日志，以及后续 `docs import/export`、`agent ask`、HTTP MCP OAuth 等增强能力。
+当前 CLI / MCP 的核心目标已经从“实现 Agent 写文档能力”推进到“发布与开发体验收口”。`kb search`、RAG/Qdrant 检索、`agent ask` 和 HTTP MCP/OAuth 都不是写文档链路的必要依赖，降级为后续按产品目标选择的增强能力。
 
 
 ## Latest Validation
@@ -37,7 +38,7 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 - `pnpm e2e:mcp`：通过。覆盖 CLI build、PAT 注入、MCP STDIO server 启动、`initialize`、`tools/list`、dry-run 写工具、真实 create/fetch/update/search 链路和 PAT cleanup。
 - `pnpm e2e:cli`：通过。覆盖 CLI build、PAT 注入、`auth login`、`docs create/fetch/update/search`、`docs import/export`、`docs archive`、`tokens revoke-current`、`auth logout`。
 - `pnpm e2e:cli:errors`：通过。覆盖 Machine API 错误契约，包括 `401/403/404/422/429`、revoked / expired token、`requestId` 与 rate-limit headers。
-- 结论：Phase 1-4 主链路最终验证通过；E2E 测试文档已通过 `docs archive` 在 cleanup 阶段软归档，测试 PAT 会被撤销。
+- 结论：Agent 写文档链路已闭环。E2E 测试文档已通过 `docs archive` 在 cleanup 阶段软归档，测试 PAT 会被撤销；当前不需要为 CLI 引入 RAG/Qdrant 检索能力来完成写文档目标。
 
 ## Current State Analysis
 
@@ -472,9 +473,9 @@ pnpm --filter @notion/my-notion-skills lint
 - MCP tool 输出包含 `structuredContent` 和文本 fallback。
 - 写操作支持 client 侧确认或 dry-run。
 
-### Phase 5：增强能力与工程加固（待办）
+### Phase 5：发布收口与后续增强（进行中）
 
-优先级原则：先清理 E2E 副作用和补安全可观测性，再扩展导入导出、Agent 调用和远程 MCP。
+优先级原则：先确认 Agent 写文档链路闭环，再收口发布、文档和开发体验；知识检索、Agent Ask 和远程 MCP 仅在产品目标需要时推进。
 
 #### P0：E2E 副作用清理
 
@@ -502,12 +503,22 @@ pnpm --filter @notion/my-notion-skills lint
 - [x] 增加 import/export 的 CLI E2E 覆盖，验证导出内容可再次导入。
 - [x] 在 `my-notion-docs` skill 中补充长文档导入、导出再编辑、备份恢复示例。
 
-#### P1：Knowledge Base 能力
+#### P1：发布、文档与开发体验
 
-- [ ] 设计 `kb search` 命令边界，明确复用文档搜索还是接入 RAG/Qdrant 搜索。
-- [ ] 实现 `my-notion kb search --query <keyword> --limit <n> --format json` 的只读 MVP。
-- [ ] 设计 `kb sync` 的幂等策略，避免重复写入向量索引。
-- [ ] 在 Qdrant 离线时保持 warning 降级，不让 CLI/MCP 直接 500。
+- [ ] 在根 `README.md` 增加 CLI/MCP 快速开始，覆盖 PAT 创建、`auth login`、`docs create/import/update/export` 和 MCP STDIO 启动。
+- [ ] 增加 CLI release checklist：typecheck、build、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`。
+- [ ] 明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
+- [ ] 为 `.trae/skills` 同步流程增加校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
+- [ ] 复查 MCP 写文档工具的 dry-run 文案、`structuredContent` 和错误输出，确保 Agent 默认安全、可解释。
+
+#### 后续规划：Knowledge Base / RAG 检索
+
+> 当前目标是让 Agent 稳定写入 My-Notion 文档；`kb search` 属于“让 Agent 检索知识库再回答/生成”的增强能力，不是写文档链路必需项，暂不作为近期 P1。
+
+- [ ] 如后续产品目标需要知识检索，再设计 `kb search` 命令边界，明确复用普通文档搜索还是接入 RAG/Qdrant 搜索。
+- [ ] 如接入 RAG/Qdrant，优先把 Web Agent 的 `knowledge_search` 逻辑下沉到 `packages/ai/server`，避免 CLI 直接依赖 `apps/web/src`。
+- [ ] 如实现 `my-notion kb search --query <keyword> --limit <n> --format json`，需同时定义 Qdrant 离线 warning 降级策略，避免 CLI/MCP 直接 500。
+- [ ] `kb sync` 属于写能力，必须先设计幂等策略和 content hash 复用方案，避免重复写入向量索引。
 - [ ] 补充 KB 命令参考和 E2E/smoke 验证。
 
 #### P1：Agent Ask / NDJSON Streaming
@@ -526,12 +537,8 @@ pnpm --filter @notion/my-notion-skills lint
 - [ ] 设计远程 MCP 部署、回调地址、token refresh、client registration 的安全边界。
 - [ ] 为 HTTP MCP 增加独立 E2E，不影响 `my-notion mcp serve --transport stdio`。
 
-#### P2：发布、文档与开发体验
+#### P2：包拆分与远程化评估
 
-- [ ] 在根 `README.md` 增加 CLI/MCP 快速开始，但避免覆盖架构文档中的详细设计。
-- [ ] 增加 CLI release checklist：typecheck、build、`pnpm e2e:cli`、`pnpm e2e:mcp`、`pnpm sync:skills`。
-- [ ] 明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
-- [ ] 为 `.trae/skills` 同步流程增加校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
 - [ ] 评估是否需要拆出独立 `packages/my-notion-mcp`，仅当 HTTP transport、部署和测试复杂度显著增长时再拆。
 
 ## Assumptions & Decisions
@@ -542,6 +549,7 @@ pnpm --filter @notion/my-notion-skills lint
 - 决策：首版文档内容格式 Markdown 优先。
 - 决策：MCP 不替代鉴权，作为后续 Agent 适配层。
 - 决策：机器 API 不信任客户端传入的 `userId`，必须从 token 解析。
+- 决策：当前 CLI/MCP 的核心目标是 Agent 写文档，而不是知识库问答；因此 `kb search`、RAG/Qdrant 检索和 `agent ask` 降级为后续增强，不阻塞当前收口。
 - 假设：生产环境可暴露 Convex HTTP Actions 的 `.site` URL，或由 Web 域名反向代理。
 - 决策：当前已采用 Markdown 到 BlockNote 的简化转换，复杂 block fidelity 后续迭代。
 
@@ -551,6 +559,7 @@ pnpm --filter @notion/my-notion-skills lint
 - API Token 是长期凭据，当前已支持撤销、过期、scope、lastUsedAt、安全展示和机器 API 审计日志。
 - Convex HTTP Actions 的路由、CORS、部署 URL 需要与当前 Vercel/Convex 生产环境协调。
 - MCP HTTP OAuth 完整实现复杂，不应阻塞 CLI MVP。
+- RAG/Qdrant 检索会引入 embedding、索引一致性、Qdrant 降级和检索质量评估成本，不应在“Agent 写文档”目标已闭环的阶段提前引入。
 - Skills 文档如果写得过宽，会导致 Agent 调用危险命令；必须优先约束 dry-run、scope 和输出解析。
 
 ## Verification Steps
