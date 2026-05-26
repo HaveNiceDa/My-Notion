@@ -93,6 +93,7 @@ Behavior:
 
 - Writing tool.
 - `dryRun` defaults to `true`.
+- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, a preview document with id `dry-run`, and a text fallback saying no document was created.
 - Set `dryRun: false` only when the user explicitly approved creating the document.
 
 ### `my_notion_docs_update`
@@ -116,6 +117,7 @@ Behavior:
 - Writing tool.
 - `mode` is `append` or `overwrite`; default is `append`.
 - `dryRun` defaults to `true`.
+- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, an `update` preview, and a text fallback saying no document was updated.
 - Fetch the document first before using `mode: "overwrite"`.
 - Set `dryRun: false` only after explicit user approval.
 
@@ -124,9 +126,17 @@ Behavior:
 Every tool returns:
 
 - `structuredContent`: machine-readable JSON for the MCP client.
-- `content`: text fallback containing formatted JSON.
+- `content`: human-readable text fallback plus formatted JSON.
 
 Agents should parse `structuredContent` first and use the text fallback only when the client does not expose structured content.
+
+Error results return:
+
+- `isError: true`
+- `structuredContent.error.message`
+- optional `structuredContent.error.code`
+- optional `structuredContent.error.requestId`
+- text fallback containing readable failure context and request id when available
 
 ## Safety Rules
 

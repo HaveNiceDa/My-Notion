@@ -45,6 +45,8 @@ pnpm --filter @notion/web lint
 - `docs archive` 能软归档测试文档，并且归档后不再出现在正常 search/list/fetch 结果中。
 - `tokens revoke-current` 能撤销当前 PAT。
 - MCP STDIO 能完成 `initialize`、`tools/list`、dry-run 写工具和真实 create/fetch/update/search 链路。
+- MCP 写工具 dry-run 结果必须包含 `dryRun: true`、`confirmationRequired: true`、明确的 no-write 文案和稳定 `structuredContent`。
+- MCP 错误结果必须包含 `isError: true`、`structuredContent.error.message` 和可读 text fallback；如后端返回 `requestId`，必须透出。
 
 ## 错误契约检查
 
@@ -65,6 +67,7 @@ pnpm --filter @notion/web lint
 - PAT 明文不得写入仓库、文档、日志或测试输出。
 - 只允许展示 `tokenPrefix`。
 - MCP 写工具默认 `dryRun: true`。
+- MCP dry-run 文案必须明确说明没有创建或更新真实 My-Notion 文档。
 - CLI 写命令必须由用户或 Agent 显式调用。
 - Machine API 不信任客户端传入的 `userId`，必须由 PAT 服务端解析。
 - 审计日志不得记录 PAT 明文、token hash 或 query string。

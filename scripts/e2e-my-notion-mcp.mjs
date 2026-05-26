@@ -203,15 +203,21 @@ class McpStdioClient {
 }
 
 async function callTool(client, name, args) {
-  const result = await client.request("tools/call", {
-    name,
-    arguments: args,
-  });
-
+  const result = await callToolRaw(client, name, args);
   const text = result.content?.map((item) => item.text).filter(Boolean).join("\n");
   assert(!result.isError, `${name} returned MCP error result${text ? `:\n${text}` : ""}`);
   assert(result.structuredContent, `${name} did not return structuredContent`);
   return result.structuredContent;
+}
+
+async function callToolRaw(client, name, args) {
+  const result = await client.request("tools/call", {
+    name,
+    arguments: args,
+  });
+  assert(result.structuredContent, `${name} did not return structuredContent`);
+  assert(Array.isArray(result.content), `${name} did not return text fallback content`);
+  return result;
 }
 
 async function main() {
@@ -290,7 +296,23 @@ async function main() {
       dryRun: true,
     });
     assert(createPreview.dryRun === true, "create dryRun did not return dryRun=true");
+    assert(createPreview.confirmationRequired === true, "create dryRun did not require confirmation");
+    assert(
+      typeof createPreview.message === "string" && createPreview.message.includes("No My-Notion document was created"),
+      "create dryRun did not include a clear no-write message",
+    );
     assert(createPreview.document?.id === "dry-run", "create dryRun did not return preview document");
+
+    const createPreviewRaw = await callToolRaw(client, "my_notion_docs_create", {
+      title: `MCP Dry Run Raw ${uniqueKeyword}`,
+      contentMarkdown: `# MCP Dry Run Raw\n\n${uniqueKeyword}`,
+      dryRun: true,
+    });
+    const createPreviewText = createPreviewRaw.content.map((item) => item.text).join("\n");
+    assert(
+      createPreviewText.includes("Dry run only") && createPreviewText.includes("No My-Notion document was created"),
+      "create dryRun text fallback did not explain that no document was created",
+    );
 
     const updatePreview = await callTool(client, "my_notion_docs_update", {
       id: "dry-run",
@@ -299,6 +321,24 @@ async function main() {
       dryRun: true,
     });
     assert(updatePreview.dryRun === true, "update dryRun did not return dryRun=true");
+    assert(updatePreview.confirmationRequired === true, "update dryRun did not require confirmation");
+    assert(
+      typeof updatePreview.message === "string" && updatePreview.message.includes("No My-Notion document was updated"),
+      "update dryRun did not include a clear no-write message",
+    );
+
+    const updateError = await callToolRaw(client, "my_notion_docs_update", {
+      id: "missing-document-id",
+      contentMarkdown: `Should fail ${uniqueKeyword}`,
+      mode: "append",
+      dryRun: false,
+    });
+    assert(updateError.isError === true, "update error did not return isError=true");
+    assert(updateError.structuredContent?.error?.message, "update error did not include structured error message");
+    assert(
+      updateError.content.map((item) => item.text).join("\n").includes("My-Notion MCP tool failed during update"),
+      "update error text fallback did not include readable failure context",
+    );
 
     console.log("[6/9] Create, fetch, and update through MCP");
     const created = await callTool(client, "my_notion_docs_create", {

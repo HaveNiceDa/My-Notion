@@ -1,13 +1,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { MyNotionClient } from "../client/http-client.js";
+import { MyNotionApiError, MyNotionClient } from "../client/http-client.js";
 import { resolveApiUrl, resolveToken } from "../config/store.js";
 import type { DocumentResult, ParsedArgs } from "../types.js";
 
 type ToolResult = {
   content: Array<{ type: "text"; text: string }>;
   structuredContent: Record<string, unknown>;
+  isError?: boolean;
 };
 
 function createClient(args: ParsedArgs) {
@@ -17,14 +18,48 @@ function createClient(args: ParsedArgs) {
   });
 }
 
-function toToolResult(data: Record<string, unknown>): ToolResult {
+function toToolResult(data: Record<string, unknown>, message?: string): ToolResult {
   return {
     structuredContent: data,
-    // 兼容只展示 text content 的 MCP 客户端，保留一份 JSON 文本兜底。
+    // 兼容只展示 text content 的 MCP 客户端，保留可读说明和 JSON 兜底。
     content: [
       {
         type: "text",
-        text: JSON.stringify(data, null, 2),
+        text: [message, JSON.stringify(data, null, 2)].filter(Boolean).join("\n\n"),
+      },
+    ],
+  };
+}
+
+function toErrorToolResult(error: unknown, action: string): ToolResult {
+  const apiError = error instanceof MyNotionApiError ? error : null;
+  const message = error instanceof Error ? error.message : String(error);
+  const structured = {
+    action,
+    error: {
+      message,
+      name: error instanceof Error ? error.name : "Error",
+      status: apiError?.status,
+      code: apiError?.code,
+      requestId: apiError?.requestId,
+    },
+  };
+
+  return {
+    isError: true,
+    structuredContent: structured,
+    content: [
+      {
+        type: "text",
+        text: [
+          `My-Notion MCP tool failed during ${action}.`,
+          apiError?.code ? `Error code: ${apiError.code}` : undefined,
+          apiError?.requestId ? `Request ID: ${apiError.requestId}` : undefined,
+          `Message: ${message}`,
+          JSON.stringify(structured, null, 2),
+        ]
+          .filter(Boolean)
+          .join("\n"),
       },
     ],
   };
@@ -73,8 +108,12 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
       },
     },
     async ({ query, limit }) => {
-      const result = await client.searchDocuments({ query, limit });
-      return toToolResult({ documents: result.documents });
+      try {
+        const result = await client.searchDocuments({ query, limit });
+        return toToolResult({ documents: result.documents });
+      } catch (error) {
+        return toErrorToolResult(error, "search");
+      }
     },
   );
 
@@ -92,8 +131,12 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
       },
     },
     async ({ id }) => {
-      const document = await client.fetchDocument(id);
-      return toToolResult(toDocumentContent(document));
+      try {
+        const document = await client.fetchDocument(id);
+        return toToolResult(toDocumentContent(document));
+      } catch (error) {
+        return toErrorToolResult(error, "fetch");
+      }
     },
   );
 
@@ -117,21 +160,36 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
       },
     },
     async ({ title, contentMarkdown, dryRun }) => {
-      if (dryRun) {
-        // 写入类工具默认 dry-run，客户端必须在用户明确授权后才关闭 dry-run。
-        return toToolResult({
-          dryRun: true,
-          action: "create",
-          ...toDocumentContent(createDryRunDocument({ title, contentMarkdown })),
-        });
-      }
+      try {
+        if (dryRun) {
+          const message =
+            "Dry run only. No My-Notion document was created. Set dryRun=false only after explicit user approval.";
+          // 写入类工具默认 dry-run，客户端必须在用户明确授权后才关闭 dry-run。
+          return toToolResult(
+            {
+              dryRun: true,
+              action: "create",
+              confirmationRequired: true,
+              message,
+              ...toDocumentContent(createDryRunDocument({ title, contentMarkdown })),
+            },
+            message,
+          );
+        }
 
-      const document = await client.createDocument({ title, contentMarkdown });
-      return toToolResult({
-        dryRun: false,
-        action: "create",
-        ...toDocumentContent(document),
-      });
+        const document = await client.createDocument({ title, contentMarkdown });
+        return toToolResult(
+          {
+            dryRun: false,
+            action: "create",
+            message: "Document created in My-Notion.",
+            ...toDocumentContent(document),
+          },
+          "Document created in My-Notion.",
+        );
+      } catch (error) {
+        return toErrorToolResult(error, "create");
+      }
     },
   );
 
@@ -157,31 +215,46 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
       },
     },
     async ({ id, title, contentMarkdown, mode, dryRun }) => {
-      if (dryRun) {
-        // update 的 dry-run 只回显计划变更，不读取或写入真实文档。
-        return toToolResult({
-          dryRun: true,
-          action: "update",
-          update: {
-            id,
-            title,
-            contentMarkdown,
-            mode,
-          },
-        });
-      }
+      try {
+        if (dryRun) {
+          const message =
+            "Dry run only. No My-Notion document was updated. Set dryRun=false only after explicit user approval.";
+          // update 的 dry-run 只回显计划变更，不读取或写入真实文档。
+          return toToolResult(
+            {
+              dryRun: true,
+              action: "update",
+              confirmationRequired: true,
+              message,
+              update: {
+                id,
+                title,
+                contentMarkdown,
+                mode,
+              },
+            },
+            message,
+          );
+        }
 
-      const document = await client.updateDocument({
-        id,
-        title,
-        contentMarkdown,
-        mode,
-      });
-      return toToolResult({
-        dryRun: false,
-        action: "update",
-        ...toDocumentContent(document),
-      });
+        const document = await client.updateDocument({
+          id,
+          title,
+          contentMarkdown,
+          mode,
+        });
+        return toToolResult(
+          {
+            dryRun: false,
+            action: "update",
+            message: "Document updated in My-Notion.",
+            ...toDocumentContent(document),
+          },
+          "Document updated in My-Notion.",
+        );
+      } catch (error) {
+        return toErrorToolResult(error, "update");
+      }
     },
   );
 }

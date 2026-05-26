@@ -509,7 +509,7 @@ pnpm --filter @notion/my-notion-skills lint
 - [x] 增加 `docs/my-notion-cli-release-checklist.md`：typecheck、build、Convex codegen、Web tsc、`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp`、`pnpm sync:skills`、`pnpm sync:skills:check`。
 - [x] 在 release checklist 中明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
 - [x] 为 `.trae/skills` 同步流程增加 `pnpm sync:skills:check` 校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
-- [ ] 复查 MCP 写文档工具的 dry-run 文案、`structuredContent` 和错误输出，确保 Agent 默认安全、可解释。
+- [x] 复查并优化 MCP 写文档工具的 dry-run 文案、`structuredContent` 和错误输出，确保 Agent 默认安全、可解释。
 
 #### 后续规划：Knowledge Base / RAG 检索
 
