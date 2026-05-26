@@ -35,8 +35,9 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 2026-05-26 验证结果：
 
 - `pnpm e2e:mcp`：通过。覆盖 CLI build、PAT 注入、MCP STDIO server 启动、`initialize`、`tools/list`、dry-run 写工具、真实 create/fetch/update/search 链路和 PAT cleanup。
-- `pnpm e2e:cli`：首次运行在 `auth login` 阶段出现瞬时 `fetch failed`，cleanup 已执行；复跑通过。覆盖 CLI build、PAT 注入、`auth login`、`docs create/fetch/update/search`、`tokens revoke-current`、`auth logout`。
-- 结论：Phase 1-4 主链路最终验证通过；当前残留风险是 E2E 测试文档仍会保留在 dev Convex 部署中，只清理测试 PAT。
+- `pnpm e2e:cli`：通过。覆盖 CLI build、PAT 注入、`auth login`、`docs create/fetch/update/search`、`docs import/export`、`docs archive`、`tokens revoke-current`、`auth logout`。
+- `pnpm e2e:cli:errors`：通过。覆盖 Machine API 错误契约，包括 `401/403/404/422/429`、revoked / expired token、`requestId` 与 rate-limit headers。
+- 结论：Phase 1-4 主链路最终验证通过；E2E 测试文档已通过 `docs archive` 在 cleanup 阶段软归档，测试 PAT 会被撤销。
 
 ## Current State Analysis
 
@@ -395,6 +396,7 @@ HTTP MCP 鉴权：
 ```json
 {
   "e2e:cli": "node scripts/e2e-my-notion-cli.mjs",
+  "e2e:cli:errors": "node scripts/e2e-my-notion-cli-errors.mjs",
   "e2e:mcp": "node scripts/e2e-my-notion-mcp.mjs",
   "sync:skills": "node scripts/sync-my-notion-skills.mjs"
 }
@@ -489,8 +491,8 @@ pnpm --filter @notion/my-notion-skills lint
 - [x] 增加机器 API 审计日志，记录 tokenId、userId、scope、endpoint、status、requestId、timestamp，不记录 PAT 明文。
 - [x] 在 CLI/MCP 错误输出中透出稳定 requestId，便于从 E2E 日志反查服务端审计记录。
 - [x] 为 CLI Machine API client 增加基础超时与重试策略：10 秒超时、最多 3 次尝试、指数退避，跳过结构化 4xx 业务错误。
-- [ ] 为 token 校验失败、scope 不足、token 过期、token revoked 增加 E2E 断言。
-- [ ] 明确 401/403/404/422/429/500 的错误码契约，并在 `references/cli-commands.md` 中固化。
+- [x] 为 token 校验失败、scope 不足、token 过期、token revoked 增加 E2E 断言，新增 `pnpm e2e:cli:errors`。
+- [x] 明确 401/403/404/422/429/500 的错误码契约，并在 `references/cli-commands.md` 中固化。
 
 #### P1：文档导入导出
 
@@ -558,6 +560,7 @@ pnpm --filter @notion/my-notion-skills lint
 - 检查 `packages/my-notion-cli` TypeScript：`pnpm --filter @notion/my-notion-cli typecheck`。
 - 检查 CLI 单测：`pnpm --filter @notion/my-notion-cli test`。
 - 检查 CLI E2E：`pnpm e2e:cli`。
+- 检查 CLI 错误契约 E2E：`pnpm e2e:cli:errors`。
 - 检查 MCP E2E：`pnpm e2e:mcp`。
 - 同步 Skills：`pnpm sync:skills`。
 - 检查 Convex/Web 类型：`pnpm --filter @notion/web typecheck`。
@@ -584,4 +587,3 @@ Skills 验收：
 - Agent 读取 `my-notion-docs` skill 后，可以正确选择 `docs create/fetch/update/search`。
 - skill 明确要求长内容使用 `--content-file`。
 - skill 明确禁止在聊天或日志中输出完整 token。
-

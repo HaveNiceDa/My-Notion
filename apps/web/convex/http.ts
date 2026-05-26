@@ -9,6 +9,7 @@ type ApiErrorCode =
   | "TOKEN_REVOKED"
   | "TOKEN_EXPIRED"
   | "INSUFFICIENT_SCOPE"
+  | "VALIDATION_ERROR"
   | "RATE_LIMITED"
   | "NOT_FOUND"
   | "INTERNAL_ERROR";
@@ -253,7 +254,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
     if (pathname === "/cli/v1/documents" && method === "POST") {
       const body = await parseJsonBody(req);
       if (typeof body.title !== "string" || body.title.trim().length === 0) {
-        return auditedError(400, "BAD_REQUEST", "title is required");
+        return auditedError(422, "VALIDATION_ERROR", "title is required");
       }
 
       const document = await ctx.runMutation(internal.cli.createCliDocument, {
@@ -274,7 +275,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         pathname.slice(documentPrefix.length),
       ) as Id<"documents">;
       if (!documentId || documentId === "search") {
-        return auditedError(400, "BAD_REQUEST", "document id is required");
+        return auditedError(422, "VALIDATION_ERROR", "document id is required");
       }
 
       if (method === "GET") {

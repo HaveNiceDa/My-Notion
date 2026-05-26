@@ -106,6 +106,21 @@ Use `requestId` to correlate CLI/MCP failures with server logs or Machine API au
 
 Machine API audit records include request id, token id, token prefix, user id, endpoint path, HTTP method, status, required scope, error code, duration, and timestamp. PAT plaintext and token hashes are never recorded.
 
+### Error Code Contract
+
+Machine API errors use stable HTTP status and `error.code` pairs:
+
+| HTTP | Code | Typical trigger | Agent handling |
+| --- | --- | --- | --- |
+| `401` | `UNAUTHORIZED` | Missing Bearer token or unknown token hash | Ask the user to run `auth login` or provide a valid PAT. |
+| `401` | `TOKEN_REVOKED` | PAT was revoked on the server | Stop retrying and ask the user to create a new PAT. |
+| `401` | `TOKEN_EXPIRED` | PAT `expiresAt` is in the past | Stop retrying and ask the user to create a new PAT. |
+| `403` | `INSUFFICIENT_SCOPE` | Token lacks the required scope, such as `docs:write` | Do not retry; ask for a token with the required scope. |
+| `404` | `NOT_FOUND` | Document or CLI endpoint does not exist, or the document is archived / not owned by the token user | Re-check the document id or search again before retrying. |
+| `422` | `VALIDATION_ERROR` | Request body or path parameter is invalid, such as an empty title | Fix the command arguments or request payload before retrying. |
+| `429` | `RATE_LIMITED` | Token exceeded the fixed-window quota | Respect `Retry-After`; the CLI does not retry structured rate-limit errors. |
+| `500` | `INTERNAL_ERROR` | Unexpected server-side failure | Surface `requestId` and retry only after checking logs or audit records. |
+
 Rate-limited requests return HTTP `429` with structured code `RATE_LIMITED`, `requestId`, and rate-limit headers:
 
 ```text
@@ -345,6 +360,12 @@ Run the repository smoke test:
 pnpm e2e:cli
 ```
 
+Run the Machine API error contract test:
+
+```bash
+pnpm e2e:cli:errors
+```
+
 The smoke test:
 
 - builds the CLI
@@ -360,6 +381,16 @@ The smoke test:
 - revokes the temporary PAT
 - verifies the revoked PAT no longer authenticates
 - clears the saved local PAT with `auth logout`
+
+The error contract test:
+
+- verifies missing and invalid token responses return `401 UNAUTHORIZED`
+- verifies read-only tokens return `403 INSUFFICIENT_SCOPE` for write APIs
+- verifies expired and revoked tokens return `TOKEN_EXPIRED` and `TOKEN_REVOKED`
+- verifies invalid request payloads return `422 VALIDATION_ERROR`
+- verifies archived documents return `404 NOT_FOUND`
+- verifies rate limiting returns `429 RATE_LIMITED` with `Retry-After` and `x-ratelimit-*` headers
+- verifies every structured response includes matching body `requestId` and `x-request-id`
 
 ## Current Limitations
 
