@@ -29,6 +29,15 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 
 当前下一阶段重点不是继续补 MVP 主链路，而是进入 Phase 5 前的加固：测试文档清理、限流、审计日志，以及后续 `docs import/export`、`agent ask`、HTTP MCP OAuth 等增强能力。
 
+
+## Latest Validation
+
+2026-05-26 验证结果：
+
+- `pnpm e2e:mcp`：通过。覆盖 CLI build、PAT 注入、MCP STDIO server 启动、`initialize`、`tools/list`、dry-run 写工具、真实 create/fetch/update/search 链路和 PAT cleanup。
+- `pnpm e2e:cli`：首次运行在 `auth login` 阶段出现瞬时 `fetch failed`，cleanup 已执行；复跑通过。覆盖 CLI build、PAT 注入、`auth login`、`docs create/fetch/update/search`、`tokens revoke-current`、`auth logout`。
+- 结论：Phase 1-4 主链路最终验证通过；当前残留风险是 E2E 测试文档仍会保留在 dev Convex 部署中，只清理测试 PAT。
+
 ## Current State Analysis
 
 ### Monorepo 现状
@@ -461,15 +470,66 @@ pnpm --filter @notion/my-notion-skills lint
 - MCP tool 输出包含 `structuredContent` 和文本 fallback。
 - 写操作支持 client 侧确认或 dry-run。
 
-### Phase 5：增强能力
+### Phase 5：增强能力与工程加固（待办）
 
-候选：
+优先级原则：先清理 E2E 副作用和补安全可观测性，再扩展导入导出、Agent 调用和远程 MCP。
 
-- `docs import` / `docs export`。
-- `kb search` / `kb sync`。
-- `agent ask`：调用 My-Notion Agent 并支持 NDJSON streaming。
-- OAuth 2.1 HTTP MCP。
-- Token scope UI（已完成基础版）和审计日志。
+#### P0：E2E 副作用清理
+
+- [x] 新增机器 API 文档归档能力：已实现 `DELETE /cli/v1/documents/:id`，内部采用软归档 `isArchived: true`，不首版硬删除。
+- [x] 扩展 CLI 命令：已新增 `my-notion docs archive --id <documentId> --format json`，复用 PAT 与 `docs:write` scope。
+- [x] 扩展 MCP tool：当前不新增 `my_notion_docs_archive`；E2E cleanup 通过 CLI archive 执行，避免扩大 MCP 写工具面。
+- [x] 更新 `scripts/e2e-my-notion-cli.mjs`：记录测试文档 ID，在 `finally` 中兜底归档测试文档，再撤销测试 PAT。
+- [x] 更新 `scripts/e2e-my-notion-mcp.mjs`：记录 MCP 创建的测试文档 ID，并在 cleanup 阶段通过 CLI archive 归档。
+- [x] 更新 `packages/my-notion-skills/my-notion-docs/references/cli-commands.md`，补充 archive 命令和 E2E cleanup 约定。
+
+#### P0：机器 API 安全与可观测性
+
+- [ ] 为 `/cli/v1/*` 增加基础限流策略，优先按 token hash / token id 维度限制写请求频率。
+- [ ] 增加机器 API 审计日志，记录 tokenId、userId、scope、endpoint、status、requestId、timestamp，不记录 PAT 明文。
+- [ ] 在 CLI/MCP 错误输出中透出稳定 requestId，便于从 E2E 日志反查服务端审计记录。
+- [ ] 为 token 校验失败、scope 不足、token 过期、token revoked 增加 E2E 断言。
+- [ ] 明确 401/403/404/422/429/500 的错误码契约，并在 `references/cli-commands.md` 中固化。
+
+#### P1：文档导入导出
+
+- [ ] 实现 `my-notion docs export --id <documentId> --output-file <path>`，默认导出 Markdown。
+- [ ] 实现 `my-notion docs import --title <title> --content-file <path>`，首版等价于 create，后续支持批量目录导入。
+- [ ] 支持 `--format markdown|json` 的导出结果，保证 Agent 可直接读取。
+- [ ] 增加 import/export 的 CLI E2E 覆盖，验证导出内容可再次导入。
+- [ ] 在 `my-notion-docs` skill 中补充长文档导入、导出再编辑、备份恢复示例。
+
+#### P1：Knowledge Base 能力
+
+- [ ] 设计 `kb search` 命令边界，明确复用文档搜索还是接入 RAG/Qdrant 搜索。
+- [ ] 实现 `my-notion kb search --query <keyword> --limit <n> --format json` 的只读 MVP。
+- [ ] 设计 `kb sync` 的幂等策略，避免重复写入向量索引。
+- [ ] 在 Qdrant 离线时保持 warning 降级，不让 CLI/MCP 直接 500。
+- [ ] 补充 KB 命令参考和 E2E/smoke 验证。
+
+#### P1：Agent Ask / NDJSON Streaming
+
+- [ ] 设计机器 API：`POST /cli/v1/agent/ask`，复用 PAT 解析 userId，不信任客户端传入 userId。
+- [ ] 实现 CLI 命令：`my-notion agent ask --prompt <text> --format ndjson`。
+- [ ] 复用现有 ReAct Loop，保持 `MAX_ITERATIONS=5` 与 NDJSON 事件协议一致。
+- [ ] 处理 DashScope `enable_thinking` 与 `tool_choice` 兼容策略，避免和现有 AI Chat 行为分叉。
+- [ ] 增加 streaming E2E，验证事件顺序、错误事件和中断场景。
+
+#### P2：HTTP MCP / OAuth 2.1
+
+- [ ] 调研并设计 HTTP MCP transport，不与当前 STDIO MVP 混合鉴权语义。
+- [ ] 补充 Protected Resource Metadata 与 Authorization Server Metadata 方案。
+- [ ] 评估 PAT Bearer 兼容模式与标准 OAuth 2.1 模式的取舍。
+- [ ] 设计远程 MCP 部署、回调地址、token refresh、client registration 的安全边界。
+- [ ] 为 HTTP MCP 增加独立 E2E，不影响 `my-notion mcp serve --transport stdio`。
+
+#### P2：发布、文档与开发体验
+
+- [ ] 在根 `README.md` 增加 CLI/MCP 快速开始，但避免覆盖架构文档中的详细设计。
+- [ ] 增加 CLI release checklist：typecheck、build、`pnpm e2e:cli`、`pnpm e2e:mcp`、`pnpm sync:skills`。
+- [ ] 明确 CLI 配置文件迁移策略，后续如扩展 config schema 需保持向后兼容。
+- [ ] 为 `.trae/skills` 同步流程增加校验，防止 `packages/my-notion-skills` 与已安装 skill 内容漂移。
+- [ ] 评估是否需要拆出独立 `packages/my-notion-mcp`，仅当 HTTP transport、部署和测试复杂度显著增长时再拆。
 
 ## Assumptions & Decisions
 

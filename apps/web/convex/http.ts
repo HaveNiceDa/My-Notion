@@ -182,6 +182,18 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         }
         return successResponse(document);
       }
+
+      if (method === "DELETE") {
+        const document = await ctx.runMutation(internal.cli.archiveCliDocument, {
+          userId: auth.userId,
+          documentId,
+        });
+
+        if (!document) {
+          return errorResponse(404, "NOT_FOUND", "Document not found");
+        }
+        return successResponse(document);
+      }
     }
 
     return errorResponse(404, "NOT_FOUND", "CLI endpoint not found");
@@ -236,6 +248,12 @@ http.route({
 http.route({
   pathPrefix: "/cli/v1/documents/",
   method: "PATCH",
+  handler: cliHttpAction,
+});
+
+http.route({
+  pathPrefix: "/cli/v1/documents/",
+  method: "DELETE",
   handler: cliHttpAction,
 });
 

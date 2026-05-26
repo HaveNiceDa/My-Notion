@@ -63,6 +63,7 @@ function toDocumentResult(document: {
   _id: string;
   title: string;
   content?: string;
+  isArchived?: boolean;
   isInKnowledgeBase?: boolean;
   isPublished: boolean;
   lastEditedTime?: number;
@@ -73,6 +74,7 @@ function toDocumentResult(document: {
     content: document.content ?? "",
     contentMarkdown: blockNoteJsonToMarkdown(document.content),
     contentFormat: "blocknote-json" as const,
+    isArchived: Boolean(document.isArchived),
     isPublished: document.isPublished,
     isInKnowledgeBase: Boolean(document.isInKnowledgeBase),
     lastEditedTime: document.lastEditedTime ?? null,
@@ -363,5 +365,30 @@ export const updateCliDocument = internalMutation({
     }
 
     return toDocumentResult(updatedDocument);
+  },
+});
+
+export const archiveCliDocument = internalMutation({
+  args: {
+    userId: v.string(),
+    documentId: v.id("documents"),
+  },
+  handler: async (ctx, args) => {
+    const document = await ctx.db.get(args.documentId);
+    if (!document || document.isArchived || document.userId !== args.userId) {
+      return null;
+    }
+
+    await ctx.db.patch(args.documentId, {
+      isArchived: true,
+      lastEditedTime: now(),
+    });
+
+    const archivedDocument = await ctx.db.get(args.documentId);
+    if (!archivedDocument) {
+      throw new Error("Failed to archive document");
+    }
+
+    return toDocumentResult(archivedDocument);
   },
 });

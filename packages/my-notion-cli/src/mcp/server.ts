@@ -49,6 +49,7 @@ function createDryRunDocument(input: {
     content: input.contentMarkdown ?? "",
     contentMarkdown: input.contentMarkdown ?? "",
     contentFormat: "markdown",
+    isArchived: false,
     isPublished: false,
     isInKnowledgeBase: true,
     lastEditedTime: now,

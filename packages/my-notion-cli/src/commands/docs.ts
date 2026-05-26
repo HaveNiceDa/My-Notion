@@ -36,8 +36,13 @@ export async function runDocsCommand(args: ParsedArgs) {
     return;
   }
 
+  if (action === "archive") {
+    await archive(args);
+    return;
+  }
+
   throw new Error(
-    "Unknown docs command. Usage: my-notion docs <create|fetch|search|list|update>",
+    "Unknown docs command. Usage: my-notion docs <create|fetch|search|list|update|archive>",
   );
 }
 
@@ -119,5 +124,15 @@ async function update(args: ParsedArgs) {
     mode,
   });
 
+  writeOutput(document, getOutputFormat(args.options));
+}
+
+async function archive(args: ParsedArgs) {
+  const id = readStringOption(args.options, "id") ?? args.positionals[2];
+  if (!id) {
+    throw new Error("Missing document id. Usage: my-notion docs archive --id <id>");
+  }
+
+  const document = await createClient(args).archiveDocument(id);
   writeOutput(document, getOutputFormat(args.options));
 }

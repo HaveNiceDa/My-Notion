@@ -114,14 +114,16 @@ function main() {
   let created;
   let searchResults = [];
   let revokedToken = null;
+  let archivedDocument = null;
+  const cliEnv = { HOME: tempHome };
 
   const identityArgs = JSON.stringify({ subject: testUserId, tokenIdentifier: testUserId });
 
   try {
-    console.log(`[1/9] Build CLI`);
+    console.log(`[1/10] Build CLI`);
     run("pnpm", ["--filter", "@notion/my-notion-cli", "build"]);
 
-    console.log(`[2/9] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/10] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
     "--filter",
     "@notion/web",
@@ -144,9 +146,7 @@ function main() {
     const seededToken = parseLastJsonObject(seedOutput);
     tokenRecordId = seededToken.id;
 
-    const cliEnv = { HOME: tempHome };
-
-    console.log(`[3/9] auth login`);
+    console.log(`[3/10] auth login`);
     const login = runJson("node", [
     cliEntry,
     "auth",
@@ -163,7 +163,7 @@ function main() {
       throw new Error("auth login did not authenticate");
     }
 
-    console.log(`[4/9] docs create`);
+    console.log(`[4/10] docs create`);
     created = runJson("node", [
     cliEntry,
     "docs",
@@ -180,7 +180,7 @@ function main() {
       throw new Error("docs create did not return document id");
     }
 
-    console.log(`[5/9] docs fetch`);
+    console.log(`[5/10] docs fetch`);
     const fetchedMarkdown = run("node", [
     cliEntry,
     "docs",
@@ -195,7 +195,7 @@ function main() {
       throw new Error("docs fetch did not include created content");
     }
 
-    console.log(`[6/9] docs update`);
+    console.log(`[6/10] docs update`);
     const updated = runJson("node", [
     cliEntry,
     "docs",
@@ -214,7 +214,7 @@ function main() {
       throw new Error("docs update did not append content");
     }
 
-    console.log(`[7/9] docs search`);
+    console.log(`[7/10] docs search`);
     searchResults = runJson("node", [
     cliEntry,
     "docs",
@@ -231,7 +231,38 @@ function main() {
       throw new Error("docs search did not find the created document");
     }
 
-    console.log(`[8/9] tokens revoke-current`);
+    console.log(`[8/10] docs archive`);
+    archivedDocument = runJson("node", [
+      cliEntry,
+      "docs",
+      "archive",
+      "--id",
+      created.id,
+      "--format",
+      "json",
+    ], { env: cliEnv });
+
+    if (!archivedDocument.isArchived) {
+      throw new Error("docs archive did not mark the document as archived");
+    }
+
+    const postArchiveSearch = runJson("node", [
+      cliEntry,
+      "docs",
+      "search",
+      "--query",
+      uniqueKeyword,
+      "--limit",
+      "5",
+      "--format",
+      "json",
+    ], { env: cliEnv });
+
+    if (Array.isArray(postArchiveSearch) && postArchiveSearch.some((doc) => doc.id === created.id)) {
+      throw new Error("archived document still appeared in docs search");
+    }
+
+    console.log(`[9/10] tokens revoke-current`);
     revokedToken = runJson("node", [
       cliEntry,
       "tokens",
@@ -261,7 +292,7 @@ function main() {
       throw new Error("revoked token still passed auth status");
     }
 
-    console.log(`[9/9] auth logout`);
+    console.log(`[10/10] auth logout`);
     const logout = runJson("node", [
       cliEntry,
       "auth",
@@ -280,12 +311,35 @@ function main() {
     testUserId,
     tokenPrefix: pat.tokenPrefix,
     documentId: created.id,
+    archived: archivedDocument.isArchived,
     searchHits: searchResults.length,
     revokedTokenId: revokedToken.id,
     revokedAt: revokedToken.revokedAt,
     loggedOut: logout.loggedOut,
   }, null, 2));
   } finally {
+    if (created?.id && !archivedDocument?.isArchived && tokenRecordId) {
+      try {
+        console.log(`[cleanup] archive test document`);
+        const cleanupArchive = runJson("node", [
+          cliEntry,
+          "docs",
+          "archive",
+          "--id",
+          created.id,
+          "--api-url",
+          apiUrl,
+          "--token",
+          pat.token,
+          "--format",
+          "json",
+        ], { env: cliEnv });
+        archivedDocument = cleanupArchive;
+      } catch (error) {
+        console.error(`Failed to archive test document: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
+
     if (tokenRecordId) {
       try {
         console.log(`[cleanup] revoke PAT token`);

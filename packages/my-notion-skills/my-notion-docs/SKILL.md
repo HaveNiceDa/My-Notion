@@ -5,7 +5,7 @@ description: "Uses My-Notion CLI to create, read, search, and update documents. 
 
 # My-Notion Docs
 
-Use this skill when an Agent needs to create, read, search, list, or update My-Notion documents through the My-Notion CLI.
+Use this skill when an Agent needs to create, read, search, list, update, or archive My-Notion documents through the My-Notion CLI.
 
 Before using this skill, ensure `my-notion-shared` authentication guidance is satisfied.
 
@@ -118,6 +118,14 @@ If only the title changes:
 my-notion docs update --id <documentId> --title "New Title" --format json
 ```
 
+## Archive Documents
+
+Use archive only when the user explicitly asks to remove a document from normal views, or when cleaning up temporary E2E/test documents:
+
+```bash
+my-notion docs archive --id <documentId> --format json
+```
+
 ## Agent Behavior Rules
 
 - Always preserve returned `documentId` values in your working context.
@@ -125,6 +133,7 @@ my-notion docs update --id <documentId> --title "New Title" --format json
 - Use `--format json` when parsing command output.
 - Use `--format markdown` when reading document bodies for language tasks.
 - Ask the user before overwriting existing document content unless they explicitly requested overwrite.
+- Ask the user before archiving a non-test document unless they explicitly requested removal.
 - Do not expose PAT tokens in final answers.
 - Report the created or updated document ID to the user after successful writes.
 

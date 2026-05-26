@@ -116,6 +116,7 @@ Typical output:
   "title": "Project Plan",
   "contentMarkdown": "# Project Plan\n\n...",
   "contentFormat": "blocknote-json",
+  "isArchived": false,
   "isPublished": false,
   "isInKnowledgeBase": true,
   "lastEditedTime": 1779690000000
@@ -189,6 +190,16 @@ Update title and append content:
 ```bash
 my-notion docs update --id <documentId> --title "New Title" --content-file /tmp/append.md --mode append --format json
 ```
+
+### Archive
+
+Soft-archive a document so it no longer appears in normal fetch/search/list results:
+
+```bash
+my-notion docs archive --id <documentId> --format json
+```
+
+Typical output includes `isArchived: true`.
 
 ## MCP
 
@@ -264,6 +275,7 @@ The smoke test:
 - fetches it as Markdown
 - appends content
 - searches by a unique keyword
+- archives the test document
 - revokes the temporary PAT
 - verifies the revoked PAT no longer authenticates
 - clears the saved local PAT with `auth logout`
@@ -272,4 +284,4 @@ The smoke test:
 
 - Markdown to BlockNote conversion currently stores content as paragraph blocks.
 - CLI can revoke the current PAT, but arbitrary token list/revoke still belongs to the authenticated Web API/UI.
-- E2E cleans up the temporary PAT but does not delete the test document.
+- E2E soft-archives its test document and revokes the temporary PAT.

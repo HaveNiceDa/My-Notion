@@ -46,6 +46,7 @@ Usage:
   my-notion docs search --query <keyword> [--limit 10]
   my-notion docs list [--limit 20]
   my-notion docs update --id <documentId> [--title <title>] [--content-file draft.md] [--mode overwrite|append]
+  my-notion docs archive --id <documentId>
   my-notion mcp serve --transport stdio
 
 Global options:

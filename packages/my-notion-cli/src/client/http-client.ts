@@ -87,6 +87,15 @@ export class MyNotionClient {
     );
   }
 
+  archiveDocument(documentId: string) {
+    return this.request<DocumentResult>(
+      `/cli/v1/documents/${encodeURIComponent(documentId)}`,
+      {
+        method: "DELETE",
+      },
+    );
+  }
+
   revokeCurrentToken() {
     return this.request<{ token: ApiTokenResult }>("/cli/v1/tokens/revoke-current", {
       method: "POST",

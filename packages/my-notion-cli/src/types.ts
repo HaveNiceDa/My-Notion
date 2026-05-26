@@ -31,6 +31,7 @@ export type DocumentResult = {
   content: string;
   contentMarkdown: string;
   contentFormat: string;
+  isArchived: boolean;
   isPublished: boolean;
   isInKnowledgeBase: boolean;
   lastEditedTime: number | null;
