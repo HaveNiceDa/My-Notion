@@ -486,7 +486,7 @@ pnpm --filter @notion/my-notion-skills lint
 #### P0：机器 API 安全与可观测性
 
 - [ ] 为 `/cli/v1/*` 增加基础限流策略，优先按 token hash / token id 维度限制写请求频率。
-- [ ] 增加机器 API 审计日志，记录 tokenId、userId、scope、endpoint、status、requestId、timestamp，不记录 PAT 明文。
+- [x] 增加机器 API 审计日志，记录 tokenId、userId、scope、endpoint、status、requestId、timestamp，不记录 PAT 明文。
 - [x] 在 CLI/MCP 错误输出中透出稳定 requestId，便于从 E2E 日志反查服务端审计记录。
 - [x] 为 CLI Machine API client 增加基础超时与重试策略：10 秒超时、最多 3 次尝试、指数退避，跳过结构化 4xx 业务错误。
 - [ ] 为 token 校验失败、scope 不足、token 过期、token revoked 增加 E2E 断言。
@@ -546,7 +546,7 @@ pnpm --filter @notion/my-notion-skills lint
 ## Risks
 
 - Markdown 与 BlockNote JSON 的转换可能影响 Web 编辑器展示效果，需要明确兼容策略。
-- API Token 是长期凭据，当前已支持撤销、过期、scope、lastUsedAt 和安全展示；后续可补审计日志。
+- API Token 是长期凭据，当前已支持撤销、过期、scope、lastUsedAt、安全展示和机器 API 审计日志。
 - Convex HTTP Actions 的路由、CORS、部署 URL 需要与当前 Vercel/Convex 生产环境协调。
 - MCP HTTP OAuth 完整实现复杂，不应阻塞 CLI MVP。
 - Skills 文档如果写得过宽，会导致 Agent 调用危险命令；必须优先约束 dry-run、scope 和输出解析。

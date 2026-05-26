@@ -102,7 +102,9 @@ When the server returns a structured error, the CLI prints the request id with t
 UNAUTHORIZED (requestId: req_xxx)
 ```
 
-Use `requestId` to correlate CLI/MCP failures with server logs or future audit records. Network-level failures such as `fetch failed` may not have a request id because the server did not return a response.
+Use `requestId` to correlate CLI/MCP failures with server logs or Machine API audit records. Network-level failures such as `fetch failed` may not have a request id because the server did not return a response.
+
+Machine API audit records include request id, token id, token prefix, user id, endpoint path, HTTP method, status, required scope, error code, duration, and timestamp. PAT plaintext and token hashes are never recorded.
 
 ## Retry and Timeout
 

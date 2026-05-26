@@ -72,47 +72,107 @@ async function parseJsonBody(req: Request) {
 
 const cliHttpAction = httpAction(async (ctx, req) => {
   const requestId = createRequestId();
+  const startedAt = Date.now();
+  const url = new URL(req.url);
+  const method = req.method.toUpperCase();
+  const pathname = url.pathname;
+  const requiredScope =
+    method === "GET" ? "docs:read" : "docs:write";
+  const skipScopeCheck =
+    pathname === "/cli/v1/auth/status" ||
+    pathname === "/cli/v1/tokens/revoke-current";
+  let auditAuth: {
+    tokenId?: Id<"apiTokens">;
+    tokenPrefix?: string;
+    userId?: string;
+  } = {};
+
+  async function recordAudit(status: number, errorCode?: string) {
+    try {
+      await ctx.runMutation(internal.cli.recordCliAuditLog, {
+        requestId,
+        method,
+        path: pathname,
+        status,
+        errorCode,
+        requiredScope: skipScopeCheck ? undefined : requiredScope,
+        tokenId: auditAuth.tokenId,
+        tokenPrefix: auditAuth.tokenPrefix,
+        userId: auditAuth.userId,
+        durationMs: Date.now() - startedAt,
+      });
+    } catch (error) {
+      console.error(`[CLI HTTP] Audit log failed requestId=${requestId}:`, error);
+    }
+  }
+
+  async function auditedSuccess(
+    data: unknown,
+    init?: ResponseInit,
+  ) {
+    await recordAudit(init?.status ?? 200);
+    return successResponse(data, requestId, init);
+  }
+
+  async function auditedError(
+    status: number,
+    code: ApiErrorCode | string,
+    message: string,
+  ) {
+    await recordAudit(status, code);
+    return errorResponse(status, code, message, requestId);
+  }
+
   try {
-    const url = new URL(req.url);
     const token = getBearerToken(req);
     if (!token) {
-      return errorResponse(401, "UNAUTHORIZED", "Missing Bearer token", requestId);
+      return auditedError(401, "UNAUTHORIZED", "Missing Bearer token");
     }
 
     const tokenHash = await sha256Hex(token);
-    const method = req.method.toUpperCase();
-    const pathname = url.pathname;
-    const requiredScope = method === "GET" ? "docs:read" : "docs:write";
-    const skipScopeCheck =
-      pathname === "/cli/v1/auth/status" ||
-      pathname === "/cli/v1/tokens/revoke-current";
     const auth = await ctx.runQuery(internal.cli.authenticateApiToken, {
       tokenHash,
       requiredScope: skipScopeCheck ? undefined : requiredScope,
     });
 
     if (!auth.ok) {
-      return errorResponse(auth.status, auth.code, auth.code, requestId);
+      const failedAuth = auth as {
+        tokenId?: Id<"apiTokens">;
+        tokenPrefix?: string;
+        userId?: string;
+      };
+      auditAuth = {
+        tokenId: failedAuth.tokenId,
+        tokenPrefix: failedAuth.tokenPrefix,
+        userId: failedAuth.userId,
+      };
+      return auditedError(auth.status, auth.code, auth.code);
     }
+
+    auditAuth = {
+      tokenId: auth.tokenId,
+      tokenPrefix: auth.tokenPrefix,
+      userId: auth.userId,
+    };
 
     await ctx.runMutation(internal.cli.recordApiTokenUsed, {
       tokenId: auth.tokenId,
     });
 
     if (pathname === "/cli/v1/auth/status" && method === "GET") {
-      return successResponse({
+      return auditedSuccess({
         authenticated: true,
         tokenPrefix: auth.tokenPrefix,
         scopes: auth.scopes,
         expiresAt: auth.expiresAt,
-      }, requestId);
+      });
     }
 
     if (pathname === "/cli/v1/tokens/revoke-current" && method === "POST") {
       const token = await ctx.runMutation(internal.cli.revokeCurrentApiToken, {
         tokenId: auth.tokenId,
       });
-      return successResponse({ token }, requestId);
+      return auditedSuccess({ token });
     }
 
     if (pathname === "/cli/v1/documents" && method === "GET") {
@@ -121,7 +181,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         userId: auth.userId,
         limit: Number.isFinite(limit) ? limit : 20,
       });
-      return successResponse({ documents }, requestId);
+      return auditedSuccess({ documents });
     }
 
     if (pathname === "/cli/v1/documents/search" && method === "GET") {
@@ -131,13 +191,13 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         query: url.searchParams.get("q") ?? undefined,
         limit: Number.isFinite(limit) ? limit : 20,
       });
-      return successResponse({ documents }, requestId);
+      return auditedSuccess({ documents });
     }
 
     if (pathname === "/cli/v1/documents" && method === "POST") {
       const body = await parseJsonBody(req);
       if (typeof body.title !== "string" || body.title.trim().length === 0) {
-        return errorResponse(400, "BAD_REQUEST", "title is required", requestId);
+        return auditedError(400, "BAD_REQUEST", "title is required");
       }
 
       const document = await ctx.runMutation(internal.cli.createCliDocument, {
@@ -149,7 +209,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
             : undefined,
       });
 
-      return successResponse(document, requestId, { status: 201 });
+      return auditedSuccess(document, { status: 201 });
     }
 
     const documentPrefix = "/cli/v1/documents/";
@@ -158,7 +218,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         pathname.slice(documentPrefix.length),
       ) as Id<"documents">;
       if (!documentId || documentId === "search") {
-        return errorResponse(400, "BAD_REQUEST", "document id is required", requestId);
+        return auditedError(400, "BAD_REQUEST", "document id is required");
       }
 
       if (method === "GET") {
@@ -167,9 +227,9 @@ const cliHttpAction = httpAction(async (ctx, req) => {
           documentId,
         });
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
+          return auditedError(404, "NOT_FOUND", "Document not found");
         }
-        return successResponse(document, requestId);
+        return auditedSuccess(document);
       }
 
       if (method === "PATCH") {
@@ -191,9 +251,9 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         });
 
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
+          return auditedError(404, "NOT_FOUND", "Document not found");
         }
-        return successResponse(document, requestId);
+        return auditedSuccess(document);
       }
 
       if (method === "DELETE") {
@@ -203,20 +263,19 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         });
 
         if (!document) {
-          return errorResponse(404, "NOT_FOUND", "Document not found", requestId);
+          return auditedError(404, "NOT_FOUND", "Document not found");
         }
-        return successResponse(document, requestId);
+        return auditedSuccess(document);
       }
     }
 
-    return errorResponse(404, "NOT_FOUND", "CLI endpoint not found", requestId);
+    return auditedError(404, "NOT_FOUND", "CLI endpoint not found");
   } catch (error) {
     console.error(`[CLI HTTP] Error requestId=${requestId}:`, error);
-    return errorResponse(
+    return auditedError(
       500,
       "INTERNAL_ERROR",
       error instanceof Error ? error.message : "Internal server error",
-      requestId,
     );
   }
 });

@@ -199,15 +199,39 @@ export const authenticateApiToken = internalQuery({
     }
 
     if (token.revokedAt) {
-      return { ok: false as const, status: 401, code: "TOKEN_REVOKED" };
+      return {
+        ok: false as const,
+        status: 401,
+        code: "TOKEN_REVOKED",
+        tokenId: token._id,
+        userId: token.userId,
+        tokenPrefix: token.tokenPrefix,
+        scopes: token.scopes,
+      };
     }
 
     if (token.expiresAt && token.expiresAt <= now()) {
-      return { ok: false as const, status: 401, code: "TOKEN_EXPIRED" };
+      return {
+        ok: false as const,
+        status: 401,
+        code: "TOKEN_EXPIRED",
+        tokenId: token._id,
+        userId: token.userId,
+        tokenPrefix: token.tokenPrefix,
+        scopes: token.scopes,
+      };
     }
 
     if (args.requiredScope && !token.scopes.includes(args.requiredScope)) {
-      return { ok: false as const, status: 403, code: "INSUFFICIENT_SCOPE" };
+      return {
+        ok: false as const,
+        status: 403,
+        code: "INSUFFICIENT_SCOPE",
+        tokenId: token._id,
+        userId: token.userId,
+        tokenPrefix: token.tokenPrefix,
+        scopes: token.scopes,
+      };
     }
 
     return {
@@ -228,6 +252,38 @@ export const recordApiTokenUsed = internalMutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.patch(args.tokenId, { lastUsedAt: now() });
+    return { success: true };
+  },
+});
+
+export const recordCliAuditLog = internalMutation({
+  args: {
+    requestId: v.string(),
+    method: v.string(),
+    path: v.string(),
+    status: v.number(),
+    errorCode: v.optional(v.string()),
+    requiredScope: v.optional(v.string()),
+    tokenId: v.optional(v.id("apiTokens")),
+    tokenPrefix: v.optional(v.string()),
+    userId: v.optional(v.string()),
+    durationMs: v.number(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.insert("cliAuditLogs", {
+      requestId: args.requestId,
+      method: args.method,
+      path: args.path,
+      status: args.status,
+      errorCode: args.errorCode,
+      requiredScope: args.requiredScope,
+      tokenId: args.tokenId,
+      tokenPrefix: args.tokenPrefix,
+      userId: args.userId,
+      durationMs: args.durationMs,
+      createdAt: now(),
+    });
+
     return { success: true };
   },
 });
