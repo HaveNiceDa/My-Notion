@@ -24,6 +24,12 @@
 - M14 ✅ 已完成：ReAct Agent Loop 重构。
 - M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档。
 
+## 下一批候选里程碑
+
+- M17 ⏳ 规划中：Agent Tools + Memory + RAG Retrieval Strategy。重点扩展 tool 生态、长期记忆系统、RAG 多策略检索。
+- M18 ⏳ 后置规划：Agent Harness + Eval。重点建设 golden set、tool trace replay、retrieval/memory eval 和回归验证命令。
+- 详细路线见 `docs/ai-chat-refactor-plan.md` 的 Phase 7 规划。
+
 ## 关键验证命令
 
 ```bash
