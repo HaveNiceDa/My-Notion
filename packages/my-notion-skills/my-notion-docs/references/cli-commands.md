@@ -104,6 +104,18 @@ UNAUTHORIZED (requestId: req_xxx)
 
 Use `requestId` to correlate CLI/MCP failures with server logs or future audit records. Network-level failures such as `fetch failed` may not have a request id because the server did not return a response.
 
+## Retry and Timeout
+
+The CLI HTTP client uses a conservative retry policy for Machine API calls:
+
+- Each attempt times out after 10 seconds.
+- The CLI makes up to 3 attempts.
+- Retries use exponential backoff starting at 300ms.
+- Retries apply to network failures, timeouts, HTTP 408, HTTP 429, and HTTP 5xx responses.
+- Structured 4xx business errors such as `UNAUTHORIZED`, `TOKEN_REVOKED`, `TOKEN_EXPIRED`, `INSUFFICIENT_SCOPE`, and `NOT_FOUND` are not retried.
+
+Archive cleanup is idempotent: repeated `docs archive` calls for an already archived document return the archived document instead of failing.
+
 ## Documents
 
 ### Create

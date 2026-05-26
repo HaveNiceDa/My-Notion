@@ -488,6 +488,7 @@ pnpm --filter @notion/my-notion-skills lint
 - [ ] 为 `/cli/v1/*` 增加基础限流策略，优先按 token hash / token id 维度限制写请求频率。
 - [ ] 增加机器 API 审计日志，记录 tokenId、userId、scope、endpoint、status、requestId、timestamp，不记录 PAT 明文。
 - [x] 在 CLI/MCP 错误输出中透出稳定 requestId，便于从 E2E 日志反查服务端审计记录。
+- [x] 为 CLI Machine API client 增加基础超时与重试策略：10 秒超时、最多 3 次尝试、指数退避，跳过结构化 4xx 业务错误。
 - [ ] 为 token 校验失败、scope 不足、token 过期、token revoked 增加 E2E 断言。
 - [ ] 明确 401/403/404/422/429/500 的错误码契约，并在 `references/cli-commands.md` 中固化。
 

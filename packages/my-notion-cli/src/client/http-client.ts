@@ -1,5 +1,9 @@
 import type { ApiResponse, ApiTokenResult, DocumentResult } from "../types.js";
 
+const DEFAULT_TIMEOUT_MS = 10_000;
+const DEFAULT_MAX_ATTEMPTS = 3;
+const RETRY_BASE_DELAY_MS = 300;
+
 export class MyNotionApiError extends Error {
   constructor(
     message: string,
@@ -16,6 +20,22 @@ type ClientOptions = {
   apiUrl: string;
   token: string;
 };
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function isAbortError(error: unknown) {
+  return error instanceof Error && error.name === "AbortError";
+}
+
+function isRetryableStatus(status: number) {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+function retryDelay(attempt: number) {
+  return RETRY_BASE_DELAY_MS * 2 ** attempt;
+}
 
 export class MyNotionClient {
   private readonly apiUrl: string;
@@ -107,14 +127,64 @@ export class MyNotionClient {
     path: string,
     options: { method?: string; body?: unknown } = {},
   ) {
-    const response = await fetch(`${this.apiUrl}${path}`, {
-      method: options.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${this.token}`,
-        "Content-Type": "application/json",
-      },
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
-    });
+    const method = options.method ?? "GET";
+    const body = options.body === undefined ? undefined : JSON.stringify(options.body);
+    let lastError: MyNotionApiError | undefined;
+
+    for (let attempt = 0; attempt < DEFAULT_MAX_ATTEMPTS; attempt += 1) {
+      try {
+        return await this.requestOnce<T>(path, { method, body });
+      } catch (error) {
+        const apiError =
+          error instanceof MyNotionApiError
+            ? error
+            : new MyNotionApiError(
+                isAbortError(error)
+                  ? `Request timed out after ${DEFAULT_TIMEOUT_MS}ms`
+                  : error instanceof Error
+                    ? error.message
+                    : "Network request failed",
+                0,
+                isAbortError(error) ? "TIMEOUT" : "NETWORK_ERROR",
+              );
+
+        lastError = apiError;
+
+        const shouldRetry =
+          attempt < DEFAULT_MAX_ATTEMPTS - 1 &&
+          (apiError.status === 0 || isRetryableStatus(apiError.status));
+        if (!shouldRetry) {
+          throw apiError;
+        }
+
+        await sleep(retryDelay(attempt));
+      }
+    }
+
+    throw lastError ?? new MyNotionApiError("Request failed", 0, "NETWORK_ERROR");
+  }
+
+  private async requestOnce<T>(
+    path: string,
+    options: { method: string; body?: string },
+  ) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(`${this.apiUrl}${path}`, {
+        method: options.method,
+        signal: controller.signal,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          "Content-Type": "application/json",
+        },
+        body: options.body,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
 
     const payload = (await response.json().catch(() => null)) as ApiResponse<T> | null;
 

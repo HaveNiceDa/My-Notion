@@ -375,14 +375,16 @@ export const archiveCliDocument = internalMutation({
   },
   handler: async (ctx, args) => {
     const document = await ctx.db.get(args.documentId);
-    if (!document || document.isArchived || document.userId !== args.userId) {
+    if (!document || document.userId !== args.userId) {
       return null;
     }
 
-    await ctx.db.patch(args.documentId, {
-      isArchived: true,
-      lastEditedTime: now(),
-    });
+    if (!document.isArchived) {
+      await ctx.db.patch(args.documentId, {
+        isArchived: true,
+        lastEditedTime: now(),
+      });
+    }
 
     const archivedDocument = await ctx.db.get(args.documentId);
     if (!archivedDocument) {
