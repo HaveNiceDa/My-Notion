@@ -4,6 +4,7 @@ export * from "./logic/createConversation";
 export * from "./logic/addMessage";
 export * from "./logic/updateConversationTitle";
 export * from "./logic/deleteConversation";
+export * from "./logic/updateToolResult";
 export * from "./logic/getDocumentsForRAG";
 export * from "./logic/getKnowledgeBaseDocumentsForRAG";
 export * from "./logic/addThinkingStep";

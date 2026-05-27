@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
-import { Brain, Pencil, Save, Trash2, X } from "lucide-react";
+import { Brain, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -11,6 +11,17 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/src/components/ui/alert-dialog";
 
 type MemoryType = "preference" | "project" | "episodic";
 
@@ -39,6 +50,13 @@ export function MemoryReviewPage() {
   const t = useTranslations("MemoryReview");
   const [query, setQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | MemoryType>("all");
+  const [isCreating, setIsCreating] = useState(false);
+  const [createState, setCreateState] = useState<EditState>({
+    type: "preference",
+    content: "",
+    reason: "",
+    confidence: "1",
+  });
   const [editingId, setEditingId] = useState<Id<"agentMemories"> | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
 
@@ -54,6 +72,7 @@ export function MemoryReviewPage() {
   const memories = useQuery(api.agentMemories.listAgentMemories, queryArgs) as
     | AgentMemoryReviewItem[]
     | undefined;
+  const createMemory = useMutation(api.agentMemories.createAgentMemory);
   const updateMemory = useMutation(api.agentMemories.updateAgentMemory);
   const deactivateMemory = useMutation(api.agentMemories.deactivateAgentMemory);
 
@@ -70,6 +89,42 @@ export function MemoryReviewPage() {
   function cancelEdit() {
     setEditingId(null);
     setEditState(null);
+  }
+
+  function resetCreateForm() {
+    setCreateState({ type: "preference", content: "", reason: "", confidence: "1" });
+    setIsCreating(false);
+  }
+
+  async function handleCreate() {
+    const content = createState.content.trim();
+    if (!content) {
+      toast.error(t("contentRequired"));
+      return;
+    }
+
+    const confidence = Number(createState.confidence);
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+      toast.error(t("confidenceInvalid"));
+      return;
+    }
+
+    const promise = createMemory({
+      type: createState.type,
+      content,
+      source: "manual",
+      confidence,
+      ...(createState.reason.trim() ? { reason: createState.reason.trim() } : {}),
+    });
+
+    toast.promise(promise, {
+      loading: t("creating"),
+      success: t("created"),
+      error: t("createFailed"),
+    });
+
+    await promise;
+    resetCreateForm();
   }
 
   async function handleSave(memoryId: Id<"agentMemories">) {
@@ -127,7 +182,26 @@ export function MemoryReviewPage() {
             <p className="text-sm text-muted-foreground">{t("description")}</p>
           </div>
         </div>
+        <div>
+          <Button type="button" size="sm" onClick={() => setIsCreating((value) => !value)}>
+            <Plus className="h-4 w-4" />
+            {t("newMemory")}
+          </Button>
+        </div>
       </header>
+
+      {isCreating && (
+        <section className="mb-5 rounded-xl border bg-background/80 p-4 shadow-sm">
+          <h2 className="mb-3 text-sm font-medium">{t("newMemory")}</h2>
+          <MemoryForm
+            state={createState}
+            onStateChange={setCreateState}
+            onCancel={resetCreateForm}
+            onSave={handleCreate}
+            saveLabel={t("create")}
+          />
+        </section>
+      )}
 
       <section className="mb-5 grid gap-3 rounded-xl border bg-background/80 p-4 shadow-sm md:grid-cols-[1fr_220px]">
         <Input
@@ -178,6 +252,76 @@ export function MemoryReviewPage() {
   );
 }
 
+interface MemoryFormProps {
+  state: EditState;
+  onStateChange: (state: EditState) => void;
+  onCancel: () => void;
+  onSave: () => void;
+  saveLabel: string;
+}
+
+function MemoryForm({
+  state,
+  onStateChange,
+  onCancel,
+  onSave,
+  saveLabel,
+}: MemoryFormProps) {
+  const t = useTranslations("MemoryReview");
+
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-[220px_160px]">
+        <select
+          value={state.type}
+          onChange={(event) =>
+            onStateChange({ ...state, type: event.target.value as MemoryType })
+          }
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          {MEMORY_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {t(`type_${type}`)}
+            </option>
+          ))}
+        </select>
+        <Input
+          type="number"
+          min="0"
+          max="1"
+          step="0.1"
+          value={state.confidence}
+          onChange={(event) =>
+            onStateChange({ ...state, confidence: event.target.value })
+          }
+          aria-label={t("confidence")}
+        />
+      </div>
+      <Textarea
+        value={state.content}
+        onChange={(event) => onStateChange({ ...state, content: event.target.value })}
+        placeholder={t("contentPlaceholder")}
+        className="min-h-24"
+      />
+      <Input
+        value={state.reason}
+        onChange={(event) => onStateChange({ ...state, reason: event.target.value })}
+        placeholder={t("reasonPlaceholder")}
+      />
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          <X className="h-4 w-4" />
+          {t("cancel")}
+        </Button>
+        <Button type="button" size="sm" onClick={onSave}>
+          <Save className="h-4 w-4" />
+          {saveLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 interface MemoryReviewCardProps {
   memory: AgentMemoryReviewItem;
   isEditing: boolean;
@@ -204,55 +348,13 @@ function MemoryReviewCard({
   return (
     <article className="rounded-xl border bg-background/80 p-4 shadow-sm">
       {isEditing && editState ? (
-        <div className="space-y-3">
-          <div className="grid gap-3 md:grid-cols-[220px_160px]">
-            <select
-              value={editState.type}
-              onChange={(event) =>
-                onEditStateChange({ ...editState, type: event.target.value as MemoryType })
-              }
-              className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {MEMORY_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {t(`type_${type}`)}
-                </option>
-              ))}
-            </select>
-            <Input
-              type="number"
-              min="0"
-              max="1"
-              step="0.1"
-              value={editState.confidence}
-              onChange={(event) =>
-                onEditStateChange({ ...editState, confidence: event.target.value })
-              }
-              aria-label={t("confidence")}
-            />
-          </div>
-          <Textarea
-            value={editState.content}
-            onChange={(event) => onEditStateChange({ ...editState, content: event.target.value })}
-            placeholder={t("contentPlaceholder")}
-            className="min-h-24"
-          />
-          <Input
-            value={editState.reason}
-            onChange={(event) => onEditStateChange({ ...editState, reason: event.target.value })}
-            placeholder={t("reasonPlaceholder")}
-          />
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="ghost" size="sm" onClick={onCancelEdit}>
-              <X className="h-4 w-4" />
-              {t("cancel")}
-            </Button>
-            <Button type="button" size="sm" onClick={onSave}>
-              <Save className="h-4 w-4" />
-              {t("save")}
-            </Button>
-          </div>
-        </div>
+        <MemoryForm
+          state={editState}
+          onStateChange={onEditStateChange}
+          onCancel={onCancelEdit}
+          onSave={onSave}
+          saveLabel={t("save")}
+        />
       ) : (
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -274,10 +376,28 @@ function MemoryReviewCard({
               <Pencil className="h-4 w-4" />
               {t("edit")}
             </Button>
-            <Button type="button" variant="ghost" size="sm" onClick={onDelete}>
-              <Trash2 className="h-4 w-4" />
-              {t("delete")}
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="ghost" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                  {t("delete")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("deleteConfirmDescription")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>
+                    {t("confirmDelete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       )}

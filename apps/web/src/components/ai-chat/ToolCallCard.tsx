@@ -11,6 +11,7 @@ import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
 
 interface ToolCallCardProps {
   toolResult: ToolCallResult;
+  messageId?: Id<"aiMessages">;
 }
 
 type RetrievalStrategy = "fast" | "balanced" | "deep";
@@ -53,6 +54,8 @@ interface MemoryWriteToolResult {
   confirmationRequired?: boolean;
   message?: string;
   memory?: MemoryItem;
+  memoryWriteStatus?: "saved" | "cancelled";
+  savedMemoryId?: string;
   error?: string;
 }
 
@@ -224,10 +227,24 @@ function MemoryReadResult({ result }: { result: MemoryReadToolResult }) {
   );
 }
 
-function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
+function MemoryWriteResult({
+  result,
+  toolCallId,
+  messageId,
+}: {
+  result: MemoryWriteToolResult;
+  toolCallId: string;
+  messageId?: Id<"aiMessages">;
+}) {
   const t = useTranslations("AI");
   const createMemory = useMutation(api.agentMemories.createAgentMemory);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "cancelled" | "error">("idle");
+  const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
+  const initialStatus = result.memoryWriteStatus === "saved"
+    ? "saved"
+    : result.memoryWriteStatus === "cancelled"
+      ? "cancelled"
+      : "idle";
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "cancelled" | "error">(initialStatus);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (result.error) {
@@ -243,7 +260,7 @@ function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
     setErrorMessage(null);
 
     try {
-      await createMemory({
+      const savedMemory = await createMemory({
         type: memory.type,
         content: memory.content,
         source: memory.source ?? "agent_proposed",
@@ -254,7 +271,27 @@ function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
           ? memory.supersedesMemoryId as Id<"agentMemories">
           : undefined,
       });
+      if (messageId) {
+        await updateToolResultState({
+          messageId,
+          toolCallId,
+          status: "saved",
+          savedMemoryId: savedMemory.id,
+        });
+      }
       setStatus("saved");
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function handleCancelMemory() {
+    setStatus("cancelled");
+    if (!messageId) return;
+
+    try {
+      await updateToolResultState({ messageId, toolCallId, status: "cancelled" });
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -291,7 +328,7 @@ function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
           </button>
           <button
             type="button"
-            onClick={() => setStatus("cancelled")}
+            onClick={handleCancelMemory}
             disabled={status === "saving"}
             className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
           >
@@ -303,7 +340,7 @@ function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
   );
 }
 
-export function ToolCallCard({ toolResult }: ToolCallCardProps) {
+export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
   const isRunning = toolResult.status === "calling" || toolResult.status === "executing";
@@ -358,8 +395,18 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
       resultSummary = count > 0 ? t("memoriesFoundCount", { count }) : t("noMemoriesFound");
     } else if (toolName === "memory_write") {
       const typedResult = result as unknown as MemoryWriteToolResult;
-      resultContent = <MemoryWriteResult result={typedResult} />;
-      resultSummary = typedResult.dryRun ? t("memoryWritePreview") : t("memorySaved");
+      resultContent = (
+        <MemoryWriteResult
+          result={typedResult}
+          toolCallId={toolResult.id}
+          messageId={messageId}
+        />
+      );
+      resultSummary = typedResult.memoryWriteStatus === "cancelled"
+        ? t("memoryCancelled")
+        : typedResult.memoryWriteStatus === "saved" || !typedResult.dryRun
+          ? t("memorySaved")
+          : t("memoryWritePreview");
     }
   }
 

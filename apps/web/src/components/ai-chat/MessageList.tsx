@@ -5,6 +5,7 @@ import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { Copy, ChevronDown, ChevronUp, Brain } from "lucide-react";
+import type { Id } from "@/convex/_generated/dataModel";
 import type { ChatMessage, ToolCall, ToolCallResult } from "./types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
 import { ToolCallCard } from "./ToolCallCard";
@@ -78,7 +79,7 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
       return (
         <div className="space-y-1.5 mt-2">
           {persistedResults.map((tr) => (
-            <ToolCallCard key={tr.id} toolResult={tr} />
+            <ToolCallCard key={tr.id} toolResult={tr} messageId={message.id as Id<"aiMessages">} />
           ))}
         </div>
       );
