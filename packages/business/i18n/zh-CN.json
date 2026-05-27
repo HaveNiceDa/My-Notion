@@ -111,7 +111,8 @@
     "newNoteCreated": "新笔记已创建！",
     "failedToCreateNote": "创建笔记失败。",
     "untitled": "新笔记",
-    "home": "首页"
+    "home": "首页",
+    "memories": "长期记忆"
   },
   "Item": {
     "movingToTrash": "正在移至回收站...",
@@ -309,6 +310,38 @@
     "panelError": "AI 面板出现异常",
     "panelErrorDesc": "发生了意外错误，请重试或稍后再试",
     "retry": "重试"
+  },
+  "MemoryReview": {
+    "title": "长期记忆",
+    "description": "集中查看、编辑和停用 AI Agent 已保存的长期记忆。",
+    "searchPlaceholder": "搜索记忆内容、原因或类型...",
+    "typeAll": "全部类型",
+    "type_preference": "用户偏好",
+    "type_project": "项目事实",
+    "type_episodic": "阶段结论",
+    "source_user_explicit": "用户明确要求",
+    "source_agent_proposed": "Agent 提议保存",
+    "source_manual": "手动创建",
+    "confidence": "置信度",
+    "confidenceValue": "置信度 {value}",
+    "updatedAt": "更新于 {date}",
+    "reasonLabel": "写入原因",
+    "contentPlaceholder": "输入记忆正文",
+    "reasonPlaceholder": "写入原因（可选）",
+    "loading": "正在加载长期记忆...",
+    "empty": "暂无匹配的长期记忆。",
+    "edit": "编辑",
+    "delete": "停用",
+    "cancel": "取消",
+    "save": "保存",
+    "saving": "正在保存记忆...",
+    "saved": "记忆已保存",
+    "saveFailed": "保存记忆失败",
+    "deleting": "正在停用记忆...",
+    "deleted": "记忆已停用",
+    "deleteFailed": "停用记忆失败",
+    "contentRequired": "记忆正文不能为空",
+    "confidenceInvalid": "置信度必须是 0 到 1 之间的数字"
   },
   "Auth": {
     "signIn": "登录",

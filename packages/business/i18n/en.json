@@ -111,7 +111,8 @@
     "newNoteCreated": "New note created!",
     "failedToCreateNote": "Failed to create note.",
     "untitled": "Untitled",
-    "home": "Home"
+    "home": "Home",
+    "memories": "Long-term memory"
   },
   "Item": {
     "movingToTrash": "Moving to trash...",
@@ -309,6 +310,38 @@
     "panelError": "AI Panel Error",
     "panelErrorDesc": "An unexpected error occurred. Please retry or try again later.",
     "retry": "Retry"
+  },
+  "MemoryReview": {
+    "title": "Long-term memory",
+    "description": "Review, edit, and deactivate long-term memories saved by the AI Agent.",
+    "searchPlaceholder": "Search memory content, reason, or type...",
+    "typeAll": "All types",
+    "type_preference": "User preference",
+    "type_project": "Project fact",
+    "type_episodic": "Episodic note",
+    "source_user_explicit": "Explicit user request",
+    "source_agent_proposed": "Agent proposed",
+    "source_manual": "Manual",
+    "confidence": "Confidence",
+    "confidenceValue": "Confidence {value}",
+    "updatedAt": "Updated at {date}",
+    "reasonLabel": "Reason",
+    "contentPlaceholder": "Enter memory content",
+    "reasonPlaceholder": "Reason for saving (optional)",
+    "loading": "Loading long-term memories...",
+    "empty": "No matching long-term memories.",
+    "edit": "Edit",
+    "delete": "Deactivate",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving memory...",
+    "saved": "Memory saved",
+    "saveFailed": "Failed to save memory",
+    "deleting": "Deactivating memory...",
+    "deleted": "Memory deactivated",
+    "deleteFailed": "Failed to deactivate memory",
+    "contentRequired": "Memory content is required",
+    "confidenceInvalid": "Confidence must be a number between 0 and 1"
   },
   "Auth": {
     "signIn": "Sign in",

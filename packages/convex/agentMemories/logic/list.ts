@@ -29,7 +29,7 @@ export const listAgentMemories = query({
     }
 
     const now = Date.now();
-    const limit = Math.min(Math.max(Math.floor(args.limit ?? 8), 1), 20);
+    const limit = Math.min(Math.max(Math.floor(args.limit ?? 8), 1), 100);
     const baseQuery = args.type
       ? ctx.db
         .query("agentMemories")

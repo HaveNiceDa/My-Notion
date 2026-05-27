@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "convex/react";
 import {
+  Brain,
   ChevronsLeft,
   ChevronsUp,
   Home,
@@ -240,6 +241,12 @@ export function Navigation() {
               icon={AIIcon}
               onClick={togglePanel}
               active={panelOpen}
+            />
+            <Item
+              label={t("memories")}
+              icon={Brain}
+              onClick={() => router.push("/memories")}
+              active={pathname.includes("/memories")}
             />
             <Item
               onClick={handleCreate}
