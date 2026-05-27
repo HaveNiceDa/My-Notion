@@ -1,10 +1,12 @@
 import { fuseCandidates } from "./fusion";
 import { keywordRecall } from "./keyword-recall";
 import { metadataRecall } from "./metadata-recall";
+import { rewriteQueryForDeepRetrieval } from "./query-rewrite";
 import { semanticRecall } from "./semantic-recall";
 import type {
   KnowledgeRetrievalOptions,
   KnowledgeRetrievalResult,
+  QueryRewriteVariant,
   RetrievalCandidate,
   RetrievalStrategy,
 } from "./types";
@@ -32,8 +34,7 @@ export async function retrieveKnowledge(
   }
 
   if (strategy === "deep") {
-    // deep 后续会接 query rewrite / multi-query / rerank；当前先复用 balanced 流程并保留策略标识。
-    return retrieveBalanced({ ...options, query, topK, minScore }, "deep");
+    return retrieveDeep({ ...options, query, topK, minScore });
   }
 
   return retrieveBalanced({ ...options, query, topK, minScore }, "balanced");
@@ -60,10 +61,57 @@ async function retrieveBalanced(
   return buildResult(options.query, strategy, semantic, keyword, metadata, fused);
 }
 
+async function retrieveDeep(
+  options: KnowledgeRetrievalOptions,
+): Promise<KnowledgeRetrievalResult> {
+  const topK = clampTopK(options.topK);
+  const queryVariants = await rewriteQueryForDeepRetrieval(options.query);
+
+  // deep 会对原问题、关键词版、语义扩展版分别召回，再统一融合，降低单个 query 表达不准的漏召风险。
+  const recallGroups = await Promise.all(
+    queryVariants.map((variant) => retrieveVariantCandidates(options, variant, topK)),
+  );
+
+  const semantic = recallGroups.flatMap((group) => group.semantic);
+  const keyword = recallGroups.flatMap((group) => group.keyword);
+  const metadata = recallGroups.flatMap((group) => group.metadata);
+  const fused = fuseCandidates({
+    candidates: [...semantic, ...keyword, ...metadata],
+    topK,
+  });
+
+  return buildResult(options.query, "deep", semantic, keyword, metadata, fused, queryVariants);
+}
+
+async function retrieveVariantCandidates(
+  options: KnowledgeRetrievalOptions,
+  variant: QueryRewriteVariant,
+  topK: number,
+): Promise<{
+  semantic: RetrievalCandidate[];
+  keyword: RetrievalCandidate[];
+  metadata: RetrievalCandidate[];
+}> {
+  const variantOptions = { ...options, query: variant.query };
+  const [semantic, keyword, metadata] = await Promise.all([
+    semanticRecall({ ...variantOptions, topK: topK * 3 }),
+    keywordRecall({ ...variantOptions, topK: topK * 3 }),
+    metadataRecall({ ...variantOptions, topK }),
+  ]);
+
+  return {
+    semantic: tagQueryVariant(semantic, variant),
+    keyword: tagQueryVariant(keyword, variant),
+    metadata: tagQueryVariant(metadata, variant),
+  };
+}
+
 export type {
   KnowledgeRetrievalFilters,
   KnowledgeRetrievalOptions,
   KnowledgeRetrievalResult,
+  QueryRewriteVariant,
+  QueryRewriteVariantKind,
   RetrievalCandidate,
   RetrievalResultItem,
   RetrievalSource,
@@ -102,6 +150,7 @@ function buildResult(
   keyword: RetrievalCandidate[],
   metadata: RetrievalCandidate[],
   items: KnowledgeRetrievalResult["items"],
+  queryVariants?: QueryRewriteVariant[],
 ): KnowledgeRetrievalResult {
   return {
     query,
@@ -112,6 +161,7 @@ function buildResult(
       keywordCount: keyword.length,
       metadataCount: metadata.length,
       fusedCount: items.length,
+      queryVariants,
     },
   };
 }
@@ -127,4 +177,17 @@ function toSingleSourceItem(candidate: RetrievalCandidate): KnowledgeRetrievalRe
     sources: [candidate.source],
     metadata: candidate.metadata,
   };
+}
+
+function tagQueryVariant(
+  candidates: RetrievalCandidate[],
+  variant: QueryRewriteVariant,
+): RetrievalCandidate[] {
+  return candidates.map((candidate) => ({
+    ...candidate,
+    metadata: {
+      ...candidate.metadata,
+      queryVariant: variant,
+    },
+  }));
 }

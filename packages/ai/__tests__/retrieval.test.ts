@@ -43,6 +43,7 @@ describe("fuseCandidates", () => {
 describe("retrieveKnowledge", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete process.env.LLM_API_KEY;
   });
 
   it("空 query 返回空结果", async () => {
@@ -160,6 +161,48 @@ describe("retrieveKnowledge", () => {
       documentIds: ["doc-1"],
       updatedAfter: undefined,
     });
+  });
+
+  it("deep 执行 query rewrite 后进行 multi-query 混合检索", async () => {
+    const vectorStore = createVectorStoreMock({
+      semantic: [
+        {
+          document: {
+            pageContent: "deep semantic content",
+            metadata: { documentId: "d1", title: "Deep", chunkIndex: 0 },
+          },
+          score: 0.9,
+        },
+      ],
+      keyword: [
+        {
+          document: {
+            pageContent: "deep keyword content",
+            metadata: { documentId: "d2", title: "Keyword", chunkIndex: 0 },
+          },
+          score: 2,
+        },
+      ],
+    });
+    vi.mocked(getOrCreateVectorStore).mockResolvedValue(vectorStore);
+
+    const result = await retrieveKnowledge({
+      userId: "user-1",
+      query: "requestId 限流策略",
+      strategy: "deep",
+      topK: 3,
+    });
+
+    expect(result.strategy).toBe("deep");
+    expect(result.metadata.queryVariants).toEqual([
+      { kind: "original", query: "requestId 限流策略" },
+      { kind: "keyword", query: "requestId 限流策略" },
+      { kind: "semantic", query: "requestId 限流策略" },
+    ]);
+    expect(vectorStore.semanticSearch).toHaveBeenCalledTimes(3);
+    expect(vectorStore.keywordSearch).toHaveBeenCalledTimes(3);
+    expect(vectorStore.metadataSearch).toHaveBeenCalledTimes(3);
+    expect(result.items[0].metadata.queryVariant).toBeTruthy();
   });
 });
 

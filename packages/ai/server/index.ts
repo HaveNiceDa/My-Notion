@@ -28,6 +28,8 @@ export type {
   KnowledgeRetrievalFilters,
   KnowledgeRetrievalOptions,
   KnowledgeRetrievalResult,
+  QueryRewriteVariant,
+  QueryRewriteVariantKind,
   RetrievalCandidate,
   RetrievalResultItem,
   RetrievalSource,

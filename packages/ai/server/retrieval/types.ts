@@ -49,5 +49,13 @@ export interface KnowledgeRetrievalResult {
     keywordCount: number;
     metadataCount: number;
     fusedCount: number;
+    queryVariants?: QueryRewriteVariant[];
   };
+}
+
+export type QueryRewriteVariantKind = "original" | "keyword" | "semantic";
+
+export interface QueryRewriteVariant {
+  kind: QueryRewriteVariantKind;
+  query: string;
 }
