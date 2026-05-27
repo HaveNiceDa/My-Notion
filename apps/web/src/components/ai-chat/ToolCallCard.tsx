@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState } from "react";
+import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
 import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain } from "lucide-react";
 import { cn } from "@notion/business/utils";
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
 
 interface ToolCallCardProps {
@@ -11,6 +14,8 @@ interface ToolCallCardProps {
 }
 
 type RetrievalStrategy = "fast" | "balanced" | "deep";
+type MemoryType = "preference" | "project" | "episodic";
+type MemorySource = "user_explicit" | "agent_proposed" | "manual";
 
 interface KnowledgeSearchMetadata {
   semanticCount?: number;
@@ -29,9 +34,13 @@ interface KnowledgeSearchToolResult {
 
 interface MemoryItem {
   id?: string;
-  type?: string;
+  type?: MemoryType;
   content?: string;
+  source?: MemorySource;
   reason?: string;
+  confidence?: number;
+  expiresAt?: number;
+  supersedesMemoryId?: string;
 }
 
 interface MemoryReadToolResult {
@@ -217,20 +226,78 @@ function MemoryReadResult({ result }: { result: MemoryReadToolResult }) {
 
 function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
   const t = useTranslations("AI");
+  const createMemory = useMutation(api.agentMemories.createAgentMemory);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "cancelled" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  const memory = result.memory;
+  const canConfirm = Boolean(result.dryRun && result.confirmationRequired && memory?.content);
+
+  async function handleSaveMemory() {
+    if (!memory?.content || !memory.type) return;
+    setStatus("saving");
+    setErrorMessage(null);
+
+    try {
+      await createMemory({
+        type: memory.type,
+        content: memory.content,
+        source: memory.source ?? "agent_proposed",
+        reason: memory.reason,
+        confidence: memory.confidence,
+        expiresAt: memory.expiresAt,
+        supersedesMemoryId: memory.supersedesMemoryId
+          ? memory.supersedesMemoryId as Id<"agentMemories">
+          : undefined,
+      });
+      setStatus("saved");
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    }
   }
 
   return (
     <div className="space-y-1 rounded-md bg-background/70 px-2 py-1.5 text-xs">
       <div className="font-medium text-foreground">
-        {result.dryRun ? t("memoryWritePreview") : t("memorySaved")}
+        {status === "cancelled"
+          ? t("memoryCancelled")
+          : status === "saved" || !result.dryRun
+            ? t("memorySaved")
+            : t("memoryWritePreview")}
       </div>
-      {result.confirmationRequired && (
+      {result.confirmationRequired && status === "idle" && (
         <div className="text-muted-foreground">{t("memoryConfirmationRequired")}</div>
       )}
-      {result.memory?.content && (
-        <div className="text-muted-foreground">{result.memory.content}</div>
+      {memory?.content && (
+        <div className="text-muted-foreground">{memory.content}</div>
+      )}
+      {errorMessage && (
+        <div className="text-destructive">{t("memorySaveFailed")}: {errorMessage}</div>
+      )}
+      {canConfirm && status !== "saved" && status !== "cancelled" && (
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleSaveMemory}
+            disabled={status === "saving"}
+            className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {status === "saving" ? t("memorySaving") : t("saveMemory")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatus("cancelled")}
+            disabled={status === "saving"}
+            className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
+          >
+            {t("cancelMemory")}
+          </button>
+        </div>
       )}
     </div>
   );
