@@ -20,8 +20,7 @@
 
 ## 关联 progress 文件
 
-- progress/20260521-233000.md — 方案设计阶段
-- progress/20260522-001500.md — Phase 1 实施
+- 旧过程日志已清理，阶段结论以本 milestone 为准。
 
 ## 待办
 

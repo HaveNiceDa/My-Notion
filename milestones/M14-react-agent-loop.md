@@ -70,9 +70,7 @@
 
 ## 关联 progress 文件
 
-- `progress/20260523-170000.md` — ReAct 循环核心实现
-- `progress/20260523-174500.md` — web_search 接入 + bug 修复
-- `progress/20260523-180000.md` — 旧 API 清理
+- 旧过程日志已清理，阶段结论以本 milestone 为准。
 
 ## 后续待办
 

@@ -1,6 +1,6 @@
 # AI Chat 重构方案：剩余待办
 
-> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。M17 已完成 Hybrid Retrieval 主线，`knowledge_search` 默认升级为混合检索。下一步重点从“检索更可靠”转向“Memory MVP、写类 Tool 安全闭环、Agent 可观测性”。
+> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。M17 已完成 Hybrid Retrieval 主线和 Memory MVP，`knowledge_search` 默认升级为混合检索，`memory_read` / `memory_write` 已接入 Web Agent。下一步重点从“长期记忆最小闭环”转向“写类 Tool 安全闭环、Agent 可观测性、只读 Tool 生态补齐”。
 
 ---
 
@@ -12,7 +12,7 @@
 |---|---|---|---|---|
 | 1.1 | useAIChat.ts 拆分 | 已拆为 `useAIChatState` + `useAIChatStream` + `useAIChatPersistence` + `stream-client`，主文件仅 34 行组合层 | P1 | ✅ 完成 |
 | 1.2 | AIChatPanel.tsx 拆分 | `ConversationList` 和 `EmptyHome` 已拆为独立文件 | P2 | ✅ 完成 |
-| 1.3 | Agent 后端测试 | 5 个测试文件（tools / document-read / context-compression / stream / rate-limiter），59 个用例覆盖全部核心路径 | P1 | ✅ 完成 |
+| 1.3 | Agent 后端测试 | 5 个测试文件（tools / document-read / context-compression / stream / rate-limiter），66 个用例覆盖全部核心路径 | P1 | ✅ 完成 |
 | 1.4 | 前端 AI 组件测试 | `components/ai-chat/` 下 0 个测试文件，MarkdownRenderer/MessageList/useAIChat 核心路径需测试 | P2 | ❌ 未做 |
 | 1.5 | 错误边界 | `AIChatErrorBoundary` 已实现 | P1 | ✅ 完成 |
 | 1.6 | 类型安全 | `runAgentStream` → `AgentStreamOptions`，`streamModelResponse` → `StreamModelOptions`，所有长参数列表已重构为 options 对象 | P2 | ✅ 完成 |
@@ -33,22 +33,21 @@
 | # | 项目 | 具体内容 | 优先级 | 状态 |
 |---|---|---|---|---|
 | 3.1 | AI 模块 E2E 测试 | Playwright mock API 测试完整对话流程 | P2 | ❌ 未做 |
-| 3.2 | Agent 性能监控 | Sentry 追踪 tool 执行耗时/LLM 响应延迟/ReAct 迭代次数 | P1 | ❌ 未做 |
+| 3.2 | Agent 性能监控 | 目前仅有 ReAct 轮次和 tool 调用 console 日志；仍缺 Sentry span、tool 执行耗时、LLM 首 token/总耗时、失败降级 trace | P1 | ⚠️ 部分日志；监控未做 |
 | 3.3 | 环境变量校验 | `instrumentation.ts` 启动时校验 LLM_API_KEY / NEXT_PUBLIC_CONVEX_URL（必需）和 SERPAPI_API_KEY / CLERK_*（可选），缺失时立即报错 | P2 | ✅ 完成 |
 | 3.4 | API Rate Limiting | 纯内存滑动窗口限流（20 次/分钟/用户），零外部依赖 | P1 | ✅ 完成 |
 | 3.5 | Storybook 组件文档 | AI Chat 组件可视化文档和交互示例 | P3 | ❌ 未做 |
-| 3.6 | CI 集成 AI 测试 | GitHub Actions lint-typecheck.yml 的 unit-test job 已包含 `pnpm --filter @notion/web test`，59 个 AI 用例纳入 CI | P2 | ✅ 完成 |
+| 3.6 | CI 集成 AI 测试 | GitHub Actions lint-typecheck.yml 的 unit-test job 已包含 `pnpm --filter @notion/web test`，Agent 后端测试纳入 CI | P2 | ✅ 完成 |
 
 ### 6.4 建议优先级排序
 
-1. **7.2 Memory 数据模型 + read/write tool** — M17 剩余最大能力缺口，先形成长期记忆最小闭环
-2. **7.1 Document write tool dry-run** — 复用 CLI/MCP 写文档契约，让 Web Agent 具备安全写入预览能力
-3. **3.2 Agent 性能监控** — 上线后可观测性关键，也为 Harness / Eval 预留 trace 数据
-4. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
-5. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
-6. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
-7. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
-8. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
+1. **7.1 Document write tool dry-run** — 复用 CLI/MCP 写文档契约，让 Web Agent 具备安全写入预览能力
+2. **3.2 Agent 性能监控** — 上线后可观测性关键，也为 Harness / Eval 预留 trace 数据
+3. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
+4. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
+5. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
+6. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
+7. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
 
 ---
 
@@ -68,9 +67,9 @@
 
 | 模块 | 当前状态 | 主要缺口 |
 |---|---|---|
-| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具 | 缺少 tool 选择可观测性、tool 失败降级策略和更完整的 tool 生态 |
-| Tools | Web Agent 仍只有 `knowledge_search`、`web_search`、`document_read`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少文档写入、文档结构化搜索、网页正文提取、任务/计划、记忆读写等工具 |
-| Memory | 只有会话上下文、当前文档上下文、长上下文压缩 | 缺少 `agentMemories` 数据模型、长期记忆、用户偏好、项目事实、跨会话记忆检索 |
+| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆 | 缺少 Sentry trace、tool 失败降级策略和更完整的 tool 生态 |
+| Tools | Web Agent 已有 `knowledge_search`、`web_search`、`document_read`、`memory_read`、`memory_write`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少文档写入、文档结构化搜索、网页正文提取、任务/计划等工具 |
+| Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入 | 缺少写入/编辑/停用后的显式 Qdrant 同步、embedding 状态可视化、专门的 Memory E2E / eval |
 | RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
 | Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
 
@@ -79,7 +78,7 @@
 | 优先级 | Tool/能力 | 目标 | 建议落点 | 当前状态 |
 |---|---|---|---|---|
 | P0 | `knowledge_search` 混合检索 | 从单一向量检索升级为 semantic / keyword / metadata 多路召回，默认 `balanced` | `packages/ai/server/retrieval/` + Web Agent tool | ✅ 已完成 |
-| P0 | `memory_read` / `memory_write` | Agent 可读取长期记忆，也可在用户确认后沉淀偏好或事实 | 先在 Web Agent 接入，底层放到 `packages/ai/server` | ❌ 未做 |
+| P0 | `memory_read` / `memory_write` | Agent 可读取长期记忆，也可在用户确认后沉淀偏好或事实 | Web Agent tool + `packages/ai/server/memory.ts` | ✅ 已完成 |
 | P0 | `document_write` / `document_update` | 让 Web Agent 能安全创建、追加、替换当前文档内容，写操作默认需要确认 | `apps/web/src/lib/agent/tools/` + Convex 文档 mutation，复用 CLI/MCP dry-run 契约 | ❌ Web Agent 未做；CLI/MCP 已完成 |
 | P1 | `web_extract` | 给定 URL 抽取正文、标题、摘要，补足 `web_search` 只能返回搜索结果的问题 | 参考 `docs/ai-docs/tool/dashscope-web-extractor.md` | ❌ 未做 |
 | P1 | `document_search` | 在用户文档元数据中按标题/路径/最近编辑进行结构化搜索，不走向量 | Convex 查询 + Agent tool；可复用 CLI/MCP docs search 语义 | ❌ Web Agent 未做；CLI/MCP 已完成 |
@@ -105,11 +104,12 @@
 
 MVP 切法：
 
-1. 建立 `agentMemories` 数据模型：`userId`、`type`、`content`、`source`、`confidence`、`createdAt`、`updatedAt`、`expiresAt?`、`embeddingRef?`。
-2. 新增 `memory_write` tool：只在用户明确要求“记住/以后都按这个来”或 Agent 提议并获得确认后写入。
-3. 新增 `memory_read` tool：按当前用户问题检索偏好、项目事实和历史结论，结果注入 ReAct Loop。
-4. 增加 Memory Review UI：允许用户查看、编辑、删除长期记忆，避免黑盒记忆污染。
-5. 增加冲突处理：同类记忆冲突时保留新版本，旧版本标记 superseded，不直接硬删。
+1. ✅ 建立 `agentMemories` 数据模型：`userId`、`type`、`content`、`source`、`confidence`、`createdAt`、`updatedAt`、`expiresAt?`、`embeddingRef?`、`status`、`supersededBy`。
+2. ✅ 新增 `memory_write` tool：默认 dry-run 并返回 `confirmationRequired`，前端确认后才写入。
+3. ✅ 新增 `memory_read` tool：按当前用户问题检索偏好、项目事实和历史结论，并支持语义召回失败后的 token / recency fallback。
+4. ✅ 增加 Memory Review UI：允许用户查看、筛选、新增、编辑、停用长期记忆，避免黑盒记忆污染。
+5. ✅ 基础冲突处理：同类记忆冲突时保留新版本，旧版本标记 `superseded`，不直接硬删。
+6. ⚠️ 剩余增强：写入/编辑/停用时显式同步 Qdrant、展示 embedding 同步状态、补 Memory E2E / eval。
 
 边界约束：
 
@@ -142,7 +142,7 @@ MVP 切法：
 | P1 | Metadata Recall | ✅ 已完成基础版：支持最近编辑、标签、路径、当前文档邻近信息等结构化补召回 |
 | P1 | Rerank | ❌ 未做：候选 chunk 二阶段重排仍未接入 |
 | P1 | Context Packing | ❌ 未做：尚未按文档分组、相邻 chunk 合并和 token budget 裁剪 |
-| P2 | Citation Quality | ❌ 未做：尚未输出引用覆盖率、命中分数解释和是否需要更多检索等质量信号 |
+| P2 | Citation Quality | ⚠️ 基础 `sources` 字段已有；尚未输出引用覆盖率、命中分数解释和是否需要更多检索等质量信号 |
 
 建议新增统一检索接口：
 
@@ -192,16 +192,16 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P0：Memory 数据模型 + read/write tool** — 建立 `agentMemories` 结构化源记录，先支持可解释写入、检索读取、删除/停用，写入必须需要用户确认。
-2. **P0：Document write tool dry-run** — 将 CLI/MCP 已验证的 create/update dry-run 契约接入 Web Agent，打通“读当前文档 → 生成变更预览 → 用户确认 → 落库”的最小闭环。
-3. **P1：Agent 性能监控** — 为 ReAct 轮次、tool 调用耗时、LLM 首 token/总耗时、失败降级打 trace，支撑后续 eval 和线上排障。
-4. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
+1. **P0：Document write tool dry-run** — 将 CLI/MCP 已验证的 create/update dry-run 契约接入 Web Agent，打通“读当前文档 → 生成变更预览 → 用户确认 → 落库”的最小闭环。
+2. **P1：Agent 性能监控** — 为 ReAct 轮次、tool 调用耗时、LLM 首 token/总耗时、失败降级打 trace，支撑后续 eval 和线上排障。
+3. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
+4. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
 5. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
-6. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
+6. **P2：Tool 结果缓存 + Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补缓存、计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 
 ## 下一批里程碑建议
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；剩余标准是新增至少 3 个 Web Agent tool、Memory MVP 可读写可删除、写类 tool 默认 dry-run/确认 |
+| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；剩余标准是新增 Web Agent 文档写入 dry-run、`web_extract` / `document_search`，并补 Agent 监控 |
 | M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |

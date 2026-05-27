@@ -93,17 +93,7 @@
 
 ## 关联 progress 文件
 
-- `progress/20260526-085348.md` — Phase 1-4 验证和 Phase 5 规划
-- `progress/20260526-091228.md` — E2E 副作用清理
-- `progress/20260526-092727.md` — requestId 透出
-- `progress/20260526-094048.md` — 审计日志
-- `progress/20260526-114035.md` — 基础限流
-- `progress/20260526-121208.md` — 文档导入导出
-- `progress/20260526-142534.md` — 错误契约 E2E
-- `progress/20260526-201512.md` — 路线校准，降级 KB/RAG 检索
-- `progress/20260526-214156.md` — README 与 release checklist
-- `progress/20260526-221347.md` — Skills 漂移校验
-- `progress/20260526-222351.md` — MCP 输出体验收口
+- 旧过程日志已清理，阶段结论以本 milestone 为准。
 
 ## 后续规划
 
