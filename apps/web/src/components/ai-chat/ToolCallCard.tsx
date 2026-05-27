@@ -10,6 +10,23 @@ interface ToolCallCardProps {
   toolResult: ToolCallResult;
 }
 
+type RetrievalStrategy = "fast" | "balanced" | "deep";
+
+interface KnowledgeSearchMetadata {
+  semanticCount?: number;
+  keywordCount?: number;
+  metadataCount?: number;
+  fusedCount?: number;
+}
+
+interface KnowledgeSearchToolResult {
+  query?: string;
+  strategy?: RetrievalStrategy;
+  documents?: KnowledgeSearchDoc[];
+  metadata?: KnowledgeSearchMetadata;
+  error?: string;
+}
+
 function getDocumentUrl(documentId: string): string {
   if (typeof window !== "undefined") {
     const locale = window.location.pathname.split("/")[1] || "zh-CN";
@@ -18,20 +35,61 @@ function getDocumentUrl(documentId: string): string {
   return `/documents/${documentId}`;
 }
 
-function KnowledgeSearchResult({ result }: { result: { query?: string; documents?: KnowledgeSearchDoc[]; error?: string } }) {
+function formatRetrievalStrategy(
+  t: ReturnType<typeof useTranslations>,
+  strategy?: RetrievalStrategy,
+): string | null {
+  if (strategy === "fast") return t("retrievalStrategyFast");
+  if (strategy === "balanced") return t("retrievalStrategyBalanced");
+  if (strategy === "deep") return t("retrievalStrategyDeep");
+  return null;
+}
+
+function KnowledgeSearchResult({ result }: { result: KnowledgeSearchToolResult }) {
   const t = useTranslations("AI");
   const docs = result.documents ?? [];
+  const strategyLabel = formatRetrievalStrategy(t, result.strategy);
+  const metadata = result.metadata;
 
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
   }
 
   if (docs.length === 0) {
-    return <span className="text-muted-foreground text-xs">{t("noDocumentsFound")}</span>;
+    return (
+      <div className="space-y-1">
+        {strategyLabel && (
+          <div className="text-xs text-muted-foreground">
+            {t("retrievalStrategyLabel")}: {strategyLabel}
+          </div>
+        )}
+        <span className="text-muted-foreground text-xs">{t("noDocumentsFound")}</span>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-1">
+    <div className="space-y-1.5">
+      {(strategyLabel || metadata) && (
+        <div className="rounded-md bg-background/70 px-2 py-1.5 text-xs text-muted-foreground">
+          {strategyLabel && (
+            <div>
+              {t("retrievalStrategyLabel")}:{" "}
+              <span className="font-medium text-foreground">{strategyLabel}</span>
+            </div>
+          )}
+          {metadata && (
+            <div>
+              {t("retrievalRecallStats", {
+                semantic: metadata.semanticCount ?? 0,
+                keyword: metadata.keywordCount ?? 0,
+                metadata: metadata.metadataCount ?? 0,
+                fused: metadata.fusedCount ?? docs.length,
+              })}
+            </div>
+          )}
+        </div>
+      )}
       {docs.map((doc, idx) => (
         <a
           key={doc.documentId || idx}
@@ -48,6 +106,11 @@ function KnowledgeSearchResult({ result }: { result: { query?: string; documents
         >
           <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
           <span className="truncate font-medium">{doc.title || t("untitledDocument")}</span>
+          {doc.sources && doc.sources.length > 0 && (
+            <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+              {doc.sources.join("+")}
+            </span>
+          )}
         </a>
       ))}
     </div>
@@ -135,10 +198,12 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
   if (isCompleted && toolResult.result) {
     const result = toolResult.result as Record<string, unknown>;
     if (toolName === "knowledge_search") {
-      const typedResult = result as unknown as { query?: string; documents?: KnowledgeSearchDoc[]; error?: string };
+      const typedResult = result as unknown as KnowledgeSearchToolResult;
       resultContent = <KnowledgeSearchResult result={typedResult} />;
       const docCount = typedResult.documents?.length ?? 0;
-      resultSummary = docCount > 0 ? t("referencedDocsCount", { count: docCount }) : t("noDocumentsFound");
+      const strategyLabel = formatRetrievalStrategy(t, typedResult.strategy);
+      const docsSummary = docCount > 0 ? t("referencedDocsCount", { count: docCount }) : t("noDocumentsFound");
+      resultSummary = strategyLabel ? `${strategyLabel} · ${docsSummary}` : docsSummary;
     } else if (toolName === "document_read") {
       const typedResult = result as unknown as { document?: { id: string; title: string } };
       resultContent = <DocumentReadResult result={typedResult} />;

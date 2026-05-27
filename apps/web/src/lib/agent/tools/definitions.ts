@@ -15,7 +15,7 @@ export interface AgentTool {
 export const knowledgeSearchTool: AgentTool = {
   name: "knowledge_search",
   description:
-    "搜索用户个人知识库中的文档和笔记。当用户提问涉及个人笔记、文档内容、项目资料、历史记录等私有信息时使用此工具。",
+    "搜索用户个人知识库中的文档和笔记。当用户提问涉及个人笔记、文档内容、项目资料、历史记录等私有信息时使用此工具。检索策略选择：常规文档查询使用 balanced；复杂研究、跨文档归纳、需要更高召回的问题使用 deep；极低延迟场景使用 fast。如果用户显式要求某种策略，优先遵循用户要求。",
   parameters: {
     type: "object",
     properties: {
@@ -31,7 +31,7 @@ export const knowledgeSearchTool: AgentTool = {
         type: "string",
         enum: ["fast", "balanced", "deep"],
         description:
-          "检索策略。fast=低延迟语义检索；balanced=默认混合搜索；deep=复杂问题深度检索。",
+          "检索策略。fast=极低延迟语义检索；balanced=默认混合搜索，适合简单事实查询；deep=复杂研究/跨文档归纳的深度检索。用户显式要求某种策略时优先遵循。",
       },
     },
     required: ["query"],

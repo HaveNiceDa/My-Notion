@@ -5,6 +5,8 @@ export interface KnowledgeSearchDoc {
   title: string;
   score: number;
   content: string;
+  sources?: Array<"semantic" | "keyword" | "metadata">;
+  metadata?: Record<string, unknown>;
 }
 
 export interface ToolCallResult {
