@@ -8,10 +8,14 @@ export async function semanticRecall(
   options: KnowledgeRetrievalOptions,
 ): Promise<RetrievalCandidate[]> {
   const vectorStore = await getOrCreateVectorStore(options.userId);
-  const results = await vectorStore.similaritySearch(
+  // 语义召回负责“换一种说法也能搜到”，过滤条件只做召回范围控制，不做关键词打分。
+  const results = await vectorStore.semanticSearch(
     options.query,
     options.topK,
     options.minScore ?? DEFAULT_SEMANTIC_MIN_SCORE,
+    {
+      includeDocumentIds: options.filters?.documentIds,
+    },
   );
 
   return results.map((result, index) =>

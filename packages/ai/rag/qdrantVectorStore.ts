@@ -5,6 +5,11 @@ import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 import { extractTextFromDocument } from "../utils";
 
+interface SemanticSearchFilters {
+  includeDocumentIds?: string[];
+  excludeDocumentIds?: string[];
+}
+
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;
   private userId: string;
@@ -82,7 +87,23 @@ export class QdrantVectorStoreWrapper {
     excludeDocumentIds?: Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
     try {
-      return await this.hybridSearch(query, k, minScore, excludeDocumentIds);
+      return await this.semanticSearch(query, k, minScore, {
+        excludeDocumentIds: excludeDocumentIds ? Array.from(excludeDocumentIds) : undefined,
+      });
+    } catch (error) {
+      console.error(`[QdrantVectorStore] 执行语义检索时出错:`, error);
+      throw error;
+    }
+  }
+
+  async semanticSearch(
+    query: string,
+    k: number = 4,
+    minScore: number = 0.6,
+    filters?: SemanticSearchFilters,
+  ): Promise<Array<{ document: Document; score: number }>> {
+    try {
+      return await this.hybridSearch(query, k, minScore, filters);
     } catch (error) {
       console.error(`[QdrantVectorStore] 执行语义检索时出错:`, error);
       throw error;
@@ -93,27 +114,21 @@ export class QdrantVectorStoreWrapper {
     query: string,
     k: number = 4,
     minScore: number = 0.6,
-    excludeDocumentIds?: Set<string>,
+    filters?: SemanticSearchFilters | Set<string>,
   ): Promise<Array<{ document: Document; score: number }>> {
     try {
       await this.ensureCollectionExists();
 
       const queryVector = await this.embeddings.embedQuery(query);
-
-      const filter: any = {};
-      if (excludeDocumentIds && excludeDocumentIds.size > 0) {
-        filter.must_not = Array.from(excludeDocumentIds).map((id) => ({
-          key: "metadata.documentId",
-          match: { value: id },
-        }));
-      }
+      const normalizedFilters = normalizeSemanticFilters(filters);
+      const filter = buildSemanticFilter(normalizedFilters);
 
       const searchResults = await this.qdrantClient.search(
         this.collectionName,
         {
           vector: queryVector,
           limit: k * 3,
-          filter: filter.must_not ? filter : undefined,
+          filter,
           params: {
             hnsw_ef: 128,
             exact: false,
@@ -121,6 +136,7 @@ export class QdrantVectorStoreWrapper {
         },
       );
 
+      // 语义召回会返回多个 chunk；这里先按 documentId 保留最高分 chunk，避免同一文档挤占全部 topK。
       const documentMap = new Map<
         string,
         { document: Document; score: number }
@@ -173,6 +189,7 @@ export class QdrantVectorStoreWrapper {
     try {
       await this.ensureCollectionExists();
 
+      // MVP 阶段先用轻量 token match 补齐精确词召回，后续可替换为 BM25/全文索引。
       const tokens = tokenizeQuery(query);
       if (tokens.length === 0) {
         return [];
@@ -206,6 +223,7 @@ export class QdrantVectorStoreWrapper {
     try {
       await this.ensureCollectionExists();
 
+      // metadata 召回专注标题、documentId、tags、更新时间等结构化信号，不参与向量计算。
       const tokens = tokenizeQuery(query);
       if (tokens.length === 0) {
         return [];
@@ -433,6 +451,43 @@ function tokenizeQuery(query: string): string[] {
     .filter((token) => token.length >= 2);
 
   return Array.from(new Set([normalizedQuery, ...tokens]));
+}
+
+function normalizeSemanticFilters(
+  filters?: SemanticSearchFilters | Set<string>,
+): SemanticSearchFilters | undefined {
+  if (!filters) {
+    return undefined;
+  }
+
+  if (filters instanceof Set) {
+    return { excludeDocumentIds: Array.from(filters) };
+  }
+
+  return filters;
+}
+
+function buildSemanticFilter(filters?: SemanticSearchFilters): any | undefined {
+  if (!filters) {
+    return undefined;
+  }
+
+  const filter: any = {};
+  if (filters.includeDocumentIds && filters.includeDocumentIds.length > 0) {
+    filter.should = filters.includeDocumentIds.map((documentId) => ({
+      key: "metadata.documentId",
+      match: { value: documentId },
+    }));
+  }
+
+  if (filters.excludeDocumentIds && filters.excludeDocumentIds.length > 0) {
+    filter.must_not = filters.excludeDocumentIds.map((documentId) => ({
+      key: "metadata.documentId",
+      match: { value: documentId },
+    }));
+  }
+
+  return filter.should || filter.must_not ? filter : undefined;
 }
 
 function buildDocumentFilter(documentIds?: string[]): any | undefined {

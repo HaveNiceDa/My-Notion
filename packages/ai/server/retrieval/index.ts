@@ -26,6 +26,7 @@ export async function retrieveKnowledge(
   }
 
   if (strategy === "fast") {
+    // fast 保持旧行为：只走语义向量召回，适合实时聊天里的低延迟路径。
     const semantic = await semanticRecall({ ...options, query, topK, minScore });
     return buildResult(query, strategy, semantic, [], [], semantic.map(toSingleSourceItem));
   }
@@ -43,12 +44,14 @@ async function retrieveBalanced(
   strategy: RetrievalStrategy,
 ): Promise<KnowledgeRetrievalResult> {
   const topK = clampTopK(options.topK);
+  // balanced 是默认混合检索：三路召回并发执行，减少单一路径漏召。
   const [semantic, keyword, metadata] = await Promise.all([
     semanticRecall({ ...options, topK: topK * 3 }),
     keywordRecall({ ...options, topK: topK * 3 }),
     metadataRecall({ ...options, topK }),
   ]);
 
+  // 不同召回通道的分数分布不同，先用 RRF 做排名融合，避免直接相加导致分数不可比。
   const fused = fuseCandidates({
     candidates: [...semantic, ...keyword, ...metadata],
     topK,

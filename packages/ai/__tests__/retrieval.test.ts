@@ -73,7 +73,7 @@ describe("retrieveKnowledge", () => {
     expect(result.strategy).toBe("fast");
     expect(result.metadata.semanticCount).toBe(1);
     expect(result.metadata.keywordCount).toBe(0);
-    expect(vectorStore.similaritySearch).toHaveBeenCalledTimes(1);
+    expect(vectorStore.semanticSearch).toHaveBeenCalledTimes(1);
     expect(vectorStore.keywordSearch).not.toHaveBeenCalled();
     expect(vectorStore.metadataSearch).not.toHaveBeenCalled();
   });
@@ -126,12 +126,38 @@ describe("retrieveKnowledge", () => {
     });
     expect(result.items[0].sources).toContain("semantic");
     expect(result.items[0].sources).toContain("keyword");
-    expect(vectorStore.similaritySearch).toHaveBeenCalledWith("requestId", 9, 0.6);
+    expect(vectorStore.semanticSearch).toHaveBeenCalledWith("requestId", 9, 0.6, {
+      includeDocumentIds: undefined,
+    });
     expect(vectorStore.keywordSearch).toHaveBeenCalledWith("requestId", 9, {
       documentIds: undefined,
     });
     expect(vectorStore.metadataSearch).toHaveBeenCalledWith("requestId", 3, {
       documentIds: undefined,
+      updatedAfter: undefined,
+    });
+  });
+
+  it("将 documentIds 过滤传给三路召回", async () => {
+    const vectorStore = createVectorStoreMock({});
+    vi.mocked(getOrCreateVectorStore).mockResolvedValue(vectorStore);
+
+    await retrieveKnowledge({
+      userId: "user-1",
+      query: "requestId",
+      strategy: "balanced",
+      topK: 2,
+      filters: { documentIds: ["doc-1"] },
+    });
+
+    expect(vectorStore.semanticSearch).toHaveBeenCalledWith("requestId", 6, 0.6, {
+      includeDocumentIds: ["doc-1"],
+    });
+    expect(vectorStore.keywordSearch).toHaveBeenCalledWith("requestId", 6, {
+      documentIds: ["doc-1"],
+    });
+    expect(vectorStore.metadataSearch).toHaveBeenCalledWith("requestId", 2, {
+      documentIds: ["doc-1"],
       updatedAfter: undefined,
     });
   });
@@ -160,6 +186,7 @@ function createVectorStoreMock(results: {
   metadata?: Array<{ document: { pageContent: string; metadata: Record<string, unknown> }; score: number }>;
 }) {
   return {
+    semanticSearch: vi.fn().mockResolvedValue(results.semantic ?? []),
     similaritySearch: vi.fn().mockResolvedValue(results.semantic ?? []),
     keywordSearch: vi.fn().mockResolvedValue(results.keyword ?? []),
     metadataSearch: vi.fn().mockResolvedValue(results.metadata ?? []),

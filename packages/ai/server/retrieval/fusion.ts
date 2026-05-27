@@ -32,6 +32,7 @@ export function fuseCandidates(options: FuseCandidatesOptions): RetrievalResultI
 
   for (const candidate of options.candidates) {
     const key = candidate.chunkId;
+    // RRF 只依赖各通道内部 rank，对 semantic/keyword/metadata 这种异构分数更稳。
     const weightedScore = weights[candidate.source] * (1 / (RRF_K + candidate.rank));
     const existing = grouped.get(key);
 
@@ -50,6 +51,7 @@ export function fuseCandidates(options: FuseCandidatesOptions): RetrievalResultI
     existing.sourceScores[candidate.source] = candidate.score;
 
     if (candidate.content.length > existing.candidate.content.length) {
+      // 同一个 chunk 多路命中时，保留更完整的内容，但累计所有来源用于可解释性展示。
       existing.candidate = candidate;
     }
   }
