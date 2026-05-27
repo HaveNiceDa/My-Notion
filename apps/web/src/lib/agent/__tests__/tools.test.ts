@@ -14,9 +14,16 @@ vi.mock("serpapi", () => ({
 }));
 
 import { buildAvailableTools } from "../tools/registry";
-import { knowledgeSearchTool, documentReadTool, webSearchTool } from "../tools/definitions";
+import {
+  knowledgeSearchTool,
+  documentReadTool,
+  webSearchTool,
+  memoryReadTool,
+  memoryWriteTool,
+} from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
 import { executeWebSearch } from "../tools/web-search";
+import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
 import { retrieveKnowledge } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
@@ -26,6 +33,8 @@ describe("buildAvailableTools", () => {
     const names = tools.map((t) => t.name);
     expect(names).toContain("knowledge_search");
     expect(names).toContain("web_search");
+    expect(names).toContain("memory_read");
+    expect(names).toContain("memory_write");
   });
 
   it("无当前文档时不包含 document_read", () => {
@@ -64,8 +73,19 @@ describe("AgentTool 定义", () => {
     expect(webSearchTool.parameters.required).toContain("query");
   });
 
+  it("memoryWriteTool 默认要求 content", () => {
+    expect(memoryWriteTool.name).toBe("memory_write");
+    expect(memoryWriteTool.parameters.required).toContain("content");
+  });
+
   it("每个 tool 都有非空 description", () => {
-    for (const tool of [knowledgeSearchTool, documentReadTool, webSearchTool]) {
+    for (const tool of [
+      knowledgeSearchTool,
+      documentReadTool,
+      webSearchTool,
+      memoryReadTool,
+      memoryWriteTool,
+    ]) {
       expect(tool.description.length).toBeGreaterThan(0);
     }
   });
@@ -309,5 +329,80 @@ describe("executeWebSearch", () => {
 
     await executeWebSearch({ query: "test" }, ctx);
     expect(chunks.length).toBe(0);
+  });
+});
+
+describe("Memory tools", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("memory_read 缺少 Convex client 时返回可恢复错误", async () => {
+    const result = await executeMemoryRead({ query: "偏好" }, baseCtx) as any;
+    expect(result.memories).toEqual([]);
+    expect(result.recoverable).toBe(true);
+  });
+
+  it("memory_read 调用 Convex 查询并返回记忆", async () => {
+    const query = vi.fn().mockResolvedValue([
+      { id: "m1", type: "preference", content: "用户偏好中文", matchScore: 1 },
+    ]);
+    const result = await executeMemoryRead(
+      { query: "中文", type: "preference", limit: 3 },
+      { ...baseCtx, convex: { query } as any },
+    ) as any;
+
+    expect(query).toHaveBeenCalledWith(expect.anything(), {
+      query: "中文",
+      type: "preference",
+      limit: 3,
+    });
+    expect(result.memories).toHaveLength(1);
+    expect(result.metadata.count).toBe(1);
+  });
+
+  it("memory_write 默认 dry-run，不写入 Convex", async () => {
+    const mutation = vi.fn();
+    const result = await executeMemoryWrite(
+      { content: "用户偏好中文", type: "preference" },
+      { ...baseCtx, convex: { mutation } as any },
+    ) as any;
+
+    expect(result.dryRun).toBe(true);
+    expect(result.confirmationRequired).toBe(true);
+    expect(result.memory.content).toBe("用户偏好中文");
+    expect(mutation).not.toHaveBeenCalled();
+  });
+
+  it("memory_write dryRun=false 时写入 Convex", async () => {
+    const mutation = vi.fn().mockResolvedValue({
+      id: "m1",
+      type: "preference",
+      content: "用户偏好中文",
+    });
+    const result = await executeMemoryWrite(
+      {
+        content: "用户偏好中文",
+        type: "preference",
+        source: "user_explicit",
+        dryRun: false,
+      },
+      { ...baseCtx, convex: { mutation } as any },
+    ) as any;
+
+    expect(mutation).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      content: "用户偏好中文",
+      type: "preference",
+      source: "user_explicit",
+    }));
+    expect(result.dryRun).toBe(false);
+    expect(result.memory.id).toBe("m1");
+  });
+
+  it("memory_write 空内容返回错误", async () => {
+    const result = await executeMemoryWrite({ content: "   " }, baseCtx) as any;
+    expect(result.error).toBe("content is required");
+    expect(result.recoverable).toBe(true);
   });
 });

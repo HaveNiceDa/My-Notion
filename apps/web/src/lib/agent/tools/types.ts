@@ -1,3 +1,5 @@
+import type { ConvexHttpClient } from "convex/browser";
+
 // 当前文档上下文，由前端传入，表示用户正在查看的文档
 export interface CurrentDocumentContext {
   id: string;
@@ -18,4 +20,5 @@ export interface ToolContext {
   model: string;
   currentDocument?: CurrentDocumentContext | null;
   stream?: ToolStreamOutput;
+  convex?: ConvexHttpClient;
 }

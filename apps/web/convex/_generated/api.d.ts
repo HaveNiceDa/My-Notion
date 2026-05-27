@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as agentMemories from "../agentMemories.js";
 import type * as aiChat from "../aiChat.js";
 import type * as cli from "../cli.js";
 import type * as documents from "../documents.js";
@@ -20,6 +21,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  agentMemories: typeof agentMemories;
   aiChat: typeof aiChat;
   cli: typeof cli;
   documents: typeof documents;

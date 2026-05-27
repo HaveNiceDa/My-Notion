@@ -10,6 +10,7 @@
     "./chat": "./chat/index.ts",
     "./documents": "./documents/index.ts",
     "./cli": "./cli/index.ts",
+    "./agentMemories": "./agentMemories/index.ts",
     "./client": "./client/index.ts"
   },
   "scripts": {

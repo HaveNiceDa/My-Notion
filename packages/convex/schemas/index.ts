@@ -6,6 +6,7 @@ import { aiThinkingStepsTable } from "./aiThinkingSteps";
 import { apiTokensTable } from "./apiTokens";
 import { cliAuditLogsTable } from "./cliAuditLogs";
 import { cliRateLimitsTable } from "./cliRateLimits";
+import { agentMemoriesTable } from "./agentMemories";
 
 /** 数据库模式 */
 export default defineSchema({
@@ -16,4 +17,5 @@ export default defineSchema({
   apiTokens: apiTokensTable,
   cliAuditLogs: cliAuditLogsTable,
   cliRateLimits: cliRateLimitsTable,
+  agentMemories: agentMemoriesTable,
 });

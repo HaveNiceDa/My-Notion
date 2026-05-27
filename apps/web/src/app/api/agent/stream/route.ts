@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
+import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL, getActualModelId } from "@notion/ai/config";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
@@ -25,6 +26,24 @@ function getOpenAIClient(): OpenAI {
   return new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
 }
 
+async function getAuthenticatedConvexClient(
+  getToken: (options?: { template?: string }) => Promise<string | null>,
+) {
+  const convexUrl = process.env.NEXT_PUBLIC_CONVEX_URL;
+  if (!convexUrl) {
+    return null;
+  }
+
+  const convexAuthToken = await getToken({ template: "convex" });
+  if (!convexAuthToken) {
+    return null;
+  }
+
+  const convex = new ConvexHttpClient(convexUrl);
+  convex.setAuth(convexAuthToken);
+  return convex;
+}
+
 function buildSystemMessage(
   hasToolContext: boolean,
 ): OpenAI.ChatCompletionSystemMessageParam {
@@ -43,7 +62,7 @@ function buildSystemMessage(
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId, getToken } = await auth();
     if (!userId) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
     }
@@ -76,6 +95,7 @@ export async function POST(req: NextRequest) {
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const enableThinking = Boolean(body.enableThinking);
     const openai = getOpenAIClient();
+    const convex = await getAuthenticatedConvexClient(getToken);
     const encoder = new TextEncoder();
     const responseId = `assistant-${Date.now()}`;
 
@@ -104,7 +124,7 @@ export async function POST(req: NextRequest) {
             messages: compressedMessages,
             tools: openaiTools,
             toolMap,
-            toolContext: { userId, model, currentDocument: body.currentDocument },
+            toolContext: { userId, model, currentDocument: body.currentDocument, convex: convex ?? undefined },
             enableThinking,
             controller,
             encoder,

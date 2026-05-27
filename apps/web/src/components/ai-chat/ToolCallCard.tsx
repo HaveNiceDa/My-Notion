@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { useTranslations } from "next-intl";
-import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain } from "lucide-react";
 import { cn } from "@notion/business/utils";
 import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
 
@@ -24,6 +24,26 @@ interface KnowledgeSearchToolResult {
   strategy?: RetrievalStrategy;
   documents?: KnowledgeSearchDoc[];
   metadata?: KnowledgeSearchMetadata;
+  error?: string;
+}
+
+interface MemoryItem {
+  id?: string;
+  type?: string;
+  content?: string;
+  reason?: string;
+}
+
+interface MemoryReadToolResult {
+  memories?: MemoryItem[];
+  error?: string;
+}
+
+interface MemoryWriteToolResult {
+  dryRun?: boolean;
+  confirmationRequired?: boolean;
+  message?: string;
+  memory?: MemoryItem;
   error?: string;
 }
 
@@ -170,6 +190,52 @@ function WebSearchResult({ result }: { result: { query?: string; results?: { tit
   );
 }
 
+function MemoryReadResult({ result }: { result: MemoryReadToolResult }) {
+  const t = useTranslations("AI");
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  const memories = result.memories ?? [];
+  if (memories.length === 0) {
+    return <span className="text-muted-foreground text-xs">{t("noMemoriesFound")}</span>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {memories.map((memory, idx) => (
+        <div key={memory.id ?? idx} className="rounded-md bg-background/70 px-2 py-1.5 text-xs">
+          <div className="font-medium text-foreground">{memory.content}</div>
+          {memory.type && (
+            <div className="text-[10px] text-muted-foreground">{memory.type}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function MemoryWriteResult({ result }: { result: MemoryWriteToolResult }) {
+  const t = useTranslations("AI");
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  return (
+    <div className="space-y-1 rounded-md bg-background/70 px-2 py-1.5 text-xs">
+      <div className="font-medium text-foreground">
+        {result.dryRun ? t("memoryWritePreview") : t("memorySaved")}
+      </div>
+      {result.confirmationRequired && (
+        <div className="text-muted-foreground">{t("memoryConfirmationRequired")}</div>
+      )}
+      {result.memory?.content && (
+        <div className="text-muted-foreground">{result.memory.content}</div>
+      )}
+    </div>
+  );
+}
+
 export function ToolCallCard({ toolResult }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
@@ -184,14 +250,20 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
         ? t("documentReadTool")
         : toolName === "web_search"
           ? t("webSearchTool")
-          : toolName;
+        : toolName === "memory_read"
+          ? t("memoryReadTool")
+          : toolName === "memory_write"
+            ? t("memoryWriteTool")
+            : toolName;
 
   const ToolIcon =
     toolName === "knowledge_search"
       ? BookOpen
       : toolName === "document_read"
         ? FileText
-        : Globe;
+        : toolName === "web_search"
+          ? Globe
+          : Brain;
 
   let resultContent: React.ReactNode = null;
   let resultSummary: string | null = null;
@@ -212,6 +284,15 @@ export function ToolCallCard({ toolResult }: ToolCallCardProps) {
       const typedResult = result as unknown as { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string };
       resultContent = <WebSearchResult result={typedResult} />;
       resultSummary = typedResult.query ?? null;
+    } else if (toolName === "memory_read") {
+      const typedResult = result as unknown as MemoryReadToolResult;
+      resultContent = <MemoryReadResult result={typedResult} />;
+      const count = typedResult.memories?.length ?? 0;
+      resultSummary = count > 0 ? t("memoriesFoundCount", { count }) : t("noMemoriesFound");
+    } else if (toolName === "memory_write") {
+      const typedResult = result as unknown as MemoryWriteToolResult;
+      resultContent = <MemoryWriteResult result={typedResult} />;
+      resultSummary = typedResult.dryRun ? t("memoryWritePreview") : t("memorySaved");
     }
   }
 
