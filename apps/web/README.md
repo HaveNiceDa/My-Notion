@@ -85,6 +85,9 @@
 # 根目录安装依赖
 pnpm i
 
+# 本地 Agent / RAG 依赖 Qdrant，启动 Web 前先确保 Docker Desktop 已启动
+docker compose -f my-notion-go/docker-compose.yml up -d qdrant
+
 # 启动 Web
 pnpm start:web
 
@@ -153,4 +156,3 @@ apps/web/
 - CLI/MCP 的机器 API URL 应使用 Convex `.site` URL，而不是 `.cloud` URL。
 - Qdrant 离线时 RAG 能力会降级，但不应影响基础文档编辑。
 - `.vercel.app` 在部分网络环境可能不可达，生产使用建议绑定自定义域名。
-

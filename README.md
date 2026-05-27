@@ -71,6 +71,9 @@ My-Notion/
 # 安装依赖
 pnpm i
 
+# 本地 Agent / RAG 依赖 Qdrant，启动 Web 前先确保 Docker Desktop 已启动
+docker compose -f my-notion-go/docker-compose.yml up -d qdrant
+
 # Web / Mobile
 pnpm start:web
 pnpm start:mobile

@@ -1,6 +1,6 @@
 # AI Chat 重构方案：剩余待办
 
-> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。当前重新启动 Agent 能力建设，后续重点从“Agent 能跑”转向“工具更丰富、记忆更稳定、检索更可靠”。
+> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。M17 已完成 Hybrid Retrieval 主线，`knowledge_search` 默认升级为混合检索。下一步重点从“检索更可靠”转向“Memory MVP、写类 Tool 安全闭环、Agent 可观测性”。
 
 ---
 
@@ -41,14 +41,14 @@
 
 ### 6.4 建议优先级排序
 
-1. **2.1 Spec 模式** — AI 能力升级的下一个里程碑
-2. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
-3. **3.2 Agent 性能监控** — 上线后可观测性关键
-4. **1.4 前端 AI 组件测试** — 核心路径无测试
-5. **2.2 Plan 模式** — 与 Spec 模式互补
-6. **2.6 流式重试** — 网络不稳定场景体验
-7. **3.1 AI 模块 E2E 测试** — 全链路验证
-8. **3.5 Storybook 组件文档** — 文档化
+1. **7.2 Memory 数据模型 + read/write tool** — M17 剩余最大能力缺口，先形成长期记忆最小闭环
+2. **7.1 Document write tool dry-run** — 复用 CLI/MCP 写文档契约，让 Web Agent 具备安全写入预览能力
+3. **3.2 Agent 性能监控** — 上线后可观测性关键，也为 Harness / Eval 预留 trace 数据
+4. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
+5. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
+6. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
+7. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
+8. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
 
 ---
 
@@ -62,28 +62,29 @@
 
 ---
 
-## Phase 7：Agent 能力重启（M17 候选）
+## Phase 7：Agent 能力重启（M17 进行中）
 
 ### 7.0 当前基线
 
 | 模块 | 当前状态 | 主要缺口 |
 |---|---|---|
-| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮 | 缺少 tool 选择可观测性、tool 失败降级策略和更完整的 tool 生态 |
-| Tools | 仅有 `knowledge_search`、`web_search`、`document_read` | 缺少文档写入、文档结构化操作、网页提取、任务/计划、记忆读写等工具 |
-| Memory | 只有会话上下文、当前文档上下文、长上下文压缩 | 缺少长期记忆、用户偏好、项目事实、跨会话记忆检索 |
-| RAG | Qdrant 向量检索 + 阈值过滤 + documentId 去重 | 缺少 query rewrite、多路召回、重排、上下文组装、引用质量评估 |
+| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具 | 缺少 tool 选择可观测性、tool 失败降级策略和更完整的 tool 生态 |
+| Tools | Web Agent 仍只有 `knowledge_search`、`web_search`、`document_read`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少文档写入、文档结构化搜索、网页正文提取、任务/计划、记忆读写等工具 |
+| Memory | 只有会话上下文、当前文档上下文、长上下文压缩 | 缺少 `agentMemories` 数据模型、长期记忆、用户偏好、项目事实、跨会话记忆检索 |
+| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
 | Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
 
 ### 7.1 更多更丰富的 Tool
 
-| 优先级 | Tool/能力 | 目标 | 建议落点 |
-|---|---|---|---|
-| P0 | `document_write` / `document_update` | 让 Web Agent 能安全创建、追加、替换当前文档内容，写操作默认需要确认 | `apps/web/src/lib/agent/tools/` + Convex 文档 mutation |
-| P0 | `memory_read` / `memory_write` | Agent 可读取长期记忆，也可在用户确认后沉淀偏好或事实 | 先在 Web Agent 接入，底层放到 `packages/ai/server` |
-| P1 | `web_extract` | 给定 URL 抽取正文、标题、摘要，补足 `web_search` 只能返回搜索结果的问题 | 参考 `docs/ai-docs/tool/dashscope-web-extractor.md` |
-| P1 | `document_search` | 在用户文档元数据中按标题/路径/最近编辑进行结构化搜索，不走向量 | Convex 查询 + Agent tool |
-| P1 | `task_plan` | 生成多步骤计划并把计划事件流式展示，为后续 Plan 模式铺路 | Agent tool 或 Agent 内部 planner |
-| P2 | MCP tool adapter | 复用现有 CLI/MCP 写文档能力，让 Agent 可通过受控 MCP 工具扩展 | `packages/my-notion-skills` / MCP server |
+| 优先级 | Tool/能力 | 目标 | 建议落点 | 当前状态 |
+|---|---|---|---|---|
+| P0 | `knowledge_search` 混合检索 | 从单一向量检索升级为 semantic / keyword / metadata 多路召回，默认 `balanced` | `packages/ai/server/retrieval/` + Web Agent tool | ✅ 已完成 |
+| P0 | `memory_read` / `memory_write` | Agent 可读取长期记忆，也可在用户确认后沉淀偏好或事实 | 先在 Web Agent 接入，底层放到 `packages/ai/server` | ❌ 未做 |
+| P0 | `document_write` / `document_update` | 让 Web Agent 能安全创建、追加、替换当前文档内容，写操作默认需要确认 | `apps/web/src/lib/agent/tools/` + Convex 文档 mutation，复用 CLI/MCP dry-run 契约 | ❌ Web Agent 未做；CLI/MCP 已完成 |
+| P1 | `web_extract` | 给定 URL 抽取正文、标题、摘要，补足 `web_search` 只能返回搜索结果的问题 | 参考 `docs/ai-docs/tool/dashscope-web-extractor.md` | ❌ 未做 |
+| P1 | `document_search` | 在用户文档元数据中按标题/路径/最近编辑进行结构化搜索，不走向量 | Convex 查询 + Agent tool；可复用 CLI/MCP docs search 语义 | ❌ Web Agent 未做；CLI/MCP 已完成 |
+| P1 | `task_plan` | 生成多步骤计划并把计划事件流式展示，为后续 Plan 模式铺路 | Agent tool 或 Agent 内部 planner | ❌ 未做 |
+| P2 | MCP tool adapter | 复用现有 CLI/MCP 写文档能力，让 Agent 可通过受控 MCP 工具扩展 | `packages/my-notion-skills` / MCP server / Web Agent adapter | ⏳ CLI/MCP server 已有，Web Agent adapter 未做 |
 
 设计原则：
 
@@ -118,7 +119,7 @@ MVP 切法：
 
 ### 7.3 RAG 混合检索策略升级
 
-当前 `hybridSearch` 名称偏超前，本质仍是单路向量检索。下一步应直接以 Hybrid Retrieval Service 为目标，把默认检索从“单一语义向量召回”升级为“关键词 + 语义搜索 + metadata 召回 + 融合重排”的混合搜索链路。
+当前 `knowledge_search` 已接入 `retrieveKnowledge(options)`，默认 `balanced` 不再是单路向量检索，而是“语义向量 + 关键词 + metadata 召回 + RRF 融合排序”的混合搜索链路。`deep` 策略已增加 Query Rewrite 和 Multi-query Search。
 
 核心原则：
 
@@ -131,17 +132,17 @@ MVP 切法：
 
 | 阶段 | 策略 | 说明 |
 |---|---|---|
-| P0 | Hybrid Retrieval Service | 新增统一 `retrieveKnowledge(options)`，聚合 semantic / keyword / metadata 多路召回 |
-| P0 | Semantic Recall | 保留当前 Qdrant embedding 检索，作为低延迟语义召回主路径 |
-| P0 | Keyword Recall | 对文档标题、chunk 文本、标签、路径做关键词召回，先用轻量 token match，后续再升级 BM25/全文索引 |
-| P0 | Fusion & Dedup | 按 `documentId + chunkIndex` 去重，使用 RRF 或加权分数融合不同召回来源 |
-| P0 | Contextual Chunk | 索引时为 chunk 增加文档标题、层级标题、邻近 chunk 摘要，减少孤立片段 |
-| P1 | Query Rewrite | 用 LLM 或轻量规则生成 2-3 个检索 query：原问题、关键词版、语义扩展版 |
-| P1 | Multi-query Search | 多 query 并发执行 semantic + keyword 召回，合并后统一融合 |
-| P1 | Metadata Recall | 增加最近编辑、文档类型、当前 workspace、当前文档邻近内容等结构化补召回 |
-| P1 | Rerank | 对候选 chunk 做二阶段重排，可先用 LLM rerank，后续换专用 reranker |
-| P1 | Context Packing | 按文档分组、相邻 chunk 合并、token budget 裁剪，保证回答上下文连贯 |
-| P2 | Citation Quality | 输出引用覆盖率、命中分数、是否回答需要更多检索等质量信号 |
+| P0 | Hybrid Retrieval Service | ✅ 已完成：新增统一 `retrieveKnowledge(options)`，聚合 semantic / keyword / metadata 多路召回 |
+| P0 | Semantic Recall | ✅ 已完成：保留 Qdrant embedding 检索，作为 `fast` 策略和混合检索语义通道 |
+| P0 | Keyword Recall | ✅ 已完成：对标题、chunk 文本、标签、路径做轻量 token match 召回 |
+| P0 | Fusion & Dedup | ✅ 已完成：按 `documentId + chunkIndex` 去重，使用 RRF 融合不同召回来源 |
+| P0 | Contextual Chunk | ✅ 已完成基础版：索引元数据已补充标题、标签、路径、层级标题、邻近摘要等字段 |
+| P1 | Query Rewrite | ✅ 已完成：`deep` 策略生成原问题、关键词版、语义扩展版 query |
+| P1 | Multi-query Search | ✅ 已完成：`deep` 策略多 query 并发执行 semantic / keyword / metadata 召回 |
+| P1 | Metadata Recall | ✅ 已完成基础版：支持最近编辑、标签、路径、当前文档邻近信息等结构化补召回 |
+| P1 | Rerank | ❌ 未做：候选 chunk 二阶段重排仍未接入 |
+| P1 | Context Packing | ❌ 未做：尚未按文档分组、相邻 chunk 合并和 token budget 裁剪 |
+| P2 | Citation Quality | ❌ 未做：尚未输出引用覆盖率、命中分数解释和是否需要更多检索等质量信号 |
 
 建议新增统一检索接口：
 
@@ -191,16 +192,16 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P0：Hybrid Retrieval Service** — 先把 `knowledge_search` 背后的检索策略从单一 `similaritySearch` 抽出来，形成 `retrieveKnowledge(options)`，默认 `balanced` 走语义 + 关键词 + metadata 混合搜索。
-2. **P0：Memory 数据模型 + read/write tool** — 先实现长期记忆最小闭环，并确保写入需要确认。
-3. **P0：Document write tool dry-run** — 打通 Agent 从读文档到改文档的最小能力，但默认不直接落库。
-4. **P1：Web extractor + document metadata search** — 快速扩展两个高收益工具。
-5. **P1：RAG balanced 策略** — query rewrite、多 query、去重、context packing。
-6. **P2：Harness smoke set** — 主能力稳定后补评测与回归。
+1. **P0：Memory 数据模型 + read/write tool** — 建立 `agentMemories` 结构化源记录，先支持可解释写入、检索读取、删除/停用，写入必须需要用户确认。
+2. **P0：Document write tool dry-run** — 将 CLI/MCP 已验证的 create/update dry-run 契约接入 Web Agent，打通“读当前文档 → 生成变更预览 → 用户确认 → 落库”的最小闭环。
+3. **P1：Agent 性能监控** — 为 ReAct 轮次、tool 调用耗时、LLM 首 token/总耗时、失败降级打 trace，支撑后续 eval 和线上排障。
+4. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
+5. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
+6. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 
 ## 下一批里程碑建议
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | 新增至少 3 个 tool；Memory MVP 可读写可删除；`knowledge_search` 支持 `fast/balanced/deep` 策略，默认 `balanced` 使用混合搜索 |
+| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；剩余标准是新增至少 3 个 Web Agent tool、Memory MVP 可读写可删除、写类 tool 默认 dry-run/确认 |
 | M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |
