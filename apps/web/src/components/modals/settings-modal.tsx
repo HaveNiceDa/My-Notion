@@ -18,6 +18,7 @@ import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/src/components/ui/dialog";
@@ -233,6 +234,9 @@ export function SettingsModal() {
       <DialogContent className="max-w-2xl">
         <DialogHeader className="border-b pb-3">
           <DialogTitle>{t('mySettings')}</DialogTitle>
+          <DialogDescription className="sr-only">
+            {t("manageApiTokens")}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between mb-4">
           <div className="flex flex-col gap-y-1">
