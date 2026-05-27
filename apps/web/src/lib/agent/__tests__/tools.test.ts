@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 
 vi.mock("@notion/ai/server", () => ({
   getOrCreateVectorStore: vi.fn(),
+  retrieveKnowledge: vi.fn(),
 }));
 
 vi.mock("@notion/ai/utils", () => ({
@@ -16,7 +17,7 @@ import { buildAvailableTools } from "../tools/registry";
 import { knowledgeSearchTool, documentReadTool, webSearchTool } from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
 import { executeWebSearch } from "../tools/web-search";
-import { getOrCreateVectorStore } from "@notion/ai/server";
+import { retrieveKnowledge } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
 describe("buildAvailableTools", () => {
@@ -82,48 +83,92 @@ describe("executeKnowledgeSearch", () => {
   });
 
   it("正常搜索返回结果", async () => {
-    const mockResults = [
-      { document: { metadata: { documentId: "d1", title: "Doc1" }, pageContent: "Content1" }, score: 0.95 },
-      { document: { metadata: { documentId: "d2", title: "Doc2" }, pageContent: "Content2" }, score: 0.85 },
-    ];
-    const mockVectorStore = {
-      similaritySearch: vi.fn().mockResolvedValue(mockResults),
-    };
-    vi.mocked(getOrCreateVectorStore).mockResolvedValue(mockVectorStore as any);
+    vi.mocked(retrieveKnowledge).mockResolvedValue({
+      query: "test",
+      strategy: "balanced",
+      items: [
+        { documentId: "d1", chunkId: "d1:0", title: "Doc1", score: 0.95, content: "Content1", sources: ["semantic"], metadata: {} },
+        { documentId: "d2", chunkId: "d2:0", title: "Doc2", score: 0.85, content: "Content2", sources: ["keyword"], metadata: {} },
+      ],
+      metadata: { semanticCount: 1, keywordCount: 1, metadataCount: 0, fusedCount: 2 },
+    });
 
     const result = await executeKnowledgeSearch("user-1", { query: "test" }) as any;
     expect(result.query).toBe("test");
+    expect(result.strategy).toBe("balanced");
     expect(result.documents.length).toBe(2);
     expect(result.documents[0].documentId).toBe("d1");
     expect(result.documents[0].score).toBe(0.95);
-    expect(getOrCreateVectorStore).toHaveBeenCalledWith("user-1");
+    expect(result.documents[0].sources).toEqual(["semantic"]);
+    expect(retrieveKnowledge).toHaveBeenCalledWith({
+      userId: "user-1",
+      query: "test",
+      topK: 3,
+      strategy: "balanced",
+    });
   });
 
   it("topK 被限制在 1-8 范围内", async () => {
-    const mockVectorStore = {
-      similaritySearch: vi.fn().mockResolvedValue([]),
-    };
-    vi.mocked(getOrCreateVectorStore).mockResolvedValue(mockVectorStore as any);
+    vi.mocked(retrieveKnowledge).mockResolvedValue({
+      query: "test",
+      strategy: "balanced",
+      items: [],
+      metadata: { semanticCount: 0, keywordCount: 0, metadataCount: 0, fusedCount: 0 },
+    });
 
     await executeKnowledgeSearch("user-1", { query: "test", topK: 20 });
-    expect(mockVectorStore.similaritySearch).toHaveBeenCalledWith("test", 8, 0.6);
+    expect(retrieveKnowledge).toHaveBeenLastCalledWith({
+      userId: "user-1",
+      query: "test",
+      topK: 8,
+      strategy: "balanced",
+    });
 
     await executeKnowledgeSearch("user-1", { query: "test", topK: -1 });
-    expect(mockVectorStore.similaritySearch).toHaveBeenCalledWith("test", 1, 0.6);
+    expect(retrieveKnowledge).toHaveBeenLastCalledWith({
+      userId: "user-1",
+      query: "test",
+      topK: 1,
+      strategy: "balanced",
+    });
   });
 
   it("topK 默认为 3", async () => {
-    const mockVectorStore = {
-      similaritySearch: vi.fn().mockResolvedValue([]),
-    };
-    vi.mocked(getOrCreateVectorStore).mockResolvedValue(mockVectorStore as any);
+    vi.mocked(retrieveKnowledge).mockResolvedValue({
+      query: "test",
+      strategy: "balanced",
+      items: [],
+      metadata: { semanticCount: 0, keywordCount: 0, metadataCount: 0, fusedCount: 0 },
+    });
 
     await executeKnowledgeSearch("user-1", { query: "test" });
-    expect(mockVectorStore.similaritySearch).toHaveBeenCalledWith("test", 3, 0.6);
+    expect(retrieveKnowledge).toHaveBeenCalledWith({
+      userId: "user-1",
+      query: "test",
+      topK: 3,
+      strategy: "balanced",
+    });
+  });
+
+  it("支持传入检索策略", async () => {
+    vi.mocked(retrieveKnowledge).mockResolvedValue({
+      query: "test",
+      strategy: "fast",
+      items: [],
+      metadata: { semanticCount: 0, keywordCount: 0, metadataCount: 0, fusedCount: 0 },
+    });
+
+    await executeKnowledgeSearch("user-1", { query: "test", strategy: "fast" });
+    expect(retrieveKnowledge).toHaveBeenCalledWith({
+      userId: "user-1",
+      query: "test",
+      topK: 3,
+      strategy: "fast",
+    });
   });
 
   it("搜索异常时返回错误", async () => {
-    vi.mocked(getOrCreateVectorStore).mockRejectedValue(new Error("DB error"));
+    vi.mocked(retrieveKnowledge).mockRejectedValue(new Error("DB error"));
 
     const result = await executeKnowledgeSearch("user-1", { query: "test" }) as any;
     expect(result.documents).toEqual([]);
@@ -131,13 +176,14 @@ describe("executeKnowledgeSearch", () => {
   });
 
   it("metadata 缺失时使用默认值", async () => {
-    const mockResults = [
-      { document: { metadata: {}, pageContent: "Content" }, score: 0.9 },
-    ];
-    const mockVectorStore = {
-      similaritySearch: vi.fn().mockResolvedValue(mockResults),
-    };
-    vi.mocked(getOrCreateVectorStore).mockResolvedValue(mockVectorStore as any);
+    vi.mocked(retrieveKnowledge).mockResolvedValue({
+      query: "test",
+      strategy: "balanced",
+      items: [
+        { documentId: "", chunkId: "unknown:0", title: "", score: 0.9, content: "Content", sources: ["semantic"], metadata: {} },
+      ],
+      metadata: { semanticCount: 1, keywordCount: 0, metadataCount: 0, fusedCount: 1 },
+    });
 
     const result = await executeKnowledgeSearch("user-1", { query: "test" }) as any;
     expect(result.documents[0].documentId).toBe("");

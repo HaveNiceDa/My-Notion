@@ -27,6 +27,12 @@ export const knowledgeSearchTool: AgentTool = {
         type: "number",
         description: "返回结果数量，默认3",
       },
+      strategy: {
+        type: "string",
+        enum: ["fast", "balanced", "deep"],
+        description:
+          "检索策略。fast=低延迟语义检索；balanced=默认混合搜索；deep=复杂问题深度检索。",
+      },
     },
     required: ["query"],
   },

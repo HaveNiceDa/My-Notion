@@ -1,5 +1,6 @@
 export { streamChat } from "./chat";
 export { streamRAG } from "./rag";
+export { retrieveKnowledge } from "./retrieval";
 export { updateDocument, deleteDocumentChunks, initKnowledgeBase } from "./documents";
 export { ConvexDataSource } from "./data-source";
 export {
@@ -23,3 +24,12 @@ export type {
   DocumentDeleteParams,
   KnowledgeBaseDocument,
 } from "./types";
+export type {
+  KnowledgeRetrievalFilters,
+  KnowledgeRetrievalOptions,
+  KnowledgeRetrievalResult,
+  RetrievalCandidate,
+  RetrievalResultItem,
+  RetrievalSource,
+  RetrievalStrategy,
+} from "./retrieval";

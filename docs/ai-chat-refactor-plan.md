@@ -116,16 +116,29 @@ MVP 切法：
 - 记忆写入必须可解释，记录来源消息和写入原因。
 - 系统提示优先级高于记忆；记忆不能覆盖安全约束、权限边界和用户本轮明确指令。
 
-### 7.3 RAG 检索策略升级
+### 7.3 RAG 混合检索策略升级
 
-当前 `hybridSearch` 名称偏超前，本质仍是单路向量检索。建议按以下顺序增强：
+当前 `hybridSearch` 名称偏超前，本质仍是单路向量检索。下一步应直接以 Hybrid Retrieval Service 为目标，把默认检索从“单一语义向量召回”升级为“关键词 + 语义搜索 + metadata 召回 + 融合重排”的混合搜索链路。
+
+核心原则：
+
+- 语义向量检索解决“表达不同但语义相近”的问题。
+- 关键词检索解决 API 名称、函数名、错误码、标题、精确短语等向量检索不稳定的问题。
+- Metadata 召回解决最近编辑、文档类型、当前工作区、当前文档邻近上下文等结构化过滤与补召回问题。
+- 融合排序先采用 RRF 或加权分数，后续再接专用 reranker 或 LLM rerank。
+
+建议按以下顺序增强：
 
 | 阶段 | 策略 | 说明 |
 |---|---|---|
-| P0 | Query Rewrite | 用 LLM 或轻量规则生成 2-3 个检索 query：原问题、关键词版、语义扩展版 |
+| P0 | Hybrid Retrieval Service | 新增统一 `retrieveKnowledge(options)`，聚合 semantic / keyword / metadata 多路召回 |
+| P0 | Semantic Recall | 保留当前 Qdrant embedding 检索，作为低延迟语义召回主路径 |
+| P0 | Keyword Recall | 对文档标题、chunk 文本、标签、路径做关键词召回，先用轻量 token match，后续再升级 BM25/全文索引 |
+| P0 | Fusion & Dedup | 按 `documentId + chunkIndex` 去重，使用 RRF 或加权分数融合不同召回来源 |
 | P0 | Contextual Chunk | 索引时为 chunk 增加文档标题、层级标题、邻近 chunk 摘要，减少孤立片段 |
-| P0 | Multi-query Vector Search | 多 query 并发向量检索，合并后按 `documentId + chunkIndex` 去重 |
-| P1 | Keyword / Metadata Recall | 增加标题、标签、最近编辑、文档类型等结构化召回，弥补纯向量漏召 |
+| P1 | Query Rewrite | 用 LLM 或轻量规则生成 2-3 个检索 query：原问题、关键词版、语义扩展版 |
+| P1 | Multi-query Search | 多 query 并发执行 semantic + keyword 召回，合并后统一融合 |
+| P1 | Metadata Recall | 增加最近编辑、文档类型、当前 workspace、当前文档邻近内容等结构化补召回 |
 | P1 | Rerank | 对候选 chunk 做二阶段重排，可先用 LLM rerank，后续换专用 reranker |
 | P1 | Context Packing | 按文档分组、相邻 chunk 合并、token budget 裁剪，保证回答上下文连贯 |
 | P2 | Citation Quality | 输出引用覆盖率、命中分数、是否回答需要更多检索等质量信号 |
@@ -144,13 +157,23 @@ interface KnowledgeRetrievalOptions {
     updatedAfter?: number;
   };
 }
+
+interface RetrievalResultItem {
+  documentId: string;
+  chunkId: string;
+  title: string;
+  content: string;
+  score: number;
+  sources: Array<"semantic" | "keyword" | "metadata">;
+  metadata: Record<string, unknown>;
+}
 ```
 
 策略语义：
 
 - `fast`：单 query 向量检索，适合实时聊天低延迟。
-- `balanced`：query rewrite + multi-query + 去重 + 简单 rerank，作为默认策略。
-- `deep`：balanced + metadata recall + LLM rerank + context packing，适合复杂研究问题。
+- `balanced`：默认策略，执行 semantic recall + keyword recall + metadata recall + fusion/dedup，必要时做轻量 context packing。
+- `deep`：在 `balanced` 基础上增加 query rewrite、multi-query search、LLM/reranker 重排和更完整的 context packing，适合复杂研究问题。
 
 ### 7.4 Harness 机制（M18 候选，后置）
 
@@ -168,7 +191,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P0：RAG Retrieval Service 抽象** — 先把 `knowledge_search` 背后的检索策略从单一 `similaritySearch` 抽出来，形成 `retrieveKnowledge(options)`。
+1. **P0：Hybrid Retrieval Service** — 先把 `knowledge_search` 背后的检索策略从单一 `similaritySearch` 抽出来，形成 `retrieveKnowledge(options)`，默认 `balanced` 走语义 + 关键词 + metadata 混合搜索。
 2. **P0：Memory 数据模型 + read/write tool** — 先实现长期记忆最小闭环，并确保写入需要确认。
 3. **P0：Document write tool dry-run** — 打通 Agent 从读文档到改文档的最小能力，但默认不直接落库。
 4. **P1：Web extractor + document metadata search** — 快速扩展两个高收益工具。
@@ -179,5 +202,5 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M17 | Agent Tools + Memory + RAG Retrieval Strategy | 新增至少 3 个 tool；Memory MVP 可读写可删除；`knowledge_search` 支持 `fast/balanced/deep` 策略 |
+| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | 新增至少 3 个 tool；Memory MVP 可读写可删除；`knowledge_search` 支持 `fast/balanced/deep` 策略，默认 `balanced` 使用混合搜索 |
 | M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |

@@ -165,6 +165,72 @@ export class QdrantVectorStoreWrapper {
     }
   }
 
+  async keywordSearch(
+    query: string,
+    k: number = 8,
+    filters?: { documentIds?: string[] },
+  ): Promise<Array<{ document: Document; score: number }>> {
+    try {
+      await this.ensureCollectionExists();
+
+      const tokens = tokenizeQuery(query);
+      if (tokens.length === 0) {
+        return [];
+      }
+
+      const scrollResult = await this.qdrantClient.scroll(this.collectionName, {
+        limit: Math.max(k * 16, 128),
+        with_payload: true,
+        with_vector: false,
+        filter: buildDocumentFilter(filters?.documentIds),
+      });
+
+      return scrollResult.points
+        .map((point) => createScoredDocument(point, (metadata, content) =>
+          scoreKeywordMatch(tokens, query, metadata, content),
+        ))
+        .filter((result) => result.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, k);
+    } catch (error) {
+      console.error(`[QdrantVectorStore] 执行关键词检索时出错:`, error);
+      throw error;
+    }
+  }
+
+  async metadataSearch(
+    query: string,
+    k: number = 4,
+    filters?: { documentIds?: string[]; updatedAfter?: number },
+  ): Promise<Array<{ document: Document; score: number }>> {
+    try {
+      await this.ensureCollectionExists();
+
+      const tokens = tokenizeQuery(query);
+      if (tokens.length === 0) {
+        return [];
+      }
+
+      const scrollResult = await this.qdrantClient.scroll(this.collectionName, {
+        limit: Math.max(k * 12, 96),
+        with_payload: true,
+        with_vector: false,
+        filter: buildDocumentFilter(filters?.documentIds),
+      });
+
+      return scrollResult.points
+        .map((point) => createScoredDocument(point, (metadata) =>
+          scoreMetadataMatch(tokens, metadata, filters?.updatedAfter),
+        ))
+        .filter((result) => result.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, k);
+    } catch (error) {
+      console.error(`[QdrantVectorStore] 执行 metadata 检索时出错:`, error);
+      throw error;
+    }
+  }
+
   async addDocumentChunks(
     userId: string,
     documentId: string,
@@ -353,4 +419,106 @@ export class QdrantVectorStoreWrapper {
       return 0;
     }
   }
+}
+
+function tokenizeQuery(query: string): string[] {
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const tokens = normalizedQuery
+    .split(/[\s,，.。:：;；/\\()[\]{}'"`|]+/)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 2);
+
+  return Array.from(new Set([normalizedQuery, ...tokens]));
+}
+
+function buildDocumentFilter(documentIds?: string[]): any | undefined {
+  if (!documentIds || documentIds.length === 0) {
+    return undefined;
+  }
+
+  return {
+    should: documentIds.map((documentId) => ({
+      key: "metadata.documentId",
+      match: { value: documentId },
+    })),
+  };
+}
+
+function createScoredDocument(
+  point: { payload?: Record<string, unknown> | null },
+  score: (metadata: Record<string, unknown>, content: string) => number,
+): { document: Document; score: number } {
+  const payload = point.payload ?? {};
+  const content = typeof payload.pageContent === "string" ? payload.pageContent : "";
+  const metadata = normalizeMetadata(payload.metadata);
+
+  return {
+    document: new Document({
+      pageContent: content,
+      metadata,
+    }),
+    score: score(metadata, content),
+  };
+}
+
+function normalizeMetadata(metadata: unknown): Record<string, unknown> {
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+    return metadata as Record<string, unknown>;
+  }
+
+  return {};
+}
+
+function scoreKeywordMatch(
+  tokens: string[],
+  query: string,
+  metadata: Record<string, unknown>,
+  content: string,
+): number {
+  const title = stringValue(metadata.title).toLowerCase();
+  const normalizedContent = content.toLowerCase();
+  const normalizedQuery = query.trim().toLowerCase();
+  let score = 0;
+
+  if (title.includes(normalizedQuery)) score += 3;
+  if (normalizedContent.includes(normalizedQuery)) score += 2;
+
+  for (const token of tokens) {
+    if (title.includes(token)) score += 1.5;
+    if (normalizedContent.includes(token)) score += 1;
+  }
+
+  return score / Math.max(tokens.length, 1);
+}
+
+function scoreMetadataMatch(
+  tokens: string[],
+  metadata: Record<string, unknown>,
+  updatedAfter?: number,
+): number {
+  const title = stringValue(metadata.title).toLowerCase();
+  const documentId = stringValue(metadata.documentId).toLowerCase();
+  const tags = Array.isArray(metadata.tags) ? metadata.tags.map(String).join(" ").toLowerCase() : "";
+  const updatedAt = typeof metadata.updatedAt === "number" ? metadata.updatedAt : undefined;
+  let score = 0;
+
+  for (const token of tokens) {
+    if (title.includes(token)) score += 2;
+    if (documentId.includes(token)) score += 1.5;
+    if (tags.includes(token)) score += 1.2;
+  }
+
+  if (updatedAfter && updatedAt && updatedAt >= updatedAfter) {
+    score += 0.5;
+  }
+
+  return score / Math.max(tokens.length, 1);
+}
+
+function stringValue(value: unknown): string {
+  return typeof value === "string" ? value : "";
 }

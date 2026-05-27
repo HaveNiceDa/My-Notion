@@ -1,4 +1,4 @@
-import { getOrCreateVectorStore } from "@notion/ai/server";
+import { retrieveKnowledge, type RetrievalStrategy } from "@notion/ai/server";
 
 // 知识库检索：搜索用户个人知识库中的文档和笔记
 export async function executeKnowledgeSearch(
@@ -11,24 +11,42 @@ export async function executeKnowledgeSearch(
   }
 
   const topK = typeof args.topK === "number" ? Math.min(Math.max(args.topK, 1), 8) : 3;
+  const strategy = parseRetrievalStrategy(args.strategy);
   try {
-    const vectorStore = await getOrCreateVectorStore(userId);
-    const results = await vectorStore.similaritySearch(query, topK, 0.6);
+    const result = await retrieveKnowledge({
+      userId,
+      query,
+      topK,
+      strategy,
+    });
 
     return {
       query,
-      documents: results.map((result) => ({
-        documentId: result.document.metadata?.documentId ?? "",
-        title: result.document.metadata?.title ?? "",
-        score: Number(result.score.toFixed(4)),
-        content: result.document.pageContent,
+      strategy: result.strategy,
+      documents: result.items.map((item) => ({
+        documentId: item.documentId,
+        title: item.title,
+        score: item.score,
+        content: item.content,
+        sources: item.sources,
+        metadata: item.metadata,
       })),
+      metadata: result.metadata,
     };
   } catch (error) {
     return {
       query,
+      strategy,
       documents: [],
       error: error instanceof Error ? error.message : String(error),
     };
   }
+}
+
+function parseRetrievalStrategy(value: unknown): RetrievalStrategy {
+  if (value === "fast" || value === "balanced" || value === "deep") {
+    return value;
+  }
+
+  return "balanced";
 }
