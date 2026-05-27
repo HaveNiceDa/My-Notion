@@ -10,6 +10,12 @@ interface SemanticSearchFilters {
   excludeDocumentIds?: string[];
 }
 
+interface DocumentIndexMetadata {
+  updatedAt?: number;
+  tags?: string[];
+  documentPath?: string[];
+}
+
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;
   private userId: string;
@@ -49,26 +55,18 @@ export class QdrantVectorStoreWrapper {
           },
         });
 
-        await this.qdrantClient.createPayloadIndex(this.collectionName, {
-          field_name: "metadata.documentId",
-          field_schema: "keyword",
-        });
-
-        await this.qdrantClient.createPayloadIndex(this.collectionName, {
-          field_name: "metadata.title",
-          field_schema: "keyword",
-        });
-
-        await this.qdrantClient.createPayloadIndex(this.collectionName, {
-          field_name: "metadata.contentHash",
-          field_schema: "keyword",
-        });
+        for (const { field, schema } of payloadIndexDefinitions()) {
+          await this.qdrantClient.createPayloadIndex(this.collectionName, {
+            field_name: field,
+            field_schema: schema,
+          });
+        }
       } else {
-        for (const field of ["metadata.documentId", "metadata.title", "metadata.contentHash"]) {
+        for (const { field, schema } of payloadIndexDefinitions()) {
           try {
             await this.qdrantClient.createPayloadIndex(this.collectionName, {
               field_name: field,
-              field_schema: "keyword",
+              field_schema: schema,
             });
           } catch {
           }
@@ -298,6 +296,7 @@ export class QdrantVectorStoreWrapper {
     content: string,
     title: string,
     contentHash?: string,
+    indexMetadata?: DocumentIndexMetadata,
   ): Promise<void> {
     await this.ensureCollectionExists();
 
@@ -317,11 +316,23 @@ export class QdrantVectorStoreWrapper {
     const splits = await textSplitter.splitText(plainTextContent);
 
     const embeddingResults = await this.embeddings.embedDocuments(splits);
+    const headingMetadata = extractHeadingMetadata(content);
+    const tags = mergeTags(indexMetadata?.tags, extractInlineTags(`${title}\n${plainTextContent}`));
+    const updatedAt = indexMetadata?.updatedAt ?? Date.now();
 
     const chunks = splits.map((split, index) => ({
       chunkIndex: index,
       pageContent: split,
-      metadata: { documentId, title },
+      metadata: {
+        documentId,
+        title,
+        updatedAt,
+        tags,
+        documentPath: indexMetadata?.documentPath ?? [],
+        headingPath: headingMetadata.headingPath,
+        headings: headingMetadata.headings,
+        neighborSummary: buildNeighborSummary(splits, index),
+      },
       embedding: embeddingResults[index],
     }));
 
@@ -453,6 +464,86 @@ function tokenizeQuery(query: string): string[] {
   return Array.from(new Set([normalizedQuery, ...tokens]));
 }
 
+function payloadIndexDefinitions(): Array<{ field: string; schema: "keyword" | "integer" }> {
+  return [
+    { field: "metadata.documentId", schema: "keyword" },
+    { field: "metadata.title", schema: "keyword" },
+    { field: "metadata.contentHash", schema: "keyword" },
+    { field: "metadata.updatedAt", schema: "integer" },
+    { field: "metadata.tags", schema: "keyword" },
+    { field: "metadata.headingPath", schema: "keyword" },
+    { field: "metadata.documentPath", schema: "keyword" },
+  ];
+}
+
+function extractHeadingMetadata(content: string): { headings: string[]; headingPath: string } {
+  try {
+    const blocks = JSON.parse(content);
+    const headings: string[] = [];
+    collectHeadings(blocks, headings);
+    const uniqueHeadings = Array.from(new Set(headings)).slice(0, 8);
+    return {
+      headings: uniqueHeadings,
+      headingPath: uniqueHeadings.join(" > "),
+    };
+  } catch {
+    return { headings: [], headingPath: "" };
+  }
+}
+
+function collectHeadings(node: unknown, headings: string[]): void {
+  if (Array.isArray(node)) {
+    for (const child of node) collectHeadings(child, headings);
+    return;
+  }
+
+  if (!node || typeof node !== "object") {
+    return;
+  }
+
+  const block = node as { type?: string; content?: unknown; children?: unknown };
+  if (block.type === "heading") {
+    const heading = extractInlineText(block.content).trim();
+    if (heading) headings.push(heading);
+  }
+
+  collectHeadings(block.children, headings);
+}
+
+function extractInlineText(node: unknown): string {
+  if (Array.isArray(node)) {
+    return node.map(extractInlineText).join("");
+  }
+
+  if (!node || typeof node !== "object") {
+    return "";
+  }
+
+  const block = node as { text?: unknown; content?: unknown; children?: unknown };
+  const text = typeof block.text === "string" ? block.text : "";
+  return `${text}${extractInlineText(block.content)}${extractInlineText(block.children)}`;
+}
+
+function extractInlineTags(text: string): string[] {
+  return Array.from(text.matchAll(/#([\p{L}\p{N}_-]+)/gu), (match) => match[1]);
+}
+
+function mergeTags(explicitTags: string[] | undefined, inlineTags: string[]): string[] {
+  return Array.from(
+    new Set(
+      [...(explicitTags ?? []), ...inlineTags]
+        .map((tag) => tag.trim())
+        .filter(Boolean),
+    ),
+  ).slice(0, 20);
+}
+
+function buildNeighborSummary(chunks: string[], index: number): string {
+  const previous = chunks[index - 1] ? `前文: ${chunks[index - 1].slice(0, 80)}` : "";
+  const next = chunks[index + 1] ? `后文: ${chunks[index + 1].slice(0, 80)}` : "";
+  return [previous, next].filter(Boolean).join("\n");
+}
+
 function normalizeSemanticFilters(
   filters?: SemanticSearchFilters | Set<string>,
 ): SemanticSearchFilters | undefined {
@@ -557,7 +648,11 @@ function scoreMetadataMatch(
 ): number {
   const title = stringValue(metadata.title).toLowerCase();
   const documentId = stringValue(metadata.documentId).toLowerCase();
-  const tags = Array.isArray(metadata.tags) ? metadata.tags.map(String).join(" ").toLowerCase() : "";
+  const tags = arrayText(metadata.tags).toLowerCase();
+  const headings = arrayText(metadata.headings).toLowerCase();
+  const headingPath = stringValue(metadata.headingPath).toLowerCase();
+  const documentPath = arrayText(metadata.documentPath).toLowerCase();
+  const neighborSummary = stringValue(metadata.neighborSummary).toLowerCase();
   const updatedAt = typeof metadata.updatedAt === "number" ? metadata.updatedAt : undefined;
   let score = 0;
 
@@ -565,10 +660,16 @@ function scoreMetadataMatch(
     if (title.includes(token)) score += 2;
     if (documentId.includes(token)) score += 1.5;
     if (tags.includes(token)) score += 1.2;
+    if (headingPath.includes(token)) score += 1.6;
+    if (headings.includes(token)) score += 1.4;
+    if (documentPath.includes(token)) score += 1.1;
+    if (neighborSummary.includes(token)) score += 0.4;
   }
 
   if (updatedAfter && updatedAt && updatedAt >= updatedAfter) {
-    score += 0.5;
+    score += 1;
+  } else if (updatedAt) {
+    score += recencyBoost(updatedAt);
   }
 
   return score / Math.max(tokens.length, 1);
@@ -576,4 +677,15 @@ function scoreMetadataMatch(
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+function arrayText(value: unknown): string {
+  return Array.isArray(value) ? value.map(String).join(" ") : "";
+}
+
+function recencyBoost(updatedAt: number): number {
+  const ageInDays = Math.max(0, (Date.now() - updatedAt) / 86_400_000);
+  if (ageInDays <= 7) return 0.6;
+  if (ageInDays <= 30) return 0.3;
+  return 0;
 }

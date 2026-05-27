@@ -2,10 +2,14 @@ import { computeContentHash, getOrCreateVectorStore, invalidateDocumentHash, set
 import type { DocumentUpdateParams, DocumentDeleteParams } from "./types";
 
 export async function updateDocument(params: DocumentUpdateParams): Promise<void> {
-  const { userId, documentId, content, title } = params;
+  const { userId, documentId, content, title, updatedAt, tags, documentPath } = params;
   const vectorStore = await getOrCreateVectorStore(userId);
   const contentHash = computeContentHash(content);
-  await vectorStore.updateDocument(userId, documentId, content, title, contentHash);
+  await vectorStore.updateDocument(userId, documentId, content, title, contentHash, {
+    updatedAt,
+    tags,
+    documentPath,
+  });
   setCachedDocumentHash(userId, documentId, contentHash);
 }
 

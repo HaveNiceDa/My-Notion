@@ -57,6 +57,9 @@ export interface DocumentUpdateParams {
   documentId: string;
   content: string;
   title: string;
+  updatedAt?: number;
+  tags?: string[];
+  documentPath?: string[];
 }
 
 export interface DocumentDeleteParams {

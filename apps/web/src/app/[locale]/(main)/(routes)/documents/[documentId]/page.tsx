@@ -21,6 +21,7 @@ const triggerDocumentUpdate = async (
   documentId: string,
   content: string,
   title: string,
+  updatedAt?: number,
 ): Promise<void> => {
   try {
     const response = await fetch("/api/rag-documents", {
@@ -34,6 +35,7 @@ const triggerDocumentUpdate = async (
         documentId,
         content,
         title,
+        updatedAt,
       }),
     });
 
@@ -96,6 +98,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
       docId: Id<"documents">;
       content: string;
       title: string;
+      updatedAt?: number;
     } | null;
   }>({ timer: null, pendingUpdate: null });
   const updateDebounceRef = useRef<{
@@ -149,6 +152,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     docId: Id<"documents">,
     content: string,
     title: string,
+    updatedAt?: number,
   ) => {
     // 清除之前的定时器
     if (ragUpdateDebounceRef.current.timer) {
@@ -156,14 +160,14 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
     }
 
     // 保存待更新的数据
-    ragUpdateDebounceRef.current.pendingUpdate = { docId, content, title };
+    ragUpdateDebounceRef.current.pendingUpdate = { docId, content, title, updatedAt };
 
     // 设置新的定时器
     ragUpdateDebounceRef.current.timer = setTimeout(() => {
       if (ragUpdateDebounceRef.current.pendingUpdate && user) {
-        const { docId, content, title } =
+        const { docId, content, title, updatedAt } =
           ragUpdateDebounceRef.current.pendingUpdate;
-        triggerDocumentUpdate(user.id, docId, content, title);
+        triggerDocumentUpdate(user.id, docId, content, title, updatedAt);
         ragUpdateDebounceRef.current.pendingUpdate = null;
       }
     }, 5000); // 5秒防抖
@@ -172,9 +176,9 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
   // 强制更新所有待处理的RAG更新
   const flushRagUpdates = () => {
     if (ragUpdateDebounceRef.current.pendingUpdate && user) {
-      const { docId, content, title } =
+      const { docId, content, title, updatedAt } =
         ragUpdateDebounceRef.current.pendingUpdate;
-      triggerDocumentUpdate(user.id, docId, content, title);
+      triggerDocumentUpdate(user.id, docId, content, title, updatedAt);
       ragUpdateDebounceRef.current.pendingUpdate = null;
     }
     if (ragUpdateDebounceRef.current.timer) {
@@ -203,7 +207,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
 
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
-      debouncedRagUpdate(documentId, content, document.title);
+      debouncedRagUpdate(documentId, content, document.title, Date.now());
     }
   };
 
@@ -216,7 +220,7 @@ export default function DocumentIdPage({ params }: DocumentIdPageProps) {
 
     // 触发 RAG 更新（防抖处理）- 只有当文档在知识库中时才触发
     if (user && document && document.isInKnowledgeBase) {
-      debouncedRagUpdate(documentId, document.content!, title);
+      debouncedRagUpdate(documentId, document.content!, title, Date.now());
     }
   };
 

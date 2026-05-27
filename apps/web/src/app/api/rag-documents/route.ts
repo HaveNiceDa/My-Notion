@@ -31,6 +31,9 @@ export async function POST(req: NextRequest) {
             documentId: params.documentId,
             content: params.content,
             title: params.title,
+            updatedAt: params.updatedAt,
+            tags: params.tags,
+            documentPath: params.documentPath,
           });
         } catch (error) {
           if (isQdrantUnavailable(error)) {

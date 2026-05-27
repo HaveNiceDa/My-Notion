@@ -146,6 +146,7 @@ export function Publish({ initialData }: PublishProps) {
                 documentId: initialData._id,
                 content: initialData.content,
                 title: initialData.title,
+                updatedAt: initialData.lastEditedTime,
               }),
             });
             
