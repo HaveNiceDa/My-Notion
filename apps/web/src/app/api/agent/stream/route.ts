@@ -3,6 +3,8 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL, getActualModelId } from "@notion/ai/config";
+import { retrieveRelevantMemories } from "@notion/ai/server";
+import { api } from "@/convex/_generated/api";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
 import { runReActLoop } from "@/src/lib/agent/react-loop";
@@ -46,6 +48,7 @@ async function getAuthenticatedConvexClient(
 
 function buildSystemMessage(
   hasToolContext: boolean,
+  memoryContext?: string,
 ): OpenAI.ChatCompletionSystemMessageParam {
   return {
     role: "system",
@@ -56,8 +59,59 @@ function buildSystemMessage(
         ? "When the user's question requires information from multiple sources, call multiple tools in the same response instead of making separate calls. For example, if the user asks about both their notes and current events, call knowledge_search and web_search together."
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
       "Keep your answers concise and well-structured. Avoid overly long responses.",
+      memoryContext
+        ? `Relevant long-term memories for this user:\n${memoryContext}\nUse these memories as soft context. The current user instruction always has higher priority.`
+        : "",
     ].join("\n"),
   };
+}
+
+function extractLatestUserText(messages: OpenAI.ChatCompletionMessageParam[]): string {
+  const latestUserMessage = [...messages].reverse().find((message) => message.role === "user");
+  const content = latestUserMessage?.content;
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (part && typeof part === "object" && "text" in part && typeof part.text === "string") {
+          return part.text;
+        }
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n");
+  }
+  return "";
+}
+
+async function buildMemoryContext(options: {
+  convex: ConvexHttpClient | null;
+  userId: string;
+  query: string;
+}): Promise<string | undefined> {
+  if (!options.convex || !options.query.trim()) return undefined;
+
+  try {
+    const memories = await options.convex.query(api.agentMemories.listAgentMemories, {
+      limit: 100,
+    });
+    const result = await retrieveRelevantMemories({
+      userId: options.userId,
+      query: options.query,
+      memories,
+      topK: 6,
+    });
+    if (result.memories.length === 0) return undefined;
+
+    return result.memories
+      .map((memory, index) =>
+        `${index + 1}. [${memory.type}] ${memory.content}${memory.reason ? ` (reason: ${memory.reason})` : ""}`,
+      )
+      .join("\n");
+  } catch (error) {
+    console.warn("[Agent Memory] Failed to build memory context:", error);
+    return undefined;
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -96,6 +150,8 @@ export async function POST(req: NextRequest) {
     const enableThinking = Boolean(body.enableThinking);
     const openai = getOpenAIClient();
     const convex = await getAuthenticatedConvexClient(getToken);
+    const latestUserText = extractLatestUserText(messages);
+    const memoryContext = await buildMemoryContext({ convex, userId, query: latestUserText });
     const encoder = new TextEncoder();
     const responseId = `assistant-${Date.now()}`;
 
@@ -108,7 +164,7 @@ export async function POST(req: NextRequest) {
     }));
 
     const allMessages: OpenAI.ChatCompletionMessageParam[] = [
-      buildSystemMessage(availableTools.length > 0),
+      buildSystemMessage(availableTools.length > 0, memoryContext),
       ...messages,
     ];
 

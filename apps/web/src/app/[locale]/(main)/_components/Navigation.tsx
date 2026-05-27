@@ -101,6 +101,7 @@ export function Navigation() {
   const create = useMutation(api.documents.create);
   const starredDocuments = useQuery(api.documents.getStarred, {});
   const t = useTranslations("Navigation");
+  const memoriesLabel = t.has("memories") ? t("memories") : "Long-term memory";
 
   const hasStarredDocuments = starredDocuments && starredDocuments.length > 0;
   const knowledgeBaseDocuments = useQuery(
@@ -243,7 +244,7 @@ export function Navigation() {
               active={panelOpen}
             />
             <Item
-              label={t("memories")}
+              label={memoriesLabel}
               icon={Brain}
               onClick={() => router.push("/memories")}
               active={pathname.includes("/memories")}

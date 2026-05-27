@@ -1,5 +1,6 @@
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
+import { retrieveRelevantMemories } from "@notion/ai/server";
 import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
@@ -31,17 +32,28 @@ export async function executeMemoryRead(
 
   try {
     const memories = await context.convex.query(api.agentMemories.listAgentMemories, {
-      query,
+      query: undefined,
       type,
-      limit,
+      limit: 100,
     });
+    const retrieval = query
+      ? await retrieveRelevantMemories({
+        userId: context.userId,
+        query,
+        memories,
+        topK: limit,
+      })
+      : { memories: memories.slice(0, limit), retrieval: "fallback" as const };
 
     return {
       query,
       type,
-      memories,
+      memories: retrieval.memories,
       metadata: {
-        count: Array.isArray(memories) ? memories.length : 0,
+        count: retrieval.memories.length,
+        retrieval: retrieval.retrieval,
+        unavailable: retrieval.unavailable,
+        error: retrieval.error,
       },
     };
   } catch (error) {

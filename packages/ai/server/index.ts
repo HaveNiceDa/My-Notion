@@ -1,6 +1,7 @@
 export { streamChat } from "./chat";
 export { streamRAG } from "./rag";
 export { retrieveKnowledge } from "./retrieval";
+export { retrieveRelevantMemories, fallbackRankMemories } from "./memory";
 export { updateDocument, deleteDocumentChunks, initKnowledgeBase } from "./documents";
 export { ConvexDataSource } from "./data-source";
 export {
@@ -24,6 +25,10 @@ export type {
   DocumentDeleteParams,
   KnowledgeBaseDocument,
 } from "./types";
+export type {
+  AgentMemoryRecord,
+  RelevantMemoryResult,
+} from "./memory";
 export type {
   KnowledgeRetrievalFilters,
   KnowledgeRetrievalOptions,

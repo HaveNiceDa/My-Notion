@@ -16,6 +16,16 @@ interface DocumentIndexMetadata {
   documentPath?: string[];
 }
 
+interface AgentMemoryIndexItem {
+  id: string;
+  type: string;
+  content: string;
+  reason?: string;
+  confidence?: number;
+  source?: string;
+  updatedAt?: number;
+}
+
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;
   private userId: string;
@@ -366,6 +376,59 @@ export class QdrantVectorStoreWrapper {
     }
   }
 
+  async upsertAgentMemory(userId: string, memory: AgentMemoryIndexItem): Promise<void> {
+    const documentId = memoryDocumentId(memory.id);
+    const contentHash = hashText(`${memory.type}:${memory.content}:${memory.reason ?? ""}:${memory.updatedAt ?? ""}`);
+    const pageContent = [
+      `类型: ${memory.type}`,
+      `内容: ${memory.content}`,
+      memory.reason ? `原因: ${memory.reason}` : "",
+    ].filter(Boolean).join("\n");
+
+    await this.deleteDocumentChunks(documentId);
+    const [embedding] = await this.embeddings.embedDocuments([pageContent]);
+    await this.addDocumentChunks(userId, documentId, [{
+      chunkIndex: 0,
+      pageContent,
+      metadata: {
+        kind: "agentMemory",
+        memoryId: memory.id,
+        memoryType: memory.type,
+        title: `Memory: ${memory.type}`,
+        updatedAt: memory.updatedAt ?? Date.now(),
+        tags: ["agent-memory", memory.type],
+        confidence: memory.confidence ?? 1,
+        source: memory.source,
+      },
+      embedding,
+    }], contentHash);
+  }
+
+  async semanticSearchAgentMemories(
+    query: string,
+    activeMemoryIds: string[],
+    k: number = 8,
+    minScore: number = 0.35,
+  ): Promise<Array<{ memoryId: string; score: number }>> {
+    if (activeMemoryIds.length === 0) {
+      return [];
+    }
+
+    const results = await this.semanticSearch(
+      query,
+      Math.min(Math.max(k, 1), activeMemoryIds.length),
+      minScore,
+      { includeDocumentIds: activeMemoryIds.map(memoryDocumentId) },
+    );
+
+    return results
+      .map((result) => ({
+        memoryId: stringValue(result.document.metadata.memoryId),
+        score: result.score,
+      }))
+      .filter((result) => result.memoryId);
+  }
+
   async needsReembedding(
     documentId: string,
     content: string,
@@ -466,6 +529,7 @@ function tokenizeQuery(query: string): string[] {
 
 function payloadIndexDefinitions(): Array<{ field: string; schema: "keyword" | "integer" }> {
   return [
+    { field: "metadata.kind", schema: "keyword" },
     { field: "metadata.documentId", schema: "keyword" },
     { field: "metadata.title", schema: "keyword" },
     { field: "metadata.contentHash", schema: "keyword" },
@@ -474,6 +538,18 @@ function payloadIndexDefinitions(): Array<{ field: string; schema: "keyword" | "
     { field: "metadata.headingPath", schema: "keyword" },
     { field: "metadata.documentPath", schema: "keyword" },
   ];
+}
+
+function memoryDocumentId(memoryId: string): string {
+  return `memory:${memoryId}`;
+}
+
+function hashText(text: string): string {
+  let hash = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    hash = (hash * 31 + text.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash).toString(16);
 }
 
 function extractHeadingMetadata(content: string): { headings: string[]; headingPath: string } {

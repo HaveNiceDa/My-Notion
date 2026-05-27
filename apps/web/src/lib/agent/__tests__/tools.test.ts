@@ -3,6 +3,7 @@ import { describe, it, expect, vi } from "vitest";
 vi.mock("@notion/ai/server", () => ({
   getOrCreateVectorStore: vi.fn(),
   retrieveKnowledge: vi.fn(),
+  retrieveRelevantMemories: vi.fn(),
 }));
 
 vi.mock("@notion/ai/utils", () => ({
@@ -24,7 +25,7 @@ import {
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
-import { retrieveKnowledge } from "@notion/ai/server";
+import { retrieveKnowledge, retrieveRelevantMemories } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
 describe("buildAvailableTools", () => {
@@ -348,18 +349,23 @@ describe("Memory tools", () => {
     const query = vi.fn().mockResolvedValue([
       { id: "m1", type: "preference", content: "用户偏好中文", matchScore: 1 },
     ]);
+    vi.mocked(retrieveRelevantMemories).mockResolvedValue({
+      memories: [{ id: "m1", type: "preference", content: "用户偏好中文", matchScore: 0.8 }],
+      retrieval: "semantic",
+    });
     const result = await executeMemoryRead(
       { query: "中文", type: "preference", limit: 3 },
       { ...baseCtx, convex: { query } as any },
     ) as any;
 
     expect(query).toHaveBeenCalledWith(expect.anything(), {
-      query: "中文",
+      query: undefined,
       type: "preference",
-      limit: 3,
+      limit: 100,
     });
     expect(result.memories).toHaveLength(1);
     expect(result.metadata.count).toBe(1);
+    expect(result.metadata.retrieval).toBe("semantic");
   });
 
   it("memory_write 默认 dry-run，不写入 Convex", async () => {
