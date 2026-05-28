@@ -24,7 +24,7 @@
 | 2.1 | Spec 模式 | LLM 先输出结构化规格说明（JSON Schema），用户确认后再执行 | P1 | ❌ 未做 |
 | 2.2 | Plan 模式 | LLM 先输出执行计划（多步骤），逐步执行并展示进度 | P1 | ❌ 未做 |
 | 2.3 | MCP 接入 | 通过 DashScope Responses API 接入百炼托管 MCP 服务 | P2 | ❌ 未做 |
-| 2.4 | Tool 结果缓存 | 相同 query 5 分钟内复用 tool result，LRU 缓存 | P2 | ❌ 未做 |
+| 2.4 | Tool 结果缓存 | 只读 Tool 已支持跨请求 5 分钟 TTL + LRU 进程内缓存，并按 userId、toolName、规范化参数和当前文档上下文隔离；写类 Tool 不进入跨请求缓存，错误结果不缓存 | P2 | ✅ 完成 |
 | 2.5 | 对话上下文压缩 | `context-compression.ts` 已实现，长对话 token 超限时自动压缩历史消息 | P1 | ✅ 完成 |
 | 2.6 | 流式重试 | 网络中断时支持断点续传或自动重试 | P2 | ❌ 未做 |
 
@@ -41,13 +41,12 @@
 
 ### 6.4 建议优先级排序
 
-1. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
-2. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-3. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
-4. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
-5. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
-6. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
-7. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
+1. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
+2. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
+3. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
+4. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
+5. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
+6. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
 
 ---
 
@@ -67,7 +66,7 @@
 
 | 模块 | 当前状态 | 主要缺口 |
 |---|---|---|
-| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
+| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志；只读 Tool 已具备 5 分钟 TTL + LRU 跨请求缓存，单次运行内仍保留同名同参去重 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入 | 缺少写入/编辑/停用后的显式 Qdrant 同步、embedding 状态可视化、专门的 Memory E2E / eval |
 | RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
@@ -195,7 +194,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 1. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
 2. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
 3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
-4. **P2：Tool 结果缓存 + Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补缓存、计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
+4. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 5. **P2：task_plan / MCP adapter** — 扩展计划工具和受控外部工具适配，作为 M18 前置探索。
 
 ## 下一批里程碑建议

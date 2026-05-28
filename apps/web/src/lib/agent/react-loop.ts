@@ -4,6 +4,11 @@ import type { ToolContext } from "./tools/types";
 import { enqueueEvent, streamModelResponse, applyThinkingParams } from "./stream";
 import type { AgentTracer } from "./trace";
 import { getErrorMessage, summarizeForTrace } from "./trace";
+import {
+  getCachedToolResult,
+  getToolSignature,
+  setCachedToolResult,
+} from "./tool-result-cache";
 
 const MAX_ITERATIONS = 5;
 
@@ -151,6 +156,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           toolName: toolCall.function.name,
           resultLength: cachedResult.length,
           cached: true,
+          cacheScope: "run",
         });
         debugLog(`[ReAct] tool ${toolCall.function.name} 命中本轮缓存`);
         enqueueEvent(controller, encoder, {
@@ -162,6 +168,31 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           role: "tool",
           tool_call_id: toolCall.id,
           content: cachedResult,
+        });
+        continue;
+      }
+
+      const sharedCachedResult = getCachedToolResult(toolCall.function.name, args, toolContext);
+      if (sharedCachedResult.hit && sharedCachedResult.value) {
+        toolResultCache.set(toolSignature, sharedCachedResult.value);
+        trace?.event("tool_end", nowMs() - toolStartedAt, {
+          iteration: iteration + 1,
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+          resultLength: sharedCachedResult.value.length,
+          cached: true,
+          cacheScope: "shared",
+        });
+        debugLog(`[ReAct] tool ${toolCall.function.name} 命中跨请求缓存`);
+        enqueueEvent(controller, encoder, {
+          type: "tool-call-result",
+          toolCallId: toolCall.id,
+          result: JSON.parse(sharedCachedResult.value),
+        });
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: sharedCachedResult.value,
         });
         continue;
       }
@@ -190,7 +221,9 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       const resultStr = JSON.stringify(result);
       toolResultCache.set(toolSignature, resultStr);
       const parsedResult = result as Record<string, unknown>;
-      if (!(parsedResult && typeof parsedResult === "object" && "error" in parsedResult)) {
+      const hasError = Boolean(parsedResult && typeof parsedResult === "object" && "error" in parsedResult);
+      if (!hasError) {
+        setCachedToolResult(toolCall.function.name, args, toolContext, resultStr);
         trace?.event("tool_end", nowMs() - toolStartedAt, {
           iteration: iteration + 1,
           toolCallId: toolCall.id,
@@ -265,22 +298,4 @@ function debugLog(message: string): void {
   if (process.env.AGENT_DEBUG_LOG === "1" || process.env.AGENT_DEBUG_LOG === "true") {
     console.log(message);
   }
-}
-
-function getToolSignature(toolName: string, args: Record<string, unknown>): string {
-  return `${toolName}:${JSON.stringify(sortObject(args))}`;
-}
-
-function sortObject(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map(sortObject);
-  }
-  if (!value || typeof value !== "object") {
-    return value;
-  }
-  return Object.fromEntries(
-    Object.entries(value as Record<string, unknown>)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([key, nestedValue]) => [key, sortObject(nestedValue)]),
-  );
 }
