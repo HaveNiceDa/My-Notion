@@ -57,6 +57,7 @@ export function useAIChatStream(
     let currentReasoningContent = "";
     let pendingRender = false;
     let completedToolResults: ToolCallResult[] = [];
+    const toolArgumentsById = new Map<string, string>();
 
     const flushMessages = () => {
       pendingRender = false;
@@ -127,20 +128,31 @@ export function useAIChatStream(
           onChunk: (chunk: string) => { currentContent += chunk; scheduleRender(); },
           onReasoningChunk: (chunk: string) => { if (state.enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
           onToolCallStart: (toolCallId: string, toolName: string) => {
+            toolArgumentsById.set(toolCallId, "");
             state.setToolCalls((prev) => [
               ...prev.filter((tc) => tc.id !== toolCallId),
               { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
             ]);
-            completedToolResults.push({ id: toolCallId, name: toolName, status: "calling" });
+            completedToolResults.push({ id: toolCallId, name: toolName, parameters: {}, status: "calling" });
           },
           onToolCallDelta: (toolCallId: string, delta: string) => {
+            const nextArguments = `${toolArgumentsById.get(toolCallId) ?? ""}${delta}`;
+            toolArgumentsById.set(toolCallId, nextArguments);
             state.setToolCalls((prev) =>
               prev.map((tc) =>
                 tc.id === toolCallId
-                  ? { ...tc, parameters: { ...tc.parameters, arguments: `${tc.parameters.arguments ?? ""}${delta}` }, status: "executing" }
+                  ? { ...tc, parameters: { ...tc.parameters, arguments: nextArguments }, status: "executing" }
                   : tc,
               ),
             );
+            const existingIdx = completedToolResults.findIndex((r) => r.id === toolCallId);
+            if (existingIdx >= 0) {
+              completedToolResults[existingIdx] = {
+                ...completedToolResults[existingIdx],
+                parameters: { arguments: nextArguments },
+                status: "executing",
+              };
+            }
           },
           onToolResultDelta: (toolCallId: string, delta: string) => {
             state.setToolCalls((prev) =>
@@ -159,7 +171,12 @@ export function useAIChatStream(
             );
             const existingIdx = completedToolResults.findIndex((r) => r.id === toolCallId);
             if (existingIdx >= 0) {
-              completedToolResults[existingIdx] = { ...completedToolResults[existingIdx], status: "completed", result };
+              completedToolResults[existingIdx] = {
+                ...completedToolResults[existingIdx],
+                parameters: { arguments: toolArgumentsById.get(toolCallId) ?? "" },
+                status: "completed",
+                result,
+              };
             }
           },
           onComplete: async () => {

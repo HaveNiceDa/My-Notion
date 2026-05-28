@@ -38,6 +38,8 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
     trace,
   } = params;
   const messages = [...params.messages];
+  const toolResultCache = new Map<string, string>();
+  let reachedMaxIterationsWithTools = false;
 
   console.log(
     `[ReAct] 开始循环 model=${model} tools=[${tools.map((t) => "function" in t ? t.function.name : t.type).join(",")}] messages=${messages.length} thinking=${enableThinking}`,
@@ -130,6 +132,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       } catch {
         args = {};
       }
+      const toolSignature = getToolSignature(toolCall.function.name, args);
 
       console.log(`[ReAct] 执行 tool: ${toolCall.function.name} args=${JSON.stringify(args)}`);
       const toolStartedAt = nowMs();
@@ -139,6 +142,29 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
         toolName: toolCall.function.name,
         argsSummary: summarizeForTrace(args),
       });
+
+      const cachedResult = toolResultCache.get(toolSignature);
+      if (cachedResult) {
+        trace?.event("tool_end", nowMs() - toolStartedAt, {
+          iteration: iteration + 1,
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+          resultLength: cachedResult.length,
+          cached: true,
+        });
+        console.log(`[ReAct] tool ${toolCall.function.name} 命中本轮缓存`);
+        enqueueEvent(controller, encoder, {
+          type: "tool-call-result",
+          toolCallId: toolCall.id,
+          result: JSON.parse(cachedResult),
+        });
+        messages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: cachedResult,
+        });
+        continue;
+      }
 
       // 注入流式输出能力到 tool 上下文，tool 可向前端推送 tool-result-delta 事件
       const toolContextWithStream: ToolContext = {
@@ -162,6 +188,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       }
 
       const resultStr = JSON.stringify(result);
+      toolResultCache.set(toolSignature, resultStr);
       const parsedResult = result as Record<string, unknown>;
       if (!(parsedResult && typeof parsedResult === "object" && "error" in parsedResult)) {
         trace?.event("tool_end", nowMs() - toolStartedAt, {
@@ -196,11 +223,58 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       stopReason: iteration === MAX_ITERATIONS - 1 ? "max_iterations" : "continue",
       messageCount: messages.length,
     });
+    if (iteration === MAX_ITERATIONS - 1) {
+      reachedMaxIterationsWithTools = true;
+    }
 
     // 继续下一轮迭代，让 LLM 基于工具结果决定是否继续调用
+  }
+
+  if (reachedMaxIterationsWithTools) {
+    console.warn("[ReAct] 达到最大工具迭代次数，强制进入最终回答阶段");
+    messages.push({
+      role: "system",
+      content:
+        "Tool iteration limit reached. Do not call any more tools. Use the available tool results above to answer the user's latest request directly.",
+    });
+    const finalParams: Record<string, unknown> = {
+      model,
+      messages,
+      max_tokens: 4096,
+      stream: true,
+    };
+    applyThinkingParams(finalParams, enableThinking);
+    await streamModelResponse({
+      openai,
+      params: finalParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
+      controller,
+      encoder,
+      responseId,
+      enableThinking,
+      trace,
+      iteration: MAX_ITERATIONS + 1,
+    });
   }
 }
 
 function nowMs(): number {
   return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
+function getToolSignature(toolName: string, args: Record<string, unknown>): string {
+  return `${toolName}:${JSON.stringify(sortObject(args))}`;
+}
+
+function sortObject(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sortObject);
+  }
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, nestedValue]) => [key, sortObject(nestedValue)]),
+  );
 }

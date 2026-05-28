@@ -13,7 +13,9 @@ export interface ToolCallResult {
   id: string;
   name: string;
   status: "calling" | "executing" | "completed" | "error";
+  parameters?: Record<string, unknown>;
   result?: unknown;
+  duplicateCount?: number;
 }
 
 export interface ChatMessage {

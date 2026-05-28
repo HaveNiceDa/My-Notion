@@ -79,9 +79,10 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
       const persistedMessageId = isConvexMessageId(message.id)
         ? message.id as Id<"aiMessages">
         : undefined;
+        const groupedResults = groupRepeatedToolResults(persistedResults);
       return (
         <div className="space-y-1.5 mt-2">
-          {persistedResults.map((tr) => (
+          {groupedResults.map((tr) => (
             <ToolCallCard key={tr.id} toolResult={tr} messageId={persistedMessageId} />
           ))}
         </div>
@@ -89,12 +90,21 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
     }
 
     if (activeToolCalls && activeToolCalls.length > 0) {
+      const groupedResults = groupRepeatedToolResults(
+        activeToolCalls.map((tc) => ({
+          id: tc.id,
+          name: tc.name,
+          parameters: tc.parameters,
+          status: tc.status,
+          result: tc.result,
+        })),
+      );
       return (
         <div className="space-y-1.5 mt-2">
-          {activeToolCalls.map((tc) => (
+          {groupedResults.map((tc) => (
             <ToolCallCard
               key={tc.id}
-              toolResult={{ id: tc.id, name: tc.name, status: tc.status, result: tc.result }}
+              toolResult={tc}
             />
           ))}
         </div>
@@ -184,6 +194,54 @@ MessageItem.displayName = "MessageItem";
 
 function isConvexMessageId(id: string): boolean {
   return !/^\d+$/.test(id);
+}
+
+function groupRepeatedToolResults(results: ToolCallResult[]): ToolCallResult[] {
+  const grouped = new Map<string, ToolCallResult>();
+  const output: ToolCallResult[] = [];
+
+  for (const result of results) {
+    if (!isReadOnlyTool(result.name)) {
+      output.push(result);
+      continue;
+    }
+    const key = `${result.name}:${getToolArguments(result)}`;
+    const existing = grouped.get(key);
+    if (!existing) {
+      grouped.set(key, { ...result, duplicateCount: 1 });
+      output.push(grouped.get(key)!);
+      continue;
+    }
+    existing.duplicateCount = (existing.duplicateCount ?? 1) + 1;
+    if (result.status !== "completed") {
+      existing.status = result.status;
+    }
+    existing.result = result.result ?? existing.result;
+  }
+
+  return output;
+}
+
+function isReadOnlyTool(toolName: string): boolean {
+  return [
+    "knowledge_search",
+    "web_search",
+    "web_extract",
+    "document_search",
+    "document_read",
+    "memory_read",
+  ].includes(toolName);
+}
+
+function getToolArguments(result: ToolCallResult): string {
+  const args = result.parameters?.arguments;
+  if (typeof args === "string") return args;
+  if (result.result && typeof result.result === "object") {
+    const record = result.result as Record<string, unknown>;
+    const fallback = record.url ?? record.finalUrl ?? record.query;
+    if (typeof fallback === "string") return fallback;
+  }
+  return JSON.stringify(result.parameters ?? {});
 }
 
 interface MessageListProps {

@@ -59,6 +59,31 @@ interface MemoryWriteToolResult {
   error?: string;
 }
 
+interface WebExtractToolResult {
+  url?: string;
+  finalUrl?: string;
+  title?: string;
+  description?: string;
+  content?: string;
+  error?: string;
+  metadata?: {
+    truncated?: boolean;
+  };
+}
+
+interface DocumentSearchItem {
+  documentId: string;
+  title: string;
+  path?: string[];
+  updatedAt?: number;
+}
+
+interface DocumentSearchToolResult {
+  query?: string;
+  documents?: DocumentSearchItem[];
+  error?: string;
+}
+
 type DocumentUpdateMode = "overwrite" | "append";
 type DocumentWriteStatus = "applied" | "cancelled";
 
@@ -219,6 +244,72 @@ function WebSearchResult({ result }: { result: { query?: string; results?: { tit
           <div className="min-w-0">
             <span className="truncate font-medium text-foreground block">{item.title}</span>
             <span className="text-muted-foreground line-clamp-2">{item.snippet}</span>
+          </div>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+function WebExtractResult({ result }: { result: WebExtractToolResult }) {
+  const t = useTranslations("AI");
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  return (
+    <a
+      href={result.finalUrl ?? result.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        <Globe className="h-3 w-3 shrink-0 text-muted-foreground" />
+        <span className="truncate font-medium text-foreground">
+          {result.title ?? result.finalUrl ?? result.url}
+        </span>
+      </div>
+      {result.description && (
+        <div className="mt-1 line-clamp-2 text-muted-foreground">{result.description}</div>
+      )}
+      {result.content && (
+        <div className="mt-1 line-clamp-3 text-muted-foreground">{result.content}</div>
+      )}
+      {result.metadata?.truncated && (
+        <div className="mt-1 text-[10px] text-muted-foreground">{t("webExtractTruncated")}</div>
+      )}
+    </a>
+  );
+}
+
+function DocumentSearchResult({ result }: { result: DocumentSearchToolResult }) {
+  const t = useTranslations("AI");
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  const documents = result.documents ?? [];
+  if (documents.length === 0) {
+    return <span className="text-muted-foreground text-xs">{t("noDocumentsFound")}</span>;
+  }
+
+  return (
+    <div className="space-y-1">
+      {documents.map((doc) => (
+        <a
+          key={doc.documentId}
+          href={getDocumentUrl(doc.documentId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-start gap-2 rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors cursor-pointer"
+        >
+          <FileText className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground" />
+          <div className="min-w-0">
+            <span className="truncate font-medium text-foreground block">{doc.title || t("untitledDocument")}</span>
+            {doc.path && doc.path.length > 0 && (
+              <span className="text-muted-foreground line-clamp-1">{doc.path.join(" / ")}</span>
+            )}
           </div>
         </a>
       ))}
@@ -519,12 +610,16 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       ? t("knowledgeSearchTool")
       : toolName === "document_read"
         ? t("documentReadTool")
+        : toolName === "document_search"
+          ? t("documentSearchTool")
         : toolName === "document_write"
           ? t("documentWriteTool")
           : toolName === "document_update"
             ? t("documentUpdateTool")
             : toolName === "web_search"
-          ? t("webSearchTool")
+              ? t("webSearchTool")
+              : toolName === "web_extract"
+                ? t("webExtractTool")
         : toolName === "memory_read"
           ? t("memoryReadTool")
           : toolName === "memory_write"
@@ -536,9 +631,11 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       ? BookOpen
       : toolName === "document_read"
         ? FileText
+        : toolName === "document_search"
+          ? FileText
         : toolName === "document_write" || toolName === "document_update"
           ? PencilLine
-        : toolName === "web_search"
+        : toolName === "web_search" || toolName === "web_extract"
           ? Globe
           : Brain;
 
@@ -577,6 +674,15 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       const typedResult = result as unknown as { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string };
       resultContent = <WebSearchResult result={typedResult} />;
       resultSummary = typedResult.query ?? null;
+    } else if (toolName === "web_extract") {
+      const typedResult = result as unknown as WebExtractToolResult;
+      resultContent = <WebExtractResult result={typedResult} />;
+      resultSummary = typedResult.title ?? typedResult.finalUrl ?? typedResult.url ?? null;
+    } else if (toolName === "document_search") {
+      const typedResult = result as unknown as DocumentSearchToolResult;
+      resultContent = <DocumentSearchResult result={typedResult} />;
+      const count = typedResult.documents?.length ?? 0;
+      resultSummary = count > 0 ? t("referencedDocsCount", { count }) : t("noDocumentsFound");
     } else if (toolName === "memory_read") {
       const typedResult = result as unknown as MemoryReadToolResult;
       resultContent = <MemoryReadResult result={typedResult} />;
@@ -613,6 +719,11 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       >
         <ToolIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
         <span className="font-medium text-foreground">{displayName}</span>
+        {(toolResult.duplicateCount ?? 1) > 1 && (
+          <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+            {t("toolRepeated", { count: toolResult.duplicateCount ?? 1 })}
+          </span>
+        )}
         {isRunning && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-1" />}
         {isCompleted && <Check className="h-3 w-3 text-green-600 dark:text-green-400 ml-1" />}
         {resultSummary && !expanded && (
