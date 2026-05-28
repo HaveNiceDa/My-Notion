@@ -3,7 +3,9 @@ import {
   documentReadTool,
   documentUpdateTool,
   documentWriteTool,
+  documentSearchTool,
   webSearchTool,
+  webExtractTool,
   memoryReadTool,
   memoryWriteTool,
 } from "./definitions";
@@ -18,6 +20,8 @@ export function buildAvailableTools(
   const tools: AgentTool[] = [
     knowledgeSearchTool,
     webSearchTool,
+    webExtractTool,
+    documentSearchTool,
     memoryReadTool,
     memoryWriteTool,
     documentWriteTool,

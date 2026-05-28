@@ -19,3 +19,4 @@ export * from "./logic/getDocumentPath";
 export * from "./logic/toggleStar";
 export * from "./logic/toggleKnowledgeBase";
 export * from "./logic/getKnowledgeBaseDocuments";
+export * from "./logic/searchMetadata";

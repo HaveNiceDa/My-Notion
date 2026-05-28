@@ -41,14 +41,13 @@
 
 ### 6.4 建议优先级排序
 
-1. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
-2. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
-3. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-4. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
-5. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
-6. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
-7. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
-8. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
+1. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
+2. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
+3. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
+4. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
+5. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
+6. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
+7. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
 
 ---
 
@@ -69,7 +68,7 @@
 | 模块 | 当前状态 | 主要缺口 |
 |---|---|---|
 | Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
-| Tools | Web Agent 已有 `knowledge_search`、`web_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少文档结构化搜索、网页正文提取、任务/计划等工具 |
+| Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入 | 缺少写入/编辑/停用后的显式 Qdrant 同步、embedding 状态可视化、专门的 Memory E2E / eval |
 | RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
 | Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
@@ -81,8 +80,8 @@
 | P0 | `knowledge_search` 混合检索 | 从单一向量检索升级为 semantic / keyword / metadata 多路召回，默认 `balanced` | `packages/ai/server/retrieval/` + Web Agent tool | ✅ 已完成 |
 | P0 | `memory_read` / `memory_write` | Agent 可读取长期记忆，也可在用户确认后沉淀偏好或事实 | Web Agent tool + `packages/ai/server/memory.ts` | ✅ 已完成 |
 | P0 | `document_write` / `document_update` | 让 Web Agent 能安全创建、追加、替换当前文档内容，写操作默认需要确认 | `apps/web/src/lib/agent/tools/` + Convex 文档 mutation，复用 CLI/MCP dry-run 契约 | ✅ Web Agent dry-run + 前端确认落库已完成；CLI/MCP 已完成 |
-| P1 | `web_extract` | 给定 URL 抽取正文、标题、摘要，补足 `web_search` 只能返回搜索结果的问题 | 参考 `docs/ai-docs/tool/dashscope-web-extractor.md` | ❌ 未做 |
-| P1 | `document_search` | 在用户文档元数据中按标题/路径/最近编辑进行结构化搜索，不走向量 | Convex 查询 + Agent tool；可复用 CLI/MCP docs search 语义 | ❌ Web Agent 未做；CLI/MCP 已完成 |
+| P1 | `web_extract` | 给定 URL 抽取正文、标题、摘要，补足 `web_search` 只能返回搜索结果的问题 | `apps/web/src/lib/agent/tools/web-extract.ts` | ✅ 已完成：支持 URL 校验、私网拦截、超时、HTML 清洗和长度裁剪 |
+| P1 | `document_search` | 在用户文档元数据中按标题/路径/最近编辑进行结构化搜索，不走向量 | Convex 查询 + Agent tool；可复用 CLI/MCP docs search 语义 | ✅ Web Agent 已完成；CLI/MCP 已完成 |
 | P1 | `task_plan` | 生成多步骤计划并把计划事件流式展示，为后续 Plan 模式铺路 | Agent tool 或 Agent 内部 planner | ❌ 未做 |
 | P2 | MCP tool adapter | 复用现有 CLI/MCP 写文档能力，让 Agent 可通过受控 MCP 工具扩展 | `packages/my-notion-skills` / MCP server / Web Agent adapter | ⏳ CLI/MCP server 已有，Web Agent adapter 未做 |
 
@@ -193,15 +192,15 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
-2. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
-3. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
-4. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
-5. **P2：Tool 结果缓存 + Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补缓存、计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
+1. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
+2. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
+3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
+4. **P2：Tool 结果缓存 + Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补缓存、计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
+5. **P2：task_plan / MCP adapter** — 扩展计划工具和受控外部工具适配，作为 M18 前置探索。
 
 ## 下一批里程碑建议
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；Agent 基础性能 trace 已完成；剩余标准是新增 `web_extract` / `document_search` |
+| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ✅ 主线完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；Agent 基础性能 trace 已完成；`web_extract` / `document_search` 已完成 |
 | M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |

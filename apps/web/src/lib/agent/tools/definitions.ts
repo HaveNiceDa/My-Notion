@@ -1,6 +1,8 @@
 import { executeKnowledgeSearch } from "./knowledge-search";
 import { executeDocumentRead } from "./document-read";
 import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
+import { executeDocumentSearch } from "./document-search";
+import { executeWebExtract } from "./web-extract";
 import { executeWebSearch } from "./web-search";
 import { executeMemoryRead, executeMemoryWrite } from "./memory";
 import type { ToolContext } from "./types";
@@ -134,6 +136,53 @@ export const webSearchTool: AgentTool = {
     required: ["query"],
   },
   execute: async (args, ctx) => executeWebSearch(args, ctx),
+};
+
+// 网页正文抽取 tool：读取用户提供的 URL 内容，补足 web_search 只返回搜索结果的缺口
+export const webExtractTool: AgentTool = {
+  name: "web_extract",
+  description:
+    "读取指定网页 URL 的标题、描述和正文内容。当用户粘贴链接、要求总结/分析某个网页、或需要访问搜索结果中的具体页面时使用。只支持 http/https，不访问本地或私网地址。",
+  parameters: {
+    type: "object",
+    properties: {
+      url: {
+        type: "string",
+        description: "要读取的完整网页 URL，必须包含 http 或 https。",
+      },
+    },
+    required: ["url"],
+  },
+  execute: async (args, ctx) => executeWebExtract(args, ctx),
+};
+
+// 文档元数据搜索 tool：按标题、路径和最近编辑时间查找文档，不读取正文
+export const documentSearchTool: AgentTool = {
+  name: "document_search",
+  description:
+    "按标题、层级路径或最近编辑时间搜索用户的 My-Notion 文档元数据。用于查找某个文档在哪里、列出最近文档、定位要读取或更新的文档；如果需要正文内容，再配合 knowledge_search 或 document_read。",
+  parameters: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "可选，文档标题或路径关键词；为空时返回最近编辑的文档。",
+      },
+      limit: {
+        type: "number",
+        description: "返回数量，默认 10，最大 30。",
+      },
+      includeArchived: {
+        type: "boolean",
+        description: "是否包含归档文档，默认 false。",
+      },
+      updatedAfter: {
+        type: "number",
+        description: "可选，只返回该时间戳之后编辑过的文档。",
+      },
+    },
+  },
+  execute: async (args, ctx) => executeDocumentSearch(args, ctx),
 };
 
 // 长期记忆读取 tool：读取用户偏好、项目事实和阶段性对话结论

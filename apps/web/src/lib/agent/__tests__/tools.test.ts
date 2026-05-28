@@ -20,23 +20,29 @@ import {
   documentReadTool,
   documentUpdateTool,
   documentWriteTool,
+  documentSearchTool,
+  webExtractTool,
   webSearchTool,
   memoryReadTool,
   memoryWriteTool,
 } from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
 import { executeDocumentUpdate, executeDocumentWrite } from "../tools/document-write";
+import { executeDocumentSearch } from "../tools/document-search";
+import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
 import { retrieveKnowledge, retrieveRelevantMemories } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
 describe("buildAvailableTools", () => {
-  it("始终包含 knowledge_search 和 web_search", () => {
+  it("始终包含只读基础工具和写入预览工具", () => {
     const tools = buildAvailableTools();
     const names = tools.map((t) => t.name);
     expect(names).toContain("knowledge_search");
     expect(names).toContain("web_search");
+    expect(names).toContain("web_extract");
+    expect(names).toContain("document_search");
     expect(names).toContain("memory_read");
     expect(names).toContain("memory_write");
     expect(names).toContain("document_write");
@@ -81,6 +87,16 @@ describe("AgentTool 定义", () => {
     expect(webSearchTool.parameters.required).toContain("query");
   });
 
+  it("webExtractTool 有 url 必填参数", () => {
+    expect(webExtractTool.name).toBe("web_extract");
+    expect(webExtractTool.parameters.required).toContain("url");
+  });
+
+  it("documentSearchTool 是可选 query 的元数据搜索工具", () => {
+    expect(documentSearchTool.name).toBe("document_search");
+    expect(documentSearchTool.parameters.required).toBeUndefined();
+  });
+
   it("memoryWriteTool 默认要求 content", () => {
     expect(memoryWriteTool.name).toBe("memory_write");
     expect(memoryWriteTool.parameters.required).toContain("content");
@@ -98,6 +114,8 @@ describe("AgentTool 定义", () => {
       knowledgeSearchTool,
       documentReadTool,
       webSearchTool,
+      webExtractTool,
+      documentSearchTool,
       memoryReadTool,
       memoryWriteTool,
       documentWriteTool,
@@ -105,6 +123,39 @@ describe("AgentTool 定义", () => {
     ]) {
       expect(tool.description.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("Document search tool", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("缺少 Convex client 时返回可恢复错误", async () => {
+    const result = await executeDocumentSearch({ query: "roadmap" }, baseCtx) as any;
+    expect(result.documents).toEqual([]);
+    expect(result.recoverable).toBe(true);
+  });
+
+  it("调用 Convex 元数据搜索并限制 limit", async () => {
+    const query = vi.fn().mockResolvedValue({
+      query: "roadmap",
+      documents: [{ documentId: "doc-1", title: "Roadmap", path: ["Roadmap"] }],
+      metadata: { count: 1 },
+    });
+    const result = await executeDocumentSearch(
+      { query: " roadmap ", limit: 100, includeArchived: true, updatedAfter: 123 },
+      { ...baseCtx, convex: { query } as any },
+    ) as any;
+
+    expect(query).toHaveBeenCalledWith(expect.anything(), {
+      query: "roadmap",
+      limit: 30,
+      includeArchived: true,
+      updatedAfter: 123,
+    });
+    expect(result.documents[0].title).toBe("Roadmap");
   });
 });
 
@@ -394,6 +445,49 @@ describe("executeWebSearch", () => {
 
     await executeWebSearch({ query: "test" }, ctx);
     expect(chunks.length).toBe(0);
+  });
+});
+
+describe("executeWebExtract", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("拒绝空 URL 和本地地址", async () => {
+    await expect(executeWebExtract({ url: "" }, baseCtx))
+      .resolves.toMatchObject({ error: "url is required", recoverable: true });
+    await expect(executeWebExtract({ url: "http://localhost:3000" }, baseCtx))
+      .resolves.toMatchObject({ error: "local and private network URLs are not allowed", recoverable: true });
+  });
+
+  it("抓取 HTML 并抽取标题、描述和正文", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      url: "https://example.com/page",
+      headers: { get: () => "text/html; charset=utf-8" },
+      text: async () => `
+        <html>
+          <head>
+            <title>Example &amp; Demo</title>
+            <meta name="description" content="Demo page" />
+            <style>.hidden{}</style>
+          </head>
+          <body><script>bad()</script><main>Hello <strong>world</strong></main></body>
+        </html>
+      `,
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await executeWebExtract({ url: "https://example.com/page" }, baseCtx) as any;
+
+    expect(result.title).toBe("Example & Demo");
+    expect(result.description).toBe("Demo page");
+    expect(result.content).toContain("Hello world");
+    expect(result.content).not.toContain("bad()");
+    expect(fetchMock).toHaveBeenCalledWith(expect.any(URL), expect.objectContaining({
+      redirect: "follow",
+    }));
   });
 });
 
