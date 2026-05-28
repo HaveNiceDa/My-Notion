@@ -42,7 +42,7 @@
 ### 6.4 建议优先级排序
 
 1. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-2. **7.3 RAG 质量补齐** — 必要时接二阶段 rerank，并补 retrieval eval
+2. **7.3 RAG 质量补齐** — 扩展真实数据 retrieval eval，必要时接二阶段 rerank
 3. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
 4. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
 5. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
@@ -69,8 +69,8 @@
 | Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志；只读 Tool 已具备 5 分钟 TTL + LRU 跨请求缓存，单次运行内仍保留同名同参去重 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入；写入/编辑/停用后会清理 `memory_read` 缓存并显式同步 Qdrant | 缺少 embedding 状态可视化、专门的 Memory E2E / eval；Qdrant 不可用时目前仅 warning 降级，未持久化待重试状态 |
-| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query；`balanced` / `deep` 已接入 Context Packing，支持按文档合并相邻 chunk 和 token budget 裁剪；Citation Quality 已输出引用覆盖率、来源分数解释、packing 说明和是否建议补充检索 | 缺少二阶段 rerank；召回质量仍需 eval 验证 |
-| Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
+| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query；`balanced` / `deep` 已接入 Context Packing，支持按文档合并相邻 chunk 和 token budget 裁剪；Citation Quality 已输出引用覆盖率、来源分数解释、packing 说明和是否建议补充检索；已新增 synthetic golden set 验证 hybrid retrieval + packing + citation quality | 缺少真实数据 retrieval eval、二阶段 rerank；召回质量仍需线上样本验证 |
+| Harness | 已有最小 retrieval eval golden set，覆盖 hybrid 融合、metadata 补召回和 token budget 截断 | 尚未系统化 Agent eval / regression harness、Tool Trace Replay 和 CI smoke |
 
 ### 7.1 更多更丰富的 Tool
 
@@ -184,7 +184,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 |---|---|
 | Golden Set | 固定一组 Agent 问题、期望 tool 调用、期望引用来源和答案要点 |
 | Tool Trace Replay | 记录 ReAct 每轮 tool_calls、arguments、result 摘要，支持回放对比 |
-| Retrieval Eval | 评估 recall@k、citation coverage、是否检索到目标文档 |
+| Retrieval Eval | ✅ 最小 synthetic golden set 已完成：评估是否检索到目标文档、citation coverage、source coverage、packing 合并和 truncation；后续扩展真实数据集 |
 | Memory Eval | 验证用户偏好是否被正确读取、是否错误写入、是否能删除后不再生效 |
 | Regression CLI | 提供 `pnpm eval:agent` 或类似命令，CI 中先跑轻量 smoke set |
 
@@ -193,7 +193,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 ## 建议实施顺序
 
 1. **P1：Memory 增强收尾** — 补 embedding 状态可视化、失败重试队列和 Memory E2E / eval。
-2. **P1：RAG 质量补齐** — 根据 retrieval eval 决定是否接二阶段 rerank。
+2. **P1：RAG 质量补齐** — 将 synthetic golden set 扩展为真实数据 retrieval eval，再根据结果决定是否接二阶段 rerank。
 3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
 4. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 5. **P2：task_plan / MCP adapter** — 扩展计划工具和受控外部工具适配，作为 M18 前置探索。
@@ -203,4 +203,4 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
 | M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ✅ 主线完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；Agent 基础性能 trace 已完成；`web_extract` / `document_search` 已完成 |
-| M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |
+| M18 | Agent Harness + Eval | ✅ 最小 retrieval golden set 已有；后续补 tool trace replay、memory eval、真实数据 retrieval eval，并接入最小 CI smoke |
