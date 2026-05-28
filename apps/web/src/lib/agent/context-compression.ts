@@ -136,7 +136,7 @@ export async function compressContext(
   const oldMessages = messages.slice(0, cutIndex);
   const recentMessages = messages.slice(cutIndex);
 
-  console.log(
+  debugLog(
     `[ContextCompression] 估算 ${estimatedTokens} tokens > ${MAX_CONTEXT_TOKENS}，压缩前 ${cutIndex} 条消息`,
   );
 
@@ -144,7 +144,7 @@ export async function compressContext(
     const summaryMessage = await summarizeMessages(openai, model, oldMessages);
     const compressed = [summaryMessage, ...recentMessages];
     const newTokens = estimateTokens(compressed);
-    console.log(
+    debugLog(
       `[ContextCompression] 压缩完成: ${messages.length} → ${compressed.length} 条消息，${estimatedTokens} → ${newTokens} tokens`,
     );
     return compressed;
@@ -152,5 +152,11 @@ export async function compressContext(
     console.error("[ContextCompression] 摘要失败，回退到截断:", error);
     // 摘要失败时回退：直接截断旧消息，仅保留最近部分
     return recentMessages;
+  }
+}
+
+function debugLog(message: string): void {
+  if (process.env.AGENT_DEBUG_LOG === "1" || process.env.AGENT_DEBUG_LOG === "true") {
+    console.log(message);
   }
 }

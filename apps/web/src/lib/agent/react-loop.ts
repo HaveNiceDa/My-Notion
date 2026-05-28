@@ -41,12 +41,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
   const toolResultCache = new Map<string, string>();
   let reachedMaxIterationsWithTools = false;
 
-  console.log(
+  debugLog(
     `[ReAct] 开始循环 model=${model} tools=[${tools.map((t) => "function" in t ? t.function.name : t.type).join(",")}] messages=${messages.length} thinking=${enableThinking}`,
   );
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-    console.log(`[ReAct] 迭代 ${iteration + 1}/${MAX_ITERATIONS}`);
+    debugLog(`[ReAct] 迭代 ${iteration + 1}/${MAX_ITERATIONS}`);
     const iterationStartedAt = nowMs();
     trace?.mark("react_iteration_start", {
       iteration: iteration + 1,
@@ -82,7 +82,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
     // LLM 没有调用任何 tool → 直接输出文本，循环结束
     if (pendingToolCalls.length === 0) {
-      console.log(`[ReAct] 迭代 ${iteration + 1} 无 tool_calls，循环结束`);
+      debugLog(`[ReAct] 迭代 ${iteration + 1} 无 tool_calls，循环结束`);
       trace?.event("react_iteration_end", nowMs() - iterationStartedAt, {
         iteration: iteration + 1,
         toolCallCount: 0,
@@ -92,7 +92,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       break;
     }
 
-    console.log(
+    debugLog(
       `[ReAct] 迭代 ${iteration + 1} 收到 ${pendingToolCalls.length} 个 tool_calls: [${pendingToolCalls.map((tc) => tc.function.name).join(",")}]`,
     );
 
@@ -134,7 +134,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       }
       const toolSignature = getToolSignature(toolCall.function.name, args);
 
-      console.log(`[ReAct] 执行 tool: ${toolCall.function.name} args=${JSON.stringify(args)}`);
+      debugLog(`[ReAct] 执行 tool: ${toolCall.function.name} args=${JSON.stringify(args)}`);
       const toolStartedAt = nowMs();
       trace?.mark("tool_start", {
         iteration: iteration + 1,
@@ -152,7 +152,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           resultLength: cachedResult.length,
           cached: true,
         });
-        console.log(`[ReAct] tool ${toolCall.function.name} 命中本轮缓存`);
+        debugLog(`[ReAct] tool ${toolCall.function.name} 命中本轮缓存`);
         enqueueEvent(controller, encoder, {
           type: "tool-call-result",
           toolCallId: toolCall.id,
@@ -200,7 +200,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           sourceCount: Array.isArray(parsedResult?.sources) ? parsedResult.sources.length : undefined,
         });
       }
-      console.log(
+      debugLog(
         `[ReAct] tool ${toolCall.function.name} 执行完成 resultLength=${resultStr.length}`,
       );
 
@@ -259,6 +259,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
 function nowMs(): number {
   return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
+function debugLog(message: string): void {
+  if (process.env.AGENT_DEBUG_LOG === "1" || process.env.AGENT_DEBUG_LOG === "true") {
+    console.log(message);
+  }
 }
 
 function getToolSignature(toolName: string, args: Record<string, unknown>): string {

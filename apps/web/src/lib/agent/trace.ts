@@ -100,7 +100,12 @@ export function getErrorMessage(error: unknown): string {
 }
 
 function defaultTraceSink(event: AgentTraceEvent) {
+  if (!isAgentTraceLogEnabled()) return;
   console.info("[AgentTrace]", JSON.stringify(event));
+}
+
+function isAgentTraceLogEnabled(): boolean {
+  return process.env.AGENT_TRACE_LOG === "1" || process.env.AGENT_TRACE_LOG === "true";
 }
 
 function nowMs(): number {

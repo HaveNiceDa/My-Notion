@@ -71,26 +71,16 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
     }
   };
 
-  const renderToolResults = () => {
+  const getGroupedToolResults = () => {
     if (message.role !== "assistant") return null;
 
     const persistedResults = message.toolResults;
     if (persistedResults && persistedResults.length > 0) {
-      const persistedMessageId = isConvexMessageId(message.id)
-        ? message.id as Id<"aiMessages">
-        : undefined;
-        const groupedResults = groupRepeatedToolResults(persistedResults);
-      return (
-        <div className="space-y-1.5 mt-2">
-          {groupedResults.map((tr) => (
-            <ToolCallCard key={tr.id} toolResult={tr} messageId={persistedMessageId} />
-          ))}
-        </div>
-      );
+      return groupRepeatedToolResults(persistedResults);
     }
 
     if (activeToolCalls && activeToolCalls.length > 0) {
-      const groupedResults = groupRepeatedToolResults(
+      return groupRepeatedToolResults(
         activeToolCalls.map((tc) => ({
           id: tc.id,
           name: tc.name,
@@ -99,19 +89,36 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
           result: tc.result,
         })),
       );
-      return (
-        <div className="space-y-1.5 mt-2">
-          {groupedResults.map((tc) => (
-            <ToolCallCard
-              key={tc.id}
-              toolResult={tc}
-            />
-          ))}
-        </div>
-      );
     }
 
     return null;
+  };
+
+  const renderToolResults = (placement: "before" | "after") => {
+    const groupedResults = getGroupedToolResults();
+    if (!groupedResults || groupedResults.length === 0) return null;
+
+    const persistedMessageId = isConvexMessageId(message.id)
+      ? message.id as Id<"aiMessages">
+      : undefined;
+    const filteredResults = groupedResults.filter((toolResult) =>
+      placement === "after"
+        ? requiresUserConfirmation(toolResult.name)
+        : !requiresUserConfirmation(toolResult.name),
+    );
+    if (filteredResults.length === 0) return null;
+
+    return (
+      <div className={cn("space-y-1.5", placement === "before" ? "mb-2" : "mt-2")}>
+        {filteredResults.map((toolResult) => (
+          <ToolCallCard
+            key={toolResult.id}
+            toolResult={toolResult}
+            messageId={persistedMessageId}
+          />
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -160,8 +167,9 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
               : "bg-background text-foreground pb-1",
           )}
         >
+          {renderToolResults("before")}
           {renderMessageContent()}
-          {renderToolResults()}
+          {renderToolResults("after")}
         </div>
 
         <div
@@ -231,6 +239,10 @@ function isReadOnlyTool(toolName: string): boolean {
     "document_read",
     "memory_read",
   ].includes(toolName);
+}
+
+function requiresUserConfirmation(toolName: string): boolean {
+  return ["document_write", "document_update", "memory_write"].includes(toolName);
 }
 
 function getToolArguments(result: ToolCallResult): string {
