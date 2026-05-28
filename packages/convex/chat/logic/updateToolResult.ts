@@ -4,6 +4,7 @@ import { v } from "convex/values";
 const toolResultStatusValidator = v.union(
   v.literal("saved"),
   v.literal("cancelled"),
+  v.literal("applied"),
 );
 
 export const updateToolResultState = mutation({
@@ -12,6 +13,7 @@ export const updateToolResultState = mutation({
     toolCallId: v.string(),
     status: toolResultStatusValidator,
     savedMemoryId: v.optional(v.id("agentMemories")),
+    savedDocumentId: v.optional(v.id("documents")),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -32,7 +34,13 @@ export const updateToolResultState = mutation({
     const parsedContent = parseMessageContent(message.content);
     const toolResults = parseToolResults(parsedContent.toolResults);
     const nextToolResults = toolResults.map((toolResult) => {
-      if (toolResult.id !== args.toolCallId || toolResult.name !== "memory_write") {
+      if (toolResult.id !== args.toolCallId) {
+        return toolResult;
+      }
+      const isMemoryWrite = toolResult.name === "memory_write";
+      const isDocumentWrite =
+        toolResult.name === "document_write" || toolResult.name === "document_update";
+      if (!isMemoryWrite && !isDocumentWrite) {
         return toolResult;
       }
 
@@ -44,8 +52,15 @@ export const updateToolResultState = mutation({
         ...toolResult,
         result: {
           ...result,
-          memoryWriteStatus: args.status,
-          savedMemoryId: args.savedMemoryId,
+          ...(isMemoryWrite
+            ? {
+              memoryWriteStatus: args.status,
+              savedMemoryId: args.savedMemoryId,
+            }
+            : {
+              documentWriteStatus: args.status,
+              savedDocumentId: args.savedDocumentId,
+            }),
           confirmationRequired: false,
         },
       };

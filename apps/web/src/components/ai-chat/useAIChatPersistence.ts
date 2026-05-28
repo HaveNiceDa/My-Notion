@@ -73,11 +73,12 @@ export function useAIChatPersistence() {
     conversationId: Id<"aiConversations">,
     content: string,
     role: "user" | "assistant",
-  ) => {
+  ): Promise<Id<"aiMessages"> | null> => {
     try {
-      await convex.mutation(api.aiChat.addMessage, { conversationId, content, role });
+      return await convex.mutation(api.aiChat.addMessage, { conversationId, content, role });
     } catch (err) {
       console.error("[Chat] Failed to save message to Convex:", err);
+      return null;
     }
   });
 

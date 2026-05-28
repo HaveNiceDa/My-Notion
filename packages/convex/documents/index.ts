@@ -10,6 +10,7 @@ export * from "./logic/batchRemove";
 export * from "./logic/getSearch";
 export * from "./logic/getById";
 export * from "./logic/update";
+export * from "./logic/markdownWrite";
 export * from "./logic/setCoverImage";
 export * from "./logic/removeIcon";
 export * from "./logic/removeCoverImage";

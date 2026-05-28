@@ -179,7 +179,20 @@ export function useAIChatStream(
             if (finalToolResults) {
               messageData.toolResults = JSON.stringify(finalToolResults);
             }
-            await persistence.saveMessage(currentConversationId!, JSON.stringify(messageData), "assistant");
+            const savedAssistantMessageId = await persistence.saveMessage(
+              currentConversationId!,
+              JSON.stringify(messageData),
+              "assistant",
+            );
+            if (savedAssistantMessageId) {
+              state.setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === assistantMessageId
+                    ? { ...msg, id: savedAssistantMessageId }
+                    : msg,
+                ),
+              );
+            }
             const title = currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话";
             await persistence.updateConversationTitle(currentConversationId!, title);
             await state.refreshConversations();

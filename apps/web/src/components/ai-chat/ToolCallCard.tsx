@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
-import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain } from "lucide-react";
+import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain, PencilLine } from "lucide-react";
 import { cn } from "@notion/business/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -56,6 +56,30 @@ interface MemoryWriteToolResult {
   memory?: MemoryItem;
   memoryWriteStatus?: "saved" | "cancelled";
   savedMemoryId?: string;
+  error?: string;
+}
+
+type DocumentUpdateMode = "overwrite" | "append";
+type DocumentWriteStatus = "applied" | "cancelled";
+
+interface DocumentWritePreview {
+  documentId?: string;
+  title?: string;
+  currentTitle?: string;
+  contentMarkdown?: string;
+  parentDocument?: string;
+  mode?: DocumentUpdateMode;
+}
+
+interface DocumentWriteToolResult {
+  dryRun?: boolean;
+  confirmationRequired?: boolean;
+  action?: "document_write" | "document_update";
+  summary?: string;
+  message?: string;
+  document?: DocumentWritePreview;
+  documentWriteStatus?: DocumentWriteStatus;
+  savedDocumentId?: string;
   error?: string;
 }
 
@@ -340,11 +364,154 @@ function MemoryWriteResult({
   );
 }
 
+function DocumentWriteResult({
+  result,
+  toolCallId,
+  messageId,
+}: {
+  result: DocumentWriteToolResult;
+  toolCallId: string;
+  messageId?: Id<"aiMessages">;
+}) {
+  const t = useTranslations("AI");
+  const createDocument = useMutation(api.documents.createFromMarkdown);
+  const updateDocument = useMutation(api.documents.updateFromMarkdown);
+  const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
+  const initialStatus = result.documentWriteStatus === "applied"
+    ? "applied"
+    : result.documentWriteStatus === "cancelled"
+      ? "cancelled"
+      : "idle";
+  const [status, setStatus] = useState<"idle" | "saving" | "applied" | "cancelled" | "error">(initialStatus);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  const document = result.document;
+  const isUpdate = result.action === "document_update";
+  const canConfirm = Boolean(result.dryRun && result.confirmationRequired && document);
+
+  async function handleApplyDocumentWrite() {
+    if (!document) return;
+    setStatus("saving");
+    setErrorMessage(null);
+
+    try {
+      const savedDocument = isUpdate
+        ? await updateDocument({
+          documentId: document.documentId ?? "",
+          title: document.title,
+          contentMarkdown: document.contentMarkdown,
+          mode: document.mode ?? "append",
+        })
+        : await createDocument({
+          title: document.title ?? t("untitledDocument"),
+          contentMarkdown: document.contentMarkdown,
+          parentDocument: document.parentDocument,
+        });
+
+      if (messageId) {
+        await updateToolResultState({
+          messageId,
+          toolCallId,
+          status: "applied",
+          savedDocumentId: savedDocument.id as Id<"documents">,
+        });
+      }
+      setStatus("applied");
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function handleCancelDocumentWrite() {
+    setStatus("cancelled");
+    if (!messageId) return;
+
+    try {
+      await updateToolResultState({ messageId, toolCallId, status: "cancelled" });
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  const title = document?.title ?? document?.currentTitle ?? t("untitledDocument");
+  const preview = document?.contentMarkdown ?? "";
+  const savedId = result.savedDocumentId;
+
+  return (
+    <div className="space-y-2 rounded-md bg-background/70 px-2 py-1.5 text-xs">
+      <div className="font-medium text-foreground">
+        {status === "cancelled"
+          ? t("documentWriteCancelled")
+          : status === "applied" || !result.dryRun
+            ? t("documentWriteApplied")
+            : isUpdate
+              ? t("documentUpdatePreview")
+              : t("documentWritePreview")}
+      </div>
+      {result.confirmationRequired && status === "idle" && (
+        <div className="text-muted-foreground">{t("documentConfirmationRequired")}</div>
+      )}
+      <div className="rounded-md border border-border bg-muted/30 p-2">
+        <div className="font-medium text-foreground">{title}</div>
+        {isUpdate && (
+          <div className="text-[10px] text-muted-foreground">
+            {t("documentUpdateMode")}: {document?.mode ?? "append"}
+          </div>
+        )}
+        {preview && (
+          <pre className="mt-2 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-background p-2 text-[11px] text-muted-foreground">
+            {preview}
+          </pre>
+        )}
+      </div>
+      {savedId && (
+        <a
+          href={getDocumentUrl(savedId)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex text-[11px] font-medium text-primary hover:underline"
+        >
+          {t("openDocument")}
+        </a>
+      )}
+      {errorMessage && (
+        <div className="text-destructive">{t("documentWriteFailed")}: {errorMessage}</div>
+      )}
+      {canConfirm && status !== "applied" && status !== "cancelled" && (
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleApplyDocumentWrite}
+            disabled={status === "saving"}
+            className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {status === "saving" ? t("documentWriting") : t("applyDocumentWrite")}
+          </button>
+          <button
+            type="button"
+            onClick={handleCancelDocumentWrite}
+            disabled={status === "saving"}
+            className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
+          >
+            {t("cancelDocumentWrite")}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
   const isRunning = toolResult.status === "calling" || toolResult.status === "executing";
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const toolName = toolResult.name;
   const displayName =
@@ -352,7 +519,11 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       ? t("knowledgeSearchTool")
       : toolName === "document_read"
         ? t("documentReadTool")
-        : toolName === "web_search"
+        : toolName === "document_write"
+          ? t("documentWriteTool")
+          : toolName === "document_update"
+            ? t("documentUpdateTool")
+            : toolName === "web_search"
           ? t("webSearchTool")
         : toolName === "memory_read"
           ? t("memoryReadTool")
@@ -365,6 +536,8 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       ? BookOpen
       : toolName === "document_read"
         ? FileText
+        : toolName === "document_write" || toolName === "document_update"
+          ? PencilLine
         : toolName === "web_search"
           ? Globe
           : Brain;
@@ -384,6 +557,22 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
       const typedResult = result as unknown as { document?: { id: string; title: string } };
       resultContent = <DocumentReadResult result={typedResult} />;
       resultSummary = typedResult.document?.title ?? null;
+    } else if (toolName === "document_write" || toolName === "document_update") {
+      const typedResult = result as unknown as DocumentWriteToolResult;
+      resultContent = (
+        <DocumentWriteResult
+          result={typedResult}
+          toolCallId={toolResult.id}
+          messageId={messageId}
+        />
+      );
+      resultSummary = typedResult.documentWriteStatus === "cancelled"
+        ? t("documentWriteCancelled")
+        : typedResult.documentWriteStatus === "applied" || !typedResult.dryRun
+          ? t("documentWriteApplied")
+          : toolName === "document_update"
+            ? t("documentUpdatePreview")
+            : t("documentWritePreview");
     } else if (toolName === "web_search") {
       const typedResult = result as unknown as { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string };
       resultContent = <WebSearchResult result={typedResult} />;

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useRef, useEffect, useMemo, useState, useCallback } from "react";
-import { useMemoizedFn } from "ahooks";
 import { formatRelativeTime } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import {
@@ -64,20 +63,11 @@ export function AIChatPanel() {
   const [showConvList, setShowConvList] = useState(false);
   const [conversationSearch, setConversationSearch] = useState("");
 
-  const scrollToBottom = useMemoizedFn(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  });
-
-  useEffect(() => {
-    const timer = setTimeout(scrollToBottom, 50);
-    return () => clearTimeout(timer);
-  }, [messages, scrollToBottom]);
-
-  const handleInputChange = useMemoizedFn((value: string) => {
+  const handleInputChange = useCallback((value: string) => {
     setInput(value);
-  });
+  }, [setInput]);
 
-  const formatTime = useMemoizedFn((ts: number) => formatRelativeTime(ts, tc));
+  const formatTime = useCallback((ts: number) => formatRelativeTime(ts, tc), [tc]);
 
   const filteredConversations = useMemo(() => {
     const query = conversationSearch.trim().toLowerCase();
@@ -87,14 +77,14 @@ export function AIChatPanel() {
     );
   }, [conversationSearch, conversations]);
 
-  const handleLoadConversation = useMemoizedFn((id: Id<"aiConversations">) => {
+  const handleLoadConversation = useCallback((id: Id<"aiConversations">) => {
     loadConversation(id);
     setShowConvList(false);
-  });
+  }, [loadConversation]);
 
-  const handlePromptSelect = useMemoizedFn((prompt: string) => {
+  const handlePromptSelect = useCallback((prompt: string) => {
     setInput(prompt);
-  });
+  }, [setInput]);
 
   const convListRef = useRef<HTMLDivElement>(null);
   const convButtonRef = useRef<HTMLButtonElement>(null);

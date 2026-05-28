@@ -18,11 +18,14 @@ import { buildAvailableTools } from "../tools/registry";
 import {
   knowledgeSearchTool,
   documentReadTool,
+  documentUpdateTool,
+  documentWriteTool,
   webSearchTool,
   memoryReadTool,
   memoryWriteTool,
 } from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
+import { executeDocumentUpdate, executeDocumentWrite } from "../tools/document-write";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
 import { retrieveKnowledge, retrieveRelevantMemories } from "@notion/ai/server";
@@ -36,24 +39,28 @@ describe("buildAvailableTools", () => {
     expect(names).toContain("web_search");
     expect(names).toContain("memory_read");
     expect(names).toContain("memory_write");
+    expect(names).toContain("document_write");
   });
 
   it("无当前文档时不包含 document_read", () => {
     const tools = buildAvailableTools();
     const names = tools.map((t) => t.name);
     expect(names).not.toContain("document_read");
+    expect(names).not.toContain("document_update");
   });
 
-  it("有当前文档时包含 document_read", () => {
+  it("有当前文档时包含 document_read 和 document_update", () => {
     const tools = buildAvailableTools({ id: "doc-1", title: "Test" });
     const names = tools.map((t) => t.name);
     expect(names).toContain("document_read");
+    expect(names).toContain("document_update");
   });
 
   it("文档 id 为空字符串时不包含 document_read", () => {
     const tools = buildAvailableTools({ id: "", title: "Test" });
     const names = tools.map((t) => t.name);
     expect(names).not.toContain("document_read");
+    expect(names).not.toContain("document_update");
   });
 });
 
@@ -79,6 +86,13 @@ describe("AgentTool 定义", () => {
     expect(memoryWriteTool.parameters.required).toContain("content");
   });
 
+  it("document_write 和 document_update 使用 dry-run 写入契约", () => {
+    expect(documentWriteTool.name).toBe("document_write");
+    expect(documentWriteTool.parameters.required).toEqual(["title", "contentMarkdown"]);
+    expect(documentUpdateTool.name).toBe("document_update");
+    expect(documentUpdateTool.parameters).toHaveProperty("properties");
+  });
+
   it("每个 tool 都有非空 description", () => {
     for (const tool of [
       knowledgeSearchTool,
@@ -86,9 +100,59 @@ describe("AgentTool 定义", () => {
       webSearchTool,
       memoryReadTool,
       memoryWriteTool,
+      documentWriteTool,
+      documentUpdateTool,
     ]) {
       expect(tool.description.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("Document write tools", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("document_write 默认只返回 dry-run 预览", async () => {
+    const result = await executeDocumentWrite(
+      { title: "会议纪要", contentMarkdown: "# Agenda\n- A" },
+      baseCtx,
+    ) as any;
+
+    expect(result.dryRun).toBe(true);
+    expect(result.confirmationRequired).toBe(true);
+    expect(result.action).toBe("document_write");
+    expect(result.document.title).toBe("会议纪要");
+    expect(result.document.contentMarkdown).toContain("Agenda");
+  });
+
+  it("document_write 空标题或内容返回可恢复错误", async () => {
+    await expect(executeDocumentWrite({ title: "", contentMarkdown: "x" }, baseCtx))
+      .resolves.toMatchObject({ error: "title is required", recoverable: true });
+    await expect(executeDocumentWrite({ title: "x", contentMarkdown: "" }, baseCtx))
+      .resolves.toMatchObject({ error: "contentMarkdown is required", recoverable: true });
+  });
+
+  it("document_update 可从当前文档上下文补 documentId", async () => {
+    const result = await executeDocumentUpdate(
+      { contentMarkdown: "补充内容", mode: "append" },
+      { ...baseCtx, currentDocument: { id: "doc-1", title: "当前文档" } },
+    ) as any;
+
+    expect(result.dryRun).toBe(true);
+    expect(result.confirmationRequired).toBe(true);
+    expect(result.action).toBe("document_update");
+    expect(result.document.documentId).toBe("doc-1");
+    expect(result.document.currentTitle).toBe("当前文档");
+    expect(result.document.mode).toBe("append");
+  });
+
+  it("document_update 无 documentId 或无变更时返回可恢复错误", async () => {
+    await expect(executeDocumentUpdate({ contentMarkdown: "x" }, baseCtx))
+      .resolves.toMatchObject({ error: "documentId is required", recoverable: true });
+    await expect(executeDocumentUpdate({ documentId: "doc-1" }, baseCtx))
+      .resolves.toMatchObject({ error: "title or contentMarkdown is required", recoverable: true });
   });
 });
 

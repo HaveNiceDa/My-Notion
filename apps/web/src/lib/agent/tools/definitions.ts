@@ -1,5 +1,6 @@
 import { executeKnowledgeSearch } from "./knowledge-search";
 import { executeDocumentRead } from "./document-read";
+import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
 import { executeWebSearch } from "./web-search";
 import { executeMemoryRead, executeMemoryWrite } from "./memory";
 import type { ToolContext } from "./types";
@@ -51,6 +52,70 @@ export const documentReadTool: AgentTool = {
     properties: {},
   },
   execute: async (_args, ctx) => executeDocumentRead(ctx.currentDocument),
+};
+
+// 文档创建 tool：只生成写入预览，真实落库必须由用户在前端确认触发
+export const documentWriteTool: AgentTool = {
+  name: "document_write",
+  description:
+    "创建新的 My-Notion 文档。当用户明确要求新建文档、整理成新页面、生成会议纪要/计划等内容时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。",
+  parameters: {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "新文档标题。",
+      },
+      contentMarkdown: {
+        type: "string",
+        description: "新文档 Markdown 内容。",
+      },
+      parentDocument: {
+        type: "string",
+        description: "可选父文档 ID。仅在用户明确要求创建为当前文档子页或指定父文档时传入。",
+      },
+      dryRun: {
+        type: "boolean",
+        description: "必须保持 true 或省略；真实写入由用户在前端确认后执行。",
+      },
+    },
+    required: ["title", "contentMarkdown"],
+  },
+  execute: async (args, ctx) => executeDocumentWrite(args, ctx),
+};
+
+// 文档更新 tool：只生成变更预览，真实落库必须由用户在前端确认触发
+export const documentUpdateTool: AgentTool = {
+  name: "document_update",
+  description:
+    "更新已有 My-Notion 文档。可追加或替换当前文档内容，也可改标题。当用户要求修改/追加/重写当前文档时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。",
+  parameters: {
+    type: "object",
+    properties: {
+      documentId: {
+        type: "string",
+        description: "目标文档 ID；如果要更新当前页面，可省略并由系统使用当前文档 ID。",
+      },
+      title: {
+        type: "string",
+        description: "可选，新标题。",
+      },
+      contentMarkdown: {
+        type: "string",
+        description: "可选，要追加或替换的 Markdown 内容。",
+      },
+      mode: {
+        type: "string",
+        enum: ["append", "overwrite"],
+        description: "内容更新模式。append=追加到现有内容后；overwrite=替换全文。默认 append。",
+      },
+      dryRun: {
+        type: "boolean",
+        description: "必须保持 true 或省略；真实写入由用户在前端确认后执行。",
+      },
+    },
+  },
+  execute: async (args, ctx) => executeDocumentUpdate(args, ctx),
 };
 
 // 联网搜索 tool：通过 SerpAPI 调用 Google 搜索获取实时信息

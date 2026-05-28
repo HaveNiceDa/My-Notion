@@ -1,6 +1,8 @@
 import {
   knowledgeSearchTool,
   documentReadTool,
+  documentUpdateTool,
+  documentWriteTool,
   webSearchTool,
   memoryReadTool,
   memoryWriteTool,
@@ -9,14 +11,21 @@ import type { AgentTool } from "./definitions";
 import type { CurrentDocumentContext } from "./types";
 
 // 根据上下文构建可用 tool 列表
-// knowledge_search / web_search / memory tools 始终可用，document_read 仅在有当前文档时可用
+// knowledge_search / web_search / memory / document_write 始终可用，当前文档相关 tool 仅在有上下文时启用
 export function buildAvailableTools(
   currentDocument?: CurrentDocumentContext | null,
 ): AgentTool[] {
-  const tools: AgentTool[] = [knowledgeSearchTool, webSearchTool, memoryReadTool, memoryWriteTool];
+  const tools: AgentTool[] = [
+    knowledgeSearchTool,
+    webSearchTool,
+    memoryReadTool,
+    memoryWriteTool,
+    documentWriteTool,
+  ];
 
   if (currentDocument?.id) {
     tools.push(documentReadTool);
+    tools.push(documentUpdateTool);
   }
 
   return tools;

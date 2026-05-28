@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -76,10 +76,13 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
 
     const persistedResults = message.toolResults;
     if (persistedResults && persistedResults.length > 0) {
+      const persistedMessageId = isConvexMessageId(message.id)
+        ? message.id as Id<"aiMessages">
+        : undefined;
       return (
         <div className="space-y-1.5 mt-2">
           {persistedResults.map((tr) => (
-            <ToolCallCard key={tr.id} toolResult={tr} messageId={message.id as Id<"aiMessages">} />
+            <ToolCallCard key={tr.id} toolResult={tr} messageId={persistedMessageId} />
           ))}
         </div>
       );
@@ -179,6 +182,10 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
 
 MessageItem.displayName = "MessageItem";
 
+function isConvexMessageId(id: string): boolean {
+  return !/^\d+$/.test(id);
+}
+
 interface MessageListProps {
   messages: ChatMessage[];
   isLoading: boolean;
@@ -196,6 +203,8 @@ export const MessageList = React.memo(
     conversationCreatedAt,
   }: MessageListProps) => {
     const t = useTranslations("AI");
+    const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const shouldAutoScrollRef = useRef(true);
 
     const formatDate = useMemo(() => {
       if (!conversationCreatedAt) return null;
@@ -209,8 +218,27 @@ export const MessageList = React.memo(
 
     const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
 
+    const handleScroll = () => {
+      const element = scrollContainerRef.current;
+      if (!element) return;
+      const distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
+      shouldAutoScrollRef.current = distanceToBottom < 40;
+    };
+
+    useEffect(() => {
+      if (!shouldAutoScrollRef.current) return;
+      const timer = window.setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }, [messages, toolCalls, isLoading, messagesEndRef]);
+
     return (
-      <div className="flex-1 overflow-y-auto px-4 py-2">
+      <div
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-4 py-2"
+      >
         {conversationCreatedAt && (
           <div className="mb-4 text-center">
             <div className="inline-block text-muted-foreground px-3 py-0.5 rounded-full text-xs">
