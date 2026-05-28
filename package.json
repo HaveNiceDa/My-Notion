@@ -14,6 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "eval:retrieval": "tsx packages/ai/eval/retrieval-eval-runner.ts",
     "e2e:cli": "node scripts/e2e-my-notion-cli.mjs",
     "e2e:cli:errors": "node scripts/e2e-my-notion-cli-errors.mjs",
     "e2e:mcp": "node scripts/e2e-my-notion-mcp.mjs",
