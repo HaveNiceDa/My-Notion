@@ -2,6 +2,8 @@ import OpenAI from "openai";
 import type { AgentTool } from "./tools/definitions";
 import type { ToolContext } from "./tools/types";
 import { enqueueEvent, streamModelResponse, applyThinkingParams } from "./stream";
+import type { AgentTracer } from "./trace";
+import { getErrorMessage, summarizeForTrace } from "./trace";
 
 const MAX_ITERATIONS = 5;
 
@@ -16,6 +18,7 @@ interface ReActLoopParams {
   controller: ReadableStreamDefaultController<Uint8Array>;
   encoder: TextEncoder;
   responseId: string;
+  trace?: AgentTracer;
 }
 
 // ReAct 循环引擎：LLM 自主决策是否调用工具，支持多轮工具调用
@@ -32,6 +35,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
     controller,
     encoder,
     responseId,
+    trace,
   } = params;
   const messages = [...params.messages];
 
@@ -41,6 +45,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
   for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
     console.log(`[ReAct] 迭代 ${iteration + 1}/${MAX_ITERATIONS}`);
+    const iterationStartedAt = nowMs();
+    trace?.mark("react_iteration_start", {
+      iteration: iteration + 1,
+      maxIterations: MAX_ITERATIONS,
+      messageCount: messages.length,
+    });
 
     // 用 Record 类型构建参数，以便合并 DashScope 扩展参数
     const createParams: Record<string, unknown> = {
@@ -64,11 +74,19 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       encoder,
       responseId,
       enableThinking,
+      trace,
+      iteration: iteration + 1,
     });
 
     // LLM 没有调用任何 tool → 直接输出文本，循环结束
     if (pendingToolCalls.length === 0) {
       console.log(`[ReAct] 迭代 ${iteration + 1} 无 tool_calls，循环结束`);
+      trace?.event("react_iteration_end", nowMs() - iterationStartedAt, {
+        iteration: iteration + 1,
+        toolCallCount: 0,
+        stopReason: "no_tool_calls",
+        messageCount: messages.length,
+      });
       break;
     }
 
@@ -88,6 +106,11 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       const tool = toolMap.get(toolCall.function.name);
       if (!tool) {
         console.warn(`[ReAct] 未知 tool: ${toolCall.function.name}`);
+        trace?.mark("tool_unknown", {
+          iteration: iteration + 1,
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+        });
         enqueueEvent(controller, encoder, {
           type: "tool-call-result",
           toolCallId: toolCall.id,
@@ -109,6 +132,13 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       }
 
       console.log(`[ReAct] 执行 tool: ${toolCall.function.name} args=${JSON.stringify(args)}`);
+      const toolStartedAt = nowMs();
+      trace?.mark("tool_start", {
+        iteration: iteration + 1,
+        toolCallId: toolCall.id,
+        toolName: toolCall.function.name,
+        argsSummary: summarizeForTrace(args),
+      });
 
       // 注入流式输出能力到 tool 上下文，tool 可向前端推送 tool-result-delta 事件
       const toolContextWithStream: ToolContext = {
@@ -121,10 +151,28 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       try {
         result = await tool.execute(args, toolContextWithStream);
       } catch (error) {
-        result = { error: error instanceof Error ? error.message : String(error) };
+        const errorMessage = getErrorMessage(error);
+        trace?.event("tool_error", nowMs() - toolStartedAt, {
+          iteration: iteration + 1,
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+          error: errorMessage,
+        });
+        result = { error: errorMessage };
       }
 
       const resultStr = JSON.stringify(result);
+      const parsedResult = result as Record<string, unknown>;
+      if (!(parsedResult && typeof parsedResult === "object" && "error" in parsedResult)) {
+        trace?.event("tool_end", nowMs() - toolStartedAt, {
+          iteration: iteration + 1,
+          toolCallId: toolCall.id,
+          toolName: toolCall.function.name,
+          resultLength: resultStr.length,
+          recoverable: typeof parsedResult?.recoverable === "boolean" ? parsedResult.recoverable : undefined,
+          sourceCount: Array.isArray(parsedResult?.sources) ? parsedResult.sources.length : undefined,
+        });
+      }
       console.log(
         `[ReAct] tool ${toolCall.function.name} 执行完成 resultLength=${resultStr.length}`,
       );
@@ -142,6 +190,17 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       });
     }
 
+    trace?.event("react_iteration_end", nowMs() - iterationStartedAt, {
+      iteration: iteration + 1,
+      toolCallCount: pendingToolCalls.length,
+      stopReason: iteration === MAX_ITERATIONS - 1 ? "max_iterations" : "continue",
+      messageCount: messages.length,
+    });
+
     // 继续下一轮迭代，让 LLM 基于工具结果决定是否继续调用
   }
+}
+
+function nowMs(): number {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
 }

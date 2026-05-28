@@ -1,6 +1,8 @@
 import { describe, it, expect, vi } from "vitest";
 import { enqueueEvent, applyThinkingParams, streamModelResponse } from "../stream";
 import type { AgentStreamEvent, StreamModelOptions } from "../stream";
+import { AgentTracer } from "../trace";
+import type { AgentTraceEvent } from "../trace";
 
 describe("enqueueEvent", () => {
   it("将事件编码为 NDJSON 行并写入 controller", () => {
@@ -175,6 +177,41 @@ describe("streamModelResponse", () => {
     expect(text1.delta).toBe("Hello");
     const text2 = JSON.parse(new TextDecoder().decode(chunks[1]).trim());
     expect(text2.delta).toBe(" world");
+  });
+
+  it("记录 LLM trace 事件和首 chunk 延迟", async () => {
+    const mockOpenAI = createMockOpenAI([
+      { choices: [{ delta: { content: "Hello" } }] },
+    ]);
+    const { controller } = createController();
+    const encoder = new TextEncoder();
+    const events: AgentTraceEvent[] = [];
+    const trace = new AgentTracer({
+      traceId: "trace-stream",
+      sink: (event) => events.push(event),
+    });
+
+    await streamModelResponse({
+      openai: mockOpenAI,
+      params: { model: "test", messages: [], stream: true } as any,
+      controller,
+      encoder,
+      responseId: "resp-trace",
+      enableThinking: false,
+      trace,
+      iteration: 1,
+    });
+
+    expect(events.map((event) => event.type)).toEqual([
+      "llm_start",
+      "llm_first_chunk",
+      "llm_end",
+    ]);
+    expect(events[2].metadata).toMatchObject({
+      iteration: 1,
+      textDeltaCount: 1,
+      toolCallCount: 0,
+    });
   });
 
   it("thinking 模式：输出 reasoning-delta 事件", async () => {

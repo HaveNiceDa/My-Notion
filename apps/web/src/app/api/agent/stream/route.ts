@@ -11,6 +11,7 @@ import { runReActLoop } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
 import { compressContext } from "@/src/lib/agent/context-compression";
 import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
+import { AgentTracer, getErrorMessage } from "@/src/lib/agent/trace";
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -148,6 +149,14 @@ export async function POST(req: NextRequest) {
 
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const enableThinking = Boolean(body.enableThinking);
+    const tracer = new AgentTracer({
+      baseMetadata: {
+        route: "/api/agent/stream",
+        conversationId: body.conversationId,
+        model,
+        enableThinking,
+      },
+    });
     const openai = getOpenAIClient();
     const convex = await getAuthenticatedConvexClient(getToken);
     const latestUserText = extractLatestUserText(messages);
@@ -162,6 +171,12 @@ export async function POST(req: NextRequest) {
       type: "function" as const,
       function: { name: t.name, description: t.description, parameters: t.parameters },
     }));
+    tracer.mark("run_start", {
+      inputMessageCount: messages.length,
+      hasCurrentDocument: Boolean(body.currentDocument?.id),
+      memoryInjected: Boolean(memoryContext),
+      toolNames: availableTools.map((tool) => tool.name),
+    });
 
     const allMessages: OpenAI.ChatCompletionMessageParam[] = [
       buildSystemMessage(availableTools.length > 0, memoryContext),
@@ -170,6 +185,7 @@ export async function POST(req: NextRequest) {
 
     // 长对话上下文压缩：token 超阈值时摘要旧消息 + 保留最近 N 轮
     const compressedMessages = await compressContext(openai, model, allMessages);
+    const runStartedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -185,12 +201,20 @@ export async function POST(req: NextRequest) {
             controller,
             encoder,
             responseId,
+            trace: tracer,
           });
           enqueueEvent(controller, encoder, { type: "finish", model, usage: null });
+          tracer.event("run_end", elapsedSince(runStartedAt), {
+            compressedMessageCount: compressedMessages.length,
+          });
         } catch (error) {
+          tracer.event("run_error", elapsedSince(runStartedAt), {
+            error: getErrorMessage(error),
+            compressedMessageCount: compressedMessages.length,
+          });
           enqueueEvent(controller, encoder, {
             type: "error",
-            message: error instanceof Error ? error.message : String(error),
+            message: getErrorMessage(error),
           });
         } finally {
           controller.close();
@@ -211,4 +235,9 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+function elapsedSince(startedAt: number): number {
+  const current = typeof performance !== "undefined" ? performance.now() : Date.now();
+  return Math.round(current - startedAt);
 }

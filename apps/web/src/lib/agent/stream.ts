@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import type { AgentTracer } from "./trace";
+import { getErrorMessage } from "./trace";
 
 // Agent 流式事件协议：前端通过 NDJSON 解析这些事件
 export type AgentStreamEvent =
@@ -42,6 +44,8 @@ export interface StreamModelOptions {
   encoder: TextEncoder;
   responseId: string;
   enableThinking: boolean;
+  trace?: AgentTracer;
+  iteration?: number;
   timeoutMs?: number;
 }
 
@@ -55,10 +59,16 @@ export async function streamModelResponse(
     encoder,
     responseId,
     enableThinking,
+    trace,
+    iteration,
     timeoutMs = 120_000,
   } = options;
   const pendingToolCalls: Record<number, OpenAI.ChatCompletionMessageFunctionToolCall> = {};
   const startedToolCallIds = new Set<string>();
+  const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+  let firstChunkMs: number | undefined;
+  let textDeltaCount = 0;
+  let reasoningDeltaCount = 0;
 
   const abortController = new AbortController();
   const timeoutId = setTimeout(() => {
@@ -66,20 +76,44 @@ export async function streamModelResponse(
     abortController.abort();
   }, timeoutMs);
 
-  const response = await openai.chat.completions.create(params, {
-    signal: abortController.signal,
+  trace?.mark("llm_start", {
+    iteration,
+    model: params.model,
+    messageCount: params.messages.length,
+    toolCount: params.tools?.length ?? 0,
+    enableThinking,
+    timeoutMs,
   });
+
+  let response: Awaited<ReturnType<typeof openai.chat.completions.create>>;
+  try {
+    response = await openai.chat.completions.create(params, {
+      signal: abortController.signal,
+    });
+  } catch (error) {
+    clearTimeout(timeoutId);
+    trace?.event("llm_error", elapsedSince(startedAt), {
+      iteration,
+      error: getErrorMessage(error),
+    });
+    throw error;
+  }
 
   try {
     for await (const chunk of response) {
       const delta = chunk.choices[0]?.delta;
       if (!delta) continue;
+      if (firstChunkMs === undefined) {
+        firstChunkMs = elapsedSince(startedAt);
+        trace?.event("llm_first_chunk", firstChunkMs, { iteration });
+      }
 
       // DashScope 思考模式通过 reasoning_content 字段返回推理过程
       const reasoning = enableThinking
         ? ((delta as Record<string, unknown>).reasoning_content as string | undefined)
         : undefined;
       if (reasoning) {
+        reasoningDeltaCount += 1;
         enqueueEvent(controller, encoder, {
           type: "reasoning-delta",
           id: responseId,
@@ -88,6 +122,7 @@ export async function streamModelResponse(
       }
 
       if (delta.content) {
+        textDeltaCount += 1;
         enqueueEvent(controller, encoder, {
           type: "text-delta",
           id: responseId,
@@ -130,9 +165,27 @@ export async function streamModelResponse(
         }
       }
     }
+    trace?.event("llm_end", elapsedSince(startedAt), {
+      iteration,
+      firstChunkMs,
+      textDeltaCount,
+      reasoningDeltaCount,
+      toolCallCount: Object.keys(pendingToolCalls).length,
+    });
+  } catch (error) {
+    trace?.event("llm_error", elapsedSince(startedAt), {
+      iteration,
+      error: getErrorMessage(error),
+    });
+    throw error;
   } finally {
     clearTimeout(timeoutId);
   }
 
   return Object.values(pendingToolCalls);
+}
+
+function elapsedSince(startedAt: number): number {
+  const current = typeof performance !== "undefined" ? performance.now() : Date.now();
+  return Math.round(current - startedAt);
 }

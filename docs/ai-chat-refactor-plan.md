@@ -33,7 +33,7 @@
 | # | 项目 | 具体内容 | 优先级 | 状态 |
 |---|---|---|---|---|
 | 3.1 | AI 模块 E2E 测试 | Playwright mock API 测试完整对话流程 | P2 | ❌ 未做 |
-| 3.2 | Agent 性能监控 | 目前仅有 ReAct 轮次和 tool 调用 console 日志；仍缺 Sentry span、tool 执行耗时、LLM 首 token/总耗时、失败降级 trace | P1 | ⚠️ 部分日志；监控未做 |
+| 3.2 | Agent 性能监控 | 已新增 `AgentTracer` 结构化事件，覆盖 run / ReAct iteration / LLM 首 chunk 与总耗时 / tool 执行耗时与错误；本地 console 可观测，后续可接 Sentry/Harness sink | P1 | ✅ 基础完成 |
 | 3.3 | 环境变量校验 | `instrumentation.ts` 启动时校验 LLM_API_KEY / NEXT_PUBLIC_CONVEX_URL（必需）和 SERPAPI_API_KEY / CLERK_*（可选），缺失时立即报错 | P2 | ✅ 完成 |
 | 3.4 | API Rate Limiting | 纯内存滑动窗口限流（20 次/分钟/用户），零外部依赖 | P1 | ✅ 完成 |
 | 3.5 | Storybook 组件文档 | AI Chat 组件可视化文档和交互示例 | P3 | ❌ 未做 |
@@ -41,11 +41,11 @@
 
 ### 6.4 建议优先级排序
 
-1. **3.2 Agent 性能监控** — 上线后可观测性关键，也为 Harness / Eval 预留 trace 数据
-2. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
-3. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
-4. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-5. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
+1. **7.1 Web extractor + document metadata search** — 扩展两个高收益只读工具，提升 Agent 信息获取能力
+2. **2.4 Tool 结果缓存** — 减少重复 tool 调用，提升响应速度和降低 API 成本
+3. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
+4. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
+5. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
 6. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
 7. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
 8. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
@@ -68,7 +68,7 @@
 
 | 模块 | 当前状态 | 主要缺口 |
 |---|---|---|
-| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆 | 缺少 Sentry trace、tool 失败降级策略和更完整的 tool 生态 |
+| Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少文档结构化搜索、网页正文提取、任务/计划等工具 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入 | 缺少写入/编辑/停用后的显式 Qdrant 同步、embedding 状态可视化、专门的 Memory E2E / eval |
 | RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
@@ -193,15 +193,15 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P1：Agent 性能监控** — 为 ReAct 轮次、tool 调用耗时、LLM 首 token/总耗时、失败降级打 trace，支撑后续 eval 和线上排障。
-2. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
-3. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
-4. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
+1. **P1：Web extractor + document metadata search** — 扩展两个高收益只读工具：URL 正文抽取、用户文档结构化搜索。
+2. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
+3. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
+4. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
 5. **P2：Tool 结果缓存 + Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补缓存、计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 
 ## 下一批里程碑建议
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；剩余标准是新增 `web_extract` / `document_search`，并补 Agent 监控 |
+| M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ⏳ 部分完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；Agent 基础性能 trace 已完成；剩余标准是新增 `web_extract` / `document_search` |
 | M18 | Agent Harness + Eval | 固定 golden set、tool trace replay、retrieval/memory eval，并接入最小 CI smoke |
