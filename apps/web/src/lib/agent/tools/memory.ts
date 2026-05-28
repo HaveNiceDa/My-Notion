@@ -1,6 +1,7 @@
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
-import { retrieveRelevantMemories } from "@notion/ai/server";
+import { retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
+import { invalidateToolResultCache } from "../tool-result-cache";
 import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
@@ -99,12 +100,15 @@ export async function executeMemoryWrite(
         ? args.supersedesMemoryId as Id<"agentMemories">
         : undefined,
     });
+    invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read"] });
+    const syncWarning = await syncMemorySafely(context.userId, memory);
 
     return {
       dryRun: false,
       action: "memory_write",
       message: "Memory saved.",
       memory,
+      warning: syncWarning,
     };
   } catch (error) {
     return {
@@ -113,6 +117,38 @@ export async function executeMemoryWrite(
       error: error instanceof Error ? error.message : String(error),
       recoverable: true,
     };
+  }
+}
+
+async function syncMemorySafely(
+  userId: string,
+  memory: {
+    id: Id<"agentMemories">;
+    type: MemoryType;
+    content: string;
+    reason?: string;
+    confidence: number;
+    source: MemorySource;
+    updatedAt: number;
+  },
+): Promise<string | undefined> {
+  try {
+    await syncAgentMemory({
+      userId,
+      memory: {
+        id: memory.id,
+        type: memory.type,
+        content: memory.content,
+        reason: memory.reason,
+        confidence: memory.confidence,
+        source: memory.source,
+        updatedAt: memory.updatedAt,
+      },
+    });
+    return undefined;
+  } catch (error) {
+    console.warn("[Agent Memory Sync] memory_write sync failed:", error);
+    return "Memory saved but vector index sync failed.";
   }
 }
 

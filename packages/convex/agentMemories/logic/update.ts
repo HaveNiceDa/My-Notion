@@ -46,6 +46,7 @@ export const updateAgentMemory = mutation({
       id: args.memoryId,
       type: args.type,
       content,
+      source: memory.source,
       reason: args.reason,
       confidence: clampConfidence(args.confidence),
       expiresAt: args.expiresAt,

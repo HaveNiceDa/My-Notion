@@ -18,6 +18,26 @@ export interface RelevantMemoryResult {
   error?: string;
 }
 
+export interface AgentMemorySyncParams {
+  userId: string;
+  memory: AgentMemoryRecord;
+}
+
+export interface AgentMemoryDeleteParams {
+  userId: string;
+  memoryId: string;
+}
+
+export async function syncAgentMemory(params: AgentMemorySyncParams): Promise<void> {
+  const vectorStore = await getOrCreateVectorStore(params.userId);
+  await vectorStore.upsertAgentMemory(params.userId, params.memory);
+}
+
+export async function deleteAgentMemoryIndex(params: AgentMemoryDeleteParams): Promise<void> {
+  const vectorStore = await getOrCreateVectorStore(params.userId);
+  await vectorStore.deleteDocumentChunks(memoryDocumentId(params.memoryId));
+}
+
 export async function retrieveRelevantMemories(options: {
   userId: string;
   query: string;
@@ -101,4 +121,8 @@ function recencyBoost(updatedAt: number): number {
   if (ageInDays <= 7) return 0.5;
   if (ageInDays <= 30) return 0.2;
   return 0;
+}
+
+function memoryDocumentId(memoryId: string): string {
+  return `memory:${memoryId}`;
 }

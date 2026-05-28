@@ -3,6 +3,8 @@ import {
   clearToolResultCache,
   getCachedToolResult,
   getToolSignature,
+  getToolResultCacheSize,
+  invalidateToolResultCache,
   setCachedToolResult,
 } from "../tool-result-cache";
 
@@ -66,5 +68,24 @@ describe("tool-result-cache", () => {
     setCachedToolResult("document_write", args, context, '{"dryRun":true}');
 
     expect(getCachedToolResult("document_write", args, context)).toEqual({ hit: false });
+  });
+
+  it("可以按用户和 tool name 失效 memory_read 缓存", () => {
+    const userOneContext = { userId: "user-1", model: "test-model" };
+    const userTwoContext = { userId: "user-2", model: "test-model" };
+
+    setCachedToolResult("memory_read", { query: "style" }, userOneContext, '{"memories":[1]}');
+    setCachedToolResult("web_extract", { url: "https://example.com" }, userOneContext, '{"content":"ok"}');
+    setCachedToolResult("memory_read", { query: "style" }, userTwoContext, '{"memories":[2]}');
+
+    expect(invalidateToolResultCache({
+      userId: "user-1",
+      toolNames: ["memory_read"],
+    })).toBe(1);
+
+    expect(getCachedToolResult("memory_read", { query: "style" }, userOneContext)).toEqual({ hit: false });
+    expect(getCachedToolResult("web_extract", { url: "https://example.com" }, userOneContext).hit).toBe(true);
+    expect(getCachedToolResult("memory_read", { query: "style" }, userTwoContext).hit).toBe(true);
+    expect(getToolResultCacheSize()).toBe(2);
   });
 });

@@ -11,6 +11,7 @@ import type { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import { Textarea } from "@/src/components/ui/textarea";
+import { deleteMemoryIndex, syncMemoryIndex } from "@/src/lib/agent/memory-sync-client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -123,7 +124,16 @@ export function MemoryReviewPage() {
       error: t("createFailed"),
     });
 
-    await promise;
+    const memory = await promise;
+    await syncMemoryIndex({
+      id: memory.id,
+      type: memory.type,
+      content: memory.content,
+      reason: memory.reason,
+      confidence: memory.confidence,
+      source: memory.source,
+      updatedAt: memory.updatedAt,
+    }).catch((error) => console.warn("[Agent Memory Sync] create failed:", error));
     resetCreateForm();
   }
 
@@ -156,7 +166,16 @@ export function MemoryReviewPage() {
       error: t("saveFailed"),
     });
 
-    await promise;
+    const memory = await promise;
+    await syncMemoryIndex({
+      id: memory.id,
+      type: memory.type,
+      content: memory.content,
+      reason: memory.reason,
+      confidence: memory.confidence,
+      source: memory.source,
+      updatedAt: memory.updatedAt,
+    }).catch((error) => console.warn("[Agent Memory Sync] update failed:", error));
     cancelEdit();
   }
 
@@ -167,7 +186,9 @@ export function MemoryReviewPage() {
       success: t("deleted"),
       error: t("deleteFailed"),
     });
-    await promise;
+    const memory = await promise;
+    await deleteMemoryIndex(memory.id)
+      .catch((error) => console.warn("[Agent Memory Sync] delete failed:", error));
   }
 
   return (

@@ -7,6 +7,7 @@ import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brai
 import { cn } from "@notion/business/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
+import { syncMemoryIndex } from "@/src/lib/agent/memory-sync-client";
 import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
 
 interface ToolCallCardProps {
@@ -394,6 +395,15 @@ function MemoryWriteResult({
           savedMemoryId: savedMemory.id,
         });
       }
+      await syncMemoryIndex({
+        id: savedMemory.id,
+        type: savedMemory.type,
+        content: savedMemory.content,
+        reason: savedMemory.reason,
+        confidence: savedMemory.confidence,
+        source: savedMemory.source,
+        updatedAt: savedMemory.updatedAt,
+      }).catch((error) => console.warn("[Agent Memory Sync] save failed:", error));
       setStatus("saved");
     } catch (error) {
       setStatus("error");

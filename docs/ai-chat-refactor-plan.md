@@ -68,7 +68,7 @@
 |---|---|---|
 | Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志；只读 Tool 已具备 5 分钟 TTL + LRU 跨请求缓存，单次运行内仍保留同名同参去重 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
-| Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入 | 缺少写入/编辑/停用后的显式 Qdrant 同步、embedding 状态可视化、专门的 Memory E2E / eval |
+| Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入；写入/编辑/停用后会清理 `memory_read` 缓存并显式同步 Qdrant | 缺少 embedding 状态可视化、专门的 Memory E2E / eval；Qdrant 不可用时目前仅 warning 降级，未持久化待重试状态 |
 | RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
 | Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
 
@@ -108,7 +108,8 @@ MVP 切法：
 3. ✅ 新增 `memory_read` tool：按当前用户问题检索偏好、项目事实和历史结论，并支持语义召回失败后的 token / recency fallback。
 4. ✅ 增加 Memory Review UI：允许用户查看、筛选、新增、编辑、停用长期记忆，避免黑盒记忆污染。
 5. ✅ 基础冲突处理：同类记忆冲突时保留新版本，旧版本标记 `superseded`，不直接硬删。
-6. ⚠️ 剩余增强：写入/编辑/停用时显式同步 Qdrant、展示 embedding 同步状态、补 Memory E2E / eval。
+6. ✅ 写入/编辑/停用后显式同步 Qdrant，并清理当前用户 `memory_read` 跨请求缓存；Qdrant 不可用时不阻断 Convex 源记录写入。
+7. ⚠️ 剩余增强：展示 embedding 同步状态、补 Memory E2E / eval，必要时增加失败重试队列。
 
 边界约束：
 
@@ -191,7 +192,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 
 ## 建议实施顺序
 
-1. **P1：Memory 增强** — 将懒同步升级为写入/编辑/停用时显式同步 Qdrant，补 embedding 状态可视化和 Memory E2E / eval。
+1. **P1：Memory 增强收尾** — 补 embedding 状态可视化、失败重试队列和 Memory E2E / eval。
 2. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
 3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
 4. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。

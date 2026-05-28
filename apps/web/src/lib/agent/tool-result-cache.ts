@@ -24,6 +24,11 @@ export interface ToolCacheLookup {
   value?: string;
 }
 
+export interface ToolCacheInvalidationFilter {
+  userId?: string;
+  toolNames?: string[];
+}
+
 // 只读 tool 的跨请求缓存：按用户、当前文档上下文和规范化参数隔离，避免串用户或串页面。
 export function getCachedToolResult(
   toolName: string,
@@ -86,6 +91,23 @@ export function getToolResultCacheSize(): number {
   return toolResultCache.size;
 }
 
+export function invalidateToolResultCache(filter: ToolCacheInvalidationFilter = {}): number {
+  const toolNameSet = filter.toolNames ? new Set(filter.toolNames) : undefined;
+  let deleted = 0;
+
+  for (const key of toolResultCache.keys()) {
+    const metadata = parseToolCacheKey(key);
+    if (!metadata) continue;
+    if (filter.userId && metadata.userId !== filter.userId) continue;
+    if (toolNameSet && (!metadata.toolName || !toolNameSet.has(metadata.toolName))) continue;
+
+    toolResultCache.delete(key);
+    deleted += 1;
+  }
+
+  return deleted;
+}
+
 function getToolCacheKey(
   toolName: string,
   args: Record<string, unknown>,
@@ -103,6 +125,18 @@ function getToolCacheKey(
         }
       : null,
   });
+}
+
+function parseToolCacheKey(key: string): { userId?: string; toolName?: string } | undefined {
+  try {
+    const parsed = JSON.parse(key) as { userId?: unknown; toolName?: unknown };
+    return {
+      userId: typeof parsed.userId === "string" ? parsed.userId : undefined,
+      toolName: typeof parsed.toolName === "string" ? parsed.toolName : undefined,
+    };
+  } catch {
+    return undefined;
+  }
 }
 
 function pruneExpiredEntries(): void {

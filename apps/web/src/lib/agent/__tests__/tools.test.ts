@@ -4,6 +4,7 @@ vi.mock("@notion/ai/server", () => ({
   getOrCreateVectorStore: vi.fn(),
   retrieveKnowledge: vi.fn(),
   retrieveRelevantMemories: vi.fn(),
+  syncAgentMemory: vi.fn(),
 }));
 
 vi.mock("@notion/ai/utils", () => ({
@@ -32,7 +33,7 @@ import { executeDocumentSearch } from "../tools/document-search";
 import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
-import { retrieveKnowledge, retrieveRelevantMemories } from "@notion/ai/server";
+import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
 describe("buildAvailableTools", () => {
@@ -544,6 +545,9 @@ describe("Memory tools", () => {
       id: "m1",
       type: "preference",
       content: "用户偏好中文",
+      source: "user_explicit",
+      confidence: 1,
+      updatedAt: 123,
     });
     const result = await executeMemoryWrite(
       {
@@ -562,6 +566,13 @@ describe("Memory tools", () => {
     }));
     expect(result.dryRun).toBe(false);
     expect(result.memory.id).toBe("m1");
+    expect(syncAgentMemory).toHaveBeenCalledWith({
+      userId: "user-1",
+      memory: expect.objectContaining({
+        id: "m1",
+        content: "用户偏好中文",
+      }),
+    });
   });
 
   it("memory_write 空内容返回错误", async () => {
