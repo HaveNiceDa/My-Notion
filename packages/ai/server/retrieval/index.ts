@@ -1,6 +1,7 @@
 import { fuseCandidates } from "./fusion";
 import { keywordRecall } from "./keyword-recall";
 import { metadataRecall } from "./metadata-recall";
+import { packRetrievalContext } from "./context-packing";
 import { rewriteQueryForDeepRetrieval } from "./query-rewrite";
 import { semanticRecall } from "./semantic-recall";
 import type {
@@ -58,7 +59,14 @@ async function retrieveBalanced(
     topK,
   });
 
-  return buildResult(options.query, strategy, semantic, keyword, metadata, fused);
+  const packed = packRetrievalContext({
+    items: fused,
+    tokenBudget: options.contextTokenBudget,
+  });
+
+  return buildResult(options.query, strategy, semantic, keyword, metadata, fused, packed.items, {
+    ...packed.metadata,
+  });
 }
 
 async function retrieveDeep(
@@ -80,7 +88,15 @@ async function retrieveDeep(
     topK,
   });
 
-  return buildResult(options.query, "deep", semantic, keyword, metadata, fused, queryVariants);
+  const packed = packRetrievalContext({
+    items: fused,
+    tokenBudget: options.contextTokenBudget,
+  });
+
+  return buildResult(options.query, "deep", semantic, keyword, metadata, fused, packed.items, {
+    ...packed.metadata,
+    queryVariants,
+  });
 }
 
 async function retrieveVariantCandidates(
@@ -149,8 +165,9 @@ function buildResult(
   semantic: RetrievalCandidate[],
   keyword: RetrievalCandidate[],
   metadata: RetrievalCandidate[],
-  items: KnowledgeRetrievalResult["items"],
-  queryVariants?: QueryRewriteVariant[],
+  fusedItems: KnowledgeRetrievalResult["items"],
+  items: KnowledgeRetrievalResult["items"] = fusedItems,
+  extraMetadata?: Partial<KnowledgeRetrievalResult["metadata"]>,
 ): KnowledgeRetrievalResult {
   return {
     query,
@@ -160,8 +177,8 @@ function buildResult(
       semanticCount: semantic.length,
       keywordCount: keyword.length,
       metadataCount: metadata.length,
-      fusedCount: items.length,
-      queryVariants,
+      fusedCount: fusedItems.length,
+      ...extraMetadata,
     },
   };
 }

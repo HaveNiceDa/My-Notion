@@ -6,8 +6,9 @@ vi.mock("../server/vector-store-cache", () => ({
 
 import { getOrCreateVectorStore } from "../server/vector-store-cache";
 import { retrieveKnowledge } from "../server/retrieval";
+import { packRetrievalContext } from "../server/retrieval/context-packing";
 import { fuseCandidates } from "../server/retrieval/fusion";
-import type { RetrievalCandidate } from "../server/retrieval";
+import type { RetrievalCandidate, RetrievalResultItem } from "../server/retrieval";
 
 describe("fuseCandidates", () => {
   it("合并同一个 chunk 的多路召回来源", () => {
@@ -37,6 +38,57 @@ describe("fuseCandidates", () => {
 
     expect(result).toHaveLength(2);
     expect(result[0].documentId).toBe("d2");
+  });
+});
+
+describe("packRetrievalContext", () => {
+  it("按文档合并相邻 chunk", () => {
+    const result = packRetrievalContext({
+      items: [
+        createResultItem({ chunkId: "d1:0", chunkIndex: 0, content: "第一段", score: 0.9 }),
+        createResultItem({ chunkId: "d1:1", chunkIndex: 1, content: "第二段", score: 0.8 }),
+        createResultItem({ chunkId: "d1:3", chunkIndex: 3, content: "第四段", score: 0.7 }),
+      ],
+      tokenBudget: 100,
+    });
+
+    expect(result.items).toHaveLength(2);
+    expect(result.items[0]).toMatchObject({
+      documentId: "d1",
+      chunkId: "d1:0-1",
+      chunkIndex: 0,
+      content: "第一段\n\n第二段",
+    });
+    expect(result.items[0].metadata.packedChunkIds).toEqual(["d1:0", "d1:1"]);
+    expect(result.metadata.packedCount).toBe(2);
+    expect(result.metadata.contextTruncated).toBe(false);
+  });
+
+  it("按 token budget 裁剪上下文", () => {
+    const result = packRetrievalContext({
+      items: [
+        createResultItem({
+          chunkId: "d1:0",
+          chunkIndex: 0,
+          content: "a".repeat(400),
+          score: 0.9,
+        }),
+        createResultItem({
+          documentId: "d2",
+          chunkId: "d2:0",
+          chunkIndex: 0,
+          content: "b".repeat(400),
+          score: 0.8,
+        }),
+      ],
+      tokenBudget: 50,
+    });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].content).toContain("[truncated]");
+    expect(result.items[0].metadata.truncatedByTokenBudget).toBe(true);
+    expect(result.metadata.contextTruncated).toBe(true);
+    expect(result.metadata.contextEstimatedTokens).toBeLessThanOrEqual(55);
   });
 });
 
@@ -139,6 +191,48 @@ describe("retrieveKnowledge", () => {
     });
   });
 
+  it("balanced 对融合结果执行 context packing", async () => {
+    const vectorStore = createVectorStoreMock({
+      semantic: [
+        {
+          document: {
+            pageContent: "chunk 0",
+            metadata: { documentId: "d1", title: "Guide", chunkIndex: 0 },
+          },
+          score: 0.95,
+        },
+        {
+          document: {
+            pageContent: "chunk 1",
+            metadata: { documentId: "d1", title: "Guide", chunkIndex: 1 },
+          },
+          score: 0.9,
+        },
+        {
+          document: {
+            pageContent: "chunk 3",
+            metadata: { documentId: "d1", title: "Guide", chunkIndex: 3 },
+          },
+          score: 0.85,
+        },
+      ],
+    });
+    vi.mocked(getOrCreateVectorStore).mockResolvedValue(vectorStore);
+
+    const result = await retrieveKnowledge({
+      userId: "user-1",
+      query: "guide",
+      strategy: "balanced",
+      topK: 3,
+      contextTokenBudget: 100,
+    });
+
+    expect(result.metadata.fusedCount).toBe(3);
+    expect(result.metadata.packedCount).toBe(2);
+    expect(result.items[0].chunkId).toBe("d1:0-1");
+    expect(result.items[0].content).toBe("chunk 0\n\nchunk 1");
+  });
+
   it("将 documentIds 过滤传给三路召回", async () => {
     const vectorStore = createVectorStoreMock({});
     vi.mocked(getOrCreateVectorStore).mockResolvedValue(vectorStore);
@@ -219,6 +313,22 @@ function createCandidate(
     source: "semantic",
     rank: 1,
     metadata: {},
+    ...overrides,
+  };
+}
+
+function createResultItem(
+  overrides: Partial<RetrievalResultItem> = {},
+): RetrievalResultItem {
+  return {
+    documentId: "d1",
+    chunkId: "d1:0",
+    chunkIndex: 0,
+    title: "Doc",
+    content: "content",
+    score: 1,
+    sources: ["semantic"],
+    metadata: { sourceScores: { semantic: 0.9 } },
     ...overrides,
   };
 }

@@ -14,6 +14,7 @@ export interface KnowledgeRetrievalOptions {
   topK?: number;
   minScore?: number;
   strategy?: RetrievalStrategy;
+  contextTokenBudget?: number;
   filters?: KnowledgeRetrievalFilters;
 }
 
@@ -49,6 +50,10 @@ export interface KnowledgeRetrievalResult {
     keywordCount: number;
     metadataCount: number;
     fusedCount: number;
+    packedCount?: number;
+    contextTokenBudget?: number;
+    contextEstimatedTokens?: number;
+    contextTruncated?: boolean;
     queryVariants?: QueryRewriteVariant[];
   };
 }

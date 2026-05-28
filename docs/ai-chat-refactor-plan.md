@@ -42,7 +42,7 @@
 ### 6.4 建议优先级排序
 
 1. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-2. **7.3 RAG 质量补齐** — context packing、citation quality、必要时接二阶段 rerank
+2. **7.3 RAG 质量补齐** — citation quality、必要时接二阶段 rerank
 3. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
 4. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
 5. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
@@ -69,7 +69,7 @@
 | Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志；只读 Tool 已具备 5 分钟 TTL + LRU 跨请求缓存，单次运行内仍保留同名同参去重 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入；写入/编辑/停用后会清理 `memory_read` 缓存并显式同步 Qdrant | 缺少 embedding 状态可视化、专门的 Memory E2E / eval；Qdrant 不可用时目前仅 warning 降级，未持久化待重试状态 |
-| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query | 缺少 context packing、citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
+| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query；`balanced` / `deep` 已接入 Context Packing，支持按文档合并相邻 chunk 和 token budget 裁剪 | 缺少 citation quality、二阶段 rerank；召回质量仍需 eval 验证 |
 | Harness | 尚未系统化 | 可后置，但需要预留 Agent eval / regression harness 的数据结构和事件日志 |
 
 ### 7.1 更多更丰富的 Tool
@@ -141,7 +141,7 @@ MVP 切法：
 | P1 | Multi-query Search | ✅ 已完成：`deep` 策略多 query 并发执行 semantic / keyword / metadata 召回 |
 | P1 | Metadata Recall | ✅ 已完成基础版：支持最近编辑、标签、路径、当前文档邻近信息等结构化补召回 |
 | P1 | Rerank | ❌ 未做：候选 chunk 二阶段重排仍未接入 |
-| P1 | Context Packing | ❌ 未做：尚未按文档分组、相邻 chunk 合并和 token budget 裁剪 |
+| P1 | Context Packing | ✅ 已完成：`context-packing.ts` 按文档分组合并相邻 chunk，并按 `contextTokenBudget` / 默认预算裁剪上下文 |
 | P2 | Citation Quality | ⚠️ 基础 `sources` 字段已有；尚未输出引用覆盖率、命中分数解释和是否需要更多检索等质量信号 |
 
 建议新增统一检索接口：
@@ -193,7 +193,7 @@ Harness 暂时不抢 M17 主线，但需要预留数据和事件：
 ## 建议实施顺序
 
 1. **P1：Memory 增强收尾** — 补 embedding 状态可视化、失败重试队列和 Memory E2E / eval。
-2. **P1：RAG 质量补齐** — 增加 context packing、citation quality，必要时再接二阶段 rerank。
+2. **P1：RAG 质量补齐** — 增加 citation quality，必要时再接二阶段 rerank。
 3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
 4. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
 5. **P2：task_plan / MCP adapter** — 扩展计划工具和受控外部工具适配，作为 M18 前置探索。
