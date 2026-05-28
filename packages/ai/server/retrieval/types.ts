@@ -41,6 +41,45 @@ export interface RetrievalResultItem {
   metadata: Record<string, unknown>;
 }
 
+export interface CitationSourceScoreExplanation {
+  source: RetrievalSource;
+  score?: number;
+  explanation: string;
+}
+
+export interface CitationItemQuality {
+  documentId: string;
+  chunkId: string;
+  title: string;
+  sources: RetrievalSource[];
+  score: number;
+  sourceScores: CitationSourceScoreExplanation[];
+  packedItemCount: number;
+  packedChunkIndexes: number[];
+  truncated: boolean;
+  explanation: string;
+}
+
+export interface CitationQuality {
+  citationCoverage: number;
+  citedItemCount: number;
+  totalItemCount: number;
+  uniqueDocumentCount: number;
+  sourceCoverage: Partial<Record<RetrievalSource, number>>;
+  sourceScoreExplanations: CitationItemQuality[];
+  packing: {
+    packedCount?: number;
+    fusedCount: number;
+    mergedItemCount: number;
+    contextTokenBudget?: number;
+    contextEstimatedTokens?: number;
+    contextTruncated?: boolean;
+    explanation: string;
+  };
+  needsMoreRetrieval: boolean;
+  explanation: string;
+}
+
 export interface KnowledgeRetrievalResult {
   query: string;
   strategy: RetrievalStrategy;
@@ -54,6 +93,7 @@ export interface KnowledgeRetrievalResult {
     contextTokenBudget?: number;
     contextEstimatedTokens?: number;
     contextTruncated?: boolean;
+    citationQuality?: CitationQuality;
     queryVariants?: QueryRewriteVariant[];
   };
 }

@@ -6,6 +6,7 @@ vi.mock("../server/vector-store-cache", () => ({
 
 import { getOrCreateVectorStore } from "../server/vector-store-cache";
 import { retrieveKnowledge } from "../server/retrieval";
+import { buildCitationQuality } from "../server/retrieval/citation-quality";
 import { packRetrievalContext } from "../server/retrieval/context-packing";
 import { fuseCandidates } from "../server/retrieval/fusion";
 import type { RetrievalCandidate, RetrievalResultItem } from "../server/retrieval";
@@ -89,6 +90,55 @@ describe("packRetrievalContext", () => {
     expect(result.items[0].metadata.truncatedByTokenBudget).toBe(true);
     expect(result.metadata.contextTruncated).toBe(true);
     expect(result.metadata.contextEstimatedTokens).toBeLessThanOrEqual(55);
+  });
+});
+
+describe("buildCitationQuality", () => {
+  it("输出引用覆盖率、来源分数解释和 packing 说明", () => {
+    const quality = buildCitationQuality({
+      items: [
+        createResultItem({
+          documentId: "d1",
+          title: "Doc",
+          sources: ["semantic", "keyword"],
+          metadata: {
+            sourceScores: { semantic: 0.91, keyword: 2 },
+            packedItemCount: 2,
+            packedChunkIndexes: [0, 1],
+          },
+        }),
+        createResultItem({
+          documentId: "",
+          title: "",
+          sources: ["metadata"],
+          metadata: { truncatedByTokenBudget: true },
+        }),
+      ],
+      fusedCount: 3,
+      packedCount: 2,
+      contextTokenBudget: 100,
+      contextEstimatedTokens: 80,
+      contextTruncated: true,
+    });
+
+    expect(quality.citationCoverage).toBe(0.5);
+    expect(quality.uniqueDocumentCount).toBe(1);
+    expect(quality.sourceCoverage).toEqual({
+      semantic: 0.5,
+      keyword: 0.5,
+      metadata: 0.5,
+    });
+    expect(quality.sourceScoreExplanations[0].sourceScores).toEqual([
+      expect.objectContaining({ source: "semantic", score: 0.91 }),
+      expect.objectContaining({ source: "keyword", score: 2 }),
+    ]);
+    expect(quality.packing).toMatchObject({
+      fusedCount: 3,
+      packedCount: 2,
+      mergedItemCount: 1,
+      contextTruncated: true,
+    });
+    expect(quality.needsMoreRetrieval).toBe(true);
   });
 });
 
@@ -179,6 +229,11 @@ describe("retrieveKnowledge", () => {
     });
     expect(result.items[0].sources).toContain("semantic");
     expect(result.items[0].sources).toContain("keyword");
+    expect(result.metadata.citationQuality).toMatchObject({
+      citationCoverage: 1,
+      uniqueDocumentCount: 2,
+      needsMoreRetrieval: false,
+    });
     expect(vectorStore.semanticSearch).toHaveBeenCalledWith("requestId", 9, 0.6, {
       includeDocumentIds: undefined,
     });

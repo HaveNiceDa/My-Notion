@@ -2,6 +2,7 @@ import { fuseCandidates } from "./fusion";
 import { keywordRecall } from "./keyword-recall";
 import { metadataRecall } from "./metadata-recall";
 import { packRetrievalContext } from "./context-packing";
+import { buildCitationQuality } from "./citation-quality";
 import { rewriteQueryForDeepRetrieval } from "./query-rewrite";
 import { semanticRecall } from "./semantic-recall";
 import type {
@@ -31,7 +32,13 @@ export async function retrieveKnowledge(
   if (strategy === "fast") {
     // fast 保持旧行为：只走语义向量召回，适合实时聊天里的低延迟路径。
     const semantic = await semanticRecall({ ...options, query, topK, minScore });
-    return buildResult(query, strategy, semantic, [], [], semantic.map(toSingleSourceItem));
+    const items = semantic.map(toSingleSourceItem);
+    return buildResult(query, strategy, semantic, [], [], items, items, {
+      citationQuality: buildCitationQuality({
+        items,
+        fusedCount: items.length,
+      }),
+    });
   }
 
   if (strategy === "deep") {
@@ -66,6 +73,11 @@ async function retrieveBalanced(
 
   return buildResult(options.query, strategy, semantic, keyword, metadata, fused, packed.items, {
     ...packed.metadata,
+    citationQuality: buildCitationQuality({
+      items: packed.items,
+      fusedCount: fused.length,
+      ...packed.metadata,
+    }),
   });
 }
 
@@ -95,6 +107,11 @@ async function retrieveDeep(
 
   return buildResult(options.query, "deep", semantic, keyword, metadata, fused, packed.items, {
     ...packed.metadata,
+    citationQuality: buildCitationQuality({
+      items: packed.items,
+      fusedCount: fused.length,
+      ...packed.metadata,
+    }),
     queryVariants,
   });
 }
@@ -123,6 +140,9 @@ async function retrieveVariantCandidates(
 }
 
 export type {
+  CitationItemQuality,
+  CitationQuality,
+  CitationSourceScoreExplanation,
   KnowledgeRetrievalFilters,
   KnowledgeRetrievalOptions,
   KnowledgeRetrievalResult,

@@ -24,6 +24,23 @@ interface KnowledgeSearchMetadata {
   keywordCount?: number;
   metadataCount?: number;
   fusedCount?: number;
+  packedCount?: number;
+  contextTokenBudget?: number;
+  contextEstimatedTokens?: number;
+  contextTruncated?: boolean;
+  citationQuality?: {
+    citationCoverage?: number;
+    citedItemCount?: number;
+    totalItemCount?: number;
+    uniqueDocumentCount?: number;
+    needsMoreRetrieval?: boolean;
+    explanation?: string;
+    packing?: {
+      explanation?: string;
+      mergedItemCount?: number;
+      contextTruncated?: boolean;
+    };
+  };
 }
 
 interface KnowledgeSearchToolResult {
@@ -161,14 +178,42 @@ function KnowledgeSearchResult({ result }: { result: KnowledgeSearchToolResult }
             </div>
           )}
           {metadata && (
-            <div>
-              {t("retrievalRecallStats", {
-                semantic: metadata.semanticCount ?? 0,
-                keyword: metadata.keywordCount ?? 0,
-                metadata: metadata.metadataCount ?? 0,
-                fused: metadata.fusedCount ?? docs.length,
-              })}
-            </div>
+            <>
+              <div>
+                {t("retrievalRecallStats", {
+                  semantic: metadata.semanticCount ?? 0,
+                  keyword: metadata.keywordCount ?? 0,
+                  metadata: metadata.metadataCount ?? 0,
+                  fused: metadata.fusedCount ?? docs.length,
+                })}
+              </div>
+              {metadata.packedCount !== undefined && (
+                <div>
+                  {t("retrievalPackingStats", {
+                    packed: metadata.packedCount,
+                    tokens: metadata.contextEstimatedTokens ?? 0,
+                    budget: metadata.contextTokenBudget ?? 0,
+                  })}
+                  {metadata.contextTruncated ? ` · ${t("retrievalContextTruncated")}` : ""}
+                </div>
+              )}
+              {metadata.citationQuality && (
+                <div>
+                  {t("retrievalCitationQuality", {
+                    coverage: Math.round((metadata.citationQuality.citationCoverage ?? 0) * 100),
+                    documents: metadata.citationQuality.uniqueDocumentCount ?? 0,
+                  })}
+                  {metadata.citationQuality.needsMoreRetrieval
+                    ? ` · ${t("retrievalNeedsMoreEvidence")}`
+                    : ""}
+                </div>
+              )}
+              {metadata.citationQuality?.packing?.explanation && (
+                <div className="line-clamp-2">
+                  {metadata.citationQuality.packing.explanation}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}

@@ -35,6 +35,9 @@ export type {
   RelevantMemoryResult,
 } from "./memory";
 export type {
+  CitationItemQuality,
+  CitationQuality,
+  CitationSourceScoreExplanation,
   KnowledgeRetrievalFilters,
   KnowledgeRetrievalOptions,
   KnowledgeRetrievalResult,
