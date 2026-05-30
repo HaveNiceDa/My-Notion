@@ -28,13 +28,13 @@ node packages/my-notion-cli/dist/index.js <command>
 
 The CLI talks to My-Notion through Convex HTTP Actions. It requires:
 
-- `apiUrl`: usually the Convex `.site` URL, for example `https://<deployment>.convex.site`
+- `apiUrl`: optional. When omitted, the CLI defaults to `https://handsome-stoat-500.convex.site`. Use a Convex `.site` URL such as `https://<deployment>.convex.site` for non-default deployments.
 - `token`: a My-Notion PAT with `mnt_` prefix
 
 Login command:
 
 ```bash
-my-notion auth login --api-url <convex-site-url> --token <mnt_token>
+my-notion auth login --token <mnt_token>
 ```
 
 Status command:
@@ -67,6 +67,8 @@ Environment variables override saved config:
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
 export MY_NOTION_API_TOKEN="mnt_xxx"
 ```
+
+`MY_NOTION_API_URL` is optional for the default online My-Notion deployment.
 
 Command flags have the highest priority:
 

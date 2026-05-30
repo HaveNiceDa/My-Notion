@@ -37,7 +37,7 @@ function printHelp() {
   console.log(`My-Notion CLI
 
 Usage:
-  my-notion auth login --api-url <url> --token <mnt_token>
+  my-notion auth login --token <mnt_token> [--api-url <url>]
   my-notion auth status
   my-notion auth logout
   my-notion tokens revoke-current
@@ -52,7 +52,7 @@ Usage:
   my-notion mcp serve --transport stdio
 
 Global options:
-  --api-url <url>      Override MY_NOTION_API_URL / saved config
+  --api-url <url>      Override MY_NOTION_API_URL / saved config / default online API
   --token <token>      Override MY_NOTION_API_TOKEN / saved config
   --format <format>    json | pretty | table | ndjson | markdown
 `);

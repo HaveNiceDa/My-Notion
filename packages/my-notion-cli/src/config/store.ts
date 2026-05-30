@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import type { CliConfig } from "../types.js";
 
 const CONFIG_PATH = join(homedir(), ".my-notion", "config.json");
+export const DEFAULT_API_URL = "https://handsome-stoat-500.convex.site";
 
 export function getConfigPath() {
   return CONFIG_PATH;
@@ -36,13 +37,8 @@ export function resolveApiUrl(options: Record<string, string | boolean>) {
   const value =
     readStringOption(options, "api-url") ??
     process.env.MY_NOTION_API_URL ??
-    loadConfig().apiUrl;
-
-  if (!value) {
-    throw new Error(
-      "Missing API URL. Run `my-notion auth login --api-url <url> --token <token>` or set MY_NOTION_API_URL.",
-    );
-  }
+    loadConfig().apiUrl ??
+    DEFAULT_API_URL;
 
   return value.replace(/\/+$/, "");
 }
@@ -55,7 +51,7 @@ export function resolveToken(options: Record<string, string | boolean>) {
 
   if (!value) {
     throw new Error(
-      "Missing API token. Run `my-notion auth login --api-url <url> --token <token>` or set MY_NOTION_API_TOKEN.",
+      "Missing API token. Run `my-notion auth login --token <token>` or set MY_NOTION_API_TOKEN.",
     );
   }
 

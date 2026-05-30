@@ -36,6 +36,7 @@ Priority order:
 1. Command flags: `--api-url`, `--token`
 2. Environment variables: `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
 3. Saved config: `~/.my-notion/config.json`
+4. Default online API URL: `https://handsome-stoat-500.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.
 
@@ -44,8 +45,10 @@ Agents should use `--format json` unless the desired output is Markdown content.
 Login and save config:
 
 ```bash
-my-notion auth login --api-url https://<deployment>.convex.site --token <mnt_token> --format json
+my-notion auth login --token <mnt_token> --format json
 ```
+
+Add `--api-url https://<deployment>.convex.site` only when targeting a non-default deployment.
 
 Check current auth:
 

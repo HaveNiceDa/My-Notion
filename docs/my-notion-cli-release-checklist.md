@@ -104,6 +104,7 @@ pnpm sync:skills:check
 1. 命令行参数：`--api-url`、`--token`
 2. 环境变量：`MY_NOTION_API_URL`、`MY_NOTION_API_TOKEN`
 3. 本地配置：`~/.my-notion/config.json`
+4. 默认线上地址：`https://handsome-stoat-500.convex.site`
 
 后续如扩展 config schema，必须保持向后兼容：
 

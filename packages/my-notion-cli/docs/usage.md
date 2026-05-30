@@ -12,17 +12,16 @@ My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 
 打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 创建 token -> 复制 mnt_ 开头的 PAT -> 用 CLI auth login 登录 -> 执行 docs 命令
 ```
 
-当前项目的 Machine API 地址是：
+当前项目的默认 Machine API 地址是：
 
 ```bash
 https://handsome-stoat-500.convex.site
 ```
 
-登录命令示例：
+如果用户不指定 `--api-url`，CLI 默认使用这个线上地址。登录命令示例：
 
 ```bash
 my-notion auth login \
-  --api-url "https://handsome-stoat-500.convex.site" \
   --token "mnt_xxx"
 ```
 
@@ -93,7 +92,13 @@ https://handsome-stoat-500.convex.site
 - 一个 My-Notion 账号。
 - 一个 My-Notion Personal Access Token，简称 PAT。
 - PAT 以 `mnt_` 开头。
-- 服务端 API 地址，通常是 Convex `.site` 地址，例如：
+- 服务端 API 地址；不指定时默认使用当前线上地址：
+
+```bash
+https://handsome-stoat-500.convex.site
+```
+
+- 如需连接其他部署，可指定 Convex `.site` 地址，例如：
 
 ```bash
 https://<deployment>.convex.site
@@ -132,9 +137,10 @@ node packages/my-notion-cli/dist/index.js <command>
 
 ```bash
 my-notion auth login \
-  --api-url "https://<deployment>.convex.site" \
   --token "mnt_xxx"
 ```
+
+如果要连接非默认部署，再额外传入 `--api-url "https://<deployment>.convex.site"`。
 
 登录成功后，CLI 会把配置保存到本地：
 
@@ -142,7 +148,7 @@ my-notion auth login \
 ~/.my-notion/config.json
 ```
 
-之后再执行命令时，不需要重复传 `--api-url` 和 `--token`。
+之后再执行命令时，不需要重复传 `--token`；默认线上地址也不需要重复传 `--api-url`。
 
 ## 4. 检查登录状态
 
@@ -346,7 +352,7 @@ CLI 支持多种输出格式：
 
 ## 16. 环境变量配置
 
-如果不想写入本地配置文件，也可以用环境变量：
+如果不想写入本地配置文件，也可以用环境变量。`MY_NOTION_API_URL` 可选，不设置时默认使用 `https://handsome-stoat-500.convex.site`：
 
 ```bash
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
@@ -364,7 +370,8 @@ my-notion docs search --query "项目" --format json
 
 - 命令行参数最高，例如 `--api-url`、`--token`。
 - 环境变量其次。
-- `~/.my-notion/config.json` 最后。
+- `~/.my-notion/config.json` 再次。
+- 默认线上地址 `https://handsome-stoat-500.convex.site` 最后。
 
 ## 17. 推荐完整流程
 
@@ -373,7 +380,6 @@ my-notion docs search --query "项目" --format json
 ```bash
 # 1. 登录
 my-notion auth login \
-  --api-url "https://<deployment>.convex.site" \
   --token "mnt_xxx"
 
 # 2. 检查状态

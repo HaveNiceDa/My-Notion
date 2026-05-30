@@ -10,7 +10,7 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 ## Prerequisites
 
 - The `my-notion` CLI must be installed, linked, or run from the monorepo.
-- Authentication must already be configured by `my-notion auth login`, `MY_NOTION_API_URL`, and `MY_NOTION_API_TOKEN`.
+- Authentication must already be configured by `my-notion auth login` or `MY_NOTION_API_TOKEN`; `MY_NOTION_API_URL` is optional for the default online deployment.
 - Do not pass full PAT values through MCP tool arguments. The MCP server reads credentials from CLI config or environment variables.
 
 ## Start Server

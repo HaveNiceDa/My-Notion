@@ -99,7 +99,13 @@ My-Notion 已完成面向 Agent 写文档的 CLI / Skills / MCP 主链路。Agen
 
 在 Web 设置页创建 My-Notion Personal Access Token。PAT 以 `mnt_` 开头，明文只展示一次，不要写入仓库、日志或聊天记录。
 
-机器 API URL 通常是 Convex `.site` 地址：
+默认机器 API URL 是当前线上 Convex `.site` 地址；如用户不指定，CLI 会默认使用：
+
+```bash
+https://handsome-stoat-500.convex.site
+```
+
+连接其他部署时再显式设置：
 
 ```bash
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
@@ -111,7 +117,6 @@ export MY_NOTION_API_TOKEN="mnt_xxx"
 ```bash
 pnpm --filter @notion/my-notion-cli build
 node packages/my-notion-cli/dist/index.js auth login \
-  --api-url "$MY_NOTION_API_URL" \
   --token "$MY_NOTION_API_TOKEN" \
   --format json
 ```
