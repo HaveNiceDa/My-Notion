@@ -6,7 +6,8 @@
 
 - 核心命令已可用：`auth`、`docs`、`tokens`、`mcp`。
 - MCP STDIO 暴露文档 `search`、`fetch`、`create`、`update` 工具。
-- 默认 Machine API URL 是 `https://handsome-stoat-500.convex.site`；只有连接非默认部署时才需要传 `--api-url` 或设置 `MY_NOTION_API_URL`。
+- 默认 Machine API URL 是 `https://laudable-albatross-174.convex.site`；只有连接非默认部署时才需要传 `--api-url` 或设置 `MY_NOTION_API_URL`。
+- Web 设置页会自动准备一个默认 CLI Token，可隐藏、显示、复制和重置；CLI 只需要消费这个 `mnt_` token。
 - 包级单测已覆盖配置解析、输出格式、HTTP client 和 `docs` 命令参数映射。
 
 ## 快速开始

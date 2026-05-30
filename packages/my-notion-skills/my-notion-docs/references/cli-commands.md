@@ -36,7 +36,7 @@ Priority order:
 1. Command flags: `--api-url`, `--token`
 2. Environment variables: `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
 3. Saved config: `~/.my-notion/config.json`
-4. Default online API URL: `https://handsome-stoat-500.convex.site`
+4. Default online API URL: `https://laudable-albatross-174.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.
 

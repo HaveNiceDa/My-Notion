@@ -82,7 +82,7 @@ describe("config store", () => {
   it("uses the default online API URL and still requires a token", async () => {
     const store = await loadStore();
 
-    expect(store.resolveApiUrl({})).toBe("https://handsome-stoat-500.convex.site");
+    expect(store.resolveApiUrl({})).toBe("https://laudable-albatross-174.convex.site");
     expect(() => store.resolveToken({})).toThrow("Missing API token");
   });
 });

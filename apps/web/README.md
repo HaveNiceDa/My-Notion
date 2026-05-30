@@ -158,6 +158,6 @@ apps/web/
 
 - BlockNote 暂不兼容 React StrictMode，当前在 Next 配置中关闭。
 - Web typecheck 应优先使用 `pnpm --filter @notion/web typecheck`，脚本会先清理 `.next/dev/types` stale validator，避免旧路由类型污染 `tsc --noEmit`。
-- CLI/MCP 的机器 API 默认使用 `https://handsome-stoat-500.convex.site`；连接其他部署时应使用 Convex `.site` URL，而不是 `.cloud` URL。
+- CLI/MCP 的机器 API 默认使用 `https://laudable-albatross-174.convex.site`；连接其他部署时应使用 Convex `.site` URL，而不是 `.cloud` URL。
 - Qdrant 离线时 RAG 能力会降级，但不应影响基础文档编辑。
 - `.vercel.app` 在部分网络环境可能不可达，生产使用建议绑定自定义域名。

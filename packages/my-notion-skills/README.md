@@ -26,7 +26,7 @@ pnpm sync:skills:check
 ## Safety
 
 - 不在 Skill 文档中写入完整 PAT。
-- CLI 默认连接 `https://handsome-stoat-500.convex.site`；连接其他部署时再传 `--api-url` 或设置 `MY_NOTION_API_URL`。
+- CLI 默认连接 `https://laudable-albatross-174.convex.site`；连接其他部署时再传 `--api-url` 或设置 `MY_NOTION_API_URL`。
 - 写文档优先使用临时 Markdown 文件和 `--content-file`。
 - MCP 写工具默认 `dryRun: true`，只有用户明确批准后才执行真实写入。
 - CLI 写命令必须使用 `--format json` 便于 Agent 解析结果。

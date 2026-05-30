@@ -100,12 +100,12 @@ My-Notion 已完成面向 Agent 写文档的 CLI / Skills / MCP 主链路。Agen
 
 ### 1. 准备 PAT
 
-在 Web 设置页创建 My-Notion Personal Access Token。PAT 以 `mnt_` 开头，明文只展示一次，不要写入仓库、日志或聊天记录。
+在 Web 设置页打开 `API Tokens`，系统会为当前登录用户自动准备一个默认 CLI Token。点击“显示”查看明文，点击“复制”复制 `mnt_` 开头的 PAT；需要让旧 token 失效时点击“重置 Token”。不要把完整 PAT 写入仓库、日志或聊天记录。
 
 默认机器 API URL 是当前线上 Convex `.site` 地址；如用户不指定，CLI 会默认使用：
 
 ```bash
-https://handsome-stoat-500.convex.site
+https://laudable-albatross-174.convex.site
 ```
 
 连接其他部署时再显式设置：

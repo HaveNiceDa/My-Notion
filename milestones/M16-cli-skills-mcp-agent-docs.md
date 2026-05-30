@@ -18,7 +18,7 @@
   - `mcp serve --transport stdio`
 - 默认 JSON 输出，支持 `pretty/table/ndjson/markdown`。
 - HTTP client 支持超时、重试、requestId 错误透出，并避免重试结构化 `RATE_LIMITED`。
-- 2026-05-30 P0-P2 收口后，CLI 增加包级 Vitest 入口和核心单测，默认 Machine API URL 兜底为 `https://handsome-stoat-500.convex.site`。
+- 2026-05-30 P0-P2 收口后，CLI 增加包级 Vitest 入口和核心单测，默认 Machine API URL 兜底为 `https://laudable-albatross-174.convex.site`。
 
 ### Skills
 

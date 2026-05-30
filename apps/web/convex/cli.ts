@@ -1,1 +1,17 @@
-export * from "@notion/convex/cli";
+export {
+  authenticateApiToken,
+  archiveCliDocument,
+  checkAndIncrementCliRateLimit,
+  createApiTokenRecord,
+  createCliDocument,
+  ensureDefaultApiTokenRecord,
+  getCliDocument,
+  listApiTokenRecords,
+  recordApiTokenUsed,
+  recordCliAuditLog,
+  revokeApiTokenRecord,
+  revokeCurrentApiToken,
+  resetDefaultApiTokenRecord,
+  searchCliDocuments,
+  updateCliDocument,
+} from "@notion/convex/cli";

@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import type { CliConfig } from "../types.js";
 
 const CONFIG_PATH = join(homedir(), ".my-notion", "config.json");
-export const DEFAULT_API_URL = "https://handsome-stoat-500.convex.site";
+export const DEFAULT_API_URL = "https://laudable-albatross-174.convex.site";
 
 export function getConfigPath() {
   return CONFIG_PATH;

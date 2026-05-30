@@ -14,7 +14,6 @@ import {
   AlertDialogTrigger,
 } from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
-import { Checkbox } from "@/src/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -32,6 +31,7 @@ import { useLocale, useTranslations } from "next-intl";
 type ApiTokenRecord = {
   id: string;
   name: string;
+  token: string | null;
   tokenPrefix: string;
   scopes: string[];
   createdAt: number;
@@ -41,27 +41,19 @@ type ApiTokenRecord = {
 };
 
 type ApiTokenListResponse =
-  | { success: true; data: { tokens: ApiTokenRecord[] } }
+  | {
+      success: true;
+      data: { tokens: ApiTokenRecord[]; unavailable?: boolean; warning?: string };
+    }
   | { success: false; error?: string };
 
 type ApiTokenRevokeResponse =
   | { success: true; data: { token: ApiTokenRecord } }
   | { success: false; error?: string };
 
-type CreatedApiToken = {
-  id: string;
-  token: string;
-  tokenPrefix: string;
-};
-
 type ApiTokenCreateResponse =
-  | { success: true; data: CreatedApiToken }
+  | { success: true; data: ApiTokenRecord }
   | { success: false; error?: string };
-
-type TokenScope = "docs:read" | "docs:write";
-
-const TOKEN_SCOPE_OPTIONS: TokenScope[] = ["docs:read", "docs:write"];
-const DEFAULT_TOKEN_SCOPES: TokenScope[] = ["docs:read", "docs:write"];
 
 function formatDateTime(value: number | null, locale: string) {
   if (!value) return "—";
@@ -79,17 +71,15 @@ export function SettingsModal() {
   const [tokens, setTokens] = useState<ApiTokenRecord[]>([]);
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
+  const [tokenWarning, setTokenWarning] = useState<string | null>(null);
   const [revokingTokenId, setRevokingTokenId] = useState<string | null>(null);
-  const [newTokenName, setNewTokenName] = useState("");
-  const [newTokenScopes, setNewTokenScopes] = useState<TokenScope[]>(DEFAULT_TOKEN_SCOPES);
-  const [newTokenExpiresAt, setNewTokenExpiresAt] = useState("");
-  const [isCreatingToken, setIsCreatingToken] = useState(false);
-  const [createdToken, setCreatedToken] = useState<CreatedApiToken | null>(null);
-  const [hasSavedCreatedToken, setHasSavedCreatedToken] = useState(false);
+  const [isResettingToken, setIsResettingToken] = useState(false);
+  const [showDefaultToken, setShowDefaultToken] = useState(false);
 
   const loadTokens = useCallback(async () => {
     setIsLoadingTokens(true);
     setTokenError(null);
+    setTokenWarning(null);
 
     try {
       const response = await fetch("/api/cli/tokens", {
@@ -101,15 +91,18 @@ export function SettingsModal() {
         throw new Error(payload.success === false ? payload.error : undefined);
       }
 
-      setTokens(payload.data.tokens);
+      if (payload.data.unavailable) {
+        setTokenWarning("failedToLoadTokens");
+      } else {
+        setTokens(payload.data.tokens);
+      }
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("failedToLoadTokens");
-      setTokenError(message || t("failedToLoadTokens"));
-      toast.error(message || t("failedToLoadTokens"));
+      const message = error instanceof Error ? error.message : "";
+      setTokenError(message || "failedToLoadTokens");
     } finally {
       setIsLoadingTokens(false);
     }
-  }, [t]);
+  }, []);
 
   useEffect(() => {
     if (settings.isOpen) {
@@ -120,38 +113,12 @@ export function SettingsModal() {
   const handleOpenChange = (open: boolean) => {
     if (open) return;
 
-    if (createdToken && !hasSavedCreatedToken) {
-      toast.info(t("saveTokenBeforeClosing"));
-      return;
-    }
-
-    setCreatedToken(null);
-    setHasSavedCreatedToken(false);
+    setShowDefaultToken(false);
     settings.onClose();
   };
 
-  const toggleNewTokenScope = (scope: TokenScope, checked: boolean) => {
-    setNewTokenScopes((current) => {
-      if (checked) return Array.from(new Set([...current, scope]));
-      return current.filter((item) => item !== scope);
-    });
-  };
-
-  const createToken = async () => {
-    if (newTokenScopes.length === 0) {
-      toast.error(t("selectAtLeastOneScope"));
-      return;
-    }
-
-    const expiresAt = newTokenExpiresAt
-      ? new Date(newTokenExpiresAt).getTime()
-      : undefined;
-    if (expiresAt !== undefined && (!Number.isFinite(expiresAt) || expiresAt <= Date.now())) {
-      toast.error(t("invalidExpiresAt"));
-      return;
-    }
-
-    setIsCreatingToken(true);
+  const resetDefaultToken = async () => {
+    setIsResettingToken(true);
 
     try {
       const response = await fetch("/api/cli/tokens", {
@@ -160,9 +127,7 @@ export function SettingsModal() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: newTokenName.trim() || undefined,
-          scopes: newTokenScopes,
-          expiresAt,
+          resetDefault: true,
         }),
       });
       const payload = (await response.json()) as ApiTokenCreateResponse;
@@ -171,35 +136,30 @@ export function SettingsModal() {
         throw new Error(payload.success === false ? payload.error : undefined);
       }
 
-      setCreatedToken(payload.data);
-      setHasSavedCreatedToken(false);
-      setNewTokenName("");
-      setNewTokenScopes(DEFAULT_TOKEN_SCOPES);
-      setNewTokenExpiresAt("");
+      setTokens([payload.data]);
+      setShowDefaultToken(true);
       await loadTokens();
-      toast.success(t("tokenCreated"));
+      toast.success(t("tokenReset"));
     } catch (error) {
-      const message = error instanceof Error ? error.message : t("failedToCreateToken");
-      toast.error(message || t("failedToCreateToken"));
+      const message = error instanceof Error ? error.message : t("failedToResetToken");
+      toast.error(message || t("failedToResetToken"));
     } finally {
-      setIsCreatingToken(false);
+      setIsResettingToken(false);
     }
   };
 
-  const copyCreatedToken = async () => {
-    if (!createdToken) return;
+  const copyToken = async (tokenValue: string | null) => {
+    if (!tokenValue) {
+      toast.error(t("tokenUnavailableReset"));
+      return;
+    }
 
     try {
-      await navigator.clipboard.writeText(createdToken.token);
+      await navigator.clipboard.writeText(tokenValue);
       toast.success(t("tokenCopied"));
     } catch {
       toast.error(t("failedToCopyToken"));
     }
-  };
-
-  const acknowledgeSavedToken = () => {
-    setCreatedToken(null);
-    setHasSavedCreatedToken(false);
   };
 
   const revokeToken = async (tokenId: string) => {
@@ -277,125 +237,12 @@ export function SettingsModal() {
 
           {tokenError ? (
             <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {tokenError}
+              {tokenError === "failedToLoadTokens" ? t("failedToLoadTokens") : tokenError}
             </div>
           ) : null}
-
-          <div className="mb-3 rounded-md border bg-muted/30 p-3">
-            <div className="mb-2 flex flex-col gap-1">
-              <Label htmlFor="new-api-token-name">{t("createApiToken")}</Label>
-              <span className="text-xs text-muted-foreground">
-                {t("createApiTokenDescription")}
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <Input
-                disabled={isCreatingToken || Boolean(createdToken)}
-                id="new-api-token-name"
-                onChange={(event) => setNewTokenName(event.target.value)}
-                placeholder={t("tokenNamePlaceholder")}
-                value={newTokenName}
-              />
-              <Button
-                disabled={isCreatingToken || Boolean(createdToken)}
-                onClick={() => void createToken()}
-                type="button"
-              >
-                {isCreatingToken ? t("creatingToken") : t("createToken")}
-              </Button>
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div>
-                <div className="mb-2 text-xs font-medium">{t("tokenScopes")}</div>
-                <div className="space-y-2">
-                  {TOKEN_SCOPE_OPTIONS.map((scope) => (
-                    <div className="flex items-start gap-2" key={scope}>
-                      <Checkbox
-                        checked={newTokenScopes.includes(scope)}
-                        disabled={isCreatingToken || Boolean(createdToken)}
-                        id={`new-api-token-scope-${scope}`}
-                        onCheckedChange={(checked) =>
-                          toggleNewTokenScope(scope, checked === true)
-                        }
-                      />
-                      <Label
-                        className="cursor-pointer text-xs"
-                        htmlFor={`new-api-token-scope-${scope}`}
-                      >
-                        <span className="block font-mono">{scope}</span>
-                        <span className="block text-muted-foreground">
-                          {t(scope === "docs:read" ? "docsReadScope" : "docsWriteScope")}
-                        </span>
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label className="mb-2 block text-xs font-medium" htmlFor="new-api-token-expires-at">
-                  {t("tokenExpiresAt")}
-                </Label>
-                <Input
-                  disabled={isCreatingToken || Boolean(createdToken)}
-                  id="new-api-token-expires-at"
-                  onChange={(event) => setNewTokenExpiresAt(event.target.value)}
-                  type="datetime-local"
-                  value={newTokenExpiresAt}
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("tokenExpiresAtDescription")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {createdToken ? (
-            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-3">
-              <div className="mb-2">
-                <div className="font-medium text-sm">{t("newTokenReady")}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {t("newTokenVisibleOnce")}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <Input
-                  className="font-mono text-xs"
-                  readOnly
-                  type="text"
-                  value={createdToken.token}
-                />
-                <Button
-                  onClick={() => void copyCreatedToken()}
-                  type="button"
-                  variant="outline"
-                >
-                  {t("copyToken")}
-                </Button>
-              </div>
-              <div className="mt-3 flex items-center gap-2">
-                <Checkbox
-                  checked={hasSavedCreatedToken}
-                  id="saved-created-token"
-                  onCheckedChange={(checked) =>
-                    setHasSavedCreatedToken(checked === true)
-                  }
-                />
-                <Label
-                  className="cursor-pointer text-xs text-muted-foreground"
-                  htmlFor="saved-created-token"
-                >
-                  {t("iHaveSavedToken")}
-                </Label>
-              </div>
-              <Button
-                className="mt-3"
-                disabled={!hasSavedCreatedToken}
-                onClick={acknowledgeSavedToken}
-                size="sm"
-                type="button"
-              >
-                {t("hideSavedToken")}
-              </Button>
+          {tokenWarning ? (
+            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
+              {t("failedToLoadTokens")}
             </div>
           ) : null}
 
@@ -411,17 +258,11 @@ export function SettingsModal() {
               const isRevoking = revokingTokenId === token.id;
 
               return (
-                <div
-                  className="rounded-md border p-3 text-sm"
-                  key={token.id}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
+                <div className="rounded-md border p-3 text-sm" key={token.id}>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex flex-wrap items-center gap-2">
                         <span className="font-medium">{token.name}</span>
-                        <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-muted-foreground">
-                          {token.tokenPrefix}...
-                        </span>
                         <span
                           className={
                             isRevoked
@@ -432,45 +273,80 @@ export function SettingsModal() {
                           {isRevoked ? t("revoked") : t("active")}
                         </span>
                       </div>
-                      <div className="mt-2 grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                        <span>{t("scopes")}: {token.scopes.join(", ")}</span>
-                        <span>{t("createdAt")}: {formatDateTime(token.createdAt, locale)}</span>
-                        <span>{t("lastUsedAt")}: {formatDateTime(token.lastUsedAt, locale)}</span>
-                        <span>{t("expiresAt")}: {formatDateTime(token.expiresAt, locale)}</span>
+                      <div className="flex gap-2">
+                        <Button
+                          disabled={isResettingToken}
+                          onClick={() => void resetDefaultToken()}
+                          size="sm"
+                          type="button"
+                          variant="outline"
+                        >
+                          {isResettingToken ? t("resettingToken") : t("resetToken")}
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              disabled={isRevoked || isRevoking}
+                              size="sm"
+                              type="button"
+                              variant="destructive"
+                            >
+                              {isRevoking ? t("revoking") : t("revoke")}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("revokeTokenTitle")}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("revokeTokenDescription", {
+                                  tokenPrefix: token.tokenPrefix,
+                                })}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogAction
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                onClick={() => void revokeToken(token.id)}
+                              >
+                                {t("confirmRevoke")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </div>
 
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
+                    <div className="flex gap-2">
+                        <Input
+                          className="font-mono text-xs"
+                          readOnly
+                          type={showDefaultToken ? "text" : "password"}
+                          value={token.token ?? token.tokenPrefix}
+                        />
                         <Button
-                          disabled={isRevoked || isRevoking}
-                          size="sm"
+                          disabled={!token.token || isRevoked}
+                          onClick={() => setShowDefaultToken((value) => !value)}
                           type="button"
-                          variant="destructive"
+                          variant="outline"
                         >
-                          {isRevoking ? t("revoking") : t("revoke")}
+                          {showDefaultToken ? t("hideToken") : t("showToken")}
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>{t("revokeTokenTitle")}</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            {t("revokeTokenDescription", {
-                              tokenPrefix: token.tokenPrefix,
-                            })}
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                          <AlertDialogAction
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            onClick={() => void revokeToken(token.id)}
-                          >
-                            {t("confirmRevoke")}
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                        <Button
+                          disabled={!token.token || isRevoked}
+                          onClick={() => void copyToken(token.token)}
+                          type="button"
+                          variant="outline"
+                        >
+                          {t("copyToken")}
+                        </Button>
+                    </div>
+
+                    <div className="text-xs text-muted-foreground">
+                      {token.token
+                        ? `${t("createdAt")}: ${formatDateTime(token.createdAt, locale)} · ${t("lastUsedAt")}: ${formatDateTime(token.lastUsedAt, locale)}`
+                        : t("tokenUnavailableReset")}
+                    </div>
                   </div>
                 </div>
               );

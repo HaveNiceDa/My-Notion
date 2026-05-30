@@ -7,6 +7,7 @@ import {
 } from "../documents/logic/markdown";
 
 const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
+const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 function now() {
@@ -48,6 +49,7 @@ function toApiTokenResult(token: {
   _id: string;
   name: string;
   tokenPrefix: string;
+  tokenPlaintext?: string;
   scopes: string[];
   createdAt: number;
   lastUsedAt?: number;
@@ -58,6 +60,7 @@ function toApiTokenResult(token: {
     id: token._id,
     name: token.name,
     tokenPrefix: token.tokenPrefix,
+    token: token.tokenPlaintext ?? null,
     scopes: token.scopes,
     createdAt: token.createdAt,
     lastUsedAt: token.lastUsedAt ?? null,
@@ -120,6 +123,126 @@ export const listApiTokenRecords = query({
       .collect();
 
     return tokens.map(toApiTokenResult);
+  },
+});
+
+/** 登录态用户读取或创建默认 CLI token；个人版为了易用性会返回明文。 */
+export const ensureDefaultApiTokenRecord = mutation({
+  args: {
+    tokenHash: v.string(),
+    tokenPrefix: v.string(),
+    tokenPlaintext: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const defaultTokens = await ctx.db
+      .query("apiTokens")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+    const existing = defaultTokens.find(
+      (token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt,
+    );
+    if (existing?.tokenPlaintext) {
+      return toApiTokenResult(existing);
+    }
+
+    if (existing) {
+      await ctx.db.patch(existing._id, {
+        tokenHash: args.tokenHash,
+        tokenPrefix: args.tokenPrefix,
+        tokenPlaintext: args.tokenPlaintext,
+        scopes: [...DEFAULT_DOC_SCOPES],
+      });
+
+      return toApiTokenResult({
+        ...existing,
+        tokenPrefix: args.tokenPrefix,
+        tokenPlaintext: args.tokenPlaintext,
+        scopes: [...DEFAULT_DOC_SCOPES],
+      });
+    }
+
+    const createdAt = now();
+    const tokenId = await ctx.db.insert("apiTokens", {
+      userId: identity.subject,
+      name: DEFAULT_CLI_TOKEN_NAME,
+      tokenHash: args.tokenHash,
+      tokenPrefix: args.tokenPrefix,
+      tokenPlaintext: args.tokenPlaintext,
+      scopes: [...DEFAULT_DOC_SCOPES],
+      createdAt,
+    });
+
+    return toApiTokenResult({
+      _id: tokenId,
+      name: DEFAULT_CLI_TOKEN_NAME,
+      tokenPrefix: args.tokenPrefix,
+      tokenPlaintext: args.tokenPlaintext,
+      scopes: [...DEFAULT_DOC_SCOPES],
+      createdAt,
+    });
+  },
+});
+
+/** 重置默认 CLI token 明文和 hash；旧明文会立即失效。 */
+export const resetDefaultApiTokenRecord = mutation({
+  args: {
+    tokenHash: v.string(),
+    tokenPrefix: v.string(),
+    tokenPlaintext: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const defaultTokens = await ctx.db
+      .query("apiTokens")
+      .withIndex("by_user", (q) => q.eq("userId", identity.subject))
+      .collect();
+    const existing = defaultTokens.find(
+      (token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt,
+    );
+    if (!existing) {
+      const createdAt = now();
+      const tokenId = await ctx.db.insert("apiTokens", {
+        userId: identity.subject,
+        name: DEFAULT_CLI_TOKEN_NAME,
+        tokenHash: args.tokenHash,
+        tokenPrefix: args.tokenPrefix,
+        tokenPlaintext: args.tokenPlaintext,
+        scopes: [...DEFAULT_DOC_SCOPES],
+        createdAt,
+      });
+
+      return toApiTokenResult({
+        _id: tokenId,
+        name: DEFAULT_CLI_TOKEN_NAME,
+        tokenPrefix: args.tokenPrefix,
+        tokenPlaintext: args.tokenPlaintext,
+        scopes: [...DEFAULT_DOC_SCOPES],
+        createdAt,
+      });
+    }
+
+    await ctx.db.patch(existing._id, {
+      tokenHash: args.tokenHash,
+      tokenPrefix: args.tokenPrefix,
+      tokenPlaintext: args.tokenPlaintext,
+      scopes: [...DEFAULT_DOC_SCOPES],
+    });
+
+    return toApiTokenResult({
+      ...existing,
+      tokenPrefix: args.tokenPrefix,
+      tokenPlaintext: args.tokenPlaintext,
+      scopes: [...DEFAULT_DOC_SCOPES],
+    });
   },
 });
 

@@ -9,13 +9,13 @@ My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 
 如果你要连接当前这个 My-Notion 项目已经在线运行的服务，使用流程是：
 
 ```text
-打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 创建 token -> 复制 mnt_ 开头的 PAT -> 用 CLI auth login 登录 -> 执行 docs 命令
+打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 显示并复制默认 Token -> 用 CLI auth login 登录 -> 执行 docs 命令
 ```
 
 当前项目的默认 Machine API 地址是：
 
 ```bash
-https://handsome-stoat-500.convex.site
+https://laudable-albatross-174.convex.site
 ```
 
 如果用户不指定 `--api-url`，CLI 默认使用这个线上地址。登录命令示例：
@@ -42,30 +42,26 @@ my-notion docs create \
   --format json
 ```
 
-### PAT 在哪里创建
+### PAT 在哪里复制
 
-PAT 不是在命令行里生成的，而是在 My-Notion Web 里由当前登录用户创建：
+PAT 不是在命令行里生成的，而是在 My-Notion Web 里由当前登录用户管理：
 
 1. 打开线上 My-Notion Web。
 2. 登录你的账号。
 3. 打开设置弹窗。
 4. 找到 `API Tokens` 区域。
-5. 输入 token 名称，例如 `Local CLI` 或 `Agent Writer`。
-6. 勾选权限：
-   - `docs:read`：读取、搜索、导出文档。
-   - `docs:write`：创建、更新、导入、归档文档。
-7. 可选填写过期时间。
-8. 点击创建 token。
-9. 复制生成的 `mnt_...` token。
+5. 默认 Token 会自动生成，点击“显示”查看明文。
+6. 点击“复制”复制 `mnt_...` token。
+7. 如需让旧 token 失效，点击“重置 Token”生成新的默认 token。
 
-注意：完整 PAT 只会显示一次。复制后请保存到本机密码管理器或安全位置，不要写进代码仓库、聊天记录或公开文档。
+默认 Token 像密码一样可以隐藏、显示和复制。不要把完整 PAT 写进代码仓库、聊天记录或公开文档。
 
 ### API 地址在哪里看
 
 当前项目可以直接使用：
 
 ```bash
-https://handsome-stoat-500.convex.site
+https://laudable-albatross-174.convex.site
 ```
 
 如果以后换了 Convex 部署，API 地址有两种确认方式：
@@ -76,13 +72,13 @@ https://handsome-stoat-500.convex.site
 例如：
 
 ```text
-NEXT_PUBLIC_CONVEX_URL=https://handsome-stoat-500.convex.cloud
+NEXT_PUBLIC_CONVEX_URL=https://laudable-albatross-174.convex.cloud
 ```
 
 对应 CLI API URL 是：
 
 ```text
-https://handsome-stoat-500.convex.site
+https://laudable-albatross-174.convex.site
 ```
 
 ## 1. 准备工作
@@ -95,7 +91,7 @@ https://handsome-stoat-500.convex.site
 - 服务端 API 地址；不指定时默认使用当前线上地址：
 
 ```bash
-https://handsome-stoat-500.convex.site
+https://laudable-albatross-174.convex.site
 ```
 
 - 如需连接其他部署，可指定 Convex `.site` 地址，例如：
@@ -352,7 +348,7 @@ CLI 支持多种输出格式：
 
 ## 16. 环境变量配置
 
-如果不想写入本地配置文件，也可以用环境变量。`MY_NOTION_API_URL` 可选，不设置时默认使用 `https://handsome-stoat-500.convex.site`：
+如果不想写入本地配置文件，也可以用环境变量。`MY_NOTION_API_URL` 可选，不设置时默认使用 `https://laudable-albatross-174.convex.site`：
 
 ```bash
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
@@ -371,7 +367,7 @@ my-notion docs search --query "项目" --format json
 - 命令行参数最高，例如 `--api-url`、`--token`。
 - 环境变量其次。
 - `~/.my-notion/config.json` 再次。
-- 默认线上地址 `https://handsome-stoat-500.convex.site` 最后。
+- 默认线上地址 `https://laudable-albatross-174.convex.site` 最后。
 
 ## 17. 推荐完整流程
 

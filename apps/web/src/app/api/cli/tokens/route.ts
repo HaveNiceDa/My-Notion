@@ -9,6 +9,7 @@ type CreateTokenBody = {
   name?: string;
   scopes?: string[];
   expiresAt?: number;
+  resetDefault?: boolean;
 };
 
 type AuthenticatedConvexClientResult =
@@ -24,16 +25,44 @@ function sha256Hex(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
+function getErrorText(error: unknown): string {
+  if (!error) return "";
+
+  const messages: string[] = [];
+  if (error instanceof Error) {
+    messages.push(error.message);
+    if ("cause" in error && error.cause) {
+      messages.push(String(error.cause));
+    }
+  } else {
+    messages.push(String(error));
+  }
+
+  if (typeof error === "object" && error !== null && "errors" in error) {
+    const clerkErrors = (error as { errors?: Array<{ code?: string; message?: string }> })
+      .errors;
+    if (Array.isArray(clerkErrors)) {
+      for (const clerkError of clerkErrors) {
+        messages.push(clerkError.code ?? "", clerkError.message ?? "");
+      }
+    }
+  }
+
+  return messages.filter(Boolean).join(" ");
+}
+
 function isNetworkUnavailableError(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : String(error);
-  const cause = error instanceof Error && "cause" in error ? String(error.cause) : "";
-  return /fetch failed|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|network|unexpected_error/i.test(
-    `${message} ${cause}`,
+  return /fetch failed|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|network|unexpected_error/i.test(
+    getErrorText(error),
   );
 }
 
 function serviceUnavailableMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : String(error);
+  if (typeof error === "string" && error.startsWith("CLI token service")) {
+    return error;
+  }
+
+  const message = getErrorText(error) || "authentication service unavailable";
   return `CLI token service is temporarily unavailable: ${message}`;
 }
 
@@ -45,6 +74,35 @@ function serviceUnavailableResponse(error: unknown) {
       error: serviceUnavailableMessage(error),
     },
     { status: 503 },
+  );
+}
+
+function tokenListUnavailableResponse(error: unknown) {
+  const warning = serviceUnavailableMessage(error);
+  console.warn("[CLI Token] Degraded token list:", warning);
+  return NextResponse.json({
+    success: true,
+    data: { tokens: [], unavailable: true, warning },
+  });
+}
+
+function tokenRouteErrorResponse(error: unknown) {
+  const message = getErrorText(error);
+
+  if (/Unauthenticated|Unauthorized/i.test(message)) {
+    return NextResponse.json(
+      { success: false, code: "UNAUTHORIZED", error: "Unauthorized" },
+      { status: 401 },
+    );
+  }
+
+  if (isNetworkUnavailableError(error)) {
+    return serviceUnavailableResponse(error);
+  }
+
+  return NextResponse.json(
+    { success: false, code: "INTERNAL_ERROR", error: message || "Internal server error" },
+    { status: 500 },
   );
 }
 
@@ -95,34 +153,26 @@ export async function GET() {
     const result = await getAuthenticatedConvexClient();
     if ("error" in result) return result.error;
     if ("unavailable" in result) {
-      console.warn("[CLI Token] Degraded token list:", result.unavailable);
-      return NextResponse.json({
-        success: true,
-        data: { tokens: [], unavailable: true, warning: result.unavailable },
-      });
+      return tokenListUnavailableResponse(result.unavailable);
     }
 
-    let tokens;
+    let token;
     try {
-      tokens = await result.convex.query(api.cli.listApiTokenRecords, {});
+      const plainToken = createPlainToken();
+      token = await result.convex.mutation(api.cli.ensureDefaultApiTokenRecord, {
+        tokenHash: sha256Hex(plainToken),
+        tokenPrefix: plainToken.slice(0, 12),
+        tokenPlaintext: plainToken,
+      });
     } catch (error) {
-      if (isNetworkUnavailableError(error)) {
-        const warning = serviceUnavailableMessage(error);
-        console.warn("[CLI Token] Degraded token list:", warning);
-        return NextResponse.json({
-          success: true,
-          data: { tokens: [], unavailable: true, warning },
-        });
-      }
-      throw error;
+      return tokenListUnavailableResponse(error);
     }
-    return NextResponse.json({ success: true, data: { tokens } });
+    return NextResponse.json({ success: true, data: { tokens: [token] } });
   } catch (error) {
-    console.error("[CLI Token] Error:", error);
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 },
-    );
+    if (!isNetworkUnavailableError(error)) {
+      console.error("[CLI Token] Error:", error);
+    }
+    return tokenListUnavailableResponse(error);
   }
 }
 
@@ -136,13 +186,19 @@ export async function POST(req: NextRequest) {
     const plainToken = createPlainToken();
     const tokenPrefix = plainToken.slice(0, 12);
 
-    const record = await result.convex.mutation(api.cli.createApiTokenRecord, {
-      name: body.name?.trim() || "My-Notion CLI Token",
-      tokenHash: sha256Hex(plainToken),
-      tokenPrefix,
-      scopes: body.scopes,
-      expiresAt: body.expiresAt,
-    });
+    const record = body.resetDefault
+      ? await result.convex.mutation(api.cli.resetDefaultApiTokenRecord, {
+          tokenHash: sha256Hex(plainToken),
+          tokenPrefix,
+          tokenPlaintext: plainToken,
+        })
+      : await result.convex.mutation(api.cli.createApiTokenRecord, {
+          name: body.name?.trim() || "My-Notion CLI Token",
+          tokenHash: sha256Hex(plainToken),
+          tokenPrefix,
+          scopes: body.scopes,
+          expiresAt: body.expiresAt,
+        });
 
     return NextResponse.json({
       success: true,
@@ -154,10 +210,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[CLI Token] Error:", error);
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 },
-    );
+    return tokenRouteErrorResponse(error);
   }
 }
 
@@ -184,9 +237,6 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true, data: { token } });
   } catch (error) {
     console.error("[CLI Token] Error:", error);
-    return NextResponse.json(
-      { success: false, error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 },
-    );
+    return tokenRouteErrorResponse(error);
   }
 }

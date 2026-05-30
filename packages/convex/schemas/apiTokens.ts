@@ -9,6 +9,8 @@ export const apiTokensTable = defineTable({
   name: v.string(),
   /** 明文 token 的 SHA-256 哈希，禁止存储明文。 */
   tokenHash: v.string(),
+  /** 默认 CLI token 的明文，便于个人版设置页隐藏/显示和复制。 */
+  tokenPlaintext: v.optional(v.string()),
   /** token 前缀，用于状态展示和审计，不具备认证能力。 */
   tokenPrefix: v.string(),
   /** 权限范围，例如 docs:read、docs:write。 */
