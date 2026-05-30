@@ -1,0 +1,193 @@
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { MessageInput } from "./MessageInput";
+import { MessageList } from "./MessageList";
+import { ToolCallCard } from "./ToolCallCard";
+import type { ChatMessage, ToolCallResult } from "./types";
+
+vi.mock("next-intl", () => ({
+  useTranslations: () => (key: string, values?: Record<string, unknown>) => {
+    const translations: Record<string, string> = {
+      useAIToHandleTasks: "使用 AI 处理各种任务",
+      knowledgeSearchTool: "知识库检索",
+      documentWriteTool: "文档写入",
+      documentWritePreview: "文档写入预览",
+      documentConfirmationRequired: "需要确认后写入",
+      retrievalStrategyLabel: "检索策略",
+      retrievalStrategyBalanced: "均衡",
+      retrievalRecallStats: `召回 semantic=${values?.semantic ?? 0} keyword=${values?.keyword ?? 0} metadata=${values?.metadata ?? 0} fused=${values?.fused ?? 0}`,
+      retrievalPackingStats: `上下文 ${values?.packed ?? 0}/${values?.tokens ?? 0}/${values?.budget ?? 0}`,
+      retrievalCitationQuality: `引用覆盖 ${values?.coverage ?? 0}% ${values?.documents ?? 0} 篇`,
+      referencedDocsCount: `${values?.count ?? 0} 篇文档`,
+      toolRepeated: `重复 ${values?.count ?? 0} 次`,
+      generatingResponse: "正在生成响应...",
+      deepThinking: "深度思考",
+    };
+    return translations[key] ?? key;
+  },
+}));
+
+vi.mock("./MarkdownRenderer", async () => {
+  const ReactModule = await import("react");
+  return {
+    MarkdownRenderer: ({ content }: { content: string }) =>
+      ReactModule.createElement("div", { "data-markdown": "true" }, content),
+  };
+});
+
+vi.mock("convex/react", () => ({
+  useMutation: () => vi.fn(),
+}));
+
+vi.mock("@/src/lib/agent/memory-sync-client", () => ({
+  syncMemoryIndex: vi.fn(),
+}));
+
+function render(element: React.ReactElement) {
+  return renderToStaticMarkup(element);
+}
+
+describe("AI Chat 组件渲染", () => {
+  it("MessageInput 渲染当前模型、输入内容，并在空输入时禁用发送", () => {
+    const html = render(
+      React.createElement(MessageInput, {
+        input: "  ",
+        onInputChange: vi.fn(),
+        onSend: vi.fn(),
+        modelId: "deepseek-v4-pro",
+        onModelChange: vi.fn(),
+        enableThinking: true,
+        isSending: false,
+      }),
+    );
+
+    expect(html).toContain("使用 AI 处理各种任务");
+    expect(html).toContain("DeepSeek V4 Pro");
+    expect(html).toContain("disabled");
+  });
+
+  it("MessageInput 在发送中展示加载态并禁用模型切换", () => {
+    const html = render(
+      React.createElement(MessageInput, {
+        input: "帮我总结",
+        onInputChange: vi.fn(),
+        onSend: vi.fn(),
+        modelId: "qwen3.6-27b",
+        onModelChange: vi.fn(),
+        enableThinking: true,
+        isSending: true,
+      }),
+    );
+
+    expect(html).toContain("Qwen 3.6 27B");
+    expect(html).toContain("animate-spin");
+    expect(html).toContain("disabled");
+  });
+
+  it("MessageList 渲染用户 JSON 文本、助手思考过程和加载状态", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "1",
+        role: "user",
+        content: JSON.stringify({ text: "用户问题" }),
+        timestamp: new Date("2026-05-30T10:00:00Z"),
+      },
+      {
+        id: "2",
+        role: "assistant",
+        content: "助手回答",
+        reasoningContent: "分析过程",
+        timestamp: new Date("2026-05-30T10:00:01Z"),
+      },
+    ];
+
+    const html = render(
+      React.createElement(MessageList, {
+        messages,
+        isLoading: true,
+        toolCalls: [],
+        messagesEndRef: { current: null },
+        conversationCreatedAt: new Date("2026-05-30T10:00:00Z"),
+      }),
+    );
+
+    expect(html).toContain("用户问题");
+    expect(html).toContain("助手回答");
+    expect(html).toContain("深度思考");
+    expect(html).toContain("分析过程");
+    expect(html).toContain("正在生成响应...");
+  });
+
+  it("MessageList 将重复只读工具调用折叠为重复次数", () => {
+    const toolResult: ToolCallResult = {
+      id: "tool-1",
+      name: "knowledge_search",
+      status: "completed",
+      parameters: { arguments: "{\"query\":\"Agent\"}" },
+      result: {
+        query: "Agent",
+        strategy: "balanced",
+        documents: [
+          {
+            documentId: "doc1",
+            title: "Agent 架构",
+            score: 0.9,
+            content: "Agent 架构内容",
+            sources: ["semantic", "keyword"],
+          },
+        ],
+      },
+    };
+    const messages: ChatMessage[] = [
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: "已检索",
+        timestamp: new Date("2026-05-30T10:00:00Z"),
+        toolResults: [toolResult, { ...toolResult, id: "tool-2" }],
+      },
+    ];
+
+    const html = render(
+      React.createElement(MessageList, {
+        messages,
+        isLoading: false,
+        toolCalls: [],
+        messagesEndRef: { current: null },
+        conversationCreatedAt: null,
+      }),
+    );
+
+    expect(html).toContain("知识库检索");
+    expect(html).toContain("重复 2 次");
+    expect(html).toContain("Agent 架构");
+  });
+
+  it("ToolCallCard 对写类工具展示确认预览而不是自动落库状态", () => {
+    const html = render(
+      React.createElement(ToolCallCard, {
+        toolResult: {
+          id: "write-1",
+          name: "document_write",
+          status: "completed",
+          result: {
+            dryRun: true,
+            confirmationRequired: true,
+            action: "document_write",
+            document: {
+              title: "新文档",
+              contentMarkdown: "# 标题\n正文",
+            },
+          },
+        },
+      }),
+    );
+
+    expect(html).toContain("文档写入");
+    expect(html).toContain("文档写入预览");
+    expect(html).toContain("需要确认后写入");
+    expect(html).toContain("新文档");
+    expect(html).toContain("# 标题");
+  });
+});
