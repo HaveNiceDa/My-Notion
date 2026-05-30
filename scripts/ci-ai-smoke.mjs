@@ -76,7 +76,7 @@ async function runAiChatMockE2E() {
       throw new Error(message);
     }
     console.log(`[AI Smoke] skipped: ${message}`);
-    console.log("[AI Smoke] set AI_SMOKE_REQUIRE_E2E=1 in CI to make this a hard failure");
+    console.log("[AI Smoke] set CLERK_SECRET_KEY locally to run authenticated E2E");
     return;
   }
 

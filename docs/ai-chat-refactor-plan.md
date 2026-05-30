@@ -1,6 +1,6 @@
 # AI Chat 重构方案：剩余待办
 
-> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。M17 已完成 Hybrid Retrieval 主线、Memory MVP 和 Web Agent 文档写入 dry-run 闭环，`knowledge_search` 默认升级为混合检索，`memory_read` / `memory_write` / `document_write` / `document_update` 已接入 Web Agent。下一步重点从“写类 Tool 安全闭环”转向“Agent 可观测性、只读 Tool 生态补齐、Memory/RAG 质量增强”。
+> Phase 1-5 已在 M10-M14 全部完成，CLI / Skills / MCP Agent 写文档链路已在 M16 收口。M17 已完成 Hybrid Retrieval 主线、Memory MVP 和 Web Agent 文档写入 dry-run 闭环，`knowledge_search` 默认升级为混合检索，`memory_read` / `memory_write` / `document_write` / `document_update` 已接入 Web Agent。当前 M18 已完成 Agent 后端测试扩充、AI Chat 组件/流客户端测试、最小 synthetic retrieval eval、`pnpm ci:ai-smoke` 本地串联脚本和无新增 secrets 依赖的 AI smoke GitHub Actions；AI Chat mock E2E 用例已补充，但 CI 默认跳过认证态 E2E，仅保留本地可选验证。尚未完成 Storybook、Memory eval、真实样本 eval、rerank、Tool Trace Replay 和 trace sink 持久化。
 
 ---
 
@@ -12,8 +12,8 @@
 |---|---|---|---|---|
 | 1.1 | useAIChat.ts 拆分 | 已拆为 `useAIChatState` + `useAIChatStream` + `useAIChatPersistence` + `stream-client`，主文件仅 34 行组合层 | P1 | ✅ 完成 |
 | 1.2 | AIChatPanel.tsx 拆分 | `ConversationList` 和 `EmptyHome` 已拆为独立文件 | P2 | ✅ 完成 |
-| 1.3 | Agent 后端测试 | 5 个测试文件（tools / document-read / context-compression / stream / rate-limiter），66 个用例覆盖全部核心路径 | P1 | ✅ 完成 |
-| 1.4 | 前端 AI 组件测试 | `components/ai-chat/` 下 0 个测试文件，MarkdownRenderer/MessageList/useAIChat 核心路径需测试 | P2 | ❌ 未做 |
+| 1.3 | Agent 后端测试 | 已有 `tools` / `react-loop` / `tool-result-cache` / `stream` / `trace` / `document-read` / `rate-limiter` / `context-compression` 等后端测试文件，覆盖工具注册、ReAct 循环、缓存、流、trace 和限流等核心路径 | P1 | ✅ 完成 |
+| 1.4 | 前端 AI 组件测试 | 已新增 `ai-chat-components.test.ts` 和 `stream-client.test.ts`，覆盖 `MessageInput`、`MessageList`、`ToolCallCard`、`runAgentStream` 的渲染、工具展示、写入预览、NDJSON 拆包、error 事件和 429 限流错误；纳入 `pnpm --filter @notion/web test` | P2 | ✅ 完成 |
 | 1.5 | 错误边界 | `AIChatErrorBoundary` 已实现 | P1 | ✅ 完成 |
 | 1.6 | 类型安全 | `runAgentStream` → `AgentStreamOptions`，`streamModelResponse` → `StreamModelOptions`，所有长参数列表已重构为 options 对象 | P2 | ✅ 完成 |
 
@@ -32,21 +32,21 @@
 
 | # | 项目 | 具体内容 | 优先级 | 状态 |
 |---|---|---|---|---|
-| 3.1 | AI 模块 E2E 测试 | Playwright mock API 测试完整对话流程 | P2 | ❌ 未做 |
+| 3.1 | AI 模块 E2E 测试 | 已在认证态 Playwright 用例中补充 AI Chat mock stream 场景，覆盖完整对话、只读工具展示、写入确认预览、stream error 和 429 retry-after；当前本地验证依赖 `CLERK_SECRET_KEY` 的 auth setup | P2 | ⚠️ 已补用例，待认证环境验证 |
 | 3.2 | Agent 性能监控 | 已新增 `AgentTracer` 结构化事件，覆盖 run / ReAct iteration / LLM 首 chunk 与总耗时 / tool 执行耗时与错误；本地 console 可观测，后续可接 Sentry/Harness sink | P1 | ✅ 基础完成 |
 | 3.3 | 环境变量校验 | `instrumentation.ts` 启动时校验 LLM_API_KEY / NEXT_PUBLIC_CONVEX_URL（必需）和 SERPAPI_API_KEY / CLERK_*（可选），缺失时立即报错 | P2 | ✅ 完成 |
 | 3.4 | API Rate Limiting | 纯内存滑动窗口限流（20 次/分钟/用户），零外部依赖 | P1 | ✅ 完成 |
-| 3.5 | Storybook 组件文档 | AI Chat 组件可视化文档和交互示例 | P3 | ❌ 未做 |
-| 3.6 | CI 集成 AI 测试 | GitHub Actions lint-typecheck.yml 的 unit-test job 已包含 `pnpm --filter @notion/web test`，Agent 后端测试纳入 CI | P2 | ✅ 完成 |
+| 3.5 | Storybook 组件文档 | 未发现 AI Chat stories 或 Storybook 配置；`MessageInput`、`MessageList`、`ToolCallCard`、`AIChatErrorBoundary`、`EmptyHome` 尚未形成可视化文档 | P3 | ❌ 未做 |
+| 3.6 | CI 集成 AI 测试 | 已新增 `pnpm ci:ai-smoke` 与 `.github/workflows/ai-smoke.yml`；CI 使用 `AI_SMOKE_SKIP_E2E=1`，仅串联 AI Chat Web unit、Agent unit 和 `eval:retrieval`，不再要求新增 Clerk/Convex/LLM secrets；AI Chat mock E2E 保留为本地可选验证 | P2 | ✅ 无 secrets 版完成 |
 
 ### 6.4 建议优先级排序
 
-1. **7.2 Memory 增强** — 显式 Qdrant 同步、embedding 状态可视化、Memory E2E / eval
-2. **7.3 RAG 质量补齐** — 扩展真实数据 retrieval eval，必要时接二阶段 rerank
-3. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Harness replay 做数据源
-4. **1.4 前端 AI 组件测试** — 核心路径无测试，补足 UI 回归保障
-5. **2.1 Spec 模式 + 2.2 Plan 模式** — 在 Memory / Tool / Observability 稳定后再做确认流和计划流
-6. **2.6 流式重试 + 3.1 AI 模块 E2E 测试 + 3.5 Storybook 组件文档** — 作为体验和工程化补齐项后置
+1. **Agent Trace sink 增强** — 将 `AgentTracer` 接入 Sentry span / 持久化 trace，为 Tool Trace Replay 做数据源。
+2. **Tool Trace Replay / Agent Eval** — 基于持久化 trace 补 Agent golden set、期望 tool 调用和 replay 对比。
+3. **7.2 Memory 增强** — 补 embedding 状态可视化、失败重试队列、Memory E2E 和 Memory eval。
+4. **7.3 RAG 质量补齐** — 将 synthetic retrieval eval 扩展为真实/脱敏样本，再评估 rerank 或 query-aware diversity。
+5. **前端质量补齐** — 补 Storybook；认证态 mock E2E 暂保留本地可选验证，不作为当前 CI 门禁。
+6. **2.1 Spec 模式 + 2.2 Plan 模式 + 2.6 流式重试** — 作为 Agent 观测和 Harness 稳定后的体验增强项。
 
 ---
 
@@ -69,8 +69,8 @@
 | Agent Loop | M14 已完成 ReAct 循环，LLM 自主 tool calling，最多 5 轮；当前仍由 Web Agent registry 构建可用工具；请求开始前会自动注入相关长期记忆；已具备结构化 trace 和核心耗时日志；只读 Tool 已具备 5 分钟 TTL + LRU 跨请求缓存，单次运行内仍保留同名同参去重 | 缺少 Sentry/Harness trace sink、tool 失败降级策略和更完整的 tool 生态 |
 | Tools | Web Agent 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`；CLI/MCP 已具备 docs search/fetch/create/update，写操作默认 dry-run | Web Agent 缺少任务/计划、MCP adapter 等更完整 tool 生态 |
 | Memory | 已有 `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、Agent 自动注入；写入/编辑/停用后会清理 `memory_read` 缓存并显式同步 Qdrant | 缺少 embedding 状态可视化、专门的 Memory E2E / eval；Qdrant 不可用时目前仅 warning 降级，未持久化待重试状态 |
-| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query；`balanced` / `deep` 已接入 Context Packing，支持按文档合并相邻 chunk 和 token budget 裁剪；Citation Quality 已输出引用覆盖率、来源分数解释、packing 说明和是否建议补充检索；已新增 synthetic golden set 和 `pnpm eval:retrieval` 验证 hybrid retrieval + packing + citation quality | 缺少真实数据 retrieval eval、二阶段 rerank；召回质量仍需线上样本验证 |
-| Harness | 已有最小 retrieval eval golden set、fixture、聚合指标和 `pnpm eval:retrieval`，覆盖 hybrid 融合、metadata 补召回和 token budget 截断 | 尚未系统化 Agent eval / regression harness、Tool Trace Replay 和 CI smoke |
+| RAG | 已新增 `retrieveKnowledge(options)`，支持 `fast` / `balanced` / `deep`；默认 `balanced` 走 semantic + keyword + metadata 三路召回和 RRF 融合，`deep` 已接入 Query Rewrite + Multi-query；`balanced` / `deep` 已接入 Context Packing，支持按文档合并相邻 chunk 和 token budget 裁剪；Citation Quality 已输出引用覆盖率、来源分数解释、packing 说明和是否建议补充检索；已新增最小 synthetic golden set 和 `pnpm eval:retrieval` | 缺少真实/脱敏样本 eval、rerank adapter、rerank 对比命令和线上分布质量验证 |
+| Harness | 已有 Agent 后端单测、AI Chat 组件/流客户端测试、最小 synthetic retrieval eval、AI Chat mock E2E 用例、`pnpm ci:ai-smoke` 本地串联脚本和无新增 secrets 依赖的 AI smoke GitHub Actions；GitHub Actions 已有通用 lint/typecheck/unit/build/playwright 工作流 | 尚未系统化 Agent golden set、Tool Trace Replay、Memory eval、Storybook 和持久化 trace sink；认证态 mock E2E 暂不作为 CI 门禁 |
 
 ### 7.1 更多更丰富的 Tool
 
@@ -109,7 +109,7 @@ MVP 切法：
 4. ✅ 增加 Memory Review UI：允许用户查看、筛选、新增、编辑、停用长期记忆，避免黑盒记忆污染。
 5. ✅ 基础冲突处理：同类记忆冲突时保留新版本，旧版本标记 `superseded`，不直接硬删。
 6. ✅ 写入/编辑/停用后显式同步 Qdrant，并清理当前用户 `memory_read` 跨请求缓存；Qdrant 不可用时不阻断 Convex 源记录写入。
-7. ⚠️ 剩余增强：展示 embedding 同步状态、补 Memory E2E / eval，必要时增加失败重试队列。
+7. ⚠️ 剩余增强：展示 embedding 同步状态、补 Memory E2E 和真实/脱敏样本 eval，必要时增加失败重试队列。
 
 边界约束：
 
@@ -140,7 +140,7 @@ MVP 切法：
 | P1 | Query Rewrite | ✅ 已完成：`deep` 策略生成原问题、关键词版、语义扩展版 query |
 | P1 | Multi-query Search | ✅ 已完成：`deep` 策略多 query 并发执行 semantic / keyword / metadata 召回 |
 | P1 | Metadata Recall | ✅ 已完成基础版：支持最近编辑、标签、路径、当前文档邻近信息等结构化补召回 |
-| P1 | Rerank | ❌ 未做：候选 chunk 二阶段重排仍未接入 |
+| P1 | Rerank | ❌ 未做：当前未发现 reranker adapter、deterministic rerank 实现或 `eval:retrieval:*:rerank` 对比命令 |
 | P1 | Context Packing | ✅ 已完成：`context-packing.ts` 按文档分组合并相邻 chunk，并按 `contextTokenBudget` / 默认预算裁剪上下文 |
 | P2 | Citation Quality | ✅ 已完成：输出引用覆盖率、命中来源分数解释、packing/truncation 说明和 `needsMoreRetrieval` 信号；Web `knowledge_search` 卡片已展示核心质量摘要 |
 
@@ -176,31 +176,33 @@ interface RetrievalResultItem {
 - `balanced`：默认策略，执行 semantic recall + keyword recall + metadata recall + fusion/dedup，必要时做轻量 context packing。
 - `deep`：在 `balanced` 基础上增加 query rewrite、multi-query search、LLM/reranker 重排和更完整的 context packing，适合复杂研究问题。
 
-### 7.4 Harness 机制（M18 候选，后置）
+### 7.4 Harness 机制（M18 部分完成，后续增强）
 
-Harness 暂时不抢 M17 主线，但需要预留数据和事件：
+当前已完成最小 synthetic retrieval eval、Agent 后端测试扩充、AI Chat 组件/流客户端测试、AI Chat mock E2E 用例、`pnpm ci:ai-smoke` 本地串联脚本和无新增 secrets 依赖的 AI smoke GitHub Actions；下一阶段需要补齐 Agent golden set、Tool Trace Replay、Memory eval、Storybook 和持久化 trace sink：
 
 | 能力 | 说明 |
 |---|---|
-| Golden Set | 固定一组 Agent 问题、期望 tool 调用、期望引用来源和答案要点 |
-| Tool Trace Replay | 记录 ReAct 每轮 tool_calls、arguments、result 摘要，支持回放对比 |
-| Retrieval Eval | ✅ 最小 synthetic golden set 已完成并工程化：fixture + evaluator + `pnpm eval:retrieval`，输出 recall@k、MRR、citation coverage、truncation rate、needsMoreRetrieval rate；后续扩展真实数据集 |
-| Memory Eval | 验证用户偏好是否被正确读取、是否错误写入、是否能删除后不再生效 |
-| Regression CLI | ✅ retrieval 已提供 `pnpm eval:retrieval`；Agent/Memory eval CLI 和 CI smoke 待补 |
+| Golden Set | ⚠️ 仅有 retrieval synthetic fixture；Agent 问题、期望 tool 调用、期望引用来源和答案要点尚未系统化 |
+| Tool Trace Replay | ❌ 未做：尚未持久化 ReAct 每轮 tool_calls、arguments 和 result 摘要，也没有 replay 对比 runner |
+| Retrieval Eval | ✅ 已完成最小 synthetic 版本：fixture + evaluator + runner，`pnpm eval:retrieval` 输出 recall@k、MRR、citation coverage、truncation rate 和 needsMoreRetrieval rate |
+| Memory Eval | ❌ 未做：目前只有 memory tool 单测和检索 fallback 逻辑，尚无 `eval:memory` fixture / runner / 指标 |
+| Regression CLI | ⚠️ 部分完成：已有 `pnpm eval:retrieval`、`pnpm ci:ai-smoke` 和 `.github/workflows/ai-smoke.yml`；缺少 `eval:retrieval:real`、`eval:retrieval:rerank` 和 `eval:memory` |
 
 ---
 
 ## 建议实施顺序
 
-1. **P1：Memory 增强收尾** — 补 embedding 状态可视化、失败重试队列和 Memory E2E / eval。
-2. **P1：RAG 质量补齐** — 将 synthetic golden set 扩展为真实数据 retrieval eval，再根据结果决定是否接二阶段 rerank。
-3. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
-4. **P2：Plan/Spec 模式与 Harness smoke set** — 主能力稳定后补计划/规格确认流、golden set、tool trace replay 和最小 CI smoke。
-5. **P2：task_plan / MCP adapter** — 扩展计划工具和受控外部工具适配，作为 M18 前置探索。
+1. **P1：Agent Trace sink 增强** — 将当前结构化 trace 接入 Sentry span 或持久化事件表，支撑 Tool Trace Replay。
+2. **P1：Tool Trace Replay / Agent Eval** — 基于 trace 事件补 golden set、期望 tool 调用、答案要点和 replay 对比。
+3. **P1：Memory 增强收尾** — 补 embedding 状态可视化、失败重试队列、Memory E2E 和 Memory eval。
+4. **P1：RAG 质量补齐** — 将 synthetic fixture 扩展为真实/脱敏样本 eval，再根据指标决定是否引入 rerank adapter。
+5. **P2：前端 Harness 补齐** — 补 Storybook；认证态 mock E2E 暂保留本地可选验证。
+6. **P2：Plan/Spec 模式、task_plan / MCP adapter** — 主能力稳定后补计划/规格确认流和受控外部工具适配。
 
 ## 下一批里程碑建议
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
 | M17 | Agent Tools + Memory + Hybrid RAG Retrieval Strategy | ✅ 主线完成：`knowledge_search` 已支持 `fast/balanced/deep` 且默认 `balanced`；Memory MVP 已完成可读、确认式写入、Review UI 和停用；Web Agent 文档写入 dry-run + 前端确认落库已完成；Agent 基础性能 trace 已完成；`web_extract` / `document_search` 已完成 |
-| M18 | Agent Harness + Eval | ✅ 最小 retrieval golden set、聚合指标和 `pnpm eval:retrieval` 已有；后续补 tool trace replay、memory eval、真实数据 retrieval eval，并接入最小 CI smoke |
+| M18 | Agent Harness + Eval + AI Quality Smoke | ⚠️ 部分完成：Agent 后端单测、AI Chat 组件/流客户端测试、AI Chat mock E2E 用例、最小 synthetic retrieval eval、`pnpm ci:ai-smoke` 和无 secrets 版 AI smoke workflow 已有；认证态 mock E2E 暂保留本地可选验证，仍需补 Storybook、Memory eval、real retrieval eval、rerank compare、Tool Trace Replay、Agent golden set 和 trace sink |
+| M19 | Agent Observability + Planning | 候选：Agent trace sink、Tool Trace Replay、Plan/Spec 模式、`task_plan`、MCP adapter、真实质量样本扩充和前端 Harness 收口 |
