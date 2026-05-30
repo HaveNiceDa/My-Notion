@@ -15,10 +15,11 @@
 按顺序运行：
 
 ```bash
+pnpm --filter @notion/my-notion-cli test
 pnpm --filter @notion/my-notion-cli typecheck
 pnpm --filter @notion/my-notion-cli build
 pnpm --filter @notion/web exec convex codegen
-pnpm --filter @notion/web exec tsc --noEmit
+pnpm --filter @notion/web typecheck
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
@@ -121,9 +122,10 @@ pnpm sync:skills:check
 ## 验证结果
 
 - `pnpm --filter @notion/my-notion-cli typecheck`：通过
+- `pnpm --filter @notion/my-notion-cli test`：通过
 - `pnpm --filter @notion/my-notion-cli build`：通过
 - `pnpm --filter @notion/web exec convex codegen`：通过
-- `pnpm --filter @notion/web exec tsc --noEmit`：通过
+- `pnpm --filter @notion/web typecheck`：通过
 - `pnpm e2e:cli`：通过
 - `pnpm e2e:cli:errors`：通过
 - `pnpm e2e:mcp`：通过

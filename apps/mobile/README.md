@@ -117,7 +117,8 @@ apps/mobile/
 
 ## 当前重点
 
-- 移动端基础文档与 AI Chat 能力已跑通，继续对齐 Web 端编辑器 AI 和 RAG 增强能力。
+- 移动端基础文档与 AI Chat 能力已跑通，并已接入跨端共享业务状态、Convex 数据层和服务端安全代理。
+- 2026-05-30 当前项目主线集中在 Web Agent、CLI/MCP 与 Agent 产品模式收口；Mobile 近期保持能力基线，后续再继续对齐 Web 端编辑器 AI、RAG 增强和 Agent 工具生态。
 - 后续重点包括 TestFlight/应用商店发布、离线缓存、推送通知、选中即 AI、Inline AI 和更完整的原生交互打磨。
 
 ## 注意事项

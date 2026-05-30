@@ -55,9 +55,11 @@
 ### AI Agent
 
 - **ReAct Loop**：LLM 根据 tool description 自主决策工具调用，不依赖硬编码关键词路由。
-- **工具调用**：内置 `knowledge_search`、`web_search`、`document_read`，支持多工具并行和多轮推理。
+- **工具调用**：内置 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`document_write`、`document_update`、`memory_read`、`memory_write`、`task_plan`，支持多工具并行和多轮推理。
+- **确认式写入**：文档写入、更新和记忆写入遵循预览/确认流程，写类工具默认 dry-run 或 `confirmationRequired`，避免 Agent 直接落库。
 - **流式协议**：通过 NDJSON 事件流输出 text delta、tool call、tool result、thinking、finish 等状态。
-- **稳定性**：包含环境变量启动校验、限流、工具结果缓存、长上下文压缩、Qdrant 离线降级。
+- **稳定性**：包含环境变量启动校验、限流、工具结果缓存、长上下文压缩、统一 tool fallback、Qdrant 离线降级。
+- **当前缺口**：`task_plan` 已是基础工具和 UI 展示能力，完整 Plan 模式仍需补“生成计划 -> 用户确认 -> 步骤执行/状态展示”闭环。
 
 ### CLI / Agent 生态
 
@@ -99,10 +101,12 @@ pnpm start
 常用验证：
 
 ```bash
-pnpm --filter @notion/web exec tsc --noEmit
+pnpm --filter @notion/web typecheck
 pnpm --filter @notion/web lint
 pnpm --filter @notion/web build
+pnpm ci:ai-smoke
 pnpm e2e:cli
+pnpm e2e:cli:errors
 pnpm e2e:mcp
 ```
 
@@ -153,6 +157,7 @@ apps/web/
 ## 注意事项
 
 - BlockNote 暂不兼容 React StrictMode，当前在 Next 配置中关闭。
-- CLI/MCP 的机器 API URL 应使用 Convex `.site` URL，而不是 `.cloud` URL。
+- Web typecheck 应优先使用 `pnpm --filter @notion/web typecheck`，脚本会先清理 `.next/dev/types` stale validator，避免旧路由类型污染 `tsc --noEmit`。
+- CLI/MCP 的机器 API 默认使用 `https://handsome-stoat-500.convex.site`；连接其他部署时应使用 Convex `.site` URL，而不是 `.cloud` URL。
 - Qdrant 离线时 RAG 能力会降级，但不应影响基础文档编辑。
 - `.vercel.app` 在部分网络环境可能不可达，生产使用建议绑定自定义域名。

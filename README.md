@@ -84,11 +84,14 @@ pnpm build:mobile
 
 # 测试与验证
 pnpm test
+pnpm ci:ai-smoke
+pnpm eval:retrieval
 pnpm exec playwright test
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
 pnpm sync:skills
+pnpm sync:skills:check
 ```
 
 ## CLI / MCP Quick Start
@@ -163,7 +166,7 @@ node packages/my-notion-cli/dist/index.js docs import --title "Imported Document
 
 ### 4. 启动 MCP STDIO
 
-MCP server 复用 CLI 配置或 `MY_NOTION_API_URL` / `MY_NOTION_API_TOKEN` 环境变量：
+MCP server 复用 CLI 配置或环境变量；默认线上部署只需要 PAT，连接其他部署时再设置 `MY_NOTION_API_URL`：
 
 ```bash
 node packages/my-notion-cli/dist/index.js mcp serve --transport stdio
@@ -177,6 +180,8 @@ CLI/MCP 相关发布前检查见 [CLI Release Checklist](./docs/my-notion-cli-re
 
 ## 当前状态
 
-- Web 端已具备文档编辑、AI 侧边栏、RAG 检索、联网搜索、编辑器 AI、PAT 管理与 CLI/MCP 机器访问能力。
+- Web 端已具备文档编辑、AI 侧边栏、ReAct Agent、RAG 检索、联网搜索、网页抽取、文档读写、Memory MVP、`task_plan` 基础工具、编辑器 AI、PAT 管理与 CLI/MCP 机器访问能力。
 - Mobile 端已具备文档树、文档编辑、AI Chat、跨端业务状态、Convex 数据访问与服务端代理能力。
-- Agent 生态已完成 CLI、Skills、MCP STDIO 写文档主链路，并完成文档清理、导入导出、限流审计、错误契约 E2E；当前重点是发布收口与开发体验，RAG/Qdrant CLI 检索和远程 MCP/OAuth 降级为后续规划。
+- Agent 生态已完成 CLI、Skills、MCP STDIO 写文档主链路，并完成 CLI 单测、默认线上 API URL、文档清理、导入导出、限流审计、错误契约 E2E 与 MCP E2E。
+- 当前工程验证入口已覆盖 Web typecheck/build/lint、Agent/AI Chat 单测、最小 retrieval eval、`ci:ai-smoke`、CLI/MCP E2E 和 Skills 漂移检查。
+- 当前重点从 CLI/MCP 发布收口转向 Agent 产品能力：优先做 Plan 模式最小闭环，其次是 Spec 模式、Web Agent MCP adapter、流式重试与 Tool 结果契约细化；Storybook、Trace Replay、Memory/RAG 真实评估后置。
