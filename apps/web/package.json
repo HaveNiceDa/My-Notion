@@ -6,6 +6,7 @@
     "dev": "next dev",
     "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
     "build": "next build",
+    "typecheck": "node ../../scripts/web-typecheck.mjs",
     "lint": "eslint src/ --max-warnings=50",
     "clean": "rd /s /q node_modules 2>nul || exit 0",
     "test": "vitest run",

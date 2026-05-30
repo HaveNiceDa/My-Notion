@@ -238,6 +238,7 @@ function isReadOnlyTool(toolName: string): boolean {
     "document_search",
     "document_read",
     "memory_read",
+    "task_plan",
   ].includes(toolName);
 }
 

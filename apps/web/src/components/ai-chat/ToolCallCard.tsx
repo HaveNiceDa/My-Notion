@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
-import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain, PencilLine } from "lucide-react";
+import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain, PencilLine, ListChecks } from "lucide-react";
 import { cn } from "@notion/business/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -123,6 +123,20 @@ interface DocumentWriteToolResult {
   document?: DocumentWritePreview;
   documentWriteStatus?: DocumentWriteStatus;
   savedDocumentId?: string;
+  error?: string;
+}
+
+interface TaskPlanStep {
+  id?: string;
+  title?: string;
+  description?: string;
+  status?: "pending" | "in_progress" | "completed" | "blocked";
+}
+
+interface TaskPlanToolResult {
+  objective?: string;
+  steps?: TaskPlanStep[];
+  summary?: string;
   error?: string;
 }
 
@@ -262,6 +276,53 @@ function DocumentReadResult({ result }: { result: { document?: { id: string; tit
       <span className="truncate font-medium">{result.document.title}</span>
     </a>
   );
+}
+
+function TaskPlanResult({ result }: { result: TaskPlanToolResult }) {
+  const t = useTranslations("AI");
+  const steps = result.steps ?? [];
+
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  return (
+    <div className="space-y-1.5">
+      {result.objective && (
+        <div className="rounded-md bg-background/70 px-2 py-1.5 text-xs text-foreground">
+          {result.objective}
+        </div>
+      )}
+      {steps.map((step, index) => (
+        <div key={step.id ?? index} className="flex gap-2 rounded-md px-2 py-1 text-xs">
+          <span className="mt-0.5 text-muted-foreground">{index + 1}.</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-medium text-foreground">{step.title ?? t("taskPlanUntitledStep")}</span>
+              {step.status && (
+                <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {formatTaskPlanStatus(t, step.status)}
+                </span>
+              )}
+            </div>
+            {step.description && (
+              <div className="mt-0.5 line-clamp-2 text-muted-foreground">{step.description}</div>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatTaskPlanStatus(
+  t: ReturnType<typeof useTranslations>,
+  status: NonNullable<TaskPlanStep["status"]>,
+): string {
+  if (status === "in_progress") return t("taskPlanInProgress");
+  if (status === "completed") return t("taskPlanCompleted");
+  if (status === "blocked") return t("taskPlanBlocked");
+  return t("taskPlanPending");
 }
 
 function WebSearchResult({ result }: { result: { query?: string; results?: { title: string; link: string; snippet: string }[]; error?: string } }) {
@@ -679,6 +740,8 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
           ? t("memoryReadTool")
           : toolName === "memory_write"
             ? t("memoryWriteTool")
+            : toolName === "task_plan"
+              ? t("taskPlanTool")
             : toolName;
 
   const ToolIcon =
@@ -692,6 +755,8 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
           ? PencilLine
         : toolName === "web_search" || toolName === "web_extract"
           ? Globe
+          : toolName === "task_plan"
+            ? ListChecks
           : Brain;
 
   let resultContent: React.ReactNode = null;
@@ -757,6 +822,10 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
         : typedResult.memoryWriteStatus === "saved" || !typedResult.dryRun
           ? t("memorySaved")
           : t("memoryWritePreview");
+    } else if (toolName === "task_plan") {
+      const typedResult = result as unknown as TaskPlanToolResult;
+      resultContent = <TaskPlanResult result={typedResult} />;
+      resultSummary = typedResult.summary ?? typedResult.objective ?? null;
     }
   }
 

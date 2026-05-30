@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "es2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,10 +23,18 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@notion-i18n/*": ["../../packages/business/i18n/*"],
-      "@convex/server": ["./convex/_generated/server"],
-      "@convex/dataModel": ["./convex/_generated/dataModel"]
+      "@/*": [
+        "./*"
+      ],
+      "@notion-i18n/*": [
+        "../../packages/business/i18n/*"
+      ],
+      "@convex/server": [
+        "./convex/_generated/server"
+      ],
+      "@convex/dataModel": [
+        "./convex/_generated/dataModel"
+      ]
     }
   },
   "include": [
@@ -32,5 +44,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

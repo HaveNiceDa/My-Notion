@@ -5,6 +5,8 @@ import { executeDocumentSearch } from "./document-search";
 import { executeWebExtract } from "./web-extract";
 import { executeWebSearch } from "./web-search";
 import { executeMemoryRead, executeMemoryWrite } from "./memory";
+import { executeTaskPlan } from "./task-plan";
+import { withToolFallback } from "./fallback";
 import type { ToolContext } from "./types";
 
 // Agent Tool 标准接口：每个 tool 自带 OpenAI function schema，LLM 通过 description 自主判断何时调用
@@ -40,7 +42,10 @@ export const knowledgeSearchTool: AgentTool = {
     },
     required: ["query"],
   },
-  execute: async (args, ctx) => executeKnowledgeSearch(ctx.userId, args),
+  execute: withToolFallback({
+    name: "knowledge_search",
+    execute: async (args, ctx) => executeKnowledgeSearch(ctx.userId, args),
+  }),
 };
 
 // 文档阅读 tool：读取用户当前正在查看的文档内容
@@ -53,7 +58,10 @@ export const documentReadTool: AgentTool = {
     type: "object",
     properties: {},
   },
-  execute: async (_args, ctx) => executeDocumentRead(ctx.currentDocument),
+  execute: withToolFallback({
+    name: "document_read",
+    execute: async (_args, ctx) => executeDocumentRead(ctx.currentDocument),
+  }),
 };
 
 // 文档创建 tool：只生成写入预览，真实落库必须由用户在前端确认触发
@@ -83,7 +91,10 @@ export const documentWriteTool: AgentTool = {
     },
     required: ["title", "contentMarkdown"],
   },
-  execute: async (args, ctx) => executeDocumentWrite(args, ctx),
+  execute: withToolFallback({
+    name: "document_write",
+    execute: async (args, ctx) => executeDocumentWrite(args, ctx),
+  }),
 };
 
 // 文档更新 tool：只生成变更预览，真实落库必须由用户在前端确认触发
@@ -117,7 +128,10 @@ export const documentUpdateTool: AgentTool = {
       },
     },
   },
-  execute: async (args, ctx) => executeDocumentUpdate(args, ctx),
+  execute: withToolFallback({
+    name: "document_update",
+    execute: async (args, ctx) => executeDocumentUpdate(args, ctx),
+  }),
 };
 
 // 联网搜索 tool：通过 SerpAPI 调用 Google 搜索获取实时信息
@@ -135,7 +149,10 @@ export const webSearchTool: AgentTool = {
     },
     required: ["query"],
   },
-  execute: async (args, ctx) => executeWebSearch(args, ctx),
+  execute: withToolFallback({
+    name: "web_search",
+    execute: async (args, ctx) => executeWebSearch(args, ctx),
+  }),
 };
 
 // 网页正文抽取 tool：读取用户提供的 URL 内容，补足 web_search 只返回搜索结果的缺口
@@ -153,7 +170,10 @@ export const webExtractTool: AgentTool = {
     },
     required: ["url"],
   },
-  execute: async (args, ctx) => executeWebExtract(args, ctx),
+  execute: withToolFallback({
+    name: "web_extract",
+    execute: async (args, ctx) => executeWebExtract(args, ctx),
+  }),
 };
 
 // 文档元数据搜索 tool：按标题、路径和最近编辑时间查找文档，不读取正文
@@ -182,7 +202,10 @@ export const documentSearchTool: AgentTool = {
       },
     },
   },
-  execute: async (args, ctx) => executeDocumentSearch(args, ctx),
+  execute: withToolFallback({
+    name: "document_search",
+    execute: async (args, ctx) => executeDocumentSearch(args, ctx),
+  }),
 };
 
 // 长期记忆读取 tool：读取用户偏好、项目事实和阶段性对话结论
@@ -208,7 +231,10 @@ export const memoryReadTool: AgentTool = {
       },
     },
   },
-  execute: async (args, ctx) => executeMemoryRead(args, ctx),
+  execute: withToolFallback({
+    name: "memory_read",
+    execute: async (args, ctx) => executeMemoryRead(args, ctx),
+  }),
 };
 
 // 长期记忆写入 tool：默认 dry-run，必须用户明确确认后才允许真实写入
@@ -256,5 +282,56 @@ export const memoryWriteTool: AgentTool = {
     },
     required: ["content"],
   },
-  execute: async (args, ctx) => executeMemoryWrite(args, ctx),
+  execute: withToolFallback({
+    name: "memory_write",
+    execute: async (args, ctx) => executeMemoryWrite(args, ctx),
+  }),
+};
+
+// 任务计划 tool：让 Agent 把复杂请求拆成可展示、可推进的多步骤计划。
+export const taskPlanTool: AgentTool = {
+  name: "task_plan",
+  description:
+    "为复杂任务生成或更新多步骤执行计划。当用户要求先规划、任务包含多个阶段、需要展示进度或为 Plan 模式铺垫时使用。只产出计划，不直接修改文档或记忆。",
+  parameters: {
+    type: "object",
+    properties: {
+      objective: {
+        type: "string",
+        description: "计划目标，用一句话概括用户要完成的任务。",
+      },
+      steps: {
+        type: "array",
+        description: "计划步骤列表，按执行顺序排列。",
+        items: {
+          type: "object",
+          properties: {
+            id: {
+              type: "string",
+              description: "可选步骤 ID；不传时系统会生成 step-1、step-2。",
+            },
+            title: {
+              type: "string",
+              description: "步骤标题。",
+            },
+            description: {
+              type: "string",
+              description: "可选步骤说明。",
+            },
+            status: {
+              type: "string",
+              enum: ["pending", "in_progress", "completed", "blocked"],
+              description: "步骤状态，默认 pending。",
+            },
+          },
+          required: ["title"],
+        },
+      },
+    },
+    required: ["objective", "steps"],
+  },
+  execute: withToolFallback({
+    name: "task_plan",
+    execute: async (args, ctx) => executeTaskPlan(args, ctx),
+  }),
 };

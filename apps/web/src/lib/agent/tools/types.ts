@@ -22,3 +22,15 @@ export interface ToolContext {
   stream?: ToolStreamOutput;
   convex?: ConvexHttpClient;
 }
+
+// Tool 失败时统一返回可恢复结果，避免 ReAct 循环因异常中断。
+export interface RecoverableToolError {
+  error: string;
+  summary: string;
+  recoverable: true;
+  sources: [];
+  metadata: {
+    toolName: string;
+    reason: "validation_error" | "execution_error" | "unavailable";
+  };
+}

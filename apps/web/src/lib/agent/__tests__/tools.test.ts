@@ -26,6 +26,7 @@ import {
   webSearchTool,
   memoryReadTool,
   memoryWriteTool,
+  taskPlanTool,
 } from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
 import { executeDocumentUpdate, executeDocumentWrite } from "../tools/document-write";
@@ -33,6 +34,8 @@ import { executeDocumentSearch } from "../tools/document-search";
 import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
+import { executeTaskPlan } from "../tools/task-plan";
+import { withToolFallback } from "../tools/fallback";
 import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
@@ -46,6 +49,7 @@ describe("buildAvailableTools", () => {
     expect(names).toContain("document_search");
     expect(names).toContain("memory_read");
     expect(names).toContain("memory_write");
+    expect(names).toContain("task_plan");
     expect(names).toContain("document_write");
   });
 
@@ -103,6 +107,11 @@ describe("AgentTool 定义", () => {
     expect(memoryWriteTool.parameters.required).toContain("content");
   });
 
+  it("taskPlanTool 要求 objective 和 steps", () => {
+    expect(taskPlanTool.name).toBe("task_plan");
+    expect(taskPlanTool.parameters.required).toEqual(["objective", "steps"]);
+  });
+
   it("document_write 和 document_update 使用 dry-run 写入契约", () => {
     expect(documentWriteTool.name).toBe("document_write");
     expect(documentWriteTool.parameters.required).toEqual(["title", "contentMarkdown"]);
@@ -119,11 +128,77 @@ describe("AgentTool 定义", () => {
       documentSearchTool,
       memoryReadTool,
       memoryWriteTool,
+      taskPlanTool,
       documentWriteTool,
       documentUpdateTool,
     ]) {
       expect(tool.description.length).toBeGreaterThan(0);
     }
+  });
+
+  it("tool execute 抛异常时统一返回可恢复错误", async () => {
+    const execute = withToolFallback({
+      name: "knowledge_search",
+      execute: async () => {
+        throw new Error("unexpected");
+      },
+    });
+    const result = await execute(
+      { query: "test" },
+      { userId: "user-1", model: "test-model" },
+    ) as any;
+
+    expect(result).toMatchObject({
+      error: "unexpected",
+      recoverable: true,
+      metadata: {
+        toolName: "knowledge_search",
+        reason: "execution_error",
+      },
+    });
+    expect(result.summary).toContain("knowledge_search failed");
+    expect(result.sources).toEqual([]);
+  });
+});
+
+describe("Task plan tool", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("生成结构化步骤计划", async () => {
+    const result = await executeTaskPlan(
+      {
+        objective: "补齐基础能力",
+        steps: [
+          { title: "修 typecheck", status: "completed" },
+          { id: "plan", title: "实现 task_plan", description: "输出多步骤计划", status: "in_progress" },
+          { title: "验证", status: "unknown" },
+        ],
+      },
+      baseCtx,
+    ) as any;
+
+    expect(result.objective).toBe("补齐基础能力");
+    expect(result.steps).toEqual([
+      { id: "step-1", title: "修 typecheck", status: "completed" },
+      { id: "plan", title: "实现 task_plan", description: "输出多步骤计划", status: "in_progress" },
+      { id: "step-3", title: "验证", status: "pending" },
+    ]);
+    expect(result.metadata).toMatchObject({
+      stepCount: 3,
+      currentStepId: "plan",
+      completedCount: 1,
+      blockedCount: 0,
+    });
+  });
+
+  it("缺少目标或步骤时返回可恢复错误", async () => {
+    await expect(executeTaskPlan({ objective: "", steps: [{ title: "x" }] }, baseCtx))
+      .resolves.toMatchObject({ error: "objective is required", recoverable: true });
+    await expect(executeTaskPlan({ objective: "x", steps: [] }, baseCtx))
+      .resolves.toMatchObject({ error: "steps must contain at least one item", recoverable: true });
   });
 });
 

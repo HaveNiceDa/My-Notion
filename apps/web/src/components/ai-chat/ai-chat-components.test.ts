@@ -14,6 +14,10 @@ vi.mock("next-intl", () => ({
       documentWriteTool: "文档写入",
       documentWritePreview: "文档写入预览",
       documentConfirmationRequired: "需要确认后写入",
+      taskPlanTool: "任务计划",
+      taskPlanPending: "待处理",
+      taskPlanInProgress: "进行中",
+      taskPlanCompleted: "已完成",
       retrievalStrategyLabel: "检索策略",
       retrievalStrategyBalanced: "均衡",
       retrievalRecallStats: `召回 semantic=${values?.semantic ?? 0} keyword=${values?.keyword ?? 0} metadata=${values?.metadata ?? 0} fused=${values?.fused ?? 0}`,
@@ -189,5 +193,32 @@ describe("AI Chat 组件渲染", () => {
     expect(html).toContain("需要确认后写入");
     expect(html).toContain("新文档");
     expect(html).toContain("# 标题");
+  });
+
+  it("ToolCallCard 展示 task_plan 步骤状态", () => {
+    const html = render(
+      React.createElement(ToolCallCard, {
+        toolResult: {
+          id: "plan-1",
+          name: "task_plan",
+          status: "completed",
+          result: {
+            objective: "补齐基础能力",
+            steps: [
+              { title: "修 typecheck", status: "completed" },
+              { title: "补 task_plan", description: "生成多步骤计划", status: "in_progress" },
+              { title: "验证", status: "pending" },
+            ],
+          },
+        },
+      }),
+    );
+
+    expect(html).toContain("任务计划");
+    expect(html).toContain("补齐基础能力");
+    expect(html).toContain("修 typecheck");
+    expect(html).toContain("已完成");
+    expect(html).toContain("补 task_plan");
+    expect(html).toContain("进行中");
   });
 });
