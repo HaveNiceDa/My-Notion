@@ -17,6 +17,8 @@ type AuthenticatedConvexClientResult =
   | { error: NextResponse }
   | { unavailable: string };
 
+const CLERK_CONVEX_TOKEN_RETRY_DELAYS_MS = [200, 600];
+
 function createPlainToken() {
   return `mnt_${randomBytes(32).toString("base64url")}`;
 }
@@ -77,12 +79,53 @@ function serviceUnavailableResponse(error: unknown) {
   );
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function getConvexAuthTokenWithRetry(
+  getToken: (options: { template: string }) => Promise<string | null>,
+) {
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt <= CLERK_CONVEX_TOKEN_RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await getToken({ template: "convex" });
+    } catch (error) {
+      lastError = error;
+      if (!isNetworkUnavailableError(error)) {
+        throw error;
+      }
+
+      const delay = CLERK_CONVEX_TOKEN_RETRY_DELAYS_MS[attempt];
+      if (delay === undefined) break;
+
+      console.warn(
+        `[CLI Token] Clerk Convex JWT fetch failed, retrying in ${delay}ms:`,
+        getErrorText(error),
+      );
+      await wait(delay);
+    }
+  }
+
+  throw new Error(
+    `Clerk Convex JWT fetch failed after ${
+      CLERK_CONVEX_TOKEN_RETRY_DELAYS_MS.length + 1
+    } attempts: ${getErrorText(lastError) || "unknown error"}`,
+  );
+}
+
 function tokenListUnavailableResponse(error: unknown) {
   const warning = serviceUnavailableMessage(error);
   console.warn("[CLI Token] Degraded token list:", warning);
   return NextResponse.json({
     success: true,
-    data: { tokens: [], unavailable: true, warning },
+    data: {
+      tokens: [],
+      unavailable: true,
+      reason: isNetworkUnavailableError(error) ? "NETWORK_UNAVAILABLE" : "SERVICE_UNAVAILABLE",
+      warning,
+    },
   });
 }
 
@@ -126,7 +169,7 @@ async function getAuthenticatedConvexClient(): Promise<AuthenticatedConvexClient
 
   let convexAuthToken: string | null;
   try {
-    convexAuthToken = await getToken({ template: "convex" });
+    convexAuthToken = await getConvexAuthTokenWithRetry(getToken);
   } catch (error) {
     if (isNetworkUnavailableError(error)) {
       return { unavailable: serviceUnavailableMessage(error) };

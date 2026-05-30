@@ -1,18 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Copy, Eye, EyeOff, Loader2, WifiOff } from "lucide-react";
 import { toast } from "sonner";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/src/components/ui/alert-dialog";
 import { Button } from "@/src/components/ui/button";
 import {
   Dialog,
@@ -43,12 +33,13 @@ type ApiTokenRecord = {
 type ApiTokenListResponse =
   | {
       success: true;
-      data: { tokens: ApiTokenRecord[]; unavailable?: boolean; warning?: string };
+      data: {
+        tokens: ApiTokenRecord[];
+        unavailable?: boolean;
+        reason?: "NETWORK_UNAVAILABLE" | "SERVICE_UNAVAILABLE";
+        warning?: string;
+      };
     }
-  | { success: false; error?: string };
-
-type ApiTokenRevokeResponse =
-  | { success: true; data: { token: ApiTokenRecord } }
   | { success: false; error?: string };
 
 type ApiTokenCreateResponse =
@@ -64,6 +55,12 @@ function formatDateTime(value: number | null, locale: string) {
   }).format(new Date(value));
 }
 
+function isNetworkTokenMessage(message: string | null) {
+  return /NETWORK_UNAVAILABLE|fetch failed|ETIMEDOUT|ECONNREFUSED|ENOTFOUND|EHOSTUNREACH|network|unexpected_error/i.test(
+    message ?? "",
+  );
+}
+
 export function SettingsModal() {
   const settings = useSettings();
   const t = useTranslations("Modals.settings");
@@ -72,7 +69,7 @@ export function SettingsModal() {
   const [isLoadingTokens, setIsLoadingTokens] = useState(false);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [tokenWarning, setTokenWarning] = useState<string | null>(null);
-  const [revokingTokenId, setRevokingTokenId] = useState<string | null>(null);
+  const [isTokenNetworkIssue, setIsTokenNetworkIssue] = useState(false);
   const [isResettingToken, setIsResettingToken] = useState(false);
   const [showDefaultToken, setShowDefaultToken] = useState(false);
 
@@ -80,6 +77,7 @@ export function SettingsModal() {
     setIsLoadingTokens(true);
     setTokenError(null);
     setTokenWarning(null);
+    setIsTokenNetworkIssue(false);
 
     try {
       const response = await fetch("/api/cli/tokens", {
@@ -92,13 +90,18 @@ export function SettingsModal() {
       }
 
       if (payload.data.unavailable) {
-        setTokenWarning("failedToLoadTokens");
+        setTokenWarning(payload.data.warning ?? "failedToLoadTokens");
+        setIsTokenNetworkIssue(
+          payload.data.reason === "NETWORK_UNAVAILABLE" ||
+            isNetworkTokenMessage(payload.data.warning ?? null),
+        );
       } else {
         setTokens(payload.data.tokens);
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       setTokenError(message || "failedToLoadTokens");
+      setIsTokenNetworkIssue(isNetworkTokenMessage(message));
     } finally {
       setIsLoadingTokens(false);
     }
@@ -162,33 +165,6 @@ export function SettingsModal() {
     }
   };
 
-  const revokeToken = async (tokenId: string) => {
-    setRevokingTokenId(tokenId);
-
-    try {
-      const response = await fetch(`/api/cli/tokens?tokenId=${encodeURIComponent(tokenId)}`, {
-        method: "DELETE",
-      });
-      const payload = (await response.json()) as ApiTokenRevokeResponse;
-
-      if (!response.ok || !payload.success) {
-        throw new Error(payload.success === false ? payload.error : undefined);
-      }
-
-      setTokens((current) =>
-        current.map((token) =>
-          token.id === payload.data.token.id ? payload.data.token : token,
-        ),
-      );
-      toast.success(t("tokenRevoked"));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : t("failedToRevokeToken");
-      toast.error(message || t("failedToRevokeToken"));
-    } finally {
-      setRevokingTokenId(null);
-    }
-  };
-
   return (
     <Dialog open={settings.isOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
@@ -236,18 +212,53 @@ export function SettingsModal() {
           </div>
 
           {tokenError ? (
-            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {tokenError === "failedToLoadTokens" ? t("failedToLoadTokens") : tokenError}
+            <div className="flex min-h-28 flex-col items-center justify-center rounded-md border border-destructive/40 bg-destructive/10 px-4 py-5 text-center text-sm text-destructive">
+              {isTokenNetworkIssue ? (
+                <>
+                  <WifiOff className="mb-2 h-5 w-5" />
+                  <div className="font-medium">{t("tokenNetworkErrorTitle")}</div>
+                  <div className="mt-1 text-xs text-destructive/80">
+                    {t("tokenNetworkErrorDescription")}
+                  </div>
+                </>
+              ) : (
+                tokenError === "failedToLoadTokens" ? t("failedToLoadTokens") : tokenError
+              )}
             </div>
           ) : null}
           {tokenWarning ? (
-            <div className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700">
-              {t("failedToLoadTokens")}
+            <div className="flex min-h-28 flex-col items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-5 text-center text-sm text-amber-700">
+              <WifiOff className="mb-2 h-5 w-5" />
+              <div className="font-medium">
+                {isTokenNetworkIssue ? t("tokenNetworkErrorTitle") : t("failedToLoadTokens")}
+              </div>
+              <div className="mt-1 max-w-md text-xs text-amber-700/80">
+                {isTokenNetworkIssue
+                  ? t("tokenNetworkErrorDescription")
+                  : tokenWarning !== "failedToLoadTokens"
+                    ? tokenWarning
+                    : t("tokenTemporarilyUnavailable")}
+              </div>
             </div>
           ) : null}
 
           <div className="max-h-72 space-y-2 overflow-y-auto pr-1">
-            {!isLoadingTokens && tokens.length === 0 ? (
+            {isLoadingTokens && tokens.length === 0 ? (
+              <div className="flex min-h-36 flex-col items-center justify-center rounded-md border bg-muted/20 p-5 text-center">
+                <div className="flex flex-col items-center gap-3">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium">{t("loadingTokenTitle")}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {t("loadingTokenDescription")}
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-4 h-2 w-40 animate-pulse rounded-full bg-muted" />
+              </div>
+            ) : null}
+
+            {!isLoadingTokens && tokens.length === 0 && !tokenWarning ? (
               <div className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">
                 {t("noApiTokens")}
               </div>
@@ -255,7 +266,6 @@ export function SettingsModal() {
 
             {tokens.map((token) => {
               const isRevoked = Boolean(token.revokedAt);
-              const isRevoking = revokingTokenId === token.id;
 
               return (
                 <div className="rounded-md border p-3 text-sm" key={token.id}>
@@ -283,61 +293,40 @@ export function SettingsModal() {
                         >
                           {isResettingToken ? t("resettingToken") : t("resetToken")}
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              disabled={isRevoked || isRevoking}
-                              size="sm"
-                              type="button"
-                              variant="destructive"
-                            >
-                              {isRevoking ? t("revoking") : t("revoke")}
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>{t("revokeTokenTitle")}</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {t("revokeTokenDescription", {
-                                  tokenPrefix: token.tokenPrefix,
-                                })}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                              <AlertDialogAction
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => void revokeToken(token.id)}
-                              >
-                                {t("confirmRevoke")}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
                       </div>
                     </div>
 
                     <div className="flex gap-2">
+                      <div className="relative min-w-0 flex-1">
                         <Input
-                          className="font-mono text-xs"
+                          className="pr-10 font-mono text-xs"
                           readOnly
                           type={showDefaultToken ? "text" : "password"}
                           value={token.token ?? token.tokenPrefix}
                         />
                         <Button
+                          aria-label={showDefaultToken ? t("hideToken") : t("showToken")}
+                          className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2 p-0"
                           disabled={!token.token || isRevoked}
                           onClick={() => setShowDefaultToken((value) => !value)}
+                          size="icon"
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                         >
-                          {showDefaultToken ? t("hideToken") : t("showToken")}
+                          {showDefaultToken ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
                         </Button>
+                      </div>
                         <Button
                           disabled={!token.token || isRevoked}
                           onClick={() => void copyToken(token.token)}
                           type="button"
                           variant="outline"
                         >
+                          <Copy className="mr-2 h-4 w-4" />
                           {t("copyToken")}
                         </Button>
                     </div>
