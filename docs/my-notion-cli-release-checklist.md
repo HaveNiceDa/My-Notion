@@ -15,16 +15,18 @@
 按顺序运行：
 
 ```bash
-pnpm --filter @notion/my-notion-cli test
-pnpm --filter @notion/my-notion-cli typecheck
-pnpm --filter @notion/my-notion-cli build
+pnpm --filter @mynotion/cli test
+pnpm --filter @mynotion/cli typecheck
+pnpm --filter @mynotion/cli build
 pnpm --filter @notion/web exec convex codegen
 pnpm --filter @notion/web typecheck
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
 pnpm sync:skills
+pnpm sync:skills:package
 pnpm sync:skills:check
+cd packages/my-notion-cli && npm pack --dry-run
 ```
 
 如改动影响 Web UI、PAT 管理入口或 Next.js API，再追加：
@@ -80,6 +82,7 @@ pnpm --filter @notion/web lint
 
 ```bash
 pnpm sync:skills
+pnpm sync:skills:package
 pnpm sync:skills:check
 ```
 
@@ -88,9 +91,48 @@ pnpm sync:skills:check
 - `packages/my-notion-skills/my-notion-docs` 已同步到 `.trae/skills/my-notion-docs`。
 - `packages/my-notion-skills/my-notion-mcp` 已同步到 `.trae/skills/my-notion-mcp`。
 - `packages/my-notion-skills/my-notion-shared` 已同步到 `.trae/skills/my-notion-shared`。
+- `packages/my-notion-skills/my-notion-docs` 已同步到 `packages/my-notion-cli/skills/my-notion-docs`。
+- `packages/my-notion-skills/my-notion-mcp` 已同步到 `packages/my-notion-cli/skills/my-notion-mcp`。
+- `packages/my-notion-skills/my-notion-shared` 已同步到 `packages/my-notion-cli/skills/my-notion-shared`。
 - `pnpm sync:skills:check` 返回 `success: true`，不存在缺失、额外或内容不一致的文件。
 - skill 文档仍要求长内容使用临时 Markdown 文件。
 - skill 文档仍禁止在聊天或日志中输出完整 PAT。
+
+## npm beta 发布检查
+
+首版 npm 包信息：
+
+```text
+package: @mynotion/cli
+bin:     my-notion
+tag:     beta
+version: 0.1.0-beta.0
+```
+
+发布前必须确认：
+
+- `npm whoami` 能返回当前 npm 用户。
+- `npm config get registry` 和 `pnpm config get registry` 必须都是 `https://registry.npmjs.org/`，不得使用公司内部源或镜像源发布。
+- 当前 npm 用户拥有 `@mynotion` organization/scope 的 publish 权限。
+- `@mynotion/cli` 使用 `publishConfig.access = public` 或发布时显式传 `--access public`。
+- `npm pack --dry-run` 只包含 `dist`、`README.md`、`docs`、`skills`、`LICENSE`、`package.json` 等预期文件。
+- 本地 tarball 安装后 `my-notion --help`、`my-notion install --check`、`my-notion auth login --no-open` 可运行。
+- Skills 安装命令为 `npx skills add @mynotion/cli -y -g`；如果该工具不支持 npm package source，立即切换到 GitHub URL 或 `my-notion install --skills` 方案。
+
+发布命令：
+
+```bash
+cd packages/my-notion-cli
+npm publish --tag beta --access public
+npm view @mynotion/cli@beta version bin dist-tags
+npx @mynotion/cli@beta --help
+```
+
+稳定后再切 latest：
+
+```bash
+npm dist-tag add @mynotion/cli@0.1.0 latest
+```
 
 ## 配置兼容性
 
@@ -122,16 +164,18 @@ pnpm sync:skills:check
 ```markdown
 ## 验证结果
 
-- `pnpm --filter @notion/my-notion-cli typecheck`：通过
-- `pnpm --filter @notion/my-notion-cli test`：通过
-- `pnpm --filter @notion/my-notion-cli build`：通过
+- `pnpm --filter @mynotion/cli typecheck`：通过
+- `pnpm --filter @mynotion/cli test`：通过
+- `pnpm --filter @mynotion/cli build`：通过
 - `pnpm --filter @notion/web exec convex codegen`：通过
 - `pnpm --filter @notion/web typecheck`：通过
 - `pnpm e2e:cli`：通过
 - `pnpm e2e:cli:errors`：通过
 - `pnpm e2e:mcp`：通过
 - `pnpm sync:skills`：通过
+- `pnpm sync:skills:package`：通过
 - `pnpm sync:skills:check`：通过
+- `npm pack --dry-run`：通过
 
 ## 发布判断
 

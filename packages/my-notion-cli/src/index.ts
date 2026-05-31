@@ -2,6 +2,7 @@
 
 import { runAuthCommand } from "./commands/auth.js";
 import { runDocsCommand } from "./commands/docs.js";
+import { runInstallCommand } from "./commands/install.js";
 import { runMcpCommand } from "./commands/mcp.js";
 import { runTokensCommand } from "./commands/tokens.js";
 import { writeError } from "./format/output.js";
@@ -51,6 +52,7 @@ Usage:
   my-notion docs archive --id <documentId>
   my-notion docs export --id <documentId> [--output document.md]
   my-notion docs import --title <title> --file document.md
+  my-notion install [--skills] [--check]
   my-notion mcp serve --transport stdio
 
 Global options:
@@ -66,6 +68,7 @@ Auth setup:
   approve access in the browser, and the CLI saves online auth at ~/.local/share/my-notion/config.json.
   For local debugging, use --local --web-url http://localhost:3000 --api-url <convex-site-url>.
   Local auth is stored separately at ~/.local/share/my-notion/config.local.json.
+  For npm beta setup, run npm install -g @mynotion/cli@beta and npx skills add @mynotion/cli -y -g.
 `);
 }
 
@@ -90,6 +93,11 @@ async function main() {
 
   if (command === "mcp") {
     await runMcpCommand(args);
+    return;
+  }
+
+  if (command === "install") {
+    await runInstallCommand(args);
     return;
   }
 

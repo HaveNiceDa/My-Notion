@@ -34,20 +34,22 @@
 ### Monorepo 开发运行
 
 ```bash
-pnpm --filter @notion/my-notion-cli dev <command>
+pnpm --filter @mynotion/cli dev <command>
 ```
 
 ### 构建后运行
 
 ```bash
-pnpm --filter @notion/my-notion-cli build
+pnpm --filter @mynotion/cli build
 node packages/my-notion-cli/dist/index.js <command>
 ```
 
 ### 发布后运行目标
 
 ```bash
-npx @notion/my-notion-cli@latest <command>
+npm install -g @mynotion/cli@beta
+npx skills add @mynotion/cli -y -g
+npx @mynotion/cli@beta <command>
 ```
 
 ## 快速开始
@@ -55,19 +57,20 @@ npx @notion/my-notion-cli@latest <command>
 ### Quick Start Human Users
 
 ```bash
-# 1. 构建 CLI
-pnpm --filter @notion/my-notion-cli build
+# 1. 安装 beta CLI 和 Agent Skills
+npm install -g @mynotion/cli@beta
+npx skills add @mynotion/cli -y -g
 
 # 2. 浏览器授权登录
-node packages/my-notion-cli/dist/index.js auth login
+my-notion auth login
 
 # 3. 搜索文档
-node packages/my-notion-cli/dist/index.js docs search \
+my-notion docs search \
   --query "项目周报" \
   --format json
 
 # 4. 创建文档
-node packages/my-notion-cli/dist/index.js docs create \
+my-notion docs create \
   --title "项目周报" \
   --content-file ./weekly-report.md \
   --format json
@@ -78,10 +81,14 @@ node packages/my-notion-cli/dist/index.js docs create \
 > Agent 只需要把授权链接发给用户，不要要求用户粘贴完整 Token。
 
 ```bash
-# 1. 检查登录态；如果失败再进入第 2 步
+# 1. 安装 CLI 和 Skills
+npm install -g @mynotion/cli@beta
+npx skills add @mynotion/cli -y -g
+
+# 2. 检查登录态；如果失败再进入第 3 步
 my-notion auth status --format json
 
-# 2. 需要登录时后台运行，提取 CLI 输出的授权链接
+# 3. 需要登录时后台运行，提取 CLI 输出的授权链接
 my-notion auth login --no-open
 ```
 
@@ -190,6 +197,12 @@ my-notion mcp serve --transport stdio
 
 ## Agent Skills
 
+安装已发布的 Skills：
+
+```bash
+npx skills add @mynotion/cli -y -g
+```
+
 | Skill | 用途 |
 | --- | --- |
 | `my-notion-shared` | CLI 安装、认证、配置、输出格式和安全规则 |
@@ -200,6 +213,7 @@ my-notion mcp serve --transport stdio
 
 ```bash
 pnpm sync:skills
+pnpm sync:skills:package
 pnpm sync:skills:check
 ```
 
@@ -244,9 +258,9 @@ my-notion docs update \
 ## 开发与验证
 
 ```bash
-pnpm --filter @notion/my-notion-cli test
-pnpm --filter @notion/my-notion-cli typecheck
-pnpm --filter @notion/my-notion-cli build
+pnpm --filter @mynotion/cli test
+pnpm --filter @mynotion/cli typecheck
+pnpm --filter @mynotion/cli build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp

@@ -1,5 +1,5 @@
 {
-  "name": "@notion/my-notion-skills",
+  "name": "@mynotion/skills",
   "version": "0.1.0",
   "description": "Agent skills for using the My-Notion CLI",
   "private": true,

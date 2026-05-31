@@ -99,6 +99,14 @@ https://<deployment>.convex.site
 
 ## 2. 安装或运行 CLI
 
+推荐使用 npm beta 包：
+
+```bash
+npm install -g @mynotion/cli@beta
+npx skills add @mynotion/cli -y -g
+my-notion install --check
+```
+
 如果 CLI 已经全局安装，可以直接使用：
 
 ```bash
@@ -108,19 +116,19 @@ my-notion <command>
 如果是在项目仓库内开发运行，可以用：
 
 ```bash
-pnpm --filter @notion/my-notion-cli dev <command>
+pnpm --filter @mynotion/cli dev <command>
 ```
 
 例如：
 
 ```bash
-pnpm --filter @notion/my-notion-cli dev auth status
+pnpm --filter @mynotion/cli dev auth status
 ```
 
 如果要先构建再运行：
 
 ```bash
-pnpm --filter @notion/my-notion-cli build
+pnpm --filter @mynotion/cli build
 node packages/my-notion-cli/dist/index.js <command>
 ```
 
@@ -138,7 +146,7 @@ Agent 场景建议使用：
 my-notion auth login --no-open
 ```
 
-然后把 CLI 输出的授权链接发给用户打开。
+然后把 CLI 输出的授权链接用 Markdown 链接形式发给用户打开，例如 `[打开 My-Notion CLI 授权](https://...)`。
 
 如果要连接本地 Web 和非默认 Convex 部署：
 

@@ -27,8 +27,8 @@ MCP 不建议作为“替代鉴权”的首版核心。MCP HTTP transport 本身
 截至 2026-05-26，CLI / Skills / MCP 方案已经从规划进入可交付状态：
 
 - Phase 1 机器 API 与 Token 地基：已完成。已实现 `apiTokens` schema、PAT 创建/撤销/校验、`/cli/v1/*` Convex HTTP Actions、Web PAT 管理 API。
-- Phase 2 CLI MVP：已完成。当前包名为 `@notion/my-notion-cli`，路径为 `packages/my-notion-cli`，支持 `auth`、`tokens`、`docs` 命令和 JSON/pretty/table/markdown 输出。
-- Phase 3 Skills MVP：已完成。当前包名为 `@notion/my-notion-skills`，路径为 `packages/my-notion-skills`，包含 `my-notion-shared`、`my-notion-docs`、`my-notion-mcp`，并通过 `pnpm sync:skills` 同步到 `.trae/skills`。
+- Phase 2 CLI MVP：已完成。当前包名为 `@mynotion/cli`，路径为 `packages/my-notion-cli`，支持 `auth`、`tokens`、`docs` 命令和 JSON/pretty/table/markdown 输出。
+- Phase 3 Skills MVP：已完成。当前包名为 `@mynotion/skills`，路径为 `packages/my-notion-skills`，包含 `my-notion-shared`、`my-notion-docs`、`my-notion-mcp`，并通过 `pnpm sync:skills` 同步到 `.trae/skills`。
 - Phase 4 MCP Adapter：已完成 STDIO MVP。`my-notion mcp serve --transport stdio` 已暴露 `my_notion_docs_search`、`my_notion_docs_fetch`、`my_notion_docs_create`、`my_notion_docs_update`，写操作默认 `dryRun: true`。
 - Agent 写文档链路：已闭环。Agent 可通过 Skills 选择 CLI，或通过 MCP STDIO tool，以 Markdown 为输入创建、读取、更新、导入、导出和搜索 My-Notion 文档；写操作有 dry-run / 显式命令边界。
 - E2E 验证：已新增 `pnpm e2e:cli`、`pnpm e2e:cli:errors` 与 `pnpm e2e:mcp`，覆盖 CLI 文档 CRUD、PAT 生命周期、MCP JSON-RPC STDIO 调用和 Machine API 错误契约。
@@ -421,10 +421,10 @@ HTTP MCP 鉴权：
 当前 package 内脚本：
 
 ```bash
-pnpm --filter @notion/my-notion-cli typecheck
-pnpm --filter @notion/my-notion-cli build
-pnpm --filter @notion/my-notion-cli test
-pnpm --filter @notion/my-notion-skills lint
+pnpm --filter @mynotion/cli typecheck
+pnpm --filter @mynotion/cli build
+pnpm --filter @mynotion/cli test
+pnpm --filter @mynotion/skills lint
 ```
 
 根 README 可在后续加入 CLI/MCP 快速开始；当前重点以架构文档、progress 记录和 skills 引用为准。
@@ -581,8 +581,8 @@ pnpm --filter @notion/my-notion-skills lint
 
 规划验证：
 
-- 检查 `packages/my-notion-cli` TypeScript：`pnpm --filter @notion/my-notion-cli typecheck`。
-- 检查 CLI 单测：`pnpm --filter @notion/my-notion-cli test`。
+- 检查 `packages/my-notion-cli` TypeScript：`pnpm --filter @mynotion/cli typecheck`。
+- 检查 CLI 单测：`pnpm --filter @mynotion/cli test`。
 - 检查 CLI E2E：`pnpm e2e:cli`。
 - 检查 CLI 错误契约 E2E：`pnpm e2e:cli:errors`。
 - 检查 MCP E2E：`pnpm e2e:mcp`。

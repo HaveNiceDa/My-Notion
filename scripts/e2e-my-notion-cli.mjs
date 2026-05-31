@@ -124,7 +124,7 @@ function main() {
 
   try {
     console.log(`[1/12] Build CLI`);
-    run("pnpm", ["--filter", "@notion/my-notion-cli", "build"]);
+    run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
     console.log(`[2/12] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
