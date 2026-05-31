@@ -36,8 +36,9 @@ First-time setup:
 
 - Run `my-notion auth login --no-open` when operating as an Agent.
 - Extract the printed authorization URL and ask the user to open it in the browser.
-- The user signs in with My-Notion and approves CLI access. Do not ask the user to paste a `mnt_` token into chat.
-- The CLI saves the token locally in `~/.my-notion/config.json` with file mode `0600`.
+- The printed authorization URL contains only `user_code`; the CLI keeps the sensitive temporary `device_code` locally for polling.
+- The user signs in with My-Notion if needed, returns to the authorization page automatically, and approves CLI access. Do not ask the user to paste a `mnt_` token into chat.
+- The CLI saves the token locally in `~/.local/share/my-notion/config.json`; the config directory should be `0700` and the file should be `0600`.
 - Later commands should reuse the saved local login token by default. Ask the user to authorize again only when the CLI reports missing, expired, revoked, or invalid auth.
 
 Login command:
@@ -61,7 +62,7 @@ Status command:
 my-notion auth status
 ```
 
-Logout clears the saved local PAT from `~/.my-notion/config.json` but does not revoke it remotely:
+Logout clears the saved local PAT from `~/.local/share/my-notion/config.json` but does not revoke it remotely:
 
 ```bash
 my-notion auth logout
@@ -76,8 +77,10 @@ my-notion tokens revoke-current --format json
 Configuration is stored in:
 
 ```text
-~/.my-notion/config.json
+~/.local/share/my-notion/config.json
 ```
+
+For CI or isolated permission debugging, `MY_NOTION_CONFIG_PATH` can point to an alternate writable config file. If saving config fails with `EPERM` or `EACCES`, inspect ownership and permissions with `ls -lO@ ~/.local/share/my-notion ~/.local/share/my-notion/config.json`.
 
 If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, run `my-notion auth login --no-open` again and ask the user to open the authorization URL.
 
@@ -111,6 +114,7 @@ Agents should prefer `--format json` for create, search, list, and update, and `
 ## Safety Rules
 
 - Never ask users to paste full PAT tokens into chat. Prefer browser authorization links.
+- Never paste `device_code` into chats or logs; it is a temporary credential held by the CLI for polling.
 - Prefer temporary config by setting `HOME` in automated tests so local user config is not overwritten.
 - Do not store PAT tokens in repository files, docs, logs, or generated skills.
 - Use `auth logout` for local cleanup and `tokens revoke-current` when the PAT must be invalidated server-side.

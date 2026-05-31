@@ -158,7 +158,10 @@ export async function runDeviceLogin(args: ParsedArgs) {
 
   if (args.options["no-wait"] === true) {
     console.log(
-      `Device login started. Resume polling with: my-notion auth login --profile ${profile.name} --device-code ${deviceCode}`,
+      [
+        `Device login started. Resume polling with: my-notion auth login --profile ${profile.name} --device-code <device-code>`,
+        "The device code is a sensitive temporary credential; do not paste it into chats or logs.",
+      ].join("\n"),
     );
     return {
       authenticated: false,

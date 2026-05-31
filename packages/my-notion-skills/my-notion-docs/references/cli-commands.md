@@ -38,7 +38,7 @@ Priority order:
 
 1. Command flags: `--profile`, `--local`, `--web-url`, `--api-url`, `--token`
 2. Environment variables: `MY_NOTION_PROFILE`, `MY_NOTION_WEB_URL`, `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
-3. Saved profile config: `~/.my-notion/config.json`
+3. Saved profile config: `~/.local/share/my-notion/config.json`
 4. Default online profile: Web `https://notion-j9zj.vercel.app`, API `https://laudable-albatross-174.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.

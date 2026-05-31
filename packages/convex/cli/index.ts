@@ -10,6 +10,7 @@ const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
 const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
 const DEVICE_FLOW_TOKEN_NAME = "CLI Browser Login";
 const RATE_LIMIT_WINDOW_MS = 60_000;
+const DEVICE_AUTH_DECISION_WINDOW_MS = 5_000;
 
 function now() {
   return Date.now();
@@ -26,6 +27,29 @@ function createRateLimitWindow(timestamp: number, windowMs: number) {
     expiresAt: windowStart + windowMs,
     windowKey: String(windowStart),
   };
+}
+
+function isDecisionRateLimited(session: {
+  lastDecisionAttemptAt?: number;
+  decisionAttemptCount?: number;
+}, timestamp: number) {
+  const lastAttemptAt = session.lastDecisionAttemptAt ?? 0;
+  const attempts = session.decisionAttemptCount ?? 0;
+  return (
+    attempts > 0 &&
+    timestamp - lastAttemptAt < DEVICE_AUTH_DECISION_WINDOW_MS
+  );
+}
+
+async function recordDecisionAttempt(
+  ctx: { db: any },
+  session: { _id: unknown; decisionAttemptCount?: number },
+  timestamp: number,
+) {
+  await ctx.db.patch(session._id, {
+    lastDecisionAttemptAt: timestamp,
+    decisionAttemptCount: (session.decisionAttemptCount ?? 0) + 1,
+  });
 }
 
 function toDocumentResult(document: {
@@ -722,7 +746,14 @@ export const approveCliDeviceAuthSession = mutation({
       .unique();
 
     if (!session) return { ok: false as const, code: "INVALID_DEVICE_CODE" };
-    if (session.expiresAt <= now()) {
+
+    const timestamp = now();
+    if (isDecisionRateLimited(session, timestamp)) {
+      return { ok: false as const, code: "DECISION_RATE_LIMITED" };
+    }
+    await recordDecisionAttempt(ctx, session, timestamp);
+
+    if (session.expiresAt <= timestamp) {
       await ctx.db.patch(session._id, { status: "expired" });
       return { ok: false as const, code: "DEVICE_CODE_EXPIRED" };
     }
@@ -733,7 +764,7 @@ export const approveCliDeviceAuthSession = mutation({
     await ctx.db.patch(session._id, {
       status: "approved",
       userId: identity.subject,
-      approvedAt: now(),
+      approvedAt: timestamp,
     });
 
     return { ok: true as const };
@@ -758,6 +789,17 @@ export const denyCliDeviceAuthSession = mutation({
       .unique();
 
     if (!session) return { ok: false as const, code: "INVALID_DEVICE_CODE" };
+
+    const timestamp = now();
+    if (isDecisionRateLimited(session, timestamp)) {
+      return { ok: false as const, code: "DECISION_RATE_LIMITED" };
+    }
+    await recordDecisionAttempt(ctx, session, timestamp);
+
+    if (session.expiresAt <= timestamp) {
+      await ctx.db.patch(session._id, { status: "expired" });
+      return { ok: false as const, code: "DEVICE_CODE_EXPIRED" };
+    }
     if (session.status !== "pending") {
       return { ok: false as const, code: `DEVICE_CODE_${session.status.toUpperCase()}` };
     }

@@ -190,7 +190,7 @@ MCP adapter（已完成 STDIO MVP）
 - 自研轻量参数解析：减少 CLI MVP 依赖面。
 - `zod`：MCP tool schema 与参数校验。
 - Node 18+ 原生 `fetch`：HTTP 调用。
-- 本地 JSON 配置：`~/.my-notion/config.json`。
+- 本地 JSON 配置：`~/.local/share/my-notion/config.json`。
 - `@modelcontextprotocol/sdk`：STDIO MCP server。
 
 当前已实现命令：

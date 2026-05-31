@@ -1,12 +1,16 @@
-import { clerkMiddleware } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import createMiddleware from "next-intl/middleware";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { routing } from "./i18n/routing";
 
 const intlMiddleware = createMiddleware(routing);
+const isCliAuthRoute = createRouteMatcher([
+  "/cli/auth(.*)",
+  "/:locale/cli/auth(.*)",
+]);
 
-export default clerkMiddleware((auth, request) => {
+export default clerkMiddleware(async (auth, request) => {
   const { pathname } = request.nextUrl;
 
   if (
@@ -18,6 +22,10 @@ export default clerkMiddleware((auth, request) => {
 
   if (pathname.startsWith("/api")) {
     return NextResponse.next();
+  }
+
+  if (isCliAuthRoute(request)) {
+    await auth.protect();
   }
 
   return intlMiddleware(request);

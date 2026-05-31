@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const verificationUri = `${webUrl}/cli/auth`;
     const verificationUriComplete = `${verificationUri}?user_code=${encodeURIComponent(
       userCode,
-    )}&device_code=${encodeURIComponent(deviceCode)}`;
+    )}`;
 
     await getConvexClient().mutation(cliApi.createCliDeviceAuthSession, {
       deviceCodeHash: sha256Hex(deviceCode),

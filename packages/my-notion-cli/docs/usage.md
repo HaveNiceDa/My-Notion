@@ -47,11 +47,11 @@ CLI 默认不要求用户复制 PAT。首次登录时：
 
 1. 运行 `my-notion auth login`。
 2. CLI 输出授权链接和用户码。
-3. 打开授权链接，在 My-Notion Web 登录。
+3. 打开授权链接；如果尚未登录，Web 会先引导登录并自动回到授权页。
 4. 核对页面上的用户码与终端一致。
 5. 点击授权后，CLI 自动保存本机认证态。
 
-不要把完整 `mnt_...` Token 写进代码仓库、聊天记录或公开文档。`--token` 仅保留为兼容和 CI 调试入口。
+授权链接只包含 `user_code`，用于用户核对，不包含长期 `mnt_...` Token，也不包含 CLI 用来轮询的 `device_code`。`device_code` 是 CLI 本地持有的一次性临时凭据，只有显式 resume 轮询时才会用到，不要把它写进代码仓库、聊天记录、日志或公开文档。`--token` 仅保留为兼容和 CI 调试入口。
 
 ### API 地址在哪里看
 
@@ -83,8 +83,8 @@ https://laudable-albatross-174.convex.site
 使用 CLI 前需要准备：
 
 - 一个 My-Notion 账号。
-- 一个 My-Notion Personal Access Token，简称 PAT。
-- PAT 以 `mnt_` 开头。
+- 浏览器授权登录能力；普通用户不需要复制 My-Notion Personal Access Token。
+- 兼容/CI 场景仍可显式传入以 `mnt_` 开头的 PAT，但不推荐 Agent 工作流使用。
 - 服务端 API 地址；不指定时默认使用当前线上地址：
 
 ```bash
@@ -152,10 +152,31 @@ my-notion auth login \
 登录成功后，CLI 会把配置保存到本地：
 
 ```text
-~/.my-notion/config.json
+~/.local/share/my-notion/config.json
 ```
 
-这个文件按 profile 保存当前机器的 CLI 登录态 token，文件权限为 `0600`。之后再执行命令时，不需要重复认证；默认线上地址也不需要重复传 `--api-url`。
+这个文件按 profile 保存当前机器的 CLI 登录态 token。CLI 会尽量把配置目录权限设为 `0700`，配置文件权限设为 `0600`，并通过原子写避免写入中断导致文件损坏。之后再执行命令时，不需要重复认证；默认线上地址也不需要重复传 `--api-url`。
+
+如果本机权限导致写入失败，CLI 会输出修复建议。常用检查命令：
+
+```bash
+ls -lO@ ~/.local/share/my-notion ~/.local/share/my-notion/config.json
+```
+
+常用修复命令：
+
+```bash
+mkdir -p ~/.local/share/my-notion
+chown -R "$(id -un)" ~/.local/share/my-notion
+chmod 700 ~/.local/share/my-notion
+[ ! -e ~/.local/share/my-notion/config.json ] || chmod 600 ~/.local/share/my-notion/config.json
+```
+
+如需在 CI 或隔离调试环境使用独立配置文件，可以设置：
+
+```bash
+export MY_NOTION_CONFIG_PATH=/tmp/my-notion/config.json
+```
 
 只有在以下场景需要重新复制或登录：
 
@@ -391,7 +412,7 @@ my-notion docs search --query "项目" --format json
 
 - 命令行参数最高，例如 `--profile`、`--web-url`、`--api-url`、`--token`。
 - 环境变量其次。
-- `~/.my-notion/config.json` 的 profile 配置再次。
+- `~/.local/share/my-notion/config.json` 的 profile 配置再次。
 - 默认线上地址 `https://laudable-albatross-174.convex.site` 最后。
 
 ## 17. 推荐完整流程

@@ -63,7 +63,7 @@ Global options:
 
 Auth setup:
   First use: run my-notion auth login, open the printed authorization URL,
-  approve access in the browser, and the CLI saves local auth at ~/.my-notion/config.json.
+  approve access in the browser, and the CLI saves local auth at ~/.local/share/my-notion/config.json.
   For local debugging, use --profile local --web-url http://localhost:3000 --api-url <convex-site-url>.
 `);
 }

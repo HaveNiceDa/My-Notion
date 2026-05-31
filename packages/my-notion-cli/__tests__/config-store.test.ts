@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +10,7 @@ async function loadStore() {
   vi.resetModules();
   vi.doMock("node:os", () => ({
     homedir: () => tempHome,
+    userInfo: () => ({ username: "test-user" }),
   }));
   return import("../src/config/store.js");
 }
@@ -19,6 +20,7 @@ beforeEach(() => {
   process.env = { ...originalEnv, HOME: tempHome };
   delete process.env.MY_NOTION_API_URL;
   delete process.env.MY_NOTION_API_TOKEN;
+  delete process.env.MY_NOTION_CONFIG_PATH;
 });
 
 afterEach(() => {
@@ -94,7 +96,15 @@ describe("config store", () => {
 
     expect(store.resolveApiUrl({})).toBe("https://laudable-albatross-174.convex.site");
     expect(() => store.resolveToken({})).toThrow("my-notion auth login");
-    expect(() => store.resolveToken({})).toThrow(".my-notion/config.json");
+    expect(() => store.resolveToken({})).toThrow(".local/share/my-notion/config.json");
+  });
+
+  it("uses the sandbox-friendly local share path by default", async () => {
+    const store = await loadStore();
+
+    expect(store.getConfigPath()).toBe(
+      join(tempHome, ".local", "share", "my-notion", "config.json"),
+    );
   });
 
   it("keeps local and prod profiles isolated", async () => {
@@ -127,5 +137,49 @@ describe("config store", () => {
       webUrl: "http://localhost:3000",
       token: "mnt_local",
     });
+  });
+
+  it("supports overriding the config path for isolated environments", async () => {
+    const customPath = join(tempHome, "custom", "my-notion.json");
+    process.env.MY_NOTION_CONFIG_PATH = customPath;
+    const store = await loadStore();
+
+    store.saveConfig({
+      apiUrl: "https://custom.convex.site",
+      token: "mnt_custom",
+    });
+
+    expect(store.getConfigPath()).toBe(customPath);
+    expect(store.resolveProfile({})).toMatchObject({
+      apiUrl: "https://custom.convex.site",
+      token: "mnt_custom",
+    });
+  });
+
+  it("writes config with private directory and file permissions", async () => {
+    const store = await loadStore();
+
+    store.saveConfig({
+      apiUrl: "https://secure.convex.site",
+      token: "mnt_secure",
+    });
+
+    const dirMode = statSync(store.getConfigDir()).mode & 0o777;
+    const fileMode = statSync(store.getConfigPath()).mode & 0o777;
+    expect(dirMode).toBe(0o700);
+    expect(fileMode).toBe(0o600);
+  });
+
+  it("surfaces actionable repair guidance when config writes fail", async () => {
+    const store = await loadStore();
+    process.env.MY_NOTION_CONFIG_PATH = "/dev/null/config.json";
+    const saveBrokenConfig = () =>
+      store.saveConfig({
+        apiUrl: "https://broken.convex.site",
+        token: "mnt_broken",
+      });
+
+    expect(saveBrokenConfig).toThrow("Suggested repair");
+    expect(saveBrokenConfig).toThrow("MY_NOTION_CONFIG_PATH");
   });
 });

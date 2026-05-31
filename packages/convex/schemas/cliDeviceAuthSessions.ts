@@ -32,6 +32,8 @@ export const cliDeviceAuthSessionsTable = defineTable({
   consumedAt: v.optional(v.number()),
   lastPolledAt: v.optional(v.number()),
   pollCount: v.optional(v.number()),
+  lastDecisionAttemptAt: v.optional(v.number()),
+  decisionAttemptCount: v.optional(v.number()),
 })
   .index("by_device_code_hash", ["deviceCodeHash"])
   .index("by_user_code_hash", ["userCodeHash"])
