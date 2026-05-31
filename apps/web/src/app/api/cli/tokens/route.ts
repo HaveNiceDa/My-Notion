@@ -5,13 +5,6 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 
-type CreateTokenBody = {
-  name?: string;
-  scopes?: string[];
-  expiresAt?: number;
-  resetDefault?: boolean;
-};
-
 type AuthenticatedConvexClientResult =
   | { convex: ConvexHttpClient }
   | { error: NextResponse }
@@ -219,29 +212,20 @@ export async function GET() {
   }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const result = await getAuthenticatedConvexClient();
     if ("error" in result) return result.error;
     if ("unavailable" in result) return serviceUnavailableResponse(result.unavailable);
 
-    const body = (await req.json().catch(() => ({}))) as CreateTokenBody;
     const plainToken = createPlainToken();
     const tokenPrefix = plainToken.slice(0, 12);
 
-    const record = body.resetDefault
-      ? await result.convex.mutation(api.cli.resetDefaultApiTokenRecord, {
-          tokenHash: sha256Hex(plainToken),
-          tokenPrefix,
-          tokenPlaintext: plainToken,
-        })
-      : await result.convex.mutation(api.cli.createApiTokenRecord, {
-          name: body.name?.trim() || "My-Notion CLI Token",
-          tokenHash: sha256Hex(plainToken),
-          tokenPrefix,
-          scopes: body.scopes,
-          expiresAt: body.expiresAt,
-        });
+    const record = await result.convex.mutation(api.cli.resetDefaultApiTokenRecord, {
+      tokenHash: sha256Hex(plainToken),
+      tokenPrefix,
+      tokenPlaintext: plainToken,
+    });
 
     return NextResponse.json({
       success: true,

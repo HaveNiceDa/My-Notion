@@ -14,6 +14,10 @@ function now() {
   return Date.now();
 }
 
+function latestFirst<T extends { createdAt: number }>(left: T, right: T) {
+  return right.createdAt - left.createdAt;
+}
+
 function createRateLimitWindow(timestamp: number, windowMs: number) {
   const windowStart = Math.floor(timestamp / windowMs) * windowMs;
   return {
@@ -143,10 +147,15 @@ export const ensureDefaultApiTokenRecord = mutation({
       .query("apiTokens")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .collect();
-    const existing = defaultTokens.find(
-      (token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt,
-    );
+    const existing = defaultTokens
+      .filter((token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt)
+      .sort(latestFirst)[0];
     if (existing?.tokenPlaintext) {
+      for (const token of defaultTokens) {
+        if (token._id !== existing._id) {
+          await ctx.db.delete(token._id);
+        }
+      }
       return toApiTokenResult(existing);
     }
 
@@ -157,6 +166,12 @@ export const ensureDefaultApiTokenRecord = mutation({
         tokenPlaintext: args.tokenPlaintext,
         scopes: [...DEFAULT_DOC_SCOPES],
       });
+
+      for (const token of defaultTokens) {
+        if (token._id !== existing._id) {
+          await ctx.db.delete(token._id);
+        }
+      }
 
       return toApiTokenResult({
         ...existing,
@@ -176,6 +191,10 @@ export const ensureDefaultApiTokenRecord = mutation({
       scopes: [...DEFAULT_DOC_SCOPES],
       createdAt,
     });
+
+    for (const token of defaultTokens) {
+      await ctx.db.delete(token._id);
+    }
 
     return toApiTokenResult({
       _id: tokenId,
@@ -205,9 +224,9 @@ export const resetDefaultApiTokenRecord = mutation({
       .query("apiTokens")
       .withIndex("by_user", (q) => q.eq("userId", identity.subject))
       .collect();
-    const existing = defaultTokens.find(
-      (token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt,
-    );
+    const existing = defaultTokens
+      .filter((token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt)
+      .sort(latestFirst)[0];
     if (!existing) {
       const createdAt = now();
       const tokenId = await ctx.db.insert("apiTokens", {
@@ -219,6 +238,10 @@ export const resetDefaultApiTokenRecord = mutation({
         scopes: [...DEFAULT_DOC_SCOPES],
         createdAt,
       });
+
+      for (const token of defaultTokens) {
+        await ctx.db.delete(token._id);
+      }
 
       return toApiTokenResult({
         _id: tokenId,
@@ -236,6 +259,12 @@ export const resetDefaultApiTokenRecord = mutation({
       tokenPlaintext: args.tokenPlaintext,
       scopes: [...DEFAULT_DOC_SCOPES],
     });
+
+    for (const token of defaultTokens) {
+      if (token._id !== existing._id) {
+        await ctx.db.delete(token._id);
+      }
+    }
 
     return toApiTokenResult({
       ...existing,
