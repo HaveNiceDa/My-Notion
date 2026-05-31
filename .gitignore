@@ -36,6 +36,10 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
+.npmrc.local
+.npmrc.publish
+**/.npmrc.local
+**/.npmrc.publish
 
 # vercel
 .vercel

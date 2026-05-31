@@ -45,25 +45,22 @@
 
 ## 待用户手动完成
 
-- 确认 npm organization/scope `@mynotion` 已创建。
-- 确认当前 npm 用户拥有 `@mynotion` 的 publish 权限。
-- 真实发布前运行 `npm whoami`。
-- 发布 beta：
+- npm beta 已发布成功：
 
 ```bash
-cd packages/my-notion-cli
-npm publish --tag beta --access public
+@mynotion/cli@0.1.0-beta.0
 ```
 
-- 发布后验证：
+- 发布后验证已通过：
 
 ```bash
 npm view @mynotion/cli@beta version bin dist-tags
 npx @mynotion/cli@beta --help
-npm install -g @mynotion/cli@beta
-my-notion install --check
+npx @mynotion/cli@beta install --check --format json
 ```
 
 ## 注意
 
-- 本轮生成了本地验证 tarball：`packages/my-notion-cli/mynotion-cli-0.1.0-beta.0.tgz`。用户要求保留该文件，后续提交前需确认是否纳入提交；通常建议不要提交 tarball。
+- 本轮曾生成本地验证 tarball：`packages/my-notion-cli/mynotion-cli-0.1.0-beta.0.tgz`，后续已按用户要求删除，避免误提交。
+- 本地发布 token 配置写在 `packages/my-notion-cli/.npmrc.publish`，该文件已被 `.gitignore` 忽略，不应提交。
+- 因为 `0.1.0-beta.0` 是首个 npm 版本，npm registry 自动把 `latest` 也指向该版本；尝试删除唯一版本的 `latest` tag 返回 400。后续发布稳定版 `0.1.0` 后，应将 `latest` 指向稳定版。
