@@ -7,10 +7,17 @@ description: "Guides My-Notion CLI setup, authentication, output formats, and sa
 
 Use this skill whenever an Agent needs to use the My-Notion CLI, configure authentication, validate access, or understand CLI safety boundaries.
 
+## Usage Modes
+
+- Human users install or run `my-notion`, then use `auth login` once and operate documents directly.
+- AI Agents should use `auth login --no-open` only when auth is missing, send a clickable authorization link to the user, then retry the original operation.
+- npm package distribution target: package `@notion/my-notion-cli`, binary `my-notion`.
+
 ## Prerequisites
 
 - The CLI package is `@notion/my-notion-cli`.
-- The binary name is `my-notion` after installation or linking.
+- The binary name is `my-notion` after installation, linking, or `npx`.
+- After npm release, users can run `npx @notion/my-notion-cli@latest <command>` or install it globally.
 - In this monorepo, the development entry can be run with:
 
 ```bash
@@ -41,6 +48,13 @@ First-time setup:
 - The online token is stored in `~/.local/share/my-notion/config.json`; the local/dev token is stored in `~/.local/share/my-notion/config.local.json`.
 - Later commands should reuse the saved online login token by default. Ask the user to authorize again only when the CLI reports missing, expired, revoked, or invalid auth.
 - Keep user-facing updates short. Do not echo auth status JSON, config paths, token prefixes, or environment details unless the user asks or they are needed to resolve an error.
+
+Agent-facing auth flow:
+
+1. Run the requested command or `my-notion auth status --format json` silently.
+2. If auth is missing or invalid, run `my-notion auth login --no-open`.
+3. Send only the clickable authorization link and visible user code to the user.
+4. After approval, retry the original command and report only the final result.
 
 Login command:
 

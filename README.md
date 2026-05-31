@@ -96,38 +96,48 @@ pnpm sync:skills:check
 
 ## CLI / MCP Quick Start
 
-My-Notion 已完成面向 Agent 写文档的 CLI / Skills / MCP 主链路。Agent 可以通过 CLI 命令或 MCP STDIO 工具把 Markdown 内容创建、读取、更新、导入和导出到 My-Notion。
+My-Notion 已完成面向人类和 Agent 的 CLI / Skills / MCP 主链路。CLI 默认连接线上 `prod`，通过浏览器授权登录，不要求用户复制完整 `mnt_` Token；本地调试使用 `--local` 独立登录态。
 
-### 1. 准备 PAT
-
-在 Web 设置页打开 `API Tokens`，系统会为当前登录用户自动准备一个默认 CLI Token。点击“显示”查看明文，点击“复制”复制 `mnt_` 开头的 PAT；需要让旧 token 失效时点击“重置 Token”。不要把完整 PAT 写入仓库、日志或聊天记录。
-
-默认机器 API URL 是当前线上 Convex `.site` 地址；如用户不指定，CLI 会默认使用：
-
-```bash
-https://laudable-albatross-174.convex.site
-```
-
-连接其他部署时再显式设置：
-
-```bash
-export MY_NOTION_API_URL="https://<deployment>.convex.site"
-export MY_NOTION_API_TOKEN="mnt_xxx"
-```
-
-### 2. 登录 CLI
+### 1. 构建或运行 CLI
 
 ```bash
 pnpm --filter @notion/my-notion-cli build
-node packages/my-notion-cli/dist/index.js auth login \
-  --token "$MY_NOTION_API_TOKEN" \
-  --format json
+node packages/my-notion-cli/dist/index.js <command>
 ```
 
-验证当前身份：
+开发期也可以直接运行：
 
 ```bash
-node packages/my-notion-cli/dist/index.js auth status --format json
+pnpm --filter @notion/my-notion-cli dev <command>
+```
+
+### 2. 浏览器授权登录
+
+```bash
+node packages/my-notion-cli/dist/index.js auth login
+```
+
+Agent 场景使用 `--no-open`，把 CLI 输出的授权 URL 以 Markdown 链接形式发给用户：
+
+```bash
+node packages/my-notion-cli/dist/index.js auth login --no-open
+```
+
+默认线上配置：
+
+```text
+Web URL: https://notion-j9zj.vercel.app
+API URL: https://laudable-albatross-174.convex.site
+Config:  ~/.local/share/my-notion/config.json
+```
+
+本地调试显式使用 `--local`，并写入独立配置文件 `config.local.json`：
+
+```bash
+node packages/my-notion-cli/dist/index.js auth login \
+  --local \
+  --web-url http://localhost:3000 \
+  --api-url "https://<dev-deployment>.convex.site"
 ```
 
 ### 3. 让 Agent 写入文档
@@ -166,17 +176,19 @@ node packages/my-notion-cli/dist/index.js docs import --title "Imported Document
 
 ### 4. 启动 MCP STDIO
 
-MCP server 复用 CLI 配置或环境变量；默认线上部署只需要 PAT，连接其他部署时再设置 `MY_NOTION_API_URL`：
+MCP server 复用 CLI 登录态。默认连接线上 `prod`，本地调试时同样显式传 `--local`：
 
 ```bash
 node packages/my-notion-cli/dist/index.js mcp serve --transport stdio
 ```
 
-首版 MCP 暴露文档 `search`、`fetch`、`create`、`update` 工具。写工具默认 `dryRun: true`，只有在用户明确批准后才应设置 `dryRun: false`。
+当前 MCP 暴露文档 `search`、`fetch`、`create`、`update` 工具。写工具默认 `dryRun: true`，只有在用户明确批准后才应设置 `dryRun: false`。
 
-### 5. 发布前验证
+### 5. 相关文档
 
-CLI/MCP 相关发布前检查见 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
+- CLI 完整说明见 [My-Notion CLI](./packages/my-notion-cli/)。
+- Skills 说明见 [My-Notion Skills](./packages/my-notion-skills/)。
+- 发布前检查见 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
 
 ## 当前状态
 
