@@ -83,6 +83,7 @@ describe("config store", () => {
     const store = await loadStore();
 
     expect(store.resolveApiUrl({})).toBe("https://laudable-albatross-174.convex.site");
-    expect(() => store.resolveToken({})).toThrow("Missing API token");
+    expect(() => store.resolveToken({})).toThrow("Open My-Notion Web -> Settings -> API Token");
+    expect(() => store.resolveToken({})).toThrow(".my-notion/config.json");
   });
 });

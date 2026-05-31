@@ -4,6 +4,22 @@ const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 300;
 
+function getAuthRecoveryMessage(code?: string) {
+  if (code === "TOKEN_EXPIRED") {
+    return "Saved CLI token has expired. Open My-Notion Web -> Settings -> API Token, reset/copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+  }
+
+  if (code === "TOKEN_REVOKED") {
+    return "Saved CLI token was revoked. Open My-Notion Web -> Settings -> API Token, reset/copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+  }
+
+  if (code === "UNAUTHORIZED") {
+    return "CLI token is invalid or missing. Open My-Notion Web -> Settings -> API Token, copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+  }
+
+  return undefined;
+}
+
 export class MyNotionApiError extends Error {
   constructor(
     message: string,
@@ -199,9 +215,10 @@ export class MyNotionClient {
       const requestId =
         payload?.requestId ?? response.headers.get("x-request-id") ?? undefined;
       const message =
-        payload?.success === false
+        getAuthRecoveryMessage(code) ??
+        (payload?.success === false
           ? payload.error?.message ?? code ?? "Request failed"
-          : `HTTP ${response.status}`;
+          : `HTTP ${response.status}`);
       throw new MyNotionApiError(message, response.status, code, requestId);
     }
 

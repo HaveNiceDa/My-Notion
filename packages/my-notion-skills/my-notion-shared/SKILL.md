@@ -31,6 +31,13 @@ The CLI talks to My-Notion through Convex HTTP Actions. It requires:
 - `apiUrl`: optional. When omitted, the CLI defaults to `https://laudable-albatross-174.convex.site`. Use a Convex `.site` URL such as `https://<deployment>.convex.site` for non-default deployments.
 - `token`: the default My-Notion CLI token copied from Web Settings -> API Tokens, with `mnt_` prefix. The Web UI can hide/show/copy/reset this token.
 
+First-time setup:
+
+- Ask the user to open My-Notion Web -> Settings -> API Token.
+- The Web UI auto-creates one default CLI token. The user can show/copy it and give it to the Agent.
+- Run login once. The CLI saves the token locally in `~/.my-notion/config.json` with file mode `0600`.
+- Later commands should reuse the saved local login token by default. Do not ask the user to copy the token again unless the CLI reports it is missing, expired, revoked, or invalid.
+
 Login command:
 
 ```bash
@@ -60,6 +67,8 @@ Configuration is stored in:
 ```text
 ~/.my-notion/config.json
 ```
+
+If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, ask the user to return to Web Settings -> API Token, reset/copy the latest default token, then run `my-notion auth login --token <mnt_token>` again.
 
 Environment variables override saved config:
 

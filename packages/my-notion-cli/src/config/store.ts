@@ -6,6 +6,15 @@ import type { CliConfig } from "../types.js";
 const CONFIG_PATH = join(homedir(), ".my-notion", "config.json");
 export const DEFAULT_API_URL = "https://laudable-albatross-174.convex.site";
 
+export function getTokenSetupMessage() {
+  return [
+    "Missing API token.",
+    "Open My-Notion Web -> Settings -> API Token, show/copy your default CLI token, then run:",
+    "my-notion auth login --token <mnt_token>",
+    `The CLI will save it locally at ${CONFIG_PATH} and reuse it for later commands.`,
+  ].join(" ");
+}
+
 export function getConfigPath() {
   return CONFIG_PATH;
 }
@@ -50,9 +59,7 @@ export function resolveToken(options: Record<string, string | boolean>) {
     loadConfig().token;
 
   if (!value) {
-    throw new Error(
-      "Missing API token. Run `my-notion auth login --token <token>` or set MY_NOTION_API_TOKEN.",
-    );
+    throw new Error(getTokenSetupMessage());
   }
 
   return value;

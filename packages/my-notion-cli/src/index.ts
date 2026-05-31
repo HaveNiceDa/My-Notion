@@ -55,6 +55,11 @@ Global options:
   --api-url <url>      Override MY_NOTION_API_URL / saved config / default online API
   --token <token>      Override MY_NOTION_API_TOKEN / saved config
   --format <format>    json | pretty | table | ndjson | markdown
+
+Auth setup:
+  First use: open My-Notion Web -> Settings -> API Token, copy the default CLI token,
+  then run auth login once. The token is saved locally at ~/.my-notion/config.json
+  and reused by later commands unless you pass --token or MY_NOTION_API_TOKEN.
 `);
 }
 

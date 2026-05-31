@@ -205,4 +205,31 @@ describe("MyNotionClient", () => {
       });
     }
   });
+
+  it("turns stale token errors into actionable login guidance", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        {
+          success: false,
+          error: {
+            code: "TOKEN_EXPIRED",
+            message: "Token expired",
+          },
+        },
+        { status: 401 },
+      ),
+    );
+
+    const client = new MyNotionClient({
+      apiUrl: "https://example.convex.site",
+      token: "mnt_old",
+    });
+
+    await expect(client.authStatus()).rejects.toMatchObject({
+      status: 401,
+      code: "TOKEN_EXPIRED",
+      message: expect.stringContaining("my-notion auth login --token <mnt_token>"),
+    });
+  });
 });

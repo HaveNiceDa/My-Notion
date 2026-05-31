@@ -9,7 +9,7 @@ My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 
 如果你要连接当前这个 My-Notion 项目已经在线运行的服务，使用流程是：
 
 ```text
-打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 显示并复制默认 Token -> 用 CLI auth login 登录 -> 执行 docs 命令
+打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 显示并复制默认 Token -> 用 CLI auth login 登录一次 -> 后续直接执行 docs 命令
 ```
 
 当前项目的默认 Machine API 地址是：
@@ -144,7 +144,19 @@ my-notion auth login \
 ~/.my-notion/config.json
 ```
 
-之后再执行命令时，不需要重复传 `--token`；默认线上地址也不需要重复传 `--api-url`。
+这个文件保存当前机器的 CLI 登录态 token，文件权限为 `0600`。之后再执行命令时，不需要重复传 `--token`；默认线上地址也不需要重复传 `--api-url`。
+
+只有在以下场景需要重新复制或登录：
+
+- 首次使用，CLI 提示缺少 API token。
+- Web 设置页点击“重置 Token”后，旧 token 失效。
+- CLI 提示 `TOKEN_EXPIRED`、`TOKEN_REVOKED` 或 `UNAUTHORIZED`。
+
+重新登录时，回到 Web 设置弹窗复制最新默认 Token，再执行：
+
+```bash
+my-notion auth login --token "mnt_xxx"
+```
 
 ## 4. 检查登录状态
 
