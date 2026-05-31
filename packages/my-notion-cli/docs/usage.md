@@ -144,23 +144,29 @@ my-notion auth login --no-open
 
 ```bash
 my-notion auth login \
-  --profile local \
+  --local \
   --web-url http://localhost:3000 \
   --api-url "https://<deployment>.convex.site"
 ```
 
-登录成功后，CLI 会把配置保存到本地：
+登录成功后，CLI 会把线上配置保存到本地：
 
 ```text
 ~/.local/share/my-notion/config.json
 ```
 
-这个文件按 profile 保存当前机器的 CLI 登录态 token。CLI 会尽量把配置目录权限设为 `0700`，配置文件权限设为 `0600`，并通过原子写避免写入中断导致文件损坏。之后再执行命令时，不需要重复认证；默认线上地址也不需要重复传 `--api-url`。
+本地调试登录态单独保存到：
+
+```text
+~/.local/share/my-notion/config.local.json
+```
+
+默认入口始终使用线上 `prod`，不会因为本地登录而切到 local。CLI 会尽量把配置目录权限设为 `0700`，配置文件权限设为 `0600`，并通过原子写避免写入中断导致文件损坏。之后再执行命令时，不需要重复认证；默认线上地址也不需要重复传 `--api-url`。
 
 如果本机权限导致写入失败，CLI 会输出修复建议。常用检查命令：
 
 ```bash
-ls -lO@ ~/.local/share/my-notion ~/.local/share/my-notion/config.json
+ls -lO@ ~/.local/share/my-notion ~/.local/share/my-notion/config.json ~/.local/share/my-notion/config.local.json
 ```
 
 常用修复命令：
@@ -170,6 +176,7 @@ mkdir -p ~/.local/share/my-notion
 chown -R "$(id -un)" ~/.local/share/my-notion
 chmod 700 ~/.local/share/my-notion
 [ ! -e ~/.local/share/my-notion/config.json ] || chmod 600 ~/.local/share/my-notion/config.json
+[ ! -e ~/.local/share/my-notion/config.local.json ] || chmod 600 ~/.local/share/my-notion/config.local.json
 ```
 
 如需在 CI 或隔离调试环境使用独立配置文件，可以设置：
@@ -412,7 +419,7 @@ my-notion docs search --query "项目" --format json
 
 - 命令行参数最高，例如 `--profile`、`--web-url`、`--api-url`、`--token`。
 - 环境变量其次。
-- `~/.local/share/my-notion/config.json` 的 profile 配置再次。
+- 对应环境的本地配置再次：线上 `config.json`，本地 `config.local.json`。
 - 默认线上地址 `https://laudable-albatross-174.convex.site` 最后。
 
 ## 17. 推荐完整流程

@@ -28,18 +28,19 @@ node packages/my-notion-cli/dist/index.js <command>
 
 The CLI talks to My-Notion through Convex HTTP Actions. The recommended setup is browser-based device authorization:
 
-- `profile`: optional. Defaults to `prod`. Use `--profile local` or `--local` for local/dev testing.
+- `profile`: optional. Defaults to online `prod`. Use `--local` for local/dev testing; never let a local login become the default entry.
 - `webUrl`: the My-Notion Web URL used for browser authorization. Defaults to `https://notion-j9zj.vercel.app`; local debugging commonly uses `http://localhost:3000`.
 - `apiUrl`: the Convex `.site` Machine API URL used after login. Defaults to `https://laudable-albatross-174.convex.site`.
 
 First-time setup:
 
 - Run `my-notion auth login --no-open` when operating as an Agent.
-- Extract the printed authorization URL and ask the user to open it in the browser.
+- Extract the printed authorization URL and send it as a clickable Markdown link, e.g. `[打开 My-Notion CLI 授权](https://...)`.
 - The printed authorization URL contains only `user_code`; the CLI keeps the sensitive temporary `device_code` locally for polling.
 - The user signs in with My-Notion if needed, returns to the authorization page automatically, and approves CLI access. Do not ask the user to paste a `mnt_` token into chat.
-- The CLI saves the token locally in `~/.local/share/my-notion/config.json`; the config directory should be `0700` and the file should be `0600`.
-- Later commands should reuse the saved local login token by default. Ask the user to authorize again only when the CLI reports missing, expired, revoked, or invalid auth.
+- The online token is stored in `~/.local/share/my-notion/config.json`; the local/dev token is stored in `~/.local/share/my-notion/config.local.json`.
+- Later commands should reuse the saved online login token by default. Ask the user to authorize again only when the CLI reports missing, expired, revoked, or invalid auth.
+- Keep user-facing updates short. Do not echo auth status JSON, config paths, token prefixes, or environment details unless the user asks or they are needed to resolve an error.
 
 Login command:
 
@@ -51,7 +52,7 @@ Local/dev login command:
 
 ```bash
 my-notion auth login \
-  --profile local \
+  --local \
   --web-url http://localhost:3000 \
   --api-url "https://<dev-deployment>.convex.site"
 ```
@@ -62,7 +63,7 @@ Status command:
 my-notion auth status
 ```
 
-Logout clears the saved local PAT from `~/.local/share/my-notion/config.json` but does not revoke it remotely:
+Logout clears the selected profile's saved PAT but does not revoke it remotely:
 
 ```bash
 my-notion auth logout
@@ -74,13 +75,14 @@ Revoke the currently configured PAT remotely when the user wants to invalidate t
 my-notion tokens revoke-current --format json
 ```
 
-Configuration is stored in:
+Configuration is stored separately:
 
 ```text
-~/.local/share/my-notion/config.json
+prod:  ~/.local/share/my-notion/config.json
+local: ~/.local/share/my-notion/config.local.json
 ```
 
-For CI or isolated permission debugging, `MY_NOTION_CONFIG_PATH` can point to an alternate writable config file. If saving config fails with `EPERM` or `EACCES`, inspect ownership and permissions with `ls -lO@ ~/.local/share/my-notion ~/.local/share/my-notion/config.json`.
+For CI or isolated permission debugging, `MY_NOTION_CONFIG_PATH` can point to an alternate writable config file. If saving config fails with `EPERM` or `EACCES`, inspect ownership and permissions with `ls -lO@ ~/.local/share/my-notion`.
 
 If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, run `my-notion auth login --no-open` again and ask the user to open the authorization URL.
 

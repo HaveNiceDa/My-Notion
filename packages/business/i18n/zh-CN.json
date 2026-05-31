@@ -491,6 +491,7 @@
       "done": "授权会话已是 {status} 状态。你可以关闭此页面，或重新运行",
       "loadFailed": "加载授权会话失败",
       "approved": "授权成功。你可以回到终端继续操作。",
+      "approvedRedirecting": "授权成功，5 秒后返回文档首页。",
       "denied": "已拒绝授权。你可以关闭此页面。"
     },
     "status": {

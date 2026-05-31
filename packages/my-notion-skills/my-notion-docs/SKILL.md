@@ -11,7 +11,7 @@ Before using this skill, ensure `my-notion-shared` authentication guidance is sa
 
 ## Core Workflow
 
-1. Validate authentication:
+1. Validate authentication silently when needed:
 
 ```bash
 my-notion auth status --format json
@@ -148,6 +148,8 @@ my-notion docs archive --id <documentId> --format json
 - Prefer temporary Markdown files over shell-escaped inline content for non-trivial documents.
 - Use `--format json` when parsing command output.
 - Use `--format markdown` when reading document bodies for language tasks.
+- Keep user-facing output concise: report the action result and document id; do not print auth status, config paths, token prefixes, profile details, or raw CLI JSON unless the user asks.
+- When login is required, share the authorization URL as a clickable Markdown link, e.g. `[打开 My-Notion CLI 授权](https://...)`.
 - Use `docs export --output` for backup, local editing, or handoff to external tools.
 - Use `docs import --file` for Markdown files that should become new My-Notion documents.
 - Ask the user before overwriting existing document content unless they explicitly requested overwrite.
@@ -157,8 +159,7 @@ my-notion docs archive --id <documentId> --format json
 
 ## Error Handling
 
-- If `auth status` fails with `TOKEN_REVOKED`, ask the user for a new PAT or rerun login.
-- If `auth status` fails with `UNAUTHORIZED`, verify `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`, or saved config.
+- If auth is missing, expired, revoked, or invalid, run browser login and send only the clickable authorization link plus the visible user code.
 - If `docs fetch` returns not found, confirm the document ID and whether it belongs to the authenticated user.
 - If search returns many results, show the top few titles and ask which document to update.
 

@@ -491,6 +491,7 @@
       "done": "Authorization session is already {status}. You can close this page or rerun",
       "loadFailed": "Failed to load authorization session",
       "approved": "Authorization approved. You can return to the terminal.",
+      "approvedRedirecting": "Authorization approved. Returning to document home in 5 seconds.",
       "denied": "Authorization denied. You can close this page."
     },
     "status": {

@@ -21,6 +21,8 @@ export const DEFAULT_WEB_URL = "https://notion-j9zj.vercel.app";
 export const DEFAULT_PROFILE = "prod";
 export const DEFAULT_LOCAL_PROFILE = "local";
 export const DEFAULT_LOCAL_WEB_URL = "http://localhost:3000";
+const DEFAULT_CONFIG_FILE = "config.json";
+const LOCAL_CONFIG_FILE = "config.local.json";
 
 export class ConfigStoreError extends Error {
   constructor(
@@ -32,37 +34,41 @@ export class ConfigStoreError extends Error {
   }
 }
 
-export function getTokenSetupMessage() {
+export function getTokenSetupMessage(profileName = DEFAULT_PROFILE) {
   return [
     "Missing API token.",
     "Run `my-notion auth login` and open the browser authorization link.",
-    "For local debugging use `my-notion auth login --profile local --web-url http://localhost:3000 --api-url <convex-site-url>`.",
-    `The CLI will save it locally at ${getConfigPath()} and reuse it for later commands.`,
+    "For local debugging use `my-notion auth login --local --web-url http://localhost:3000 --api-url <convex-site-url>`.",
+    `The CLI will save it locally at ${getConfigPath(profileName)} and reuse it for later commands.`,
   ].join(" ");
 }
 
-export function getConfigPath() {
+function configFileForProfile(profileName: string) {
+  return profileName === DEFAULT_LOCAL_PROFILE ? LOCAL_CONFIG_FILE : DEFAULT_CONFIG_FILE;
+}
+
+export function getConfigPath(profileName = DEFAULT_PROFILE) {
   return (
     process.env.MY_NOTION_CONFIG_PATH ??
-    join(homedir(), ".local", "share", "my-notion", "config.json")
+    join(homedir(), ".local", "share", "my-notion", configFileForProfile(profileName))
   );
 }
 
-export function getConfigDir() {
-  return dirname(getConfigPath());
+export function getConfigDir(profileName = DEFAULT_PROFILE) {
+  return dirname(getConfigPath(profileName));
 }
 
-export function loadConfig(): CliConfig {
+export function loadConfig(profileName = DEFAULT_PROFILE): CliConfig {
   try {
-    return JSON.parse(readFileSync(getConfigPath(), "utf8")) as CliConfig;
+    return JSON.parse(readFileSync(getConfigPath(profileName), "utf8")) as CliConfig;
   } catch {
     return createEmptyConfig();
   }
 }
 
-function createConfigStoreError(error: unknown, action: string) {
-  const path = getConfigPath();
-  const dir = getConfigDir();
+function createConfigStoreError(error: unknown, action: string, profileName = DEFAULT_PROFILE) {
+  const path = getConfigPath(profileName);
+  const dir = getConfigDir(profileName);
   const code =
     error && typeof error === "object" && "code" in error
       ? String((error as { code?: unknown }).code)
@@ -96,8 +102,8 @@ function bestEffortChmod(path: string, mode: number) {
   }
 }
 
-export function saveConfig(config: CliConfig) {
-  const path = getConfigPath();
+export function saveConfig(config: CliConfig, profileName = DEFAULT_PROFILE) {
+  const path = getConfigPath(profileName);
   const dir = dirname(path);
   const tempPath = join(
     dir,
@@ -120,7 +126,7 @@ export function saveConfig(config: CliConfig) {
     } catch {
       // Ignore cleanup errors and preserve the original write failure.
     }
-    throw createConfigStoreError(error, "save");
+    throw createConfigStoreError(error, "save", profileName);
   }
 }
 
@@ -170,12 +176,12 @@ export function migrateConfig(config: CliConfig): CliConfigV2 {
   };
 }
 
-export function loadConfigV2(): CliConfigV2 {
-  return migrateConfig(loadConfig());
+export function loadConfigV2(profileName = DEFAULT_PROFILE): CliConfigV2 {
+  return migrateConfig(loadConfig(profileName));
 }
 
-export function saveConfigV2(config: CliConfigV2) {
-  saveConfig(config);
+export function saveConfigV2(config: CliConfigV2, profileName = DEFAULT_PROFILE) {
+  saveConfig(config, profileName);
 }
 
 export function resolveProfileName(options: Record<string, string | boolean>) {
@@ -183,7 +189,6 @@ export function resolveProfileName(options: Record<string, string | boolean>) {
   return (
     readStringOption(options, "profile") ??
     process.env.MY_NOTION_PROFILE ??
-    loadConfigV2().activeProfile ??
     DEFAULT_PROFILE
   );
 }
@@ -200,7 +205,7 @@ export function resolveProfile(
   options: Record<string, string | boolean>,
 ): ResolvedProfile {
   const name = resolveProfileName(options);
-  const config = loadConfigV2();
+  const config = loadConfigV2(name);
   const saved = config.profiles[name] ?? {};
   const apiUrl =
     readStringOption(options, "api-url") ??
@@ -239,10 +244,9 @@ export function saveProfileAuth(input: {
   expiresAt?: number | null;
   authMethod: AuthMethod;
 }) {
-  const config = loadConfigV2();
+  const config = loadConfigV2(input.profileName);
   const nextConfig: CliConfigV2 = {
     ...config,
-    activeProfile: input.profileName,
     profiles: {
       ...config.profiles,
       [input.profileName]: {
@@ -258,13 +262,13 @@ export function saveProfileAuth(input: {
       },
     },
   };
-  saveConfigV2(nextConfig);
+  saveConfigV2(nextConfig, input.profileName);
   return nextConfig.profiles[input.profileName];
 }
 
 export function clearSavedToken(options: Record<string, string | boolean> = {}) {
   const profileName = resolveProfileName(options);
-  const config = loadConfigV2();
+  const config = loadConfigV2(profileName);
   const { token: _token, ...rest } = config.profiles[profileName] ?? {};
   const nextConfig: CliConfigV2 = {
     ...config,
@@ -273,7 +277,7 @@ export function clearSavedToken(options: Record<string, string | boolean> = {}) 
       [profileName]: rest,
     },
   };
-  saveConfig(nextConfig);
+  saveConfig(nextConfig, profileName);
   return {
     profileName,
     profile: nextConfig.profiles[profileName],
@@ -290,10 +294,11 @@ export function resolveWebUrl(options: Record<string, string | boolean>) {
 }
 
 export function resolveToken(options: Record<string, string | boolean>) {
-  const value = resolveProfile(options).token;
+  const profile = resolveProfile(options);
+  const value = profile.token;
 
   if (!value) {
-    throw new Error(getTokenSetupMessage());
+    throw new Error(getTokenSetupMessage(profile.name));
   }
 
   return value;

@@ -11,7 +11,7 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 
 - The `my-notion` CLI must be installed, linked, or run from the monorepo.
 - Authentication must already be configured by browser-based `my-notion auth login`; `MY_NOTION_API_TOKEN` is a legacy/CI fallback. `MY_NOTION_API_URL` is optional for the default online deployment.
-- In Agent mode, run `my-notion auth login --no-open`, send the printed authorization URL to the user, then retry after approval.
+- In Agent mode, run `my-notion auth login --no-open`, send the printed authorization URL as a clickable Markdown link, then retry after approval.
 - Do not pass full PAT values through MCP tool arguments. The MCP server reads credentials from CLI config or environment variables.
 
 ## Start Server

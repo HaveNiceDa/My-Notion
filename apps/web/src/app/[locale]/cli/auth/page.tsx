@@ -5,14 +5,16 @@ import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import { cn } from "@notion/business/utils";
 import { LanguageToggle } from "@/src/components/language-toggle";
 import { ModeToggle } from "@/src/components/mode-toggle";
 import { Button } from "@/src/components/ui/button";
 
 type ActionState = "idle" | "loading" | "approved" | "denied" | "error";
+const REDIRECT_DELAY_MS = 5_000;
 
 async function submitDecision(action: "approve" | "deny", userCode: string) {
   const response = await fetch(`/api/cli/auth/device/${action}`, {
@@ -38,6 +40,8 @@ async function submitDecision(action: "approve" | "deny", userCode: string) {
 
 export default function CliAuthPage() {
   const t = useTranslations("CliAuth");
+  const router = useRouter();
+  const params = useParams<{ locale?: string }>();
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn } = useUser();
   const userCode = searchParams.get("user_code") ?? "";
@@ -66,6 +70,14 @@ export default function CliAuthPage() {
     try {
       await submitDecision(action, userCode);
       setState(action === "approve" ? "approved" : "denied");
+      if (action === "approve") {
+        toast.success(t("messages.approvedRedirecting"), {
+          duration: REDIRECT_DELAY_MS,
+        });
+        window.setTimeout(() => {
+          router.push(`/${params.locale ?? "zh-CN"}/documents`);
+        }, REDIRECT_DELAY_MS);
+      }
     } catch (decisionError) {
       setState("error");
       setError(

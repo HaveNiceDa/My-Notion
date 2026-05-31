@@ -105,9 +105,12 @@ describe("config store", () => {
     expect(store.getConfigPath()).toBe(
       join(tempHome, ".local", "share", "my-notion", "config.json"),
     );
+    expect(store.getConfigPath("local")).toBe(
+      join(tempHome, ".local", "share", "my-notion", "config.local.json"),
+    );
   });
 
-  it("keeps local and prod profiles isolated", async () => {
+  it("keeps local and prod login state in separate config files", async () => {
     const store = await loadStore();
 
     store.saveProfileAuth({
@@ -136,6 +139,25 @@ describe("config store", () => {
       apiUrl: "https://local.convex.site",
       webUrl: "http://localhost:3000",
       token: "mnt_local",
+    });
+    expect(store.resolveProfile({})).toMatchObject({
+      name: "prod",
+      apiUrl: "https://prod.convex.site",
+      token: "mnt_prod",
+    });
+    expect(store.loadConfigV2()).toMatchObject({
+      profiles: {
+        prod: {
+          token: "mnt_prod",
+        },
+      },
+    });
+    expect(store.loadConfigV2("local")).toMatchObject({
+      profiles: {
+        local: {
+          token: "mnt_local",
+        },
+      },
     });
   });
 

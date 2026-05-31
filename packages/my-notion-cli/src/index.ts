@@ -55,7 +55,7 @@ Usage:
 
 Global options:
   --profile <name>    Select saved profile. Defaults to prod
-  --local             Shortcut for --profile local
+  --local             Use local/dev login state and defaults. Online prod remains default
   --web-url <url>     Web URL used for browser authorization
   --api-url <url>      Override MY_NOTION_API_URL / saved config / default online API
   --token <token>      Legacy token override. Prefer browser login
@@ -63,8 +63,9 @@ Global options:
 
 Auth setup:
   First use: run my-notion auth login, open the printed authorization URL,
-  approve access in the browser, and the CLI saves local auth at ~/.local/share/my-notion/config.json.
-  For local debugging, use --profile local --web-url http://localhost:3000 --api-url <convex-site-url>.
+  approve access in the browser, and the CLI saves online auth at ~/.local/share/my-notion/config.json.
+  For local debugging, use --local --web-url http://localhost:3000 --api-url <convex-site-url>.
+  Local auth is stored separately at ~/.local/share/my-notion/config.local.json.
 `);
 }
 

@@ -38,10 +38,11 @@ Priority order:
 
 1. Command flags: `--profile`, `--local`, `--web-url`, `--api-url`, `--token`
 2. Environment variables: `MY_NOTION_PROFILE`, `MY_NOTION_WEB_URL`, `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
-3. Saved profile config: `~/.local/share/my-notion/config.json`
+3. Saved profile config: prod uses `~/.local/share/my-notion/config.json`; local uses `~/.local/share/my-notion/config.local.json`
 4. Default online profile: Web `https://notion-j9zj.vercel.app`, API `https://laudable-albatross-174.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.
+Do not expose auth status JSON, config paths, token prefixes, or raw command output in user-facing replies unless debugging is explicitly requested.
 
 ## Auth
 
@@ -51,13 +52,13 @@ Browser login and save config:
 my-notion auth login --no-open --format json
 ```
 
-Agents should extract the printed authorization URL and ask the user to open it. Do not ask users to paste `mnt_` tokens into chat.
+Agents should extract the printed authorization URL and send it as a clickable Markdown link, for example `[打开 My-Notion CLI 授权](https://...)`. Do not ask users to paste `mnt_` tokens into chat.
 
 Local/dev login:
 
 ```bash
 my-notion auth login \
-  --profile local \
+  --local \
   --web-url http://localhost:3000 \
   --api-url https://<dev-deployment>.convex.site \
   --format json
