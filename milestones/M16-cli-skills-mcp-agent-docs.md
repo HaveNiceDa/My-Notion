@@ -101,6 +101,9 @@
 
 ## 后续规划
 
+- P0 `my-notion config init` / `my-notion install` 初始化闭环：`@mynotion/cli` 已发布 npm beta，但当前缺少类似 `lark-cli config init` 的统一初始化状态入口。需要设计一个面向人和 Agent 的首屏配置命令，集中完成环境选择、登录引导、配置检查、MCP/Skills 安装提示和下一步命令推荐，避免等到用户执行具体业务命令时才暴露缺配置问题。
+- P0 Agent 写入格式策略：当前 CLI / Skills 主要让 Agent 输出 Markdown，但 Web 编辑器底层是 BlockNote。需要评估两条路线并形成决策：一是服务端/CLI 增加 Markdown -> BlockNote blocks 转换器，保持 Agent 侧输出简单；二是让 Agent 直接生成受约束的 BlockNote JSON，降低转换损耗但提高 Agent 适配成本。决策时需要重点比较可控性、兼容性、调试成本、错误恢复、未来移动端复用和导入导出一致性。
+- P0 MCP 模式真实验证：虽然 STDIO MVP 和 `pnpm e2e:mcp` 已完成，但仍需用真实 MCP Client / Agent 场景验证 `my-notion mcp serve --transport stdio` 的发现、认证、dry-run、确认链路、错误输出和文档写入体验，并补齐 README / Skills 中的最小可用示例。
 - `kb search`：仅在产品目标需要 Agent 检索知识库再回答/生成时启动。
 - `agent ask --format ndjson`：需要复用 ReAct Loop，并设计 streaming 事件契约。
 - HTTP MCP / OAuth 2.1：远程集成能力，复杂度较高，暂不阻塞当前交付。
