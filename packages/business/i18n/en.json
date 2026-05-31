@@ -231,7 +231,6 @@
     "addCover": "Add cover",
     "insertImage": "Insert image"
   },
-
   "Common": {
     "saved": "Saved successfully!",
     "saving": "Saving...",
@@ -350,8 +349,7 @@
     "openDocument": "Open document",
     "openAIChat": "Open AI Assistant",
     "panelError": "AI Panel Error",
-    "panelErrorDesc": "An unexpected error occurred. Please retry or try again later.",
-    "retry": "Retry"
+    "panelErrorDesc": "An unexpected error occurred. Please retry or try again later."
   },
   "MemoryReview": {
     "title": "Long-term memory",
@@ -450,5 +448,61 @@
     "more": "More",
     "newSubPage": "Create sub-page",
     "aiMockResponse": "Message received: \"{{message}}\". AI features are being connected..."
+  },
+  "CliAuth": {
+    "brand": "My-Notion",
+    "brandSubtitle": "Secure CLI authorization",
+    "brandLogoAlt": "My-Notion logo",
+    "eyebrow": "CLI authorization",
+    "title": "Authorize My-Notion CLI",
+    "subtitle": "Allow this local command line session to access your My-Notion workspace.",
+    "userCode": "Verification code",
+    "missingCode": "Missing code",
+    "confirmCode": "Confirm this code matches the one printed in your terminal before approving.",
+    "expiresAt": "Expires {time}",
+    "requestTitle": "Request details",
+    "client": "Client",
+    "machine": "Machine",
+    "profile": "Profile",
+    "unknown": "Unknown",
+    "defaultProfile": "Default",
+    "securityTitle": "Review before approving",
+    "securityDescription": "After approval, the CLI can read and write documents with your account permissions. Only approve if you trust this local Agent or terminal session.",
+    "approve": "Authorize access",
+    "approving": "Authorizing...",
+    "deny": "Deny",
+    "permissions": {
+      "readTitle": "Read documents",
+      "readDescription": "Search and fetch documents that belong to your account.",
+      "writeTitle": "Write documents",
+      "writeDescription": "Create and update documents through the CLI after authorization.",
+      "search": "Search your My-Notion documents",
+      "read": "Read document content and metadata",
+      "create": "Create new documents in your workspace",
+      "update": "Update existing documents through the CLI"
+    },
+    "messages": {
+      "authorizationFailed": "Authorization failed",
+      "missingParams": "Missing authorization parameters. Please rerun",
+      "redirecting": "Redirecting to sign in...",
+      "loading": "Loading authorization session...",
+      "invalid": "Authorization code is invalid. Please rerun",
+      "expired": "Authorization code has expired. Please rerun",
+      "done": "Authorization session is already {status}. You can close this page or rerun",
+      "loadFailed": "Failed to load authorization session",
+      "approved": "Authorization approved. You can return to the terminal.",
+      "denied": "Authorization denied. You can close this page."
+    },
+    "status": {
+      "pending": "pending",
+      "approved": "approved",
+      "denied": "denied",
+      "consumed": "completed",
+      "expired": "expired"
+    },
+    "compactTitle": "Confirm and grant these permissions?",
+    "compactSubtitle": "My-Notion CLI is requesting access to your workspace.",
+    "confirmTrust": "I have confirmed the verification code and trust this local Agent or terminal session.",
+    "securityFootnote": "The app can access authorized data continuously after approval."
   }
 }

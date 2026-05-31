@@ -226,7 +226,6 @@
       "renaming": "重命名中..."
     }
   },
-
   "Toolbar": {
     "addIcon": "添加图标",
     "addCover": "添加封面",
@@ -350,8 +349,7 @@
     "openDocument": "打开文档",
     "openAIChat": "打开 AI 助手",
     "panelError": "AI 面板出现异常",
-    "panelErrorDesc": "发生了意外错误，请重试或稍后再试",
-    "retry": "重试"
+    "panelErrorDesc": "发生了意外错误，请重试或稍后再试"
   },
   "MemoryReview": {
     "title": "长期记忆",
@@ -450,5 +448,61 @@
     "more": "更多",
     "newSubPage": "新建子页面",
     "aiMockResponse": "收到您的消息: \"{{message}}\"。AI 功能正在接入中..."
+  },
+  "CliAuth": {
+    "brand": "My-Notion",
+    "brandSubtitle": "安全 CLI 授权",
+    "brandLogoAlt": "My-Notion 标志",
+    "eyebrow": "CLI 授权",
+    "title": "授权 My-Notion CLI",
+    "subtitle": "允许这个本地命令行会话访问你的 My-Notion 工作区。",
+    "userCode": "验证码",
+    "missingCode": "缺少验证码",
+    "confirmCode": "授权前请确认此验证码与终端中显示的验证码一致。",
+    "expiresAt": "{time} 过期",
+    "requestTitle": "请求详情",
+    "client": "客户端",
+    "machine": "设备",
+    "profile": "配置",
+    "unknown": "未知",
+    "defaultProfile": "默认",
+    "securityTitle": "授权前请确认",
+    "securityDescription": "授权后，CLI 可以在你的账号权限范围内读取和写入文档。仅在你信任这个本地 Agent 或终端会话时授权。",
+    "approve": "确认授权",
+    "approving": "授权中...",
+    "deny": "拒绝",
+    "permissions": {
+      "readTitle": "读取文档",
+      "readDescription": "搜索和读取属于你账号的文档。",
+      "writeTitle": "写入文档",
+      "writeDescription": "授权后通过 CLI 创建和更新文档。",
+      "search": "搜索你的 My-Notion 文档",
+      "read": "读取文档内容和元信息",
+      "create": "在工作区中创建新文档",
+      "update": "通过 CLI 更新已有文档"
+    },
+    "messages": {
+      "authorizationFailed": "授权失败",
+      "missingParams": "缺少授权参数，请重新运行",
+      "redirecting": "正在跳转登录...",
+      "loading": "正在加载授权会话...",
+      "invalid": "授权码无效，请重新运行",
+      "expired": "授权码已过期，请重新运行",
+      "done": "授权会话已是 {status} 状态。你可以关闭此页面，或重新运行",
+      "loadFailed": "加载授权会话失败",
+      "approved": "授权成功。你可以回到终端继续操作。",
+      "denied": "已拒绝授权。你可以关闭此页面。"
+    },
+    "status": {
+      "pending": "等待中",
+      "approved": "已授权",
+      "denied": "已拒绝",
+      "consumed": "已完成",
+      "expired": "已过期"
+    },
+    "compactTitle": "确定开通并授权以下权限吗？",
+    "compactSubtitle": "My-Notion CLI 正在请求访问你的工作区。",
+    "confirmTrust": "我已确认验证码一致，并信任这个本地 Agent 或终端会话。",
+    "securityFootnote": "该应用将可持续访问已授权的数据。"
   }
 }

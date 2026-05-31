@@ -14,13 +14,13 @@ function AIIcon({ className }: { className?: string }) {
   return (
     <>
       <img
-        src="/image.png"
+        src="/logo.png"
         alt="AI"
         className={cn(className, "dark:hidden")}
         draggable={false}
       />
       <img
-        src="/image-dark.png"
+        src="/logo-dark.png"
         alt="AI"
         className={cn(className, "hidden dark:block")}
         draggable={false}

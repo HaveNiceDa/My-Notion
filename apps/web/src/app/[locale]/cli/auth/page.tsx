@@ -1,59 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { ShieldCheck, Terminal } from "lucide-react";
+import { CheckCircle2, ShieldCheck, XCircle } from "lucide-react";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { cn } from "@notion/business/utils";
+import { LanguageToggle } from "@/src/components/language-toggle";
+import { ModeToggle } from "@/src/components/mode-toggle";
 import { Button } from "@/src/components/ui/button";
 
 type ActionState = "idle" | "loading" | "approved" | "denied" | "error";
-type SessionState =
-  | "loading"
-  | "ready"
-  | "missing"
-  | "invalid"
-  | "expired"
-  | "done"
-  | "error";
-
-type DeviceAuthSession = {
-  userCodeDisplay: string;
-  status: "pending" | "approved" | "denied" | "consumed" | "expired";
-  scopes: string[];
-  profile: string | null;
-  apiUrl: string | null;
-  webUrl: string | null;
-  clientName: string | null;
-  machineName: string | null;
-  createdAt: number;
-  expiresAt: number;
-};
-
-async function loadSession(userCode: string) {
-  const response = await fetch("/api/cli/auth/device/session", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ userCode }),
-  });
-  const payload = (await response.json().catch(() => null)) as
-    | { success: true; data: { session: DeviceAuthSession } }
-    | { success: false; error?: { message?: string; code?: string } }
-    | null;
-
-  if (!response.ok || !payload?.success) {
-    throw new Error(
-      payload?.success === false
-        ? payload.error?.message ??
-            payload.error?.code ??
-            "Failed to load authorization session"
-        : `HTTP ${response.status}`,
-    );
-  }
-
-  return payload.data.session;
-}
 
 async function submitDecision(action: "approve" | "deny", userCode: string) {
   const response = await fetch(`/api/cli/auth/device/${action}`, {
@@ -78,61 +37,30 @@ async function submitDecision(action: "approve" | "deny", userCode: string) {
 }
 
 export default function CliAuthPage() {
+  const t = useTranslations("CliAuth");
   const searchParams = useSearchParams();
   const { isLoaded, isSignedIn } = useUser();
   const userCode = searchParams.get("user_code") ?? "";
-  const [session, setSession] = useState<DeviceAuthSession | null>(null);
-  const [sessionState, setSessionState] = useState<SessionState>("loading");
   const [state, setState] = useState<ActionState>("idle");
   const [error, setError] = useState<string | null>(null);
-  const [sessionError, setSessionError] = useState<string | null>(null);
-  const canSubmit = useMemo(
-    () =>
-      sessionState === "ready" &&
-      session?.status === "pending" &&
-      state === "idle",
-    [session?.status, sessionState, state],
-  );
+  const [confirmed, setConfirmed] = useState(false);
+  const isSubmitting = state === "loading";
 
-  useEffect(() => {
-    if (!isLoaded || !isSignedIn) return;
-    if (!userCode) return;
-
-    let cancelled = false;
-    void loadSession(userCode)
-      .then((nextSession) => {
-        if (cancelled) return;
-        setSession(nextSession);
-        if (nextSession.status === "expired") {
-          setSessionState("expired");
-        } else if (nextSession.status === "pending") {
-          setSessionState("ready");
-        } else {
-          setSessionState("done");
-        }
-      })
-      .catch((sessionLoadError) => {
-        if (cancelled) return;
-        setSessionState(
-          sessionLoadError instanceof Error &&
-            sessionLoadError.message.includes("not found")
-            ? "invalid"
-            : "error",
-        );
-        setSessionError(
-          sessionLoadError instanceof Error
-            ? sessionLoadError.message
-            : "Failed to load authorization session",
-        );
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoaded, isSignedIn, userCode]);
+  const canSubmit =
+    isLoaded && isSignedIn && Boolean(userCode) && confirmed && state === "idle";
+  const userCodeLabel = userCode || t("missingCode");
+  const permissions = [
+    t("permissions.search"),
+    t("permissions.read"),
+    t("permissions.create"),
+    t("permissions.update"),
+  ];
 
   async function handleDecision(action: "approve" | "deny") {
-    if (!canSubmit) return;
+    if (isSubmitting) return;
+    if (action === "approve" && !canSubmit) return;
+    if (action === "deny" && (!isLoaded || !isSignedIn || !userCode)) return;
+
     setState("loading");
     setError(null);
     try {
@@ -143,159 +71,185 @@ export default function CliAuthPage() {
       setError(
         decisionError instanceof Error
           ? decisionError.message
-          : "Authorization failed",
+          : t("messages.authorizationFailed"),
       );
     }
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
-      <section className="w-full max-w-xl rounded-2xl border bg-background p-8 shadow-lg">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <Terminal className="h-6 w-6" />
+    <main className="relative min-h-screen overflow-hidden bg-[#fbfbfa] text-foreground dark:bg-[#111111]">
+      <header className="relative z-10 flex items-center justify-between px-6 py-5 sm:px-10">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl border bg-background shadow-sm">
+            <Image
+              src="/logo.png"
+              height={24}
+              width={24}
+              alt={t("brandLogoAlt")}
+              className="dark:hidden"
+              priority
+            />
+            <Image
+              src="/logo-dark.png"
+              height={24}
+              width={24}
+              alt={t("brandLogoAlt")}
+              className="hidden dark:block"
+              priority
+            />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold">Authorize My-Notion CLI</h1>
-            <p className="text-sm text-muted-foreground">
-              Allow this local CLI session to access your My-Notion documents.
-            </p>
+            <div className="text-sm font-semibold">{t("brand")}</div>
+            <div className="text-xs text-muted-foreground">{t("brandSubtitle")}</div>
           </div>
         </div>
-
-        <div className="mb-6 rounded-lg border bg-muted/40 p-4">
-          <div className="mb-2 text-sm font-medium">User code</div>
-          <div className="font-mono text-2xl tracking-widest">
-            {session?.userCodeDisplay ?? (userCode || "Missing code")}
-          </div>
-          <div className="mt-3 text-sm text-muted-foreground">
-            Confirm that this code matches the one printed by your terminal.
-          </div>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <ModeToggle />
         </div>
+      </header>
 
-        {session ? (
-          <div className="mb-6 grid gap-2 rounded-lg border bg-muted/30 p-4 text-sm">
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Client</span>
-              <span>{session.clientName ?? "My-Notion CLI"}</span>
+      <section className="relative z-10 flex min-h-[calc(100vh-88px)] items-start justify-center px-4 pb-12 pt-12 sm:pt-20">
+        <div className="w-full max-w-[380px] text-center">
+          <div className="mb-5 flex flex-col items-center">
+            <div className="relative mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border bg-background shadow-sm">
+              <Image
+                src="/logo.png"
+                height={34}
+                width={34}
+                alt={t("brandLogoAlt")}
+                className="dark:hidden"
+                priority
+              />
+              <Image
+                src="/logo-dark.png"
+                height={34}
+                width={34}
+                alt={t("brandLogoAlt")}
+                className="hidden dark:block"
+                priority
+              />
             </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Machine</span>
-              <span>{session.machineName ?? "Unknown"}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Profile</span>
-              <span>{session.profile ?? "default"}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Scopes</span>
-              <span>{session.scopes.join(", ")}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span className="text-muted-foreground">Expires</span>
-              <span>{new Date(session.expiresAt).toLocaleString()}</span>
-            </div>
+            <div className="text-sm text-muted-foreground">My-Notion CLI</div>
           </div>
-        ) : null}
 
-        <div className="mb-6 flex gap-3 rounded-lg border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm text-yellow-700 dark:text-yellow-300">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>
-            After approval, the CLI can read and write documents with your
-            account permissions. Only approve if you trust this local Agent or
-            terminal session.
+          <h1 className="text-xl font-semibold tracking-tight">
+            {t("compactTitle")}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">
+            {t("compactSubtitle")}
           </p>
-        </div>
 
-        {!userCode ? (
-          <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-            Missing authorization parameters. Please rerun{" "}
-            <code>my-notion auth login</code>.
+          <div className="mt-7 rounded-xl bg-muted/35 px-6 py-5 text-left dark:bg-muted/15">
+            <div className="mb-4 flex items-center justify-between gap-4">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("userCode")}
+              </span>
+              <span className="font-mono text-lg font-semibold tracking-[0.14em]">
+                {userCodeLabel}
+              </span>
+            </div>
+            <ul className="space-y-3 text-sm text-muted-foreground">
+              {permissions.map((permission) => (
+                <li key={permission} className="flex items-start gap-2">
+                  <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-muted-foreground" />
+                  <span>{permission}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        ) : null}
 
-        {isLoaded && !isSignedIn ? (
-          <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-            Redirecting to sign in...
+          <label className="mt-4 flex cursor-pointer items-start gap-2 text-left text-xs leading-5 text-muted-foreground">
+            <input
+              checked={confirmed}
+              className="mt-1 h-4 w-4 rounded border-muted-foreground/30"
+              disabled={!isLoaded || !isSignedIn || isSubmitting}
+              onChange={(event) => setConfirmed(event.target.checked)}
+              type="checkbox"
+            />
+            <span>{t("confirmTrust")}</span>
+          </label>
+
+          <div className="mt-5 min-h-10">
+            {!userCode ? (
+              <StatusCard tone="error" icon={<XCircle className="h-4 w-4" />}>
+                {t("messages.missingParams")} <code>my-notion auth login</code>.
+              </StatusCard>
+            ) : null}
+
+            {isLoaded && !isSignedIn ? (
+              <StatusCard>{t("messages.redirecting")}</StatusCard>
+            ) : null}
+
+            {state === "approved" ? (
+              <StatusCard tone="success" icon={<CheckCircle2 className="h-4 w-4" />}>
+                {t("messages.approved")}
+              </StatusCard>
+            ) : null}
+
+            {state === "denied" ? (
+              <StatusCard>{t("messages.denied")}</StatusCard>
+            ) : null}
+
+            {state === "error" ? (
+              <StatusCard tone="error" icon={<XCircle className="h-4 w-4" />}>
+                {error}
+              </StatusCard>
+            ) : null}
           </div>
-        ) : null}
 
-        {isLoaded && isSignedIn ? (
-          <>
-          {sessionState === "loading" && userCode ? (
-            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-              Loading authorization session...
-            </div>
-          ) : null}
-
-          {sessionState === "invalid" || sessionState === "missing" ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-              Authorization code is invalid. Please rerun{" "}
-              <code>my-notion auth login</code>.
-            </div>
-          ) : null}
-
-          {sessionState === "expired" ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-              Authorization code has expired. Please rerun{" "}
-              <code>my-notion auth login</code>.
-            </div>
-          ) : null}
-
-          {sessionState === "done" && session ? (
-            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-              Authorization session is already {session.status}. You can close
-              this page or rerun <code>my-notion auth login</code>.
-            </div>
-          ) : null}
-
-          {sessionState === "error" ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-              {sessionError ?? "Failed to load authorization session"}
-            </div>
-          ) : null}
-
-          {state === "approved" ? (
-            <div className="rounded-lg border border-green-500/40 bg-green-500/10 p-4 text-sm text-green-700 dark:text-green-300">
-              Authorization approved. You can return to the terminal.
-            </div>
-          ) : null}
-
-          {state === "denied" ? (
-            <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-              Authorization denied. You can close this page.
-            </div>
-          ) : null}
-
-          {state === "error" ? (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-              {error}
-            </div>
-          ) : null}
-
-          {(state === "idle" || state === "loading") &&
-          sessionState === "ready" ? (
-            <div className="flex flex-col gap-3 sm:flex-row">
+          {(state === "idle" || state === "loading") && userCode ? (
+            <div className="mt-3 grid grid-cols-2 gap-3">
               <Button
-                className="flex-1"
-                disabled={!canSubmit || state === "loading"}
-                onClick={() => void handleDecision("approve")}
-              >
-                Approve CLI access
-              </Button>
-              <Button
-                className="flex-1"
-                disabled={!canSubmit || state === "loading"}
+                className="rounded-lg"
+                disabled={!isLoaded || !isSignedIn || isSubmitting}
                 onClick={() => void handleDecision("deny")}
                 variant="outline"
               >
-                Deny
+                {t("deny")}
+              </Button>
+              <Button
+                className="rounded-lg"
+                disabled={!canSubmit || isSubmitting}
+                onClick={() => void handleDecision("approve")}
+              >
+                {isSubmitting ? t("approving") : t("approve")}
               </Button>
             </div>
           ) : null}
-          </>
-        ) : null}
+
+          <p className="mt-4 flex items-center justify-center gap-1 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            {t("securityFootnote")}
+          </p>
+        </div>
       </section>
     </main>
+  );
+}
+
+function StatusCard({
+  children,
+  icon,
+  tone = "neutral",
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  tone?: "neutral" | "success" | "error";
+}) {
+  return (
+    <div
+      className={cn(
+        "flex gap-2 rounded-lg border p-3 text-left text-sm leading-6",
+        tone === "neutral" && "bg-muted/20 text-muted-foreground",
+        tone === "success" &&
+          "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+        tone === "error" &&
+          "border-destructive/30 bg-destructive/10 text-destructive",
+      )}
+    >
+      {icon ? <span className="mt-1 shrink-0">{icon}</span> : null}
+      <div>{children}</div>
+    </div>
   );
 }
