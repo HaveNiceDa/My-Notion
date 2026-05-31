@@ -1,5 +1,7 @@
 # Fly.io 部署操作指南 — services/ai
 
+> 状态：备用部署方案。当前文档用于在 Vercel 到 DashScope 链路不稳定时，将 `services/ai` 迁移到可控区域的 Fly.io；不代表当前唯一生产路径。
+
 ## 1. 前置条件
 
 | 工具 | 安装方式 | 验证命令 |

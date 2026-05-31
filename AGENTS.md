@@ -48,6 +48,7 @@ My-Notion 是一个定制化个人版 Notion，核心目标是把文档编辑、
 - `packages/my-notion-skills/README.md`：Agent Skills 列表、同步规则、安全输出约束。
 - `milestones/README.md`：阶段性里程碑索引，适合快速理解已完成能力和下一步路线。
 - `progress/README.md`：压缩后的历史过程记录入口。
+- `docs/README.md`：当前维护文档、操作手册、历史复盘和外部 AI 参考入口。
 - `docs/ai-docs/README.md`：外部 AI/DashScope 能力文档索引；开发 Agent、工具调用、流式输出前按需阅读。
 - `docs/my-notion-cli-release-checklist.md`：CLI/MCP npm 发布和交付前检查清单。
 - `docs/web-mobile-gap-analysis.md`：当前 Web / Mobile 差距和后续 backlog。

@@ -12,6 +12,7 @@
 - [My-Notion Skills](./packages/my-notion-skills/README.md)：供 Agent 调用 CLI/MCP 的 Skills 源文件与同步规则。
 - [里程碑索引](./milestones/README.md)：稳定阶段结论和下一步路线。
 - [阶段进展摘要](./progress/README.md)：压缩后的历史过程记录。
+- [Docs 索引](./docs/README.md)：当前维护文档、操作手册、历史复盘和外部 AI 参考入口。
 - [Web / Mobile 差距](./docs/web-mobile-gap-analysis.md)：当前双端能力差距和后续 backlog。
 
 ## 当前能力

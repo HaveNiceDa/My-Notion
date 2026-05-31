@@ -1,303 +1,84 @@
-# BlockNote AI 编辑器重构方案
+# BlockNote AI 编辑器重构建议
 
-## 1. 现状分析
+## 当前状态
 
-### 1.1 文件分布
+编辑器 AI 和侧边栏 Agent 是两条独立链路：
 
-| 文件 | 行数 | 职责 |
-|---|---|---|
-| `apps/web/src/components/editor/EditorAIMenuController.tsx` | 41 | 菜单控制器，桥接 BlockNote 和自定义菜单 |
-| `apps/web/src/components/editor/customAIMenuItems.tsx` | 50 | 菜单项生成，调用 `getCustomItemsForContext` |
-| `packages/ai/utils/custom-ai-menu-items.ts` | 107 | 菜单项定义 + locale 解析 + 上下文过滤 |
-| `apps/web/src/app/api/editor-ai/streamText/route.ts` | 314 | 编辑器 AI API：消息注入 + 格式转换 + 流式输出 + tool 状态管理 |
-| `packages/ai/utils/compress-blocks.ts` | — | 文档块压缩（长文档 token 优化） |
-| `packages/ai/config/index.ts` | — | 模型配置（Base URL / Model ID / 默认模型） |
+| 维度 | 编辑器 AI | 侧边栏 Agent |
+| --- | --- | --- |
+| 入口 | `/api/editor-ai/streamText` | `/api/agent/stream` |
+| 协议 | Vercel AI SDK `UIMessageStream` | 自定义 NDJSON |
+| 模型调用 | 单轮编辑器 AI 请求 | ReAct Loop + tool 执行 |
+| 上下文 | 当前文档块状态 | 对话消息、文档元数据、RAG/Memory |
+| 写入方式 | BlockNote AI operation | Agent 写类 tool 预览/确认 |
 
-### 1.2 当前架构
+编辑器 AI 的主要价值是“选区/局部内容编辑”，不应直接并入侧边栏 Agent，但两者应共享模型配置、安全边界、限流和 i18n 约定。
 
-```
-用户在编辑器中输入 AI 指令
-         │
-         ▼
-EditorAIMenuController ──► customAIMenuItems ──► getCustomItemsForContext
-         │                                              │
-         │                                    CUSTOM_AI_MENU_ITEMS[]
-         │                                    (硬编码菜单项 + Record<string> i18n)
-         │
-         ▼
-@blocknote/xl-ai AIMenuController
-         │
-         ▼ (Vercel AI SDK useChat)
-POST /api/editor-ai/streamText
-         │
-         ├── injectDocumentStateMessages()  — 注入文档状态到消息
-         ├── convertToOpenAIMessages()       — 转换为 OpenAI 格式
-         ├── toolDefinitionsToOpenAITools()  — 转换 tool 定义
-         │
-         ▼
-DashScope OpenAI Compatible API (stream)
-         │
-         ▼
-createUIMessageStream → 流式返回给前端
-```
+## 主要问题
 
-### 1.3 现有问题
+| 问题 | 优先级 | 说明 |
+| --- | --- | --- |
+| 编辑器 AI route 职责过重 | P1 | 消息注入、OpenAI 格式转换、tool 转换、流式写入混在单个 route 中。 |
+| 限流与错误边界不足 | P1 | 编辑器 AI 应复用 Web Agent 的限流和结构化错误处理思路。 |
+| DashScope 兼容性 | P1 | `enable_thinking` 与显式 `tool_choice: auto` 组合可能触发兼容问题。 |
+| 模型配置不统一 | P2 | 编辑器 AI 与 Chat/Agent 的模型配置来源需要收敛。 |
+| i18n 和菜单项维护方式分散 | P2 | 自定义菜单项不应维护独立文案体系。 |
+| 图标风格不统一 | P3 | emoji 图标与 BlockNote / shadcn 风格不一致。 |
+| 单测不足 | P2 | 消息转换和流式 writer 适合抽为纯函数测试。 |
 
-| # | 问题 | 严重度 | 描述 |
-|---|---|---|---|
-| 1 | **route.ts 314 行，职责混杂** | 🟡 | 消息注入、OpenAI 格式转换、流式写入、tool 状态管理全在一个文件，难以维护和测试 |
-| 2 | **i18n 不走 next-intl** | 🟡 | `custom-ai-menu-items.ts` 用 `Record<string, string>` 手动管理多语言，与项目 next-intl 体系不一致 |
-| 3 | **菜单项扩展不灵活** | 🟡 | 新增菜单项需直接修改 `CUSTOM_AI_MENU_ITEMS` 数组，没有注册机制，不便于后续扩展 |
-| 4 | **编辑器 AI 和 Chat AI 模型配置不统一** | 🟠 | 编辑器 AI 用 `packages/ai/config` 的 `DEFAULT_MODEL`，Chat AI 用 `components/ai-chat/models.ts`，两套配置 |
-| 5 | **缺少编辑器 AI 的 ErrorBoundary** | 🟡 | 编辑器 AI 失败时无优雅降级，用户看到原始错误 |
-| 6 | **emoji 作为 icon 不够专业** | 🔵 | 菜单项用 emoji（🇬🇧✨📝）而非 SVG 图标，与 AI Chat 面板风格不一致 |
-| 7 | **缺少单元测试** | 🟡 | 消息注入、格式转换等核心逻辑无测试覆盖 |
+## 建议改造
 
----
+### 1. 拆分 `/api/editor-ai/streamText`
 
-## 2. 重构目标
+建议结构：
 
-1. **职责分离**：route.ts 拆分为独立模块，每个文件单一职责
-2. **统一模型配置**：编辑器 AI 和 Chat AI 共用一套模型配置
-3. **菜单项注册机制**：支持动态注册，便于后续扩展
-4. **i18n 对齐**：菜单项走 next-intl 翻译体系
-5. **可测试性**：核心逻辑抽取为纯函数，便于单元测试
-
----
-
-## 3. 重构方案
-
-### 3.1 route.ts 拆分
-
-**当前**：314 行，4 个职责混在一起
-
-**重构后**：
-
-```
+```text
 apps/web/src/app/api/editor-ai/streamText/
-├── route.ts                    # 精简入口：auth + 参数校验 + 编排（~50 行）
-├── message-transformer.ts      # 消息注入 + OpenAI 格式转换（~120 行）
-├── stream-writer.ts            # 流式写入 + tool 状态管理（~100 行）
-└── system-prompt.ts            # 系统提示词管理（~30 行）
+├── route.ts                 # auth、限流、参数校验、编排
+├── message-transformer.ts   # 文档状态注入、OpenAI message 转换
+├── tool-definitions.ts      # BlockNote tool 到 OpenAI tool 转换
+├── stream-writer.ts         # UIMessageStream 写入和 tool 状态处理
+└── system-prompt.ts         # 编辑器 AI system prompt
 ```
 
-#### route.ts（精简后）
+### 2. 统一安全和兼容性
 
-```typescript
-// 只做 auth + 参数校验 + 编排
-export async function POST(req: Request) {
-  const { userId } = await auth();
-  if (!userId) return unauthorized();
+- 给编辑器 AI 增加独立限流 key，例如 `editor-ai:${userId}`。
+- 不在 DashScope thinking 模式下显式传递冲突的 `tool_choice`。
+- 流式解析时过滤或隔离 reasoning 内容，避免混入编辑操作。
+- 错误返回保持用户可读，不暴露上游 key、原始 token 或内部堆栈。
 
-  const { messages, toolDefinitions, modelId } = await parseRequest(req);
-  const openai = createOpenAIClient();
+### 3. 收敛模型配置
 
-  const injectedMessages = injectDocumentStateMessages(messages);
-  const openaiMessages = convertToOpenAIMessages(injectedMessages);
-  const tools = toolDefinitionsToOpenAITools(toolDefinitions);
+- 将模型列表、默认模型、展示名和 provider 映射收敛到 `packages/ai/config`。
+- Web Chat 模型选择和 Editor AI 后端都从共享配置读取。
+- Editor AI 可以暂不暴露模型选择 UI，但后端应支持未来扩展。
 
-  return streamEditorAI({ openai, model: resolveModel(modelId), messages: openaiMessages, tools });
-}
+### 4. 菜单项和 i18n
+
+- 自定义菜单项保留在编辑器域内，但文案 key 放入 `packages/business/i18n`。
+- 菜单项定义只保留 `key`、`prompt`、`requiresSelection`、`icon`、`titleKey`、`descriptionKey`。
+- 图标优先使用项目已有 `lucide-react`，避免 emoji 风格割裂。
+
+### 5. 测试
+
+建议补充：
+
+- message transformer 单测：文档状态注入、空内容、长内容压缩。
+- tool definition 单测：BlockNote tool schema 到 OpenAI tool schema 转换。
+- stream writer 单测：文本 delta、tool call、错误和 finish 事件。
+- route smoke：未登录、限流、上游错误、正常流式返回。
+
+## 建议优先级
+
+1. P1：route 拆分、限流、DashScope 兼容性。
+2. P2：模型配置统一、菜单 i18n、核心单测。
+3. P3：图标规范化、自定义指令、操作历史、多轮编辑器 AI。
+
+## 验证
+
+```bash
+pnpm --filter @notion/web typecheck
+pnpm --filter @notion/web test -- src/app/api/editor-ai src/components/editor
+pnpm --filter @notion/web build
 ```
-
-#### message-transformer.ts
-
-```typescript
-// 纯函数，便于单元测试
-export function injectDocumentStateMessages(messages): Message[]
-export function convertToOpenAIMessages(messages): OpenAI.ChatCompletionMessageParam[]
-export function toolDefinitionsToOpenAITools(toolDefs): OpenAI.ChatCompletionTool[]
-export function extractTextContent(msg): string
-```
-
-#### stream-writer.ts
-
-```typescript
-// 流式写入 + tool 状态追踪
-export async function streamEditorAI(params: StreamEditorAIParams): Promise<Response>
-```
-
-#### system-prompt.ts
-
-```typescript
-// 系统提示词集中管理，便于后续 A/B 测试
-export const EDITOR_AI_SYSTEM_PROMPT = `...`;
-```
-
-### 3.2 统一模型配置
-
-**当前**：编辑器 AI 用 `packages/ai/config` 的 `DEFAULT_MODEL`（单一默认值），Chat AI 用 `components/ai-chat/models.ts`（多模型选择）
-
-**重构后**：统一到 `packages/ai/config`
-
-```typescript
-// packages/ai/config/models.ts
-export const AI_MODELS = ["deepseek-v4-pro", "qwen3.6-27b", "kimi-k2.6", "glm-5.1"] as const;
-export type AIModelId = (typeof AI_MODELS)[number];
-export const DEFAULT_MODEL: AIModelId = "deepseek-v4-pro";
-
-export const MODEL_DISPLAY_NAMES: Record<AIModelId, string> = {
-  "deepseek-v4-pro": "DeepSeek V4 Pro",
-  "qwen3.6-27b": "Qwen3.6 27B",
-  "kimi-k2.6": "Kimi K2.6",
-  "glm-5.1": "GLM 5.1",
-};
-
-export const MODEL_ID_MAPPING: Record<AIModelId, string> = {
-  "deepseek-v4-pro": "deepseek-v4-pro",
-  "qwen3.6-27b": "qwen3.6-27b",
-  "kimi-k2.6": "kimi-k2.6",
-  "glm-5.1": "glm-5.1",
-};
-```
-
-- `components/ai-chat/models.ts` 改为从 `@notion/ai/config` 重新导出
-- 编辑器 AI route 也从 `@notion/ai/config` 导入，支持 `modelId` 参数
-
-### 3.3 菜单项注册机制
-
-**当前**：直接修改 `CUSTOM_AI_MENU_ITEMS` 数组
-
-**重构后**：注册模式
-
-```typescript
-// packages/ai/utils/ai-menu-registry.ts
-
-export interface AIMenuItemDef {
-  key: string;
-  icon: React.ComponentType<{ className?: string }>;  // Lucide 图标
-  requiresSelection: boolean;
-  autoSubmit: boolean;
-  titleKey: string;      // next-intl 翻译 key，如 "AI.editorMenu.improveWriting"
-  subtextKey: string;    // next-intl 翻译 key
-  prompt: string;
-}
-
-const registry = new Map<string, AIMenuItemDef>();
-
-export function registerAIMenuItem(def: AIMenuItemDef): void {
-  registry.set(def.key, def);
-}
-
-export function getAIMenuItems(
-  hasSelection: boolean,
-  t: (key: string) => string,
-): AIMenuItemDef[] {
-  return Array.from(registry.values())
-    .filter(item => item.requiresSelection === hasSelection)
-    .map(item => ({
-      ...item,
-      title: t(item.titleKey),
-      subtext: t(item.subtextKey),
-    }));
-}
-
-// 内置菜单项注册
-registerAIMenuItem({ key: "translate-to-en", icon: Languages, requiresSelection: true, ... });
-registerAIMenuItem({ key: "improve-writing", icon: Sparkles, requiresSelection: true, ... });
-// ...
-```
-
-**扩展方式**：
-
-```typescript
-// 后续新增菜单项，只需调用注册函数
-registerAIMenuItem({
-  key: "explain-code",
-  icon: Code,
-  requiresSelection: true,
-  autoSubmit: true,
-  titleKey: "AI.editorMenu.explainCode",
-  subtextKey: "AI.editorMenu.explainCodeDesc",
-  prompt: "Explain the selected code in simple terms",
-});
-```
-
-### 3.4 i18n 对齐
-
-**当前**：`Record<string, string>` 手动管理
-
-**重构后**：走 next-intl 翻译体系
-
-在 `packages/business/i18n/zh-CN.json` 和 `en.json` 的 `AI` 命名空间下新增：
-
-```json
-{
-  "AI": {
-    "editorMenu": {
-      "translateToEn": "翻译为英文",
-      "translateToEnDesc": "将选中文本翻译为英文",
-      "translateToZh": "翻译为中文",
-      "translateToZhDesc": "将选中文本翻译为中文",
-      "improveWriting": "改善写作",
-      "improveWritingDesc": "改善写作风格和表达",
-      "makeShorter": "精简文本",
-      "makeShorterDesc": "精简选中文本",
-      "makeLonger": "扩写文本",
-      "makeLongerDesc": "扩写选中文本",
-      "generateOutline": "生成大纲",
-      "generateOutlineDesc": "根据主题生成大纲",
-      "continueWriting": "继续写作",
-      "continueWritingDesc": "继续往下写",
-      "summarizeAbove": "总结上方",
-      "summarizeAboveDesc": "总结上方内容"
-    }
-  }
-}
-```
-
-### 3.5 icon 规范化
-
-**当前**：emoji（🇬🇧✨📝✍️📌）
-
-**重构后**：Lucide 图标
-
-| 菜单项 | 当前 emoji | 替换为 Lucide 图标 |
-|---|---|---|
-| 翻译为英文 | 🇬🇧 | `Languages` |
-| 翻译为中文 | 🇨🇳 | `Languages` |
-| 改善写作 | ✨ | `Sparkles` |
-| 精简文本 | 📝 | `Minimize2` |
-| 扩写文本 | 📄 | `Maximize2` |
-| 生成大纲 | 📋 | `List` |
-| 继续写作 | ✍️ | `PenLine` |
-| 总结上方 | 📌 | `AlignLeft` |
-
----
-
-## 4. 实施步骤
-
-| Step | 内容 | 优先级 |
-|---|---|---|
-| 1 | route.ts 拆分：抽取 `message-transformer.ts` | P1 |
-| 2 | route.ts 拆分：抽取 `stream-writer.ts` | P1 |
-| 3 | route.ts 拆分：抽取 `system-prompt.ts` | P1 |
-| 4 | 统一模型配置到 `packages/ai/config/models.ts` | P1 |
-| 5 | 创建 `ai-menu-registry.ts`，迁移内置菜单项 | P2 |
-| 6 | i18n 对齐：菜单项走 next-intl | P2 |
-| 7 | icon 规范化：emoji → Lucide | P3 |
-| 8 | 编辑器 AI ErrorBoundary | P2 |
-| 9 | 单元测试：message-transformer + stream-writer | P2 |
-| 10 | 验证：typecheck + build + 功能测试 | 全部 |
-
----
-
-## 5. 风险与注意事项
-
-| 风险 | 缓解措施 |
-|---|---|
-| `@blocknote/xl-ai` 的 `AIMenuSuggestionItem` 接口限制 | icon 字段类型需确认是否支持 React 组件，若只支持 string 则保留 emoji |
-| Vercel AI SDK `useChat` 协议兼容 | route.ts 拆分后必须保持 `createUIMessageStream` 的输出格式不变 |
-| 菜单注册时机 | 注册函数需在模块加载时执行（顶层 `registerAIMenuItem` 调用），确保首次渲染时可用 |
-| 编辑器 AI 与 Chat AI 模型选择差异 | 编辑器 AI 可暂不支持用户切换模型，但后端应接受 `modelId` 参数预留扩展 |
-
----
-
-## 6. 后续演进
-
-| 方向 | 描述 | 优先级 |
-|---|---|---|
-| 编辑器 AI 模型选择 | 在编辑器工具栏或 AI 菜单中支持模型切换 | P2 |
-| 自定义 AI 指令 | 用户可保存常用 prompt 为自定义菜单项 | P3 |
-| AI 操作历史 | 记录编辑器 AI 操作，支持撤销/重做 | P3 |
-| 多轮对话 | 编辑器 AI 支持追问，而非每次独立请求 | P2 |

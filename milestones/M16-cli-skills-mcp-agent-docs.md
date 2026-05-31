@@ -91,7 +91,6 @@
 
 ## 关联文档
 
-- `docs/archive/my-notion-cli-skills-architecture-final-20260526.md`
 - `docs/my-notion-cli-release-checklist.md`
 - `packages/my-notion-skills/README.md`
 - `.trae/documents/my-notion-cli-skills-architecture-plan.md`
