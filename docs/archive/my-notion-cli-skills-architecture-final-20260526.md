@@ -4,6 +4,7 @@
 > 归档日期：2026-05-26  
 > 对应里程碑：`milestones/M16-cli-skills-mcp-agent-docs.md`  
 > 后续维护入口：`docs/my-notion-cli-release-checklist.md` 与 `packages/my-notion-skills/`
+> 注意：本文保留 2026-05-26 历史快照，包名和发布状态可能已过期；当前 CLI 包名以 `@mynotion/cli` 为准。
 
 ## Summary
 

@@ -1,6 +1,6 @@
 # My-Notion CLI / MCP Release Checklist
 
-本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。目标是确认 Agent 可以安全、稳定地通过 CLI 或 MCP STDIO 把 Markdown 内容写入 My-Notion 文档。
+本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。目标是确认 Agent 可以安全、稳定地通过 CLI 或 MCP STDIO 把 Markdown 内容写入 My-Notion 文档。当前 beta 已发布，后续版本发布仍按本清单执行。
 
 ## 适用范围
 
@@ -38,7 +38,8 @@ pnpm --filter @notion/web lint
 
 ## 功能检查
 
-- `auth login` 能保存 `apiUrl` 与 PAT 到本地配置。
+- `auth login` 能通过浏览器 Device Flow 完成授权并保存 `apiUrl` 与 PAT 到本地配置。
+- 授权 URL 只包含 `user_code`，不得包含 `device_code`。
 - `auth status` 能返回 token prefix、scopes、expiresAt，不泄漏完整 PAT。
 - `docs create` 能从 Markdown 文件创建文档。
 - `docs fetch --format markdown` 能返回文档正文。
@@ -100,13 +101,13 @@ pnpm sync:skills:check
 
 ## npm beta 发布检查
 
-首版 npm 包信息：
+npm 包信息：
 
 ```text
 package: @mynotion/cli
 bin:     my-notion
 tag:     beta
-version: 0.1.0-beta.0
+current beta: 0.1.0-beta.0
 ```
 
 发布前必须确认：
@@ -115,7 +116,7 @@ version: 0.1.0-beta.0
 - `npm config get registry` 和 `pnpm config get registry` 必须都是 `https://registry.npmjs.org/`，不得使用公司内部源或镜像源发布。
 - 当前 npm 用户拥有 `@mynotion` organization/scope 的 publish 权限。
 - `@mynotion/cli` 使用 `publishConfig.access = public` 或发布时显式传 `--access public`。
-- `npm pack --dry-run` 只包含 `dist`、`README.md`、`docs`、`skills`、`LICENSE`、`package.json` 等预期文件。
+- `npm pack --dry-run` 只包含 `dist`、`README.md`、`docs`、`skills`、`LICENSE`、`CHANGELOG.md`、`package.json` 等预期文件。
 - 本地 tarball 安装后 `my-notion --help`、`my-notion install --check`、`my-notion auth login --no-open` 可运行。
 - Skills 安装命令为 `npx skills add @mynotion/cli -y -g`；如果该工具不支持 npm package source，立即切换到 GitHub URL 或 `my-notion install --skills` 方案。
 
@@ -124,11 +125,12 @@ version: 0.1.0-beta.0
 ```bash
 cd packages/my-notion-cli
 npm publish --tag beta --access public
+# 如使用本地 token 文件：npm publish --tag beta --access public --userconfig ./.npmrc.publish
 npm view @mynotion/cli@beta version bin dist-tags
 npx @mynotion/cli@beta --help
 ```
 
-稳定后再切 latest：
+稳定版发布后再切 latest：
 
 ```bash
 npm dist-tag add @mynotion/cli@0.1.0 latest
@@ -159,7 +161,7 @@ npm dist-tag add @mynotion/cli@0.1.0 latest
 
 ## 发布结论模板
 
-发布前在 progress 中记录：
+发布前或发布后在 `progress/` 阶段摘要中记录：
 
 ```markdown
 ## 验证结果

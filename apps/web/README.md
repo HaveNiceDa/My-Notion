@@ -1,6 +1,6 @@
 # My-Notion Web
 
-基于 Next.js 16 + React 19 的 My-Notion Web 应用，提供文档编辑、AI Agent 侧边栏、RAG 知识库、编辑器 AI、PAT 管理、CLI/MCP 机器访问能力。
+基于 Next.js 16 + React 19 的 My-Notion Web 应用，提供文档编辑、AI Agent 侧边栏、RAG 知识库、编辑器 AI、CLI Device Flow 授权页和 CLI/MCP 机器访问能力。
 
 ## 线上体验
 
@@ -63,10 +63,10 @@
 
 ### CLI / Agent 生态
 
-- **PAT 管理 UI**：设置页支持创建、查看、撤销 Personal Access Token，可配置 scope 和过期时间。
+- **Device Flow 授权页**：`/[locale]/cli/auth` 支持浏览器授权、用户码核对、权限清单、i18n、主题切换和授权后返回文档首页。
+- **Token 管理 UI**：设置页保留默认 CLI Token 管理能力，CLI 主链路优先使用浏览器授权，避免 Agent 接触完整 PAT。
 - **Convex HTTP Actions**：`/cli/v1/*` 提供 Bearer Token 机器 API，服务端从 token 解析用户身份。
-- **CLI E2E**：`pnpm e2e:cli` 自动完成 PAT 注入、文档 CRUD、搜索和 token 撤销。
-- **MCP STDIO E2E**：`pnpm e2e:mcp` 验证 MCP `initialize -> tools/list -> create/fetch/update/search` 链路。
+- **CLI / MCP 验证**：`pnpm e2e:cli`、`pnpm e2e:cli:errors`、`pnpm e2e:mcp` 覆盖文档 CRUD、错误契约和 MCP STDIO 链路。
 
 ## 技术栈
 
@@ -108,6 +108,7 @@ pnpm ci:ai-smoke
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
+pnpm sync:skills:check
 ```
 
 ## 环境变量
@@ -159,5 +160,6 @@ apps/web/
 - BlockNote 暂不兼容 React StrictMode，当前在 Next 配置中关闭。
 - Web typecheck 应优先使用 `pnpm --filter @notion/web typecheck`，脚本会先清理 `.next/dev/types` stale validator，避免旧路由类型污染 `tsc --noEmit`。
 - CLI/MCP 的机器 API 默认使用 `https://laudable-albatross-174.convex.site`；连接其他部署时应使用 Convex `.site` URL，而不是 `.cloud` URL。
+- CLI 授权页严禁在 URL 中携带 `device_code`，只能展示 `user_code`；Agent 给用户的授权 URL 应使用 Markdown 链接。
 - Qdrant 离线时 RAG 能力会降级，但不应影响基础文档编辑。
 - `.vercel.app` 在部分网络环境可能不可达，生产使用建议绑定自定义域名。

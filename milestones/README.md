@@ -2,9 +2,9 @@
 
 ## 目的
 
-`progress/` 保留按时间叙事的详细过程日志，适合追溯每次改动。
+`progress/` 现在只保留压缩后的阶段摘要，避免旧中间态误导后续 Agent。
 
-`milestones/` 用于把过程日志收敛成阶段性结论，适合后续喂给 AI 快速理解项目状态。
+`milestones/` 用于把阶段摘要进一步收敛成稳定结论，适合后续喂给 AI 快速理解项目状态。
 
 ## 阅读顺序
 
@@ -16,6 +16,7 @@
 6. `M15-ux-polish-markdown-rendering.md`：AI Chat 展示、Markdown 渲染和交互体验打磨。
 7. `M16-cli-skills-mcp-agent-docs.md`：CLI / Skills / MCP Agent 写文档能力交付。
 8. `docs/ai-chat-refactor-plan.md`：M17/M18 后的当前 Agent 基线与 M19-M22 下一阶段建议。
+9. `progress/20260527-20260531-consolidated.md`：近期 Web Agent、CLI/Skills/MCP、Device Flow 与 npm beta 发布的压缩过程记录。
 
 ## 当前总状态
 
@@ -25,7 +26,7 @@
 - M13 ✅ 已完成：Document Read Tool。
 - M14 ✅ 已完成：ReAct Agent Loop 重构。
 - M15 ✅ 已完成：AI Chat UX 与 Markdown 渲染打磨。
-- M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档。
+- M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档；`@mynotion/cli@0.1.0-beta.0` 已发布。
 - M17 ✅ 已完成：Web Agent 主线、Memory MVP、Hybrid Retrieval、文档写入 dry-run 与前端确认。
 - M18 ✅ 部分完成并后置 Harness：Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`ci:ai-smoke` 和无 secrets 版 GitHub Actions 已完成；Storybook、Trace Replay、Memory/RAG 真实评估后置。
 
@@ -44,12 +45,13 @@ pnpm --filter @notion/web typecheck
 pnpm --filter @notion/web build
 pnpm --filter @notion/web lint
 pnpm ci:ai-smoke
-pnpm --filter @notion/my-notion-cli test
-pnpm --filter @notion/my-notion-cli typecheck
-pnpm --filter @notion/my-notion-cli build
+pnpm --filter @mynotion/cli test
+pnpm --filter @mynotion/cli typecheck
+pnpm --filter @mynotion/cli build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
 pnpm sync:skills
+pnpm sync:skills:package
 pnpm sync:skills:check
 ```

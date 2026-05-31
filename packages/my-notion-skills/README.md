@@ -21,7 +21,7 @@ npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 ```
 
-当前首版策略是 Skills 随 `@mynotion/cli` npm 包一起发布，不单独发布 `@mynotion/skills`。如果 `skills add` 工具不支持 npm package source，再切换到 GitHub URL 或 `my-notion install --skills` 方案。
+当前首版策略是 Skills 随 `@mynotion/cli` npm 包一起发布，不单独发布 `@mynotion/skills`。`my-notion install --check` 会输出当前推荐的 CLI 与 Skills 安装命令。
 
 ## Agent 输出规则
 
@@ -51,7 +51,7 @@ packages/my-notion-cli/skills/
 ## Safety
 
 - 不在 Skill 文档中写入完整 PAT。
-- CLI 默认连接 `https://laudable-albatross-174.convex.site`；连接其他部署时再传 `--api-url` 或设置 `MY_NOTION_API_URL`。
+- CLI 默认连接 `https://laudable-albatross-174.convex.site`；连接其他部署时再传 `--local`、`--api-url` 或设置 `MY_NOTION_API_URL`。
 - 线上登录态使用 `~/.local/share/my-notion/config.json`；本地登录态使用 `~/.local/share/my-notion/config.local.json`。
 - 写文档优先使用临时 Markdown 文件和 `--content-file`。
 - MCP 写工具默认 `dryRun: true`，只有用户明确批准后才执行真实写入。

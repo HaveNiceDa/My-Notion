@@ -28,8 +28,8 @@
 ### Requirements
 
 - Node.js 20+
-- pnpm 9+
 - 一个可登录的 My-Notion Web 账号
+- monorepo 开发时需要 pnpm 9+
 
 ### Monorepo 开发运行
 
@@ -44,7 +44,7 @@ pnpm --filter @mynotion/cli build
 node packages/my-notion-cli/dist/index.js <command>
 ```
 
-### 发布后运行目标
+### npm beta 已发布
 
 ```bash
 npm install -g @mynotion/cli@beta
@@ -270,4 +270,5 @@ pnpm e2e:mcp
 
 - 使用说明：[`docs/usage.md`](./docs/usage.md)
 - 发布清单：[`../../docs/my-notion-cli-release-checklist.md`](../../docs/my-notion-cli-release-checklist.md)
+- 阶段发布记录：[`../../progress/20260527-20260531-consolidated.md`](../../progress/20260527-20260531-consolidated.md)
 - Skills 源目录：[`../my-notion-skills`](../my-notion-skills)

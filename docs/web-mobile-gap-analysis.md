@@ -1,175 +1,95 @@
-# Web vs Mobile 功能差异与优化方案
+# My-Notion Web / Mobile 差距分析
 
-> 扫描时间：2026-04-22（第二次更新）
-> 上次扫描：2026-04-21
+> 更新时间：2026-05-31
+> 本文是当前唯一现行 Web / Mobile 差距分析；旧的 `web-mobile-gap-analysis-kimi.md` 与执行 TODO 已并入本文。
 
----
+## 总体结论
 
-## 〇、变更摘要（相比 2026-04-21）
+My-Notion 已从“Web 完整、Mobile 缺失较多”演进为“数据层和基础文档能力基本统一，Mobile 主要功能已跑通，但 AI 增强能力和编辑器深水区仍落后于 Web”。
 
-| 变更项 | 旧状态 | 新状态 |
-|---|---|---|
-| 编辑器格式互通 | 保存走纯文本，富文本格式丢失 | ✅ 已改为 HTML 双向转换，富文本格式保留 |
-| 收藏/知识库切换 | 列表可展示但无操作入口 | ✅ `DocumentActionSheet` 实现收藏/知识库切换 |
-| 回收站 | 无 | ✅ `trash.tsx` 完整 CRUD + 搜索 + 批量删除 |
-| 文档重命名 | 无 | ✅ `RenameDialog` 独立弹窗 |
-| 删除确认 | 无 | ✅ `ConfirmDialog` 通用确认弹窗 |
-| Convex Schema 重复 | mobile 手动副本 | ✅ 已改为 re-export `@notion/convex/schemas` |
-| `content-compat.ts` 位置 | mobile 本地 | ✅ 已提升到 `@notion/business/content-compat` |
-| `formatRelativeTime` 硬编码中文 | 硬编码 | ✅ 已改为接收 `t` 函数参数 |
-| Mobile 模板残留文件 | 存在 | ✅ 已清理（hello-wave、parallax-scroll 等） |
-| Mobile mock 数据残留 | 存在 | ✅ 已清理 |
-| HomeHeader 重复按钮 | 两个 changeLanguageLabel | ✅ 已修复 |
-| `@notion/business/hooks` | 不存在 | ✅ 已创建，含 useSettings/useSearch/useNavigation |
-| `@notion/business/validation` | 不存在 | ✅ 已创建，含 FileLike 接口 + 图片校验 |
-| web `lib/utils.ts` | re-export cn + formatTime | ✅ 已精简为仅 `getBlockNoteLocale`（web 专属） |
-| zustand 在 business 包中的依赖方式 | dependencies | ✅ 已改为 peerDependencies |
-| Toast 反馈系统 | 无 | ✅ Mobile 新增 `toast-provider.tsx` |
-| Mobile 主题色 | 紫色系 | ✅ 已改为蓝色系（#3b82f6） |
-| Mobile Modal 主题同步 | 无处理 | ✅ 已用 TamaguiProvider + Theme 包裹 |
+当前关键判断：
 
----
+- Mobile AI 已不是 mock，已支持真实流式对话、会话历史、模型选择和深度思考展示。
+- Web Agent 已具备 ReAct Loop、RAG、Memory、文档读写 dry-run、联网搜索、网页抽取和 `task_plan`。
+- Mobile 尚未接入 Web 同级 RAG / Tool / Web Search 能力。
+- Mobile 编辑器仍缺正文图片插入和上传能力。
+- 两端共享包已形成基础，但导航状态、AI 事件协议和部分工程约定仍需继续统一。
 
-## 一、功能对比矩阵
+## 状态总览
 
-### 🔴 Web 有但 Mobile 缺失的功能
+| 模块 | 当前状态 | 说明 |
+| --- | --- | --- |
+| Schema 共享 | 已完成 | Web / Mobile 复用 `@notion/convex/schemas` |
+| 文档 CRUD / 收藏 / 回收站 | 已完成 | 两端基础文档能力可用 |
+| Mobile 真实 AI 对话 | 已完成 | 已支持流式输出、会话管理、模型选择、深度思考 UI |
+| Mobile 设置 / 搜索共享状态 | 已完成 | 已接入 `useSettings`、`useSearch` |
+| Mobile 导航共享状态 | 部分完成 | `useNavigation` 仍需确认和补齐 |
+| Mobile 封面图上传 | 已完成 | 基于移动端图片选择和服务端存储能力 |
+| Mobile 编辑器内容互通 | 已完成 | 已通过共享兼容层处理内容格式 |
+| Mobile 正文图片上传 | 未完成 | TenTap 正文图片插入/上传链路仍缺失 |
+| Mobile RAG / Knowledge Search | 未完成 | 尚未复用 Web RAG / Agent tool 链路 |
+| Mobile Tool Call / Web Search | 未完成 | 缺少 Web 同级工具调用与展示协议 |
+| Web Agent Plan 模式 | 部分完成 | `task_plan` 已完成，确认/执行闭环未完成 |
+| RAG 初始化增量优化 | 未完成 | 仍有性能债务 |
 
-| 功能 | Web 实现 | Mobile 现状 | 优先级 | 变更 |
-|---|---|---|---|---|
-| **封面图管理** | `Cover.tsx` + EdgeStore 上传/替换/删除 | 无 | P1 | — |
-| **文档图标** | `Toolbar.tsx` + `icon-picker.tsx`（emoji picker） | `page-icon.tsx` 仅支持固定图标（document/folder/database），不支持自定义 emoji | P1 | 部分实现 |
-| **发布/取消发布** | `Publish.tsx` 完整 popover（复制链接/公开切换） | 无 | P1 | — |
-| **文档拖拽排序/移动** | `Item.tsx` 原生 Drag & Drop | 无 | P2 | — |
-| **面包屑导航** | `Title.tsx` 多级路径 + 省略折叠 | 无 | P2 | — |
-| **设置弹窗** | `SettingsModal.tsx` 外观 + 语言 | HomeHeader 的 Popover 中（语言/主题切换），功能已覆盖但 UI 形式不同 | P2 | 部分实现 |
-| **Marketing 落地页** | `(marketing)` 路由组 | 无（移动端不需要） | — | — |
+## 已完成能力
 
-### ✅ 已补齐的功能
+- 数据层：Schema、文档能力、Chat 数据结构和跨端共享包基础已经成型。
+- Mobile 文档：文档树、最近文档、回收站、收藏、归档、搜索和基础编辑已具备。
+- Mobile AI：真实流式对话、会话历史、模型选择、深度思考展示已具备。
+- Web Agent：ReAct Loop、RAG、Memory、Web Search、Web Extract、文档搜索/读取/写入/更新、`task_plan` 已具备。
+- Agent 生态：CLI / Skills / MCP STDIO 已发布 beta 并可供外部 Agent 使用。
 
-| 功能 | 实现方式 | 完成时间 |
-|---|---|---|
-| **编辑器格式互通** | `@notion/business/content-compat` 实现 BlockNote JSON ↔ HTML 双向无损转换，Mobile 保存时用 `useEditorContent({ type: "html" })` + `serializeHtmlToBlockNote` | 2026-04-22 |
-| **收藏/知识库切换** | `DocumentActionSheet.tsx` 中 toggleStar / toggleKnowledgeBase mutation | 2026-04-22 |
-| **回收站** | `trash.tsx` 完整 CRUD + 搜索过滤 + 批量选择/删除 + 确认弹窗 | 2026-04-22 |
-| **文档重命名** | `RenameDialog.tsx` 独立弹窗，调用 `api.documents.update` | 2026-04-22 |
-| **删除确认** | `ConfirmDialog.tsx` 通用确认弹窗，支持 destructive 样式 | 2026-04-22 |
+## 主要差距
 
-### 🟡 AI 功能缺失
+### P0：统一 Mobile AI 能力边界
 
-| 功能 | Web 实现 | Mobile 现状 | 优先级 | 变更 |
-|---|---|---|---|---|
-| **真实 AI 对话** | `/api/chat` + `/api/rag-stream` 流式 SSE + RAG + Tool Call | `ChatModal.tsx` 仍为 mock 回复（`t("Home.aiMockResponse")`），但已接入 Convex 对话存储（createConversation / addMessage / getMessages） | P0 | 部分进展 |
-| **对话历史侧栏** | `ConversationSidebar.tsx` 搜索/固定/删除 | 无 | P1 | — |
-| **模型选择** | `useAIModelStore.ts` 多模型切换 | 无 | P1 | — |
-| **知识库 RAG 检索** | `ragUtils.ts` + Qdrant + Embeddings | 无 | P1 | — |
-| **深度思考** | `useDeepThinkingStore.ts` + reasoning_content | 无 | P2 | — |
-| **图片上传** | `useImageUpload.ts` + EdgeStore | 无 | P2 | — |
-| **思考过程可视化** | `useThinkingProcessStore.ts` + 步骤面板 | 无 | P2 | — |
-| **Web 搜索工具** | `useWebSearchStore.ts` + `webSearch.ts` | 无 | P3 | — |
+目标是明确 Mobile AI 后续是复用 Web Agent/RAG 服务，还是保留独立轻量聊天链路。
 
----
+建议任务：
 
-## 二、公共包现状
+- 统一 Mobile AI Client 层，隐藏底层是直连模型还是 Web API。
+- 统一流式事件结构，至少覆盖 content、reasoning、tool、error、finish。
+- 给 Mobile 接入知识库 RAG 或明确暂不接入时的产品边界。
+- 决定 Mobile 是否展示 Tool Call / Web Search 过程，或只展示最终答案。
 
-### ✅ 已完成的公共化
+### P1：补齐移动编辑体验
 
-| 模块 | 状态 | 说明 |
-|---|---|---|
-| **`@notion/business/utils`** | ✅ 已扩展 | `cn` + `formatTime` + `formatRelativeTime`（已走 i18n） |
-| **`@notion/business/i18n`** | ✅ 已共享 | en.json / zh-CN.json |
-| **`@notion/business/hooks`** | ✅ 已创建 | `useSettings` / `useSearch` / `useNavigation`，zustand 为 peerDependency |
-| **`@notion/business/content-compat`** | ✅ 已创建 | BlockNote JSON ↔ HTML 双向转换（536 行），Mobile 和 Web 均可引用 |
-| **`@notion/business/validation`** | ✅ 已创建 | `FileLike` 接口 + `validateImageFile` + `validateFiles`，平台无关 |
-| **`@notion/convex`** | ✅ Schema 已统一 | Mobile `convex/schema.ts` 已改为 `import schema from "@notion/convex/schemas"; export default schema;` |
-| **`@notion/ai`** | ✅ 已共享 | AI 配置/Prompt/RAG/Tools，仅 web 端使用 |
+建议任务：
 
-### 🟡 待进一步公共化
+- 为 TenTap 编辑器增加正文图片插入入口。
+- 复用现有上传能力，抽出正文图片上传 helper。
+- 将图片节点持久化到正文内容，并保证重开文档后可渲染。
+- 对上传失败、权限失败和网络失败提供可恢复提示。
 
-| 模块 | 现状 | 建议 |
-|---|---|---|
-| **`@notion/business/types`** | 已定义但两端仍直接用 Convex 生成的 `Doc<"documents">` | 可考虑逐步迁移，但 Convex 生成类型更精确，当前可接受 |
-| **Web AI 相关 store** | 7 个 zustand store 仍在 `web/src/lib/store/` 本地 | `useAIModelStore` / `useDeepThinkingStore` / `useThinkingProcessStore` / `useKnowledgeBaseStore` / `useVectorStoreStore` / `useToolCallStore` / `useWebSearchStore`，待 Mobile 接入 AI 时再决定是否抽离 |
-| **Web `lib/utils.ts`** | 仅剩 `getBlockNoteLocale`（web 专属） | ✅ 已精简，无需进一步操作 |
+### P1：优化 Mobile 文档树
 
----
+建议任务：
 
-## 三、可优化项
+- 减少当前递归 `useQuery` 带来的多层 loading 和查询放大。
+- 评估一次性拉取子树、批量拉 children 或节点级缓存。
+- 优化展开/收起状态与数据获取策略。
 
-### 🔴 架构级问题
+### P2：治理双端一致性
 
-| 问题 | 详情 | 状态 | 建议 |
-|---|---|---|---|
-| ~~Convex Schema 重复~~ | ~~mobile 手动副本~~ | ✅ 已修复 | — |
-| **i18n 体系不统一** | Web 用 `next-intl`（短路径 `t("key")`），Mobile 用 `react-i18next`（全路径 `t("Namespace.key")`） | 🟡 仍存在 | 这是框架差异导致的合理分化，但公共 i18n 键的命名规范需要文档化 |
-| **AI 功能仍为 mock** | Mobile ChatModal 已接入 Convex 对话存储，但 AI 回复仍为 `t("Home.aiMockResponse")` mock | 🔴 未修复 | Mobile 应通过 web 的 API 路由（`/api/chat`、`/api/rag-stream`）接入真实 AI |
-| ~~编辑器格式互转丢格式~~ | ~~纯文本中转~~ | ✅ 已修复 | 已改为 HTML 双向无损转换 |
+建议任务：
 
-### 🟡 代码质量
+- 补齐 `useNavigation` 在 Mobile 的接入。
+- 统一 i18n key 命名和跨端文案组织方式，不强制统一调用框架。
+- 拆分 Web AI Chat 页面中的剩余重逻辑。
+- 优化 RAG 初始化和增量更新策略。
 
-| 问题 | 位置 | 状态 | 建议 |
-|---|---|---|---|
-| ~~`formatRelativeTime` 硬编码中文~~ | ~~`packages/business/utils/index.ts`~~ | ✅ 已修复 | — |
-| ~~`content-compat.ts` 应提升为公共模块~~ | ~~mobile 本地~~ | ✅ 已修复 | — |
-| ~~HomeHeader 重复渲染 changeLanguageLabel~~ | ~~`home-header.tsx`~~ | ✅ 已修复 | — |
-| ~~web `lib/utils.ts` 仅做 re-export~~ | ~~`web/src/lib/utils.ts`~~ | ✅ 已修复 | — |
-| ~~Mobile mock 数据残留~~ | ~~`mock/home-mock-data.ts`~~ | ✅ 已修复 | — |
-| ~~Mobile 未使用的组件~~ | ~~hello-wave / parallax-scroll 等~~ | ✅ 已修复 | — |
-| **Mobile 未使用 `@notion/business/hooks`** | Mobile 端未导入 `useSettings` / `useSearch` / `useNavigation` | 🟡 待接入 | Mobile 的设置/搜索/导航状态目前是组件内 useState，应迁移到共享 store |
-| **Mobile `SearchModal` 未使用共享 store** | `search-modal.tsx` 用组件内 state | 🟡 待接入 | 应使用 `useSearch` store 统一管理 |
-| **Web AI Chat page.tsx 超 800 行** | `web/src/app/[locale]/(main)/(AI)/Chat/page.tsx` | 🟡 仍存在 | 拆分为 `useAIChat` hook + UI 组件 |
+## 建议执行顺序
 
-### 🟢 性能优化
+1. 先定 Mobile AI 架构方向：轻量聊天还是复用 Web Agent/RAG。
+2. 再补 Mobile 正文图片上传，这是用户感知最明显的编辑缺口。
+3. 优化 Mobile 文档树查询模型，降低复杂文档树下的性能风险。
+4. 补齐共享状态与 i18n 约定，降低双端维护成本。
+5. 回到 Web Agent 的 Plan/Spec/MCP adapter 产品化闭环。
 
-| 问题 | 状态 | 建议 |
-|---|---|---|
-| **web AI Chat page.tsx 超 800 行** | 🟡 仍存在 | 拆分为自定义 hook（`useAIChat`）+ UI 组件，逻辑与展示分离 |
-| **web `ragUtils.ts` 重复初始化** | 🟡 仍存在 | `initKnowledgeBaseVectorStore` 每次查询都可能重新检查所有文档，应做增量检查 + 缓存 |
-| **mobile `SidebarDocumentTree` 递归查询** | 🟡 仍存在 | 每层展开都发起新的 `useQuery`，深层嵌套时查询量大，可考虑一次性拉取子树 |
+## 关联入口
 
----
-
-## 四、实施路线
-
-### ~~Phase 1 — 基础对齐（消除断裂）~~ ✅ 已完成
-
-1. ~~消除 Convex Schema 重复~~ ✅
-2. ~~将 `content-compat.ts` 提升到 `@notion/business`~~ ✅
-3. ~~修复 `formatRelativeTime` 硬编码中文问题~~ ✅
-4. ~~清理 mobile 端模板残留文件和 mock 数据~~ ✅
-5. ~~修复 HomeHeader 重复按钮~~ ✅
-
-### ~~Phase 2 — 编辑器格式互通（P0）~~ ✅ 已完成
-
-6. ~~研究 TenTap 的 HTML 导出能力~~ ✅ 已使用 `useEditorContent({ type: "html" })`
-7. ~~在 `@notion/business/content-compat` 中实现 BlockNote JSON ↔ HTML 双向无损转换~~ ✅
-8. ~~Mobile 保存时不再走纯文本中转~~ ✅ 已改为 `serializeHtmlToBlockNote`
-
-### ~~Phase 3 — Mobile 核心功能补齐（部分）~~ ✅ 文档操作已完成
-
-9. ~~补齐文档操作：收藏/知识库切换、重命名、删除确认~~ ✅
-10. ~~补齐回收站功能~~ ✅
-11. ~~Toast 反馈系统~~ ✅
-12. ~~主题色改为蓝色系~~ ✅
-13. ~~Modal 主题同步~~ ✅
-
-### Phase 4 — Mobile AI 接入（当前重点）
-
-14. **Mobile 接入真实 AI 对话** — 通过 web API 路由（`/api/chat`、`/api/rag-stream`），替换 mock 回复
-15. **Mobile AI 对话历史** — 复用 Convex 的 `aiConversations` 表，实现对话列表 + 切换
-16. **Mobile 模型选择** — 抽离 `useAIModelStore` 到 `@notion/business/hooks` 或 mobile 本地实现
-
-### Phase 5 — 公共化 & 体验提升
-
-17. **Mobile 接入 `@notion/business/hooks`** — 将设置/搜索/导航状态迁移到共享 store
-18. **补齐封面图管理** — Mobile 端实现 Cover 上传/替换/删除（需解决 EdgeStore 在 RN 中的使用问题）
-19. **补齐文档图标** — Mobile 端实现 emoji picker，替代当前的固定图标
-20. **补齐发布功能** — Mobile 端实现 Publish popover（复制链接/公开切换）
-21. **文档面包屑导航** — Mobile 端文档详情页顶部显示多级路径
-22. **文档拖拽排序/移动** — Mobile 端实现长按拖拽或移动到弹窗
-
-### Phase 6 — 性能 & 代码质量
-
-23. **web AI Chat 页面拆分** — 提取 `useAIChat` hook，逻辑与 UI 分离
-24. **web `ragUtils.ts` 增量优化** — 缓存向量存储初始化结果，增量检查文档
-25. **mobile `SidebarDocumentTree` 查询优化** — 一次性拉取子树替代递归查询
-26. **i18n 键命名规范文档化** — 统一 `next-intl` 和 `react-i18next` 之间的键命名规则
+- Web 说明：`apps/web/README.md`
+- Mobile 说明：`apps/mobile/README.md`
+- Agent 路线：`docs/ai-chat-refactor-plan.md`
+- 阶段索引：`milestones/README.md`

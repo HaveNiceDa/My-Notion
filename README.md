@@ -1,209 +1,134 @@
 # My-Notion
 
-定制化的个人版 Notion，内置 Agent 驱动的 AI 知识管理、跨端文档编辑、CLI/Skills/MCP Agent 生态能力。
+定制化个人版 Notion，聚合 Web 文档编辑、移动端工作区、AI Agent、RAG/Memory、CLI/Skills/MCP Agent 生态。
 
-**线上体验：** [https://notion-j9zj.vercel.app/](https://notion-j9zj.vercel.app/)
+**线上体验：** <https://notion-j9zj.vercel.app/>
 
 ## 项目入口
 
-- [Web 应用说明](./apps/web/README.md) — Next.js Web 端、线上体验、截图、AI Agent 与文档编辑能力。
-- [Mobile 应用说明](./apps/mobile/README.md) — Expo 移动端、跨端共享架构、移动端运行与构建。
-- [My-Notion CLI](./packages/my-notion-cli/) — 供终端和外部 Agent 调用的文档管理 CLI。
-- [My-Notion Skills](./packages/my-notion-skills/) — 供 Agent 学习如何调用 CLI/MCP 的技能说明。
+- [Web 应用说明](./apps/web/README.md)：Next.js Web 端、BlockNote 编辑器、AI Agent、CLI 授权页和机器 API。
+- [Mobile 应用说明](./apps/mobile/README.md)：Expo 移动端、文档工作区、移动 AI Chat 和跨端共享架构。
+- [My-Notion CLI](./packages/my-notion-cli/README.md)：已发布的 `@mynotion/cli`，提供 `my-notion` 命令和 MCP STDIO server。
+- [My-Notion Skills](./packages/my-notion-skills/README.md)：供 Agent 调用 CLI/MCP 的 Skills 源文件与同步规则。
+- [里程碑索引](./milestones/README.md)：稳定阶段结论和下一步路线。
+- [阶段进展摘要](./progress/README.md)：压缩后的历史过程记录。
+- [Web / Mobile 差距](./docs/web-mobile-gap-analysis.md)：当前双端能力差距和后续 backlog。
 
-## 核心技术优势
+## 当前能力
 
-- **Agent ReAct Loop**：AI 侧边栏不再依赖硬编码关键词路由，由 LLM 自主判断是否调用 `knowledge_search`、`web_search`、`document_read` 等工具，支持多轮推理和多工具并行。
-- **RAG 知识库**：基于 Qdrant 向量检索与 DashScope Embedding，支持知识库检索、引用来源展示、文档标题跳转和 Qdrant 离线降级。
-- **编辑器 AI**：Web 端集成 BlockNote 与 `@blocknote/xl-ai`，支持选中文字润色、翻译、摘要、扩写、续写等原生编辑器 AI 操作。
-- **CLI / Skills / MCP 生态**：通过 PAT + Convex HTTP Actions 暴露机器 API，外部 Agent 可用 CLI 或 MCP STDIO server 创建、读取、搜索、更新 My-Notion 文档。
-- **跨端共享架构**：`@notion/ai`、`@notion/business`、`@notion/convex` 抽离为共享包，Web 与 Mobile 复用 AI、业务状态、Convex 数据逻辑。
-- **安全代理设计**：移动端 AI 调用和文件上传均通过服务端代理，避免在客户端暴露 LLM、EdgeStore 等敏感密钥。
-- **工程化闭环**：覆盖 TypeScript、ESLint、Vitest、Playwright、CLI E2E、MCP STDIO E2E、Sentry 与 GitHub Actions。
+- **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
+- **Web Agent**：ReAct Loop、RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入和 `task_plan` 基础工具。
+- **Mobile 工作区**：Expo + React Native，支持移动文档树、文档编辑、AI Chat、会话管理、模型选择、深度思考展示和安全代理。
+- **CLI / Skills / MCP**：`@mynotion/cli@beta` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
+- **共享包**：`packages/ai`、`packages/business`、`packages/convex` 收敛 AI、业务状态、i18n、Convex schema 和文档逻辑。
+- **验证链路**：覆盖 Web typecheck/build/lint、Agent 单测、AI smoke、CLI E2E、MCP E2E、Skills 漂移检查和 npm pack/publish 验证。
 
-## 项目结构
+## 架构总览
+
+```text
+用户 / Agent
+  ├─ Web UI: apps/web
+  ├─ Mobile UI: apps/mobile
+  ├─ CLI: @mynotion/cli / packages/my-notion-cli
+  └─ Skills / MCP: packages/my-notion-skills + my-notion mcp serve
+
+共享包
+  ├─ packages/ai        # RAG、Embedding、Agent、AI 配置
+  ├─ packages/business  # Zustand、i18n、共享类型和工具函数
+  └─ packages/convex    # Convex schema、文档、Chat、CLI Token 逻辑
+
+后端与服务
+  ├─ Convex             # 实时数据库 + HTTP Actions / Machine API
+  ├─ Clerk              # 登录认证
+  ├─ Qdrant             # 向量数据库
+  ├─ DashScope          # LLM、Embedding、工具调用
+  └─ EdgeStore          # 文件与图片存储
+```
+
+## 目录结构
 
 ```text
 My-Notion/
 ├── apps/
-│   ├── web/                    # Next.js 16 Web 应用
-│   └── mobile/                 # Expo 54 移动应用
+│   ├── web/                    # Next.js Web 应用
+│   └── mobile/                 # Expo 移动应用
 ├── packages/
 │   ├── ai/                     # AI、RAG、Embeddings、Agent 服务端逻辑
 │   ├── business/               # Zustand Stores、i18n、类型、工具函数
 │   ├── convex/                 # Convex Schema、Documents、Chat、CLI Token 逻辑
-│   ├── my-notion-cli/          # CLI：auth/docs/tokens/mcp 命令
+│   ├── my-notion-cli/          # @mynotion/cli 源码与 npm 包内容
 │   └── my-notion-skills/       # Agent Skills 源文件
-├── services/ai/                # AI 网关服务
-├── scripts/
-│   ├── e2e-my-notion-cli.mjs   # CLI + Convex HTTP Actions E2E
-│   ├── e2e-my-notion-mcp.mjs   # MCP STDIO E2E
-│   └── sync-my-notion-skills.mjs
-├── tests/                      # Playwright E2E
-└── .trae/skills/               # Agent 可发现的本地 Skills
+├── docs/                       # 当前方案、发布检查、AI 外部文档索引
+├── milestones/                 # 稳定阶段结论
+├── progress/                   # 压缩后的阶段进展记录
+├── scripts/                    # E2E、skills sync、发布辅助脚本
+└── .trae/skills/               # 同步后的本地 Agent Skills
 ```
 
-## 技术架构
-
-```text
-用户 / Agent
-  ├─ Web UI：Next.js + React + BlockNote
-  ├─ Mobile UI：Expo + React Native + Tamagui
-  ├─ CLI：my-notion auth/docs/tokens
-  └─ MCP：my-notion mcp serve --transport stdio
-
-共享能力层
-  ├─ @notion/ai：RAG、Agent、Editor AI 服务端逻辑
-  ├─ @notion/business：跨端状态、i18n、业务类型
-  └─ @notion/convex：Schema、文档、Chat、PAT 校验
-
-后端与外部服务
-  ├─ Convex：实时数据库 + HTTP Actions
-  ├─ Clerk：认证
-  ├─ Qdrant：向量数据库
-  ├─ DashScope/OpenAI Compatible API：LLM 与 Embedding
-  └─ EdgeStore：文件存储
-```
-
-## 常用命令
+## 快速开始
 
 ```bash
-# 安装依赖
 pnpm i
 
-# 本地 Agent / RAG 依赖 Qdrant，启动 Web 前先确保 Docker Desktop 已启动
-docker compose -f my-notion-go/docker-compose.yml up -d qdrant
-
-# Web / Mobile
+# Web
 pnpm start:web
+
+# Mobile
 pnpm start:mobile
 
-# 构建
-pnpm build:web
-pnpm build:mobile
-
-# 测试与验证
-pnpm test
-pnpm ci:ai-smoke
-pnpm eval:retrieval
-pnpm exec playwright test
-pnpm e2e:cli
-pnpm e2e:cli:errors
-pnpm e2e:mcp
-pnpm sync:skills
-pnpm sync:skills:check
+# 本地 RAG / Agent 调试通常需要先启动 Qdrant
+docker compose -f my-notion-go/docker-compose.yml up -d qdrant
 ```
 
 ## CLI / MCP Quick Start
 
-My-Notion 已完成面向人类和 Agent 的 CLI / Skills / MCP 主链路。CLI 默认连接线上 `prod`，通过浏览器授权登录，不要求用户复制完整 `mnt_` Token；本地调试使用 `--local` 独立登录态。
-
-### 1. 安装 CLI 和 Skills
-
-发布后的 beta 入口：
+CLI 已发布到 npm beta：
 
 ```bash
 npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
-```
-
-开发期可以直接运行：
-
-```bash
-pnpm --filter @mynotion/cli build
-node packages/my-notion-cli/dist/index.js <command>
-```
-
-或：
-
-```bash
-pnpm --filter @mynotion/cli dev <command>
-```
-
-### 2. 浏览器授权登录
-
-```bash
 my-notion auth login
 ```
 
-Agent 场景使用 `--no-open`，把 CLI 输出的授权 URL 以 Markdown 链接形式发给用户：
+Agent 场景使用：
 
 ```bash
 my-notion auth login --no-open
-```
-
-默认线上配置：
-
-```text
-Web URL: https://notion-j9zj.vercel.app
-API URL: https://laudable-albatross-174.convex.site
-Config:  ~/.local/share/my-notion/config.json
-```
-
-本地调试显式使用 `--local`，并写入独立配置文件 `config.local.json`：
-
-```bash
-my-notion auth login \
-  --local \
-  --web-url http://localhost:3000 \
-  --api-url "https://<dev-deployment>.convex.site"
-```
-
-### 3. 让 Agent 写入文档
-
-长内容优先写入临时 Markdown 文件，再通过 `--content-file` 创建文档，避免 shell quoting 问题：
-
-```bash
-cat > /tmp/my-notion-agent-doc.md <<'EOF'
-# Agent Generated Document
-
-This document was generated by an Agent and written through My-Notion CLI.
-EOF
-
-my-notion docs create \
-  --title "Agent Generated Document" \
-  --content-file /tmp/my-notion-agent-doc.md \
-  --format json
-```
-
-追加内容：
-
-```bash
-my-notion docs update \
-  --id <documentId> \
-  --content-file /tmp/my-notion-agent-doc.md \
-  --mode append \
-  --format json
-```
-
-导入和导出 Markdown：
-
-```bash
-my-notion docs export --id <documentId> --output /tmp/exported.md --format markdown
-my-notion docs import --title "Imported Document" --file /tmp/exported.md --format json
-```
-
-### 4. 启动 MCP STDIO
-
-MCP server 复用 CLI 登录态。默认连接线上 `prod`，本地调试时同样显式传 `--local`：
-
-```bash
+my-notion docs create --title "Agent Doc" --content-file /tmp/doc.md --format json
 my-notion mcp serve --transport stdio
 ```
 
-当前 MCP 暴露文档 `search`、`fetch`、`create`、`update` 工具。写工具默认 `dryRun: true`，只有在用户明确批准后才应设置 `dryRun: false`。
+约定：Agent 必须把授权 URL 以 Markdown 可点击链接发给用户；写入已有文档优先使用 append；MCP 写工具默认保持 `dryRun: true`。
 
-### 5. 相关文档
+## 常用验证
 
-- CLI 完整说明见 [My-Notion CLI](./packages/my-notion-cli/)。
-- Skills 说明见 [My-Notion Skills](./packages/my-notion-skills/)。
-- 发布前检查见 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
+```bash
+# Web
+pnpm --filter @notion/web typecheck
+pnpm --filter @notion/web lint
+pnpm --filter @notion/web build
+pnpm ci:ai-smoke
 
-## 当前状态
+# CLI / MCP / Skills
+pnpm --filter @mynotion/cli test
+pnpm --filter @mynotion/cli typecheck
+pnpm --filter @mynotion/cli build
+pnpm e2e:cli
+pnpm e2e:cli:errors
+pnpm e2e:mcp
+pnpm sync:skills
+pnpm sync:skills:package
+pnpm sync:skills:check
 
-- Web 端已具备文档编辑、AI 侧边栏、ReAct Agent、RAG 检索、联网搜索、网页抽取、文档读写、Memory MVP、`task_plan` 基础工具、编辑器 AI、PAT 管理与 CLI/MCP 机器访问能力。
-- Mobile 端已具备文档树、文档编辑、AI Chat、跨端业务状态、Convex 数据访问与服务端代理能力。
-- Agent 生态已完成 CLI、Skills、MCP STDIO 写文档主链路，并完成 CLI 单测、默认线上 API URL、文档清理、导入导出、限流审计、错误契约 E2E 与 MCP E2E。
-- 当前工程验证入口已覆盖 Web typecheck/build/lint、Agent/AI Chat 单测、最小 retrieval eval、`ci:ai-smoke`、CLI/MCP E2E 和 Skills 漂移检查。
-- 当前重点从 CLI/MCP 发布收口转向 Agent 产品能力：优先做 Plan 模式最小闭环，其次是 Spec 模式、Web Agent MCP adapter、流式重试与 Tool 结果契约细化；Storybook、Trace Replay、Memory/RAG 真实评估后置。
+# 全局
+pnpm test
+pnpm exec playwright test
+```
+
+## 当前主线
+
+- P0：Plan 模式最小闭环，基于 `task_plan` 完成计划生成、用户确认、步骤执行和状态展示。
+- P1：Spec 模式、Web Agent MCP adapter、流式重试和 Tool 结果契约细化。
+- P2：Memory/RAG 质量评估、Trace Replay、Storybook 和 Mobile AI/RAG 对齐。
+- 发布：`@mynotion/cli@0.1.0-beta.0` 已发布；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。

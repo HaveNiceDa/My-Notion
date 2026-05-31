@@ -19,6 +19,7 @@
 - 默认 JSON 输出，支持 `pretty/table/ndjson/markdown`。
 - HTTP client 支持超时、重试、requestId 错误透出，并避免重试结构化 `RATE_LIMITED`。
 - 2026-05-30 P0-P2 收口后，CLI 增加包级 Vitest 入口和核心单测，默认 Machine API URL 兜底为 `https://laudable-albatross-174.convex.site`。
+- 2026-05-31 npm beta 已发布为 `@mynotion/cli@0.1.0-beta.0`，bin 保持 `my-notion`。
 
 ### Skills
 
@@ -26,7 +27,8 @@
 - `packages/my-notion-skills/my-notion-docs`
 - `packages/my-notion-skills/my-notion-mcp`
 - `.trae/skills` 通过 `pnpm sync:skills` 同步。
-- 新增 `pnpm sync:skills:check`，可检测源 skill 与已安装 skill 是否漂移。
+- `packages/my-notion-cli/skills` 通过 `pnpm sync:skills:package` 同步，随 `@mynotion/cli` npm 包发布。
+- `pnpm sync:skills:check` 可检测源 skill、已安装 skill 与 npm 包内 skill 是否漂移。
 
 ### MCP
 
@@ -70,15 +72,16 @@
 
 完整 release checklist 已执行：
 
-- `pnpm --filter @notion/my-notion-cli typecheck`: ✅
-- `pnpm --filter @notion/my-notion-cli build`: ✅
-- `pnpm --filter @notion/my-notion-cli test`: ✅
+- `pnpm --filter @mynotion/cli typecheck`: ✅
+- `pnpm --filter @mynotion/cli build`: ✅
+- `pnpm --filter @mynotion/cli test`: ✅
 - `pnpm --filter @notion/web exec convex codegen`: ✅
 - `pnpm --filter @notion/web typecheck`: ✅
 - `pnpm e2e:cli`: ✅
 - `pnpm e2e:cli:errors`: ✅
 - `pnpm e2e:mcp`: ✅
 - `pnpm sync:skills`: ✅
+- `pnpm sync:skills:package`: ✅
 - `pnpm sync:skills:check`: ✅
 
 验证期间发现并修复：
@@ -88,15 +91,14 @@
 
 ## 关联文档
 
-- `docs/my-notion-cli-skills-architecture.md`
+- `docs/archive/my-notion-cli-skills-architecture-final-20260526.md`
 - `docs/my-notion-cli-release-checklist.md`
 - `packages/my-notion-skills/README.md`
 - `.trae/documents/my-notion-cli-skills-architecture-plan.md`
 
 ## 关联 progress 文件
 
-- 阶段结论以本 milestone 为准，详细过程仍保留在 `progress/`。
-- `progress/20260530-152500.md`：CLI P0-P2 收口，记录 CLI 单测、默认线上 API URL、release checklist 与 MCP E2E 验证结果。
+- 阶段结论以本 milestone 为准，详细过程已压缩到 `progress/20260527-20260531-consolidated.md`。
 
 ## 后续规划
 
