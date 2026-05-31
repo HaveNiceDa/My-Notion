@@ -8,7 +8,7 @@
 
 - [Web 应用说明](./apps/web/README.md)：Next.js Web 端、BlockNote 编辑器、AI Agent、CLI 授权页和机器 API。
 - [Mobile 应用说明](./apps/mobile/README.md)：Expo 移动端、文档工作区、移动 AI Chat 和跨端共享架构。
-- [My-Notion CLI](./packages/my-notion-cli/README.md)：已发布的 `@mynotion/cli`，提供 `my-notion` 命令和 MCP STDIO server。
+- [My-Notion CLI](./packages/my-notion-cli/README.md)：已发布 npm 包 [`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)，提供 `my-notion` 命令和 MCP STDIO server。
 - [My-Notion Skills](./packages/my-notion-skills/README.md)：供 Agent 调用 CLI/MCP 的 Skills 源文件与同步规则。
 - [里程碑索引](./milestones/README.md)：稳定阶段结论和下一步路线。
 - [阶段进展摘要](./progress/README.md)：压缩后的历史过程记录。
@@ -83,7 +83,7 @@ docker compose -f my-notion-go/docker-compose.yml up -d qdrant
 
 ## CLI / MCP Quick Start
 
-CLI 已发布到 npm beta：
+CLI 已发布到 npm beta：[`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)。
 
 ```bash
 npm install -g @mynotion/cli@beta
@@ -132,4 +132,4 @@ pnpm exec playwright test
 - P0：Plan 模式最小闭环，基于 `task_plan` 完成计划生成、用户确认、步骤执行和状态展示。
 - P1：Spec 模式、Web Agent MCP adapter、流式重试和 Tool 结果契约细化。
 - P2：Memory/RAG 质量评估、Trace Replay、Storybook 和 Mobile AI/RAG 对齐。
-- 发布：`@mynotion/cli@0.1.0-beta.0` 已发布；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
+- 发布：[`@mynotion/cli@0.1.0-beta.0`](https://www.npmjs.com/package/@mynotion/cli) 已发布；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
