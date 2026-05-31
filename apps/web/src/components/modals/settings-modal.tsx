@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Copy, Eye, EyeOff, Loader2, WifiOff } from "lucide-react";
+import { Copy, Eye, EyeOff, Info, Loader2, WifiOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/src/components/ui/button";
 import {
@@ -12,6 +12,12 @@ import {
   DialogTitle,
 } from "@/src/components/ui/dialog";
 import { Input } from "@/src/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/src/components/ui/tooltip";
 import { useSettings } from "@notion/business/hooks";
 import { Label } from "@/src/components/ui/label";
 import { ModeToggle } from "@/src/components/mode-toggle";
@@ -195,7 +201,27 @@ export function SettingsModal() {
         <div className="mt-6 border-t pt-4">
           <div className="mb-3 flex items-start justify-between gap-3">
             <div className="flex flex-col gap-y-1">
-              <Label>{t("apiTokens")}</Label>
+              <div className="flex items-center gap-1.5">
+                <Label>{t("apiTokens")}</Label>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        aria-label={t("tokenSecurityTooltip")}
+                        className="h-5 w-5 p-0 text-muted-foreground"
+                        size="icon"
+                        type="button"
+                        variant="ghost"
+                      >
+                        <Info className="h-3.5 w-3.5" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-64 text-xs" side="top">
+                      {t("tokenSecurityTooltip")}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <span className="text-[0.8rem] text-muted-foreground">
                 {t("manageApiTokens")}
               </span>
