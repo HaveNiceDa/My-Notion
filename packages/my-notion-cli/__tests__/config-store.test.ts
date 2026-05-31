@@ -71,11 +71,21 @@ describe("config store", () => {
 
     expect(store.resolveApiUrl({})).toBe("https://saved.convex.site");
     expect(store.resolveToken({})).toBe("mnt_saved");
-    expect(store.clearSavedToken()).toEqual({
-      apiUrl: "https://saved.convex.site/",
+    expect(store.clearSavedToken()).toMatchObject({
+      profileName: "prod",
+      profile: {
+        apiUrl: "https://saved.convex.site",
+        webUrl: "https://notion-j9zj.vercel.app",
+      },
     });
-    expect(store.loadConfig()).toEqual({
-      apiUrl: "https://saved.convex.site/",
+    expect(store.loadConfigV2()).toMatchObject({
+      version: 2,
+      profiles: {
+        prod: {
+          apiUrl: "https://saved.convex.site",
+          webUrl: "https://notion-j9zj.vercel.app",
+        },
+      },
     });
   });
 
@@ -83,7 +93,39 @@ describe("config store", () => {
     const store = await loadStore();
 
     expect(store.resolveApiUrl({})).toBe("https://laudable-albatross-174.convex.site");
-    expect(() => store.resolveToken({})).toThrow("Open My-Notion Web -> Settings -> API Token");
+    expect(() => store.resolveToken({})).toThrow("my-notion auth login");
     expect(() => store.resolveToken({})).toThrow(".my-notion/config.json");
+  });
+
+  it("keeps local and prod profiles isolated", async () => {
+    const store = await loadStore();
+
+    store.saveProfileAuth({
+      profileName: "prod",
+      apiUrl: "https://prod.convex.site",
+      webUrl: "https://prod.example.com",
+      token: "mnt_prod",
+      authMethod: "device",
+    });
+    store.saveProfileAuth({
+      profileName: "local",
+      apiUrl: "https://local.convex.site",
+      webUrl: "http://localhost:3000",
+      token: "mnt_local",
+      authMethod: "device",
+    });
+
+    expect(store.resolveProfile({ profile: "prod" })).toMatchObject({
+      name: "prod",
+      apiUrl: "https://prod.convex.site",
+      webUrl: "https://prod.example.com",
+      token: "mnt_prod",
+    });
+    expect(store.resolveProfile({ local: true })).toMatchObject({
+      name: "local",
+      apiUrl: "https://local.convex.site",
+      webUrl: "http://localhost:3000",
+      token: "mnt_local",
+    });
   });
 });

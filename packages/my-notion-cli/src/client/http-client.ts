@@ -6,15 +6,15 @@ const RETRY_BASE_DELAY_MS = 300;
 
 function getAuthRecoveryMessage(code?: string) {
   if (code === "TOKEN_EXPIRED") {
-    return "Saved CLI token has expired. Open My-Notion Web -> Settings -> API Token, reset/copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+    return "Saved CLI token has expired. Run `my-notion auth login` and approve the browser authorization link.";
   }
 
   if (code === "TOKEN_REVOKED") {
-    return "Saved CLI token was revoked. Open My-Notion Web -> Settings -> API Token, reset/copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+    return "Saved CLI token was revoked. Run `my-notion auth login` and approve the browser authorization link.";
   }
 
   if (code === "UNAUTHORIZED") {
-    return "CLI token is invalid or missing. Open My-Notion Web -> Settings -> API Token, copy the default token, then run `my-notion auth login --token <mnt_token>`.";
+    return "CLI token is invalid or missing. Run `my-notion auth login` and approve the browser authorization link.";
   }
 
   return undefined;

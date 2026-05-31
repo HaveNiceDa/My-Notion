@@ -229,7 +229,7 @@ describe("MyNotionClient", () => {
     await expect(client.authStatus()).rejects.toMatchObject({
       status: 401,
       code: "TOKEN_EXPIRED",
-      message: expect.stringContaining("my-notion auth login --token <mnt_token>"),
+      message: expect.stringContaining("my-notion auth login"),
     });
   });
 });

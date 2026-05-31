@@ -37,9 +37,11 @@ function printHelp() {
   console.log(`My-Notion CLI
 
 Usage:
-  my-notion auth login --token <mnt_token> [--api-url <url>]
-  my-notion auth status
-  my-notion auth logout
+  my-notion auth login [--profile prod|local] [--web-url <url>] [--api-url <url>]
+  my-notion auth login --no-open
+  my-notion auth login --token <mnt_token> [--api-url <url>]  # legacy
+  my-notion auth status [--profile prod|local]
+  my-notion auth logout [--profile prod|local]
   my-notion tokens revoke-current
   my-notion docs create --title <title> [--content-file draft.md]
   my-notion docs fetch --id <documentId> [--format markdown]
@@ -52,14 +54,17 @@ Usage:
   my-notion mcp serve --transport stdio
 
 Global options:
+  --profile <name>    Select saved profile. Defaults to prod
+  --local             Shortcut for --profile local
+  --web-url <url>     Web URL used for browser authorization
   --api-url <url>      Override MY_NOTION_API_URL / saved config / default online API
-  --token <token>      Override MY_NOTION_API_TOKEN / saved config
+  --token <token>      Legacy token override. Prefer browser login
   --format <format>    json | pretty | table | ndjson | markdown
 
 Auth setup:
-  First use: open My-Notion Web -> Settings -> API Token, copy the default CLI token,
-  then run auth login once. The token is saved locally at ~/.my-notion/config.json
-  and reused by later commands unless you pass --token or MY_NOTION_API_TOKEN.
+  First use: run my-notion auth login, open the printed authorization URL,
+  approve access in the browser, and the CLI saves local auth at ~/.my-notion/config.json.
+  For local debugging, use --profile local --web-url http://localhost:3000 --api-url <convex-site-url>.
 `);
 }
 

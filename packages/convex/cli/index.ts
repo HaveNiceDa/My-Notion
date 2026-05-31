@@ -8,6 +8,7 @@ import {
 
 const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
 const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
+const DEVICE_FLOW_TOKEN_NAME = "CLI Browser Login";
 const RATE_LIMIT_WINDOW_MS = 60_000;
 
 function now() {
@@ -624,5 +625,253 @@ export const archiveCliDocument = internalMutation({
     }
 
     return toDocumentResult(archivedDocument);
+  },
+});
+
+export const createCliDeviceAuthSession = mutation({
+  args: {
+    deviceCodeHash: v.string(),
+    userCodeHash: v.string(),
+    userCodeDisplay: v.string(),
+    scopes: v.array(v.string()),
+    profile: v.optional(v.string()),
+    apiUrl: v.optional(v.string()),
+    webUrl: v.optional(v.string()),
+    clientName: v.optional(v.string()),
+    clientVersion: v.optional(v.string()),
+    machineName: v.optional(v.string()),
+    expiresAt: v.number(),
+  },
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_device_code_hash", (q) =>
+        q.eq("deviceCodeHash", args.deviceCodeHash),
+      )
+      .unique();
+
+    if (existing) {
+      throw new Error("Device code already exists");
+    }
+
+    await ctx.db.insert("cliDeviceAuthSessions", {
+      deviceCodeHash: args.deviceCodeHash,
+      userCodeHash: args.userCodeHash,
+      userCodeDisplay: args.userCodeDisplay,
+      status: "pending",
+      scopes: args.scopes.length > 0 ? args.scopes : [...DEFAULT_DOC_SCOPES],
+      profile: args.profile,
+      apiUrl: args.apiUrl,
+      webUrl: args.webUrl,
+      clientName: args.clientName,
+      clientVersion: args.clientVersion,
+      machineName: args.machineName,
+      createdAt: now(),
+      expiresAt: args.expiresAt,
+      pollCount: 0,
+    });
+
+    return { success: true };
+  },
+});
+
+export const getCliDeviceAuthSessionByUserCode = query({
+  args: {
+    userCodeHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_user_code_hash", (q) =>
+        q.eq("userCodeHash", args.userCodeHash),
+      )
+      .unique();
+
+    if (!session) return null;
+
+    return {
+      userCodeDisplay: session.userCodeDisplay,
+      status: session.expiresAt <= now() ? "expired" : session.status,
+      scopes: session.scopes,
+      profile: session.profile ?? null,
+      apiUrl: session.apiUrl ?? null,
+      webUrl: session.webUrl ?? null,
+      clientName: session.clientName ?? null,
+      machineName: session.machineName ?? null,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+    };
+  },
+});
+
+export const approveCliDeviceAuthSession = mutation({
+  args: {
+    userCodeHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const session = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_user_code_hash", (q) =>
+        q.eq("userCodeHash", args.userCodeHash),
+      )
+      .unique();
+
+    if (!session) return { ok: false as const, code: "INVALID_DEVICE_CODE" };
+    if (session.expiresAt <= now()) {
+      await ctx.db.patch(session._id, { status: "expired" });
+      return { ok: false as const, code: "DEVICE_CODE_EXPIRED" };
+    }
+    if (session.status !== "pending") {
+      return { ok: false as const, code: `DEVICE_CODE_${session.status.toUpperCase()}` };
+    }
+
+    await ctx.db.patch(session._id, {
+      status: "approved",
+      userId: identity.subject,
+      approvedAt: now(),
+    });
+
+    return { ok: true as const };
+  },
+});
+
+export const denyCliDeviceAuthSession = mutation({
+  args: {
+    userCodeHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Unauthenticated");
+    }
+
+    const session = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_user_code_hash", (q) =>
+        q.eq("userCodeHash", args.userCodeHash),
+      )
+      .unique();
+
+    if (!session) return { ok: false as const, code: "INVALID_DEVICE_CODE" };
+    if (session.status !== "pending") {
+      return { ok: false as const, code: `DEVICE_CODE_${session.status.toUpperCase()}` };
+    }
+
+    await ctx.db.patch(session._id, {
+      status: "denied",
+    });
+
+    return { ok: true as const };
+  },
+});
+
+export const pollCliDeviceAuthSession = mutation({
+  args: {
+    deviceCodeHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_device_code_hash", (q) =>
+        q.eq("deviceCodeHash", args.deviceCodeHash),
+      )
+      .unique();
+
+    if (!session) return { status: "invalid" as const };
+
+    const timestamp = now();
+    if (session.expiresAt <= timestamp && session.status === "pending") {
+      await ctx.db.patch(session._id, {
+        status: "expired",
+        lastPolledAt: timestamp,
+        pollCount: (session.pollCount ?? 0) + 1,
+      });
+      return { status: "expired" as const };
+    }
+
+    await ctx.db.patch(session._id, {
+      lastPolledAt: timestamp,
+      pollCount: (session.pollCount ?? 0) + 1,
+    });
+
+    return {
+      status: session.status,
+      expiresAt: session.expiresAt,
+      scopes: session.scopes,
+    };
+  },
+});
+
+export const consumeCliDeviceAuthSessionAndCreateToken = mutation({
+  args: {
+    deviceCodeHash: v.string(),
+    tokenHash: v.string(),
+    tokenPrefix: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("cliDeviceAuthSessions")
+      .withIndex("by_device_code_hash", (q) =>
+        q.eq("deviceCodeHash", args.deviceCodeHash),
+      )
+      .unique();
+
+    if (!session) return { ok: false as const, code: "INVALID_DEVICE_CODE" };
+    if (session.expiresAt <= now()) {
+      await ctx.db.patch(session._id, { status: "expired" });
+      return { ok: false as const, code: "DEVICE_CODE_EXPIRED" };
+    }
+    if (session.status === "denied") {
+      return { ok: false as const, code: "AUTHORIZATION_DENIED" };
+    }
+    if (session.status === "consumed") {
+      return { ok: false as const, code: "DEVICE_CODE_CONSUMED" };
+    }
+    if (session.status !== "approved" || !session.userId) {
+      return { ok: false as const, code: "AUTHORIZATION_PENDING" };
+    }
+
+    const existing = await ctx.db
+      .query("apiTokens")
+      .withIndex("by_token_hash", (q) => q.eq("tokenHash", args.tokenHash))
+      .unique();
+
+    if (existing) {
+      throw new Error("Token already exists");
+    }
+
+    const createdAt = now();
+    const tokenId = await ctx.db.insert("apiTokens", {
+      userId: session.userId,
+      name: DEVICE_FLOW_TOKEN_NAME,
+      tokenHash: args.tokenHash,
+      tokenPrefix: args.tokenPrefix,
+      scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_DOC_SCOPES],
+      createdAt,
+    });
+
+    await ctx.db.patch(session._id, {
+      status: "consumed",
+      consumedAt: createdAt,
+    });
+
+    return {
+      ok: true as const,
+      token: {
+        id: tokenId,
+        name: DEVICE_FLOW_TOKEN_NAME,
+        tokenPrefix: args.tokenPrefix,
+        scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_DOC_SCOPES],
+        createdAt,
+        lastUsedAt: null,
+        expiresAt: null,
+        revokedAt: null,
+      },
+    };
   },
 });

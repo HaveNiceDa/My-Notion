@@ -27,28 +27,41 @@ node packages/my-notion-cli/dist/index.js <command>
 
 ```bash
 --api-url <url>
---token <mnt_token>
+--web-url <url>
+--profile <prod|local|name>
+--local
+--token <mnt_token> # legacy/CI only
 --format <json|pretty|table|ndjson|markdown>
 ```
 
 Priority order:
 
-1. Command flags: `--api-url`, `--token`
-2. Environment variables: `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
-3. Saved config: `~/.my-notion/config.json`
-4. Default online API URL: `https://laudable-albatross-174.convex.site`
+1. Command flags: `--profile`, `--local`, `--web-url`, `--api-url`, `--token`
+2. Environment variables: `MY_NOTION_PROFILE`, `MY_NOTION_WEB_URL`, `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
+3. Saved profile config: `~/.my-notion/config.json`
+4. Default online profile: Web `https://notion-j9zj.vercel.app`, API `https://laudable-albatross-174.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.
 
 ## Auth
 
-Login and save config:
+Browser login and save config:
 
 ```bash
-my-notion auth login --token <mnt_token> --format json
+my-notion auth login --no-open --format json
 ```
 
-Add `--api-url https://<deployment>.convex.site` only when targeting a non-default deployment.
+Agents should extract the printed authorization URL and ask the user to open it. Do not ask users to paste `mnt_` tokens into chat.
+
+Local/dev login:
+
+```bash
+my-notion auth login \
+  --profile local \
+  --web-url http://localhost:3000 \
+  --api-url https://<dev-deployment>.convex.site \
+  --format json
+```
 
 Check current auth:
 
@@ -68,7 +81,7 @@ Check with explicit credentials:
 my-notion auth status --api-url https://<deployment>.convex.site --token <mnt_token> --format json
 ```
 
-Do not use `--show-token` unless debugging token storage with explicit user approval.
+Explicit `--token` and `--show-token` are legacy/debug-only paths. Do not use them unless the user explicitly requests token debugging.
 
 ## Tokens
 
@@ -115,9 +128,9 @@ Machine API errors use stable HTTP status and `error.code` pairs:
 
 | HTTP | Code | Typical trigger | Agent handling |
 | --- | --- | --- | --- |
-| `401` | `UNAUTHORIZED` | Missing Bearer token or unknown token hash | Ask the user to run `auth login` or provide a valid PAT. |
-| `401` | `TOKEN_REVOKED` | PAT was revoked on the server | Stop retrying and ask the user to create a new PAT. |
-| `401` | `TOKEN_EXPIRED` | PAT `expiresAt` is in the past | Stop retrying and ask the user to create a new PAT. |
+| `401` | `UNAUTHORIZED` | Missing Bearer token or unknown token hash | Ask the user to run `my-notion auth login --no-open` and open the authorization URL. |
+| `401` | `TOKEN_REVOKED` | CLI token was revoked on the server | Stop retrying and ask the user to authorize again. |
+| `401` | `TOKEN_EXPIRED` | CLI token `expiresAt` is in the past | Stop retrying and ask the user to authorize again. |
 | `403` | `INSUFFICIENT_SCOPE` | Token lacks the required scope, such as `docs:write` | Do not retry; ask for a token with the required scope. |
 | `404` | `NOT_FOUND` | Document or CLI endpoint does not exist, or the document is archived / not owned by the token user | Re-check the document id or search again before retrying. |
 | `422` | `VALIDATION_ERROR` | Request body or path parameter is invalid, such as an empty title | Fix the command arguments or request payload before retrying. |

@@ -26,22 +26,33 @@ node packages/my-notion-cli/dist/index.js <command>
 
 ## Authentication
 
-The CLI talks to My-Notion through Convex HTTP Actions. It requires:
+The CLI talks to My-Notion through Convex HTTP Actions. The recommended setup is browser-based device authorization:
 
-- `apiUrl`: optional. When omitted, the CLI defaults to `https://laudable-albatross-174.convex.site`. Use a Convex `.site` URL such as `https://<deployment>.convex.site` for non-default deployments.
-- `token`: the default My-Notion CLI token copied from Web Settings -> API Tokens, with `mnt_` prefix. The Web UI can hide/show/copy/reset this token.
+- `profile`: optional. Defaults to `prod`. Use `--profile local` or `--local` for local/dev testing.
+- `webUrl`: the My-Notion Web URL used for browser authorization. Defaults to `https://notion-j9zj.vercel.app`; local debugging commonly uses `http://localhost:3000`.
+- `apiUrl`: the Convex `.site` Machine API URL used after login. Defaults to `https://laudable-albatross-174.convex.site`.
 
 First-time setup:
 
-- Ask the user to open My-Notion Web -> Settings -> API Token.
-- The Web UI auto-creates one default CLI token. The user can show/copy it and give it to the Agent.
-- Run login once. The CLI saves the token locally in `~/.my-notion/config.json` with file mode `0600`.
-- Later commands should reuse the saved local login token by default. Do not ask the user to copy the token again unless the CLI reports it is missing, expired, revoked, or invalid.
+- Run `my-notion auth login --no-open` when operating as an Agent.
+- Extract the printed authorization URL and ask the user to open it in the browser.
+- The user signs in with My-Notion and approves CLI access. Do not ask the user to paste a `mnt_` token into chat.
+- The CLI saves the token locally in `~/.my-notion/config.json` with file mode `0600`.
+- Later commands should reuse the saved local login token by default. Ask the user to authorize again only when the CLI reports missing, expired, revoked, or invalid auth.
 
 Login command:
 
 ```bash
-my-notion auth login --token <mnt_token>
+my-notion auth login --no-open
+```
+
+Local/dev login command:
+
+```bash
+my-notion auth login \
+  --profile local \
+  --web-url http://localhost:3000 \
+  --api-url "https://<dev-deployment>.convex.site"
 ```
 
 Status command:
@@ -68,7 +79,7 @@ Configuration is stored in:
 ~/.my-notion/config.json
 ```
 
-If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, ask the user to return to Web Settings -> API Token, reset/copy the latest default token, then run `my-notion auth login --token <mnt_token>` again.
+If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, run `my-notion auth login --no-open` again and ask the user to open the authorization URL.
 
 Environment variables override saved config:
 
@@ -77,7 +88,7 @@ export MY_NOTION_API_URL="https://<deployment>.convex.site"
 export MY_NOTION_API_TOKEN="mnt_xxx"
 ```
 
-`MY_NOTION_API_URL` is optional for the default online My-Notion deployment.
+`MY_NOTION_API_TOKEN` is a legacy/CI escape hatch. Prefer browser authorization for Agent workflows.
 
 Command flags have the highest priority:
 
@@ -99,7 +110,7 @@ Agents should prefer `--format json` for create, search, list, and update, and `
 
 ## Safety Rules
 
-- Never print full PAT tokens unless the user explicitly asks for token debugging.
+- Never ask users to paste full PAT tokens into chat. Prefer browser authorization links.
 - Prefer temporary config by setting `HOME` in automated tests so local user config is not overwritten.
 - Do not store PAT tokens in repository files, docs, logs, or generated skills.
 - Use `auth logout` for local cleanup and `tokens revoke-current` when the PAT must be invalidated server-side.

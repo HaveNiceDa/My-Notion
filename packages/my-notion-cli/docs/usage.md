@@ -2,14 +2,14 @@
 
 My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 文档，包括创建、读取、更新、搜索、导入、导出和归档文档。
 
-当前 CLI 的核心目标是：让 Agent 或用户把 Markdown 内容写入 My-Notion 文档。
+当前 CLI 的核心目标是：让 Agent 或用户在不接触明文 Token 的情况下，通过浏览器授权把 Markdown 内容写入 My-Notion 文档。
 
 ## 0. 当前项目线上版怎么用
 
 如果你要连接当前这个 My-Notion 项目已经在线运行的服务，使用流程是：
 
 ```text
-打开 My-Notion Web -> 登录账号 -> 打开设置 -> API Tokens -> 显示并复制默认 Token -> 用 CLI auth login 登录一次 -> 后续直接执行 docs 命令
+运行 CLI auth login -> 打开 CLI 输出的授权链接 -> 在 My-Notion Web 登录并确认授权 -> 后续直接执行 docs 命令
 ```
 
 当前项目的默认 Machine API 地址是：
@@ -21,8 +21,7 @@ https://laudable-albatross-174.convex.site
 如果用户不指定 `--api-url`，CLI 默认使用这个线上地址。登录命令示例：
 
 ```bash
-my-notion auth login \
-  --token "mnt_xxx"
+my-notion auth login
 ```
 
 登录后先检查：
@@ -42,19 +41,17 @@ my-notion docs create \
   --format json
 ```
 
-### PAT 在哪里复制
+### 浏览器授权怎么做
 
-PAT 不是在命令行里生成的，而是在 My-Notion Web 里由当前登录用户管理：
+CLI 默认不要求用户复制 PAT。首次登录时：
 
-1. 打开线上 My-Notion Web。
-2. 登录你的账号。
-3. 打开设置弹窗。
-4. 找到 `API Tokens` 区域。
-5. 默认 Token 会自动生成，点击“显示”查看明文。
-6. 点击“复制”复制 `mnt_...` token。
-7. 如需让旧 token 失效，点击“重置 Token”生成新的默认 token。
+1. 运行 `my-notion auth login`。
+2. CLI 输出授权链接和用户码。
+3. 打开授权链接，在 My-Notion Web 登录。
+4. 核对页面上的用户码与终端一致。
+5. 点击授权后，CLI 自动保存本机认证态。
 
-默认 Token 像密码一样可以隐藏、显示和复制。不要把完整 PAT 写进代码仓库、聊天记录或公开文档。
+不要把完整 `mnt_...` Token 写进代码仓库、聊天记录或公开文档。`--token` 仅保留为兼容和 CI 调试入口。
 
 ### API 地址在哪里看
 
@@ -129,14 +126,28 @@ node packages/my-notion-cli/dist/index.js <command>
 
 ## 3. 登录 CLI
 
-使用 PAT 登录：
+使用浏览器授权登录：
+
+```bash
+my-notion auth login
+```
+
+Agent 场景建议使用：
+
+```bash
+my-notion auth login --no-open
+```
+
+然后把 CLI 输出的授权链接发给用户打开。
+
+如果要连接本地 Web 和非默认 Convex 部署：
 
 ```bash
 my-notion auth login \
-  --token "mnt_xxx"
+  --profile local \
+  --web-url http://localhost:3000 \
+  --api-url "https://<deployment>.convex.site"
 ```
-
-如果要连接非默认部署，再额外传入 `--api-url "https://<deployment>.convex.site"`。
 
 登录成功后，CLI 会把配置保存到本地：
 
@@ -144,18 +155,18 @@ my-notion auth login \
 ~/.my-notion/config.json
 ```
 
-这个文件保存当前机器的 CLI 登录态 token，文件权限为 `0600`。之后再执行命令时，不需要重复传 `--token`；默认线上地址也不需要重复传 `--api-url`。
+这个文件按 profile 保存当前机器的 CLI 登录态 token，文件权限为 `0600`。之后再执行命令时，不需要重复认证；默认线上地址也不需要重复传 `--api-url`。
 
 只有在以下场景需要重新复制或登录：
 
 - 首次使用，CLI 提示缺少 API token。
-- Web 设置页点击“重置 Token”后，旧 token 失效。
+- Web 设置页或 CLI 撤销 token 后，旧 token 失效。
 - CLI 提示 `TOKEN_EXPIRED`、`TOKEN_REVOKED` 或 `UNAUTHORIZED`。
 
-重新登录时，回到 Web 设置弹窗复制最新默认 Token，再执行：
+重新登录时，执行：
 
 ```bash
-my-notion auth login --token "mnt_xxx"
+my-notion auth login
 ```
 
 ## 4. 检查登录状态
@@ -367,6 +378,8 @@ export MY_NOTION_API_URL="https://<deployment>.convex.site"
 export MY_NOTION_API_TOKEN="mnt_xxx"
 ```
 
+`MY_NOTION_API_TOKEN` 是兼容/CI 后门，Agent 场景应优先使用 `auth login` 的浏览器授权。
+
 然后直接执行：
 
 ```bash
@@ -376,9 +389,9 @@ my-notion docs search --query "项目" --format json
 
 配置优先级：
 
-- 命令行参数最高，例如 `--api-url`、`--token`。
+- 命令行参数最高，例如 `--profile`、`--web-url`、`--api-url`、`--token`。
 - 环境变量其次。
-- `~/.my-notion/config.json` 再次。
+- `~/.my-notion/config.json` 的 profile 配置再次。
 - 默认线上地址 `https://laudable-albatross-174.convex.site` 最后。
 
 ## 17. 推荐完整流程
@@ -388,7 +401,7 @@ my-notion docs search --query "项目" --format json
 ```bash
 # 1. 登录
 my-notion auth login \
-  --token "mnt_xxx"
+  --no-open
 
 # 2. 检查状态
 my-notion auth status --format json
@@ -424,7 +437,8 @@ my-notion auth logout
 ## 18. 安全注意事项
 
 - 不要把完整 PAT 写进聊天记录、日志、文档或代码仓库。
-- PAT 只应保存在本地配置、环境变量或安全的密钥管理系统中。
+- CLI token 只应保存在本地配置、环境变量或安全的密钥管理系统中。
+- Agent 不应要求用户在聊天中粘贴完整 token。
 - 如果怀疑 PAT 泄漏，立即执行：
 
 ```bash
