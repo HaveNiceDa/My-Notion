@@ -9,6 +9,8 @@ import { StdioClientTransport } from "../packages/my-notion-cli/node_modules/@mo
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
+const NETWORK_RETRY_ATTEMPTS = 3;
+const NETWORK_RETRY_DELAY_MS = 1_000;
 
 function readEnvFile(path) {
   try {
@@ -100,6 +102,45 @@ function assert(condition, message) {
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+
+function isRetryableNetworkMessage(message) {
+  return (
+    message.includes("fetch failed") ||
+    message.includes("NETWORK_ERROR") ||
+    message.includes("TIMEOUT")
+  );
+}
+
+async function retryNetworkOperation(label, operation) {
+  let lastError;
+  for (let attempt = 1; attempt <= NETWORK_RETRY_ATTEMPTS; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      const message = error instanceof Error ? error.message : String(error);
+      const shouldRetry =
+        attempt < NETWORK_RETRY_ATTEMPTS && isRetryableNetworkMessage(message);
+      if (!shouldRetry) {
+        throw error;
+      }
+      console.warn(
+        `[retry] ${label} failed on attempt ${attempt}/${NETWORK_RETRY_ATTEMPTS}: ${message}`,
+      );
+      await sleep(NETWORK_RETRY_DELAY_MS * attempt);
+    }
+  }
+
+  throw lastError ?? new Error(`${label} failed`);
+}
+
+async function runJsonWithNetworkRetry(label, command, args, options = {}) {
+  return retryNetworkOperation(label, async () => runJson(command, args, options));
+}
+
 async function createSdkClient(env) {
   const transport = new StdioClientTransport({
     command: "node",
@@ -125,6 +166,12 @@ async function callTool(client, name, args) {
   assert(Array.isArray(result.content), `${name} did not return text fallback content`);
   assert(!result.isError, `${name} returned MCP error: ${JSON.stringify(result.structuredContent)}`);
   return result.structuredContent;
+}
+
+async function callToolWithNetworkRetry(client, name, args) {
+  return retryNetworkOperation(`MCP tool ${name}`, async () =>
+    callTool(client, name, args),
+  );
 }
 
 async function callToolRaw(client, name, args) {
@@ -243,7 +290,7 @@ async function main() {
     );
 
     console.log("[7/10] Confirm and create real document");
-    const created = await callTool(validClient, "my_notion_docs_create", {
+    const created = await callToolWithNetworkRetry(validClient, "my_notion_docs_create", {
       title: `MCP SDK E2E ${uniqueKeyword}`,
       contentMarkdown: `# MCP SDK E2E\n\nInitial ${uniqueKeyword}.`,
       dryRun: false,
@@ -252,12 +299,12 @@ async function main() {
     assert(createdDocumentId, "MCP create did not return document id");
 
     console.log("[8/10] Fetch and update real document");
-    const fetched = await callTool(validClient, "my_notion_docs_fetch", {
+    const fetched = await callToolWithNetworkRetry(validClient, "my_notion_docs_fetch", {
       id: createdDocumentId,
     });
     assert(fetched.markdown?.includes(uniqueKeyword), "MCP fetch did not return created content");
 
-    const updated = await callTool(validClient, "my_notion_docs_update", {
+    const updated = await callToolWithNetworkRetry(validClient, "my_notion_docs_update", {
       id: createdDocumentId,
       contentMarkdown: `Appended by real MCP SDK Client ${uniqueKeyword}.`,
       mode: "append",
@@ -269,7 +316,7 @@ async function main() {
     );
 
     console.log("[9/10] Search real document");
-    const search = await callTool(validClient, "my_notion_docs_search", {
+    const search = await callToolWithNetworkRetry(validClient, "my_notion_docs_search", {
       query: uniqueKeyword,
       limit: 5,
     });
@@ -282,7 +329,7 @@ async function main() {
     console.log("[10/10] Archive test document");
     await validClient.close();
     validClient = undefined;
-    archivedDocument = runJson("node", [
+    archivedDocument = await runJsonWithNetworkRetry("archive test document", "node", [
       cliEntry,
       "docs",
       "archive",
@@ -321,7 +368,7 @@ async function main() {
     if (createdDocumentId && !archivedDocument?.isArchived) {
       try {
         console.log("[cleanup] archive test document");
-        archivedDocument = runJson("node", [
+        archivedDocument = await runJsonWithNetworkRetry("cleanup archive test document", "node", [
           cliEntry,
           "docs",
           "archive",
