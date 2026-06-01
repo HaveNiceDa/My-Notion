@@ -9,7 +9,7 @@ My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 
 如果你要连接当前这个 My-Notion 项目已经在线运行的服务，使用流程是：
 
 ```text
-运行 CLI auth login -> 打开 CLI 输出的授权链接 -> 在 My-Notion Web 登录并确认授权 -> 后续直接执行 docs 命令
+运行 CLI config init -> auth login -> 打开 CLI 输出的授权链接 -> 在 My-Notion Web 登录并确认授权 -> 后续直接执行 docs 命令
 ```
 
 当前项目的默认 Machine API 地址是：
@@ -27,7 +27,7 @@ my-notion auth login
 登录后先检查：
 
 ```bash
-my-notion auth status --format json
+my-notion config init --check --format json
 ```
 
 然后就可以创建或搜索文档：
@@ -105,6 +105,7 @@ https://<deployment>.convex.site
 npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
+my-notion config init --check --format json
 ```
 
 如果 CLI 已经全局安装，可以直接使用：
@@ -133,6 +134,12 @@ node packages/my-notion-cli/dist/index.js <command>
 ```
 
 ## 3. 登录 CLI
+
+首次使用先检查 CLI 初始化状态：
+
+```bash
+my-notion config init --check --format json
+```
 
 使用浏览器授权登录：
 
@@ -440,7 +447,7 @@ my-notion auth login \
   --no-open
 
 # 2. 检查状态
-my-notion auth status --format json
+my-notion config init --check --format json
 
 # 3. 搜索是否已有类似文档
 my-notion docs search \
@@ -500,7 +507,7 @@ my-notion tokens revoke-current --format json
 使用 My-Notion CLI 的完整流程是：
 
 ```text
-生成 PAT -> auth login -> auth status -> search/list -> create/import -> fetch/update/export -> archive/logout/revoke
+config init -> auth login -> config init --check -> search/list -> create/import -> fetch/update/export -> archive/logout/revoke
 ```
 
 Agent 场景下最推荐的写文档方式是：

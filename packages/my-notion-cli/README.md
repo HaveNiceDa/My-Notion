@@ -1,29 +1,31 @@
 # My-Notion CLI
 
-面向人类用户和 AI Agent 的 My-Notion 命令行工具。通过浏览器 Device Flow 授权后，`my-notion` 可以安全地创建、读取、搜索、更新、导入、导出和归档 My-Notion 文档，也可以启动 MCP STDIO server，把同一批能力暴露给支持 MCP 的 Agent。
+面向人类用户和 AI Agent 的 My-Notion 命令行工具。`my-notion` 通过浏览器 Device Flow 授权访问 My-Notion Machine API，支持文档创建、读取、搜索、更新、导入、导出、归档，并可通过 MCP STDIO 将同一批能力暴露给支持 MCP 的 Agent。
 
-[快速开始](#快速开始) · [Agent 模式](#quick-start-ai-agent) · [认证](#认证与配置) · [命令](#命令体系) · [MCP](#mcp-stdio) · [安全](#安全边界) · [验证](#开发与验证)
+[安装](#安装与快速开始) · [Agent Quick Start](#quick-start-ai-agent) · [Skills](#agent-skills) · [认证](#认证与配置) · [命令](#命令体系) · [MCP](#mcp-stdio) · [安全](#安全边界) · [开发](#开发与验证)
 
 ## Why My-Notion CLI?
 
-- **Agent-Native**：默认 JSON 输出、Markdown 文件输入、短命令和稳定错误信息，方便 Agent 调用和解析。
-- **浏览器授权**：首选 `auth login` Device Flow，不要求用户在聊天中粘贴完整 `mnt_` Token。
-- **线上优先**：默认连接线上 `prod`，本地调试使用 `--local` 独立登录态，不污染线上配置。
+- **Agent-Native**：默认 JSON 输出、稳定错误信息、Markdown 文件输入，便于 Agent 可靠调用。
+- **浏览器授权**：使用 Device Flow 登录，不要求用户在聊天中粘贴完整 `mnt_` Token。
+- **线上优先**：默认连接线上 `prod`，本地调试必须显式 `--local`，登录态互不污染。
 - **文档闭环**：覆盖 `create`、`fetch`、`search`、`list`、`update`、`archive`、`import`、`export`。
-- **MCP 适配**：`mcp serve --transport stdio` 复用 CLI 登录态，提供搜索、读取、创建和更新工具。
-- **安全可控**：写操作显式命令边界；MCP 写工具默认 `dryRun: true`；服务端按 PAT scope、rate limit 和 audit log 控制访问。
+- **Skills + MCP**：随 npm 包发布 Agent Skills，也可启动 `mcp serve --transport stdio` 接入 MCP Client。
+- **安全可控**：CLI 写入必须显式命令；MCP 写工具默认 `dryRun: true`；服务端有 scope、审计和限流。
 
 ## 能力概览
 
 | 模块 | 能力 |
 | --- | --- |
-| `auth` | 浏览器登录、状态检查、退出本机登录态 |
+| `config` | 初始化/检查 CLI 环境、profile、登录态、Skills 和 MCP 下一步命令 |
+| `auth` | 浏览器 Device Flow 登录、状态检查、清除本机登录态 |
 | `docs` | 创建、读取、搜索、列出、更新、归档、导入和导出文档 |
-| `tokens` | 撤销当前 CLI PAT，使本机凭据服务端失效 |
-| `mcp` | 启动 MCP STDIO server，给 Agent 暴露文档工具 |
-| `skills` | `my-notion-shared`、`my-notion-docs`、`my-notion-mcp` 指导 Agent 正确调用 CLI/MCP |
+| `tokens` | 撤销当前 CLI PAT，使本机凭据在服务端失效 |
+| `mcp` | 启动 MCP STDIO server，给 MCP Client 暴露文档工具 |
+| `install` | 输出 npm、Skills 和 Agent 安装检查信息 |
+| `skills` | `my-notion-shared`、`my-notion-docs`、`my-notion-mcp`，指导 Agent 正确调用 CLI/MCP |
 
-## 安装与运行
+## 安装与快速开始
 
 ### Requirements
 
@@ -31,49 +33,23 @@
 - 一个可登录的 My-Notion Web 账号
 - monorepo 开发时需要 pnpm 9+
 
-### Monorepo 开发运行
-
-```bash
-pnpm --filter @mynotion/cli dev <command>
-```
-
-### 构建后运行
-
-```bash
-pnpm --filter @mynotion/cli build
-node packages/my-notion-cli/dist/index.js <command>
-```
-
-### npm beta 已发布
-
-```bash
-npm install -g @mynotion/cli@beta
-npx skills add @mynotion/cli -y -g
-npx @mynotion/cli@beta <command>
-```
-
-## 快速开始
-
 ### Quick Start Human Users
 
 ```bash
-# 1. 安装 beta CLI 和 Agent Skills
+# 1. 安装 CLI 和 Agent Skills
 npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 
-# 2. 浏览器授权登录
+# 2. 初始化并登录
+my-notion config init
 my-notion auth login
 
-# 3. 搜索文档
-my-notion docs search \
-  --query "项目周报" \
-  --format json
+# 3. 检查状态
+my-notion config init --check --format json
 
-# 4. 创建文档
-my-notion docs create \
-  --title "项目周报" \
-  --content-file ./weekly-report.md \
-  --format json
+# 4. 创建或搜索文档
+my-notion docs create --title "项目周报" --content-file ./weekly-report.md --format json
+my-notion docs search --query "项目周报" --limit 10 --format json
 ```
 
 ### Quick Start AI Agent
@@ -81,33 +57,64 @@ my-notion docs create \
 > Agent 只需要把授权链接发给用户，不要要求用户粘贴完整 Token。
 
 ```bash
-# 1. 安装 CLI 和 Skills
-npm install -g @mynotion/cli@beta
-npx skills add @mynotion/cli -y -g
+# 1. 检查 CLI、配置、登录态和下一步动作
+my-notion config init --check --format json
 
-# 2. 检查登录态；如果失败再进入第 3 步
-my-notion auth status --format json
-
-# 3. 需要登录时后台运行，提取 CLI 输出的授权链接
+# 2. 未登录或 Token 失效时，后台运行并提取授权 URL
 my-notion auth login --no-open
+
+# 3. 授权完成后重试原任务
+my-notion docs create --title "Agent Doc" --content-file /tmp/my-notion-doc.md --format json
 ```
 
-Agent 给用户的授权提示应保持简洁，并使用 Markdown 可点击链接：
+Agent 给用户的授权提示必须使用 Markdown 可点击链接：
 
 ```text
 请打开 [My-Notion CLI 授权](https://notion-j9zj.vercel.app/cli/auth?user_code=XXXX-XXXX)，确认页面验证码为 XXXX-XXXX。
 ```
 
-授权完成后重试原命令，只向用户报告最终结果，例如：
+授权完成后，只报告最终结果，例如：
 
 ```text
-已创建文档：测试1
+已创建文档：Agent Doc
 文档 ID：j57...
 ```
 
+## Agent Skills
+
+Skills 随 `@mynotion/cli` npm 包发布，不单独发布 `@mynotion/skills`。安装命令：
+
+```bash
+npx skills add @mynotion/cli -y -g
+```
+
+| Skill | 触发场景 | 核心规则 |
+| --- | --- | --- |
+| `my-notion-shared` | 使用 CLI、登录、配置、排查认证问题 | 浏览器授权、prod/local 隔离、输出格式、Token 安全 |
+| `my-notion-docs` | 创建、读取、搜索、更新、导入、导出、归档文档 | 长内容写临时 Markdown 文件，写命令使用 `--format json` |
+| `my-notion-mcp` | 需要 MCP tool 而不是直接 shell 命令 | 启动 STDIO server，写工具保持 `dryRun: true` |
+
+Agent 调用规则：
+
+- 登录缺失：运行 `my-notion auth login --no-open`，只把授权链接和用户码发给用户。
+- 文档写入：优先生成 Markdown 文件，再用 `--content-file` 创建或追加。
+- 更新文档：默认 `docs update --mode append`；只有用户明确要求替换全文才用 `overwrite`。
+- 用户可见回复：只保留操作结果、文档标题、文档 ID 或必要错误摘要。
+- 不默认展示：完整 CLI JSON、配置路径、token prefix、profile 细节、完整 PAT。
+
+修改 Skills 源文件后必须同步：
+
+```bash
+pnpm sync:skills
+pnpm sync:skills:package
+pnpm sync:skills:check
+```
+
+同步目标：`.trae/skills/` 和 `packages/my-notion-cli/skills/`。
+
 ## 认证与配置
 
-### 默认线上登录
+### 默认线上配置
 
 默认 profile 是 `prod`：
 
@@ -117,26 +124,48 @@ API URL: https://laudable-albatross-174.convex.site
 Config:  ~/.local/share/my-notion/config.json
 ```
 
-```bash
-my-notion auth login
-my-notion auth status --format json
-my-notion auth logout
-```
-
-### 本地调试登录
-
-本地调试必须显式使用 `--local`，登录态单独存放，不会影响线上默认入口：
+本地调试必须显式使用 `--local`，登录态保存到独立文件：
 
 ```text
 Config: ~/.local/share/my-notion/config.local.json
 ```
 
+### 初始化
+
+`config init` 是首屏配置入口。它会检查 Node 版本、profile、API/Web URL、登录态、Skills 安装提示和 MCP 启动命令；写入的只是非敏感 profile 元信息，不输出完整 Token。
+
 ```bash
+my-notion config init
+my-notion config init --check --format json
+my-notion config init --dry-run --format json
+my-notion config init --local --web-url http://localhost:3000 --api-url "https://<dev-deployment>.convex.site"
+```
+
+### 登录
+
+```bash
+# 人类用户：打开浏览器完成授权
+my-notion auth login
+
+# Agent：输出授权 URL，由 Agent 转发给用户
+my-notion auth login --no-open
+
+# 本地调试：必须显式 --local
 my-notion auth login \
   --local \
   --web-url http://localhost:3000 \
   --api-url "https://<dev-deployment>.convex.site"
 ```
+
+### 状态与退出
+
+```bash
+my-notion auth status --format json
+my-notion auth logout
+my-notion tokens revoke-current --format json
+```
+
+`auth logout` 只清除本机保存的 Token；`tokens revoke-current` 会让当前 PAT 在服务端失效。
 
 ### 配置优先级
 
@@ -149,7 +178,13 @@ my-notion auth login \
 
 ## 命令体系
 
-### 1. Auth
+### 1. Config
+
+```bash
+my-notion config init [--check] [--dry-run] [--local] [--web-url <url>] [--api-url <url>]
+```
+
+### 2. Auth
 
 ```bash
 my-notion auth login [--no-open] [--local] [--web-url <url>] [--api-url <url>]
@@ -157,7 +192,7 @@ my-notion auth status [--format json]
 my-notion auth logout [--local]
 ```
 
-### 2. Docs
+### 3. Docs
 
 ```bash
 my-notion docs search --query "关键词" --limit 10 --format json
@@ -170,13 +205,20 @@ my-notion docs import --title "导入文档" --file ./document.md --format json
 my-notion docs archive --id <documentId> --format json
 ```
 
-### 3. Tokens
+推荐顺序：先 `search/list` 确认是否已有文档，再 `create/import`；修改已有文档时优先 `append`。
+
+### 4. Tokens
 
 ```bash
 my-notion tokens revoke-current --format json
 ```
 
-`auth logout` 只清除本机保存的 Token；`tokens revoke-current` 会让当前 PAT 在服务端失效。
+### 5. Install
+
+```bash
+my-notion install --check --format json
+my-notion install --skills --format json
+```
 
 ## MCP STDIO
 
@@ -188,34 +230,14 @@ my-notion mcp serve --transport stdio
 
 当前暴露工具：
 
-| Tool | 说明 | 默认安全策略 |
+| Tool | 能力 | 默认安全策略 |
 | --- | --- | --- |
 | `my_notion_docs_search` | 搜索文档 | 只读 |
 | `my_notion_docs_fetch` | 读取文档 | 只读 |
 | `my_notion_docs_create` | 创建文档 | `dryRun: true` |
 | `my_notion_docs_update` | 更新文档 | `dryRun: true`，默认 append |
 
-## Agent Skills
-
-安装已发布的 Skills：
-
-```bash
-npx skills add @mynotion/cli -y -g
-```
-
-| Skill | 用途 |
-| --- | --- |
-| `my-notion-shared` | CLI 安装、认证、配置、输出格式和安全规则 |
-| `my-notion-docs` | 创建、读取、搜索、更新、导入、导出和归档文档 |
-| `my-notion-mcp` | 启动 MCP STDIO server 并使用 MCP tools |
-
-修改 Skills 后必须同步：
-
-```bash
-pnpm sync:skills
-pnpm sync:skills:package
-pnpm sync:skills:check
-```
+MCP 写工具的 dry-run 输出会包含 `confirmationRequired: true`。只有用户明确批准后，Agent 才能把 `dryRun` 改为 `false` 执行真实写入。
 
 ## Advanced Usage
 
@@ -226,7 +248,7 @@ pnpm sync:skills:check
 --format pretty    # 格式化 JSON，适合人类查看
 --format table     # 表格输出
 --format ndjson    # 一行一个 JSON，适合管道处理
---format markdown  # 仅输出文档 Markdown 正文
+--format markdown  # 文档 Markdown 正文，常用于 docs fetch/export
 ```
 
 ### 推荐写入模式
@@ -246,14 +268,23 @@ my-notion docs update \
   --format json
 ```
 
+### 本地开发运行
+
+```bash
+pnpm --filter @mynotion/cli dev <command>
+pnpm --filter @mynotion/cli build
+node packages/my-notion-cli/dist/index.js <command>
+```
+
 ## 安全边界
 
 - 不要把完整 `mnt_` PAT 写进聊天、日志、文档或代码仓库。
 - 不要把 `device_code` 写进聊天或公开日志；授权 URL 只应包含 `user_code`。
 - Agent 给用户展示授权信息时，只展示可点击授权链接和用户码。
 - Agent 默认不要回显 `auth status`、配置路径、token prefix、profile 细节或原始 CLI JSON。
-- 写入已有文档时优先使用 `--mode append`；只有用户明确要求替换全文时才使用 `--mode overwrite`。
+- 写入已有文档时优先 `--mode append`；只有用户明确要求替换全文时才使用 `--mode overwrite`。
 - MCP 写工具保持 `dryRun: true`，除非用户明确批准真实写入。
+- 如怀疑当前凭据泄漏，先执行 `my-notion tokens revoke-current --format json`，再重新登录。
 
 ## 开发与验证
 
@@ -264,6 +295,9 @@ pnpm --filter @mynotion/cli build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
+pnpm sync:skills
+pnpm sync:skills:package
+pnpm sync:skills:check
 ```
 
 ## 参考

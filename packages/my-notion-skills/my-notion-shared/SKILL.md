@@ -9,8 +9,8 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 
 ## Usage Modes
 
-- Human users install or run `my-notion`, then use `auth login` once and operate documents directly.
-- AI Agents should use `auth login --no-open` only when auth is missing, send a clickable authorization link to the user, then retry the original operation.
+- Human users install or run `my-notion`, run `config init`, then use `auth login` once and operate documents directly.
+- AI Agents should start with `config init --check --format json`, use `auth login --no-open` only when auth is missing, send a clickable authorization link to the user, then retry the original operation.
 - npm package distribution target: package `@mynotion/cli`, binary `my-notion`, beta tag `@beta`.
 
 ## Prerequisites
@@ -19,6 +19,12 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 - The binary name is `my-notion` after installation, linking, or `npx`.
 - After npm release, users can run `npx @mynotion/cli@beta <command>` or install it globally with `npm install -g @mynotion/cli@beta`.
 - Install bundled Agent Skills with `npx skills add @mynotion/cli -y -g`. If the skills tool does not support npm package sources, use the repository URL or `my-notion install --skills` fallback.
+- Check first-run state with:
+
+```bash
+my-notion config init --check --format json
+```
+
 - In this monorepo, the development entry can be run with:
 
 ```bash
@@ -42,6 +48,7 @@ The CLI talks to My-Notion through Convex HTTP Actions. The recommended setup is
 
 First-time setup:
 
+- Run `my-notion config init` for human setup, or `my-notion config init --check --format json` for Agent checks.
 - Run `my-notion auth login --no-open` when operating as an Agent.
 - Extract the printed authorization URL and send it as a clickable Markdown link, e.g. `[打开 My-Notion CLI 授权](https://...)`.
 - The printed authorization URL contains only `user_code`; the CLI keeps the sensitive temporary `device_code` locally for polling.
@@ -52,10 +59,16 @@ First-time setup:
 
 Agent-facing auth flow:
 
-1. Run the requested command or `my-notion auth status --format json` silently.
+1. Run `my-notion config init --check --format json` or the requested command silently.
 2. If auth is missing or invalid, run `my-notion auth login --no-open`.
 3. Send only the clickable authorization link and visible user code to the user.
 4. After approval, retry the original command and report only the final result.
+
+Config check command:
+
+```bash
+my-notion config init --check --format json
+```
 
 Login command:
 

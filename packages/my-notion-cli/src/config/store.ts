@@ -193,11 +193,11 @@ export function resolveProfileName(options: Record<string, string | boolean>) {
   );
 }
 
-function defaultWebUrlForProfile(profile: string) {
+export function getDefaultWebUrlForProfile(profile: string) {
   return profile === DEFAULT_LOCAL_PROFILE ? DEFAULT_LOCAL_WEB_URL : DEFAULT_WEB_URL;
 }
 
-function defaultApiUrlForProfile(_profile: string) {
+export function getDefaultApiUrlForProfile(_profile: string) {
   return DEFAULT_API_URL;
 }
 
@@ -211,12 +211,12 @@ export function resolveProfile(
     readStringOption(options, "api-url") ??
     process.env.MY_NOTION_API_URL ??
     saved.apiUrl ??
-    defaultApiUrlForProfile(name);
+    getDefaultApiUrlForProfile(name);
   const webUrl =
     readStringOption(options, "web-url") ??
     process.env.MY_NOTION_WEB_URL ??
     saved.webUrl ??
-    defaultWebUrlForProfile(name);
+    getDefaultWebUrlForProfile(name);
   const token =
     readStringOption(options, "token") ??
     process.env.MY_NOTION_API_TOKEN ??
@@ -258,6 +258,29 @@ export function saveProfileAuth(input: {
         scopes: input.scopes,
         expiresAt: input.expiresAt,
         authMethod: input.authMethod,
+        updatedAt: Date.now(),
+      },
+    },
+  };
+  saveConfigV2(nextConfig, input.profileName);
+  return nextConfig.profiles[input.profileName];
+}
+
+export function saveProfileConfig(input: {
+  profileName: string;
+  apiUrl: string;
+  webUrl: string;
+}) {
+  const config = loadConfigV2(input.profileName);
+  const nextConfig: CliConfigV2 = {
+    ...config,
+    activeProfile: input.profileName,
+    profiles: {
+      ...config.profiles,
+      [input.profileName]: {
+        ...config.profiles[input.profileName],
+        apiUrl: normalizeApiUrl(input.apiUrl),
+        webUrl: normalizeWebUrl(input.webUrl),
         updatedAt: Date.now(),
       },
     },

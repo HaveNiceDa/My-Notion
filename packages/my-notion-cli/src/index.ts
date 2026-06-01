@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { runAuthCommand } from "./commands/auth.js";
+import { runConfigCommand } from "./commands/config.js";
 import { runDocsCommand } from "./commands/docs.js";
 import { runInstallCommand } from "./commands/install.js";
 import { runMcpCommand } from "./commands/mcp.js";
@@ -43,6 +44,7 @@ Usage:
   my-notion auth login --token <mnt_token> [--api-url <url>]  # legacy
   my-notion auth status [--profile prod|local]
   my-notion auth logout [--profile prod|local]
+  my-notion config init [--check] [--local] [--web-url <url>] [--api-url <url>]
   my-notion tokens revoke-current
   my-notion docs create --title <title> [--content-file draft.md]
   my-notion docs fetch --id <documentId> [--format markdown]
@@ -88,6 +90,11 @@ async function main() {
 
   if (command === "docs") {
     await runDocsCommand(args);
+    return;
+  }
+
+  if (command === "config") {
+    await runConfigCommand(args);
     return;
   }
 

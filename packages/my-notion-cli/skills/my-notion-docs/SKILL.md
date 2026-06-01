@@ -11,25 +11,31 @@ Before using this skill, ensure `my-notion-shared` authentication guidance is sa
 
 ## Core Workflow
 
-1. Validate authentication silently when needed:
+1. Check CLI setup and authentication silently when needed:
 
 ```bash
-my-notion auth status --format json
+my-notion config init --check --format json
 ```
 
-2. Search before creating if duplicates are possible:
+2. If authentication is missing or invalid, run browser login and send only the clickable authorization link plus visible user code:
+
+```bash
+my-notion auth login --no-open
+```
+
+3. Search before creating if duplicates are possible:
 
 ```bash
 my-notion docs search --query "<keywords>" --limit 5 --format json
 ```
 
-3. Create or update content using a temporary Markdown file:
+4. Create or update content using a temporary Markdown file:
 
 ```bash
 my-notion docs create --title "<title>" --content-file /tmp/my-notion-doc.md --format json
 ```
 
-4. Fetch the final document if the user needs confirmation:
+5. Fetch the final document if the user needs confirmation:
 
 ```bash
 my-notion docs fetch --id <documentId> --format markdown

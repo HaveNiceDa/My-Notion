@@ -89,6 +89,7 @@ CLI 已发布到 npm beta：[`@mynotion/cli`](https://www.npmjs.com/package/@myn
 npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
+my-notion config init
 my-notion auth login
 ```
 
@@ -96,6 +97,7 @@ Agent 场景使用：
 
 ```bash
 my-notion auth login --no-open
+my-notion config init --check --format json
 my-notion docs create --title "Agent Doc" --content-file /tmp/doc.md --format json
 my-notion mcp serve --transport stdio
 ```

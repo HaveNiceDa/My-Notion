@@ -16,6 +16,7 @@ npm beta package:
 npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
+my-notion config init --check --format json
 ```
 
 Monorepo development entry:
@@ -51,6 +52,31 @@ Priority order:
 
 Agents should use `--format json` unless the desired output is Markdown content.
 Do not expose auth status JSON, config paths, token prefixes, or raw command output in user-facing replies unless debugging is explicitly requested.
+
+## Config
+
+First-run and health check entry:
+
+```bash
+my-notion config init --check --format json
+```
+
+Initialize non-sensitive profile metadata:
+
+```bash
+my-notion config init
+```
+
+Local/dev initialization:
+
+```bash
+my-notion config init \
+  --local \
+  --web-url http://localhost:3000 \
+  --api-url https://<dev-deployment>.convex.site
+```
+
+`config init` checks Node version, profile URLs, saved auth state, bundled Skills, MCP command hints, and next steps. It does not print full PAT values.
 
 ## Auth
 
