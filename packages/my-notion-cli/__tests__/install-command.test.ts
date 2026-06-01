@@ -33,6 +33,7 @@ describe("runInstallCommand", () => {
         commands: expect.objectContaining({
           installCli: "npm install -g @mynotion/cli@beta",
           installSkills: "npx skills add @mynotion/cli -y -g",
+          checkUpdate: "my-notion update --check --format json",
           agentLogin: "my-notion auth login --no-open",
         }),
       }),

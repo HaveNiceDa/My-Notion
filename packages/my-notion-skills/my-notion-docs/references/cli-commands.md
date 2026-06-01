@@ -17,6 +17,7 @@ npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init --check --format json
+my-notion update --check --format json
 ```
 
 Monorepo development entry:
@@ -117,6 +118,41 @@ my-notion auth status --api-url https://<deployment>.convex.site --token <mnt_to
 ```
 
 Explicit `--token` and `--show-token` are legacy/debug-only paths. Do not use them unless the user explicitly requests token debugging.
+
+## Update
+
+Get machine-readable update instructions:
+
+```bash
+my-notion update --format json
+```
+
+Check npm dist-tag and compare it with the installed version:
+
+```bash
+my-notion update --check --format json
+```
+
+Typical output includes:
+
+```json
+{
+  "currentVersion": "0.1.0-beta.0",
+  "targetTag": "beta",
+  "latestVersion": "0.1.0-beta.1",
+  "updateAvailable": true,
+  "autoUpdated": false,
+  "requiresUserConfirmation": true,
+  "commands": {
+    "updateCli": "npm install -g @mynotion/cli@beta",
+    "updateSkills": "npx skills add @mynotion/cli -y -g",
+    "verifyCli": "my-notion update --check --format json",
+    "verifyConfig": "my-notion config init --check --format json"
+  }
+}
+```
+
+The CLI never auto-runs npm installs from `update`. Agents must ask the user before executing `commands.updateCli` or `commands.updateSkills`.
 
 ## Tokens
 

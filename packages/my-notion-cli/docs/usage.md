@@ -106,6 +106,7 @@ npm install -g @mynotion/cli@beta
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init --check --format json
+my-notion update --check --format json
 ```
 
 如果 CLI 已经全局安装，可以直接使用：
@@ -411,6 +412,25 @@ CLI 支持多种输出格式：
 - 人类查看：可以用 `--format pretty` 或 `--format table`。
 - 读取正文：用 `--format markdown`。
 - 流式或管道处理：用 `--format ndjson`。
+
+## 15.1 更新 CLI 和 Skills
+
+Agent 或用户可以先获取更新指引：
+
+```bash
+my-notion update --check --format json
+```
+
+如果输出中的 `updateAvailable` 为 `true`，或用户明确要求更新，按输出中的命令执行：
+
+```bash
+npm install -g @mynotion/cli@beta
+npx skills add @mynotion/cli -y -g
+my-notion update --check --format json
+my-notion config init --check --format json
+```
+
+`my-notion update` 只输出更新建议，不会自动执行 npm 安装。Agent 必须先获得用户确认，再更新全局 CLI 和 Skills。
 
 ## 16. 环境变量配置
 

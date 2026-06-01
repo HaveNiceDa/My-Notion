@@ -25,6 +25,12 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 my-notion config init --check --format json
 ```
 
+- Check update instructions with:
+
+```bash
+my-notion update --check --format json
+```
+
 - In this monorepo, the development entry can be run with:
 
 ```bash
@@ -63,6 +69,13 @@ Agent-facing auth flow:
 2. If auth is missing or invalid, run `my-notion auth login --no-open`.
 3. Send only the clickable authorization link and visible user code to the user.
 4. After approval, retry the original command and report only the final result.
+
+Agent-facing update flow:
+
+1. Run `my-notion update --check --format json` when the user asks to update the CLI or when an installed version may be stale.
+2. If `updateAvailable` is true or unknown, ask the user before updating the global CLI.
+3. After approval, run `commands.updateCli`, then `commands.updateSkills`.
+4. Verify with `commands.verifyCli` and `commands.verifyConfig`.
 
 Config check command:
 
@@ -128,6 +141,16 @@ Command flags have the highest priority:
 ```bash
 my-notion auth status --api-url <url> --token <token>
 ```
+
+## Updates
+
+The CLI does not auto-update itself. Use this command to obtain machine-readable update instructions:
+
+```bash
+my-notion update --check --format json
+```
+
+Agents should execute `npm install -g @mynotion/cli@beta` and `npx skills add @mynotion/cli -y -g` only after user confirmation.
 
 ## Output Formats
 

@@ -23,6 +23,7 @@
 | `tokens` | 撤销当前 CLI PAT，使本机凭据在服务端失效 |
 | `mcp` | 启动 MCP STDIO server，给 MCP Client 暴露文档工具 |
 | `install` | 输出 npm、Skills 和 Agent 安装检查信息 |
+| `update` | 输出 CLI/Skills 更新指引，并可检查 npm dist-tag 是否有新版本 |
 | `skills` | `my-notion-shared`、`my-notion-docs`、`my-notion-mcp`，指导 Agent 正确调用 CLI/MCP |
 
 ## 安装与快速开始
@@ -46,6 +47,7 @@ my-notion auth login
 
 # 3. 检查状态
 my-notion config init --check --format json
+my-notion update --check --format json
 
 # 4. 创建或搜索文档
 my-notion docs create --title "项目周报" --content-file ./weekly-report.md --format json
@@ -96,6 +98,7 @@ npx skills add @mynotion/cli -y -g
 
 Agent 调用规则：
 
+- 版本检查：先运行 `my-notion update --check --format json`；如需更新，先向用户确认，再运行输出中的 `updateCli` 和 `updateSkills` 命令。
 - 登录缺失：运行 `my-notion auth login --no-open`，只把授权链接和用户码发给用户。
 - 文档写入：优先生成 Markdown 文件，再用 `--content-file` 创建或追加。
 - 更新文档：默认 `docs update --mode append`；只有用户明确要求替换全文才用 `overwrite`。
@@ -219,6 +222,16 @@ my-notion tokens revoke-current --format json
 my-notion install --check --format json
 my-notion install --skills --format json
 ```
+
+### 6. Update
+
+```bash
+my-notion update --format json
+my-notion update --check --format json
+my-notion update --check --tag latest --format json
+```
+
+`update` 不会自动执行 npm 安装。Agent 应读取输出中的 `commands.updateCli`、`commands.updateSkills` 和 `commands.verifyCli`，获得用户确认后再执行更新。
 
 ## MCP STDIO
 

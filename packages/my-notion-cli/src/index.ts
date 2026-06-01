@@ -6,6 +6,7 @@ import { runDocsCommand } from "./commands/docs.js";
 import { runInstallCommand } from "./commands/install.js";
 import { runMcpCommand } from "./commands/mcp.js";
 import { runTokensCommand } from "./commands/tokens.js";
+import { runUpdateCommand } from "./commands/update.js";
 import { writeError } from "./format/output.js";
 import type { ParsedArgs } from "./types.js";
 
@@ -55,6 +56,7 @@ Usage:
   my-notion docs export --id <documentId> [--output document.md]
   my-notion docs import --title <title> --file document.md
   my-notion install [--skills] [--check]
+  my-notion update [--check] [--tag beta|latest]
   my-notion mcp serve --transport stdio
 
 Global options:
@@ -105,6 +107,11 @@ async function main() {
 
   if (command === "install") {
     await runInstallCommand(args);
+    return;
+  }
+
+  if (command === "update") {
+    await runUpdateCommand(args);
     return;
   }
 

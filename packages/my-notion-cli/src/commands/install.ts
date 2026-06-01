@@ -45,12 +45,15 @@ function buildInstallSummary() {
       installCli: `npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
       installSkills: SKILLS_INSTALL_COMMAND,
       runWithNpx: `npx ${PACKAGE_NAME}@${BETA_TAG} --help`,
+      updateCli: `npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
+      checkUpdate: `${BINARY_NAME} update --check --format json`,
       login: `${BINARY_NAME} auth login`,
       agentLogin: `${BINARY_NAME} auth login --no-open`,
     },
     nextSteps: [
       `Install the CLI: npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
       `Install Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
+      `Check updates: ${BINARY_NAME} update --check --format json`,
       `Login with browser auth: ${BINARY_NAME} auth login`,
     ],
   };
