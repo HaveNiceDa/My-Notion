@@ -2,9 +2,12 @@
 import { spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { join, resolve } from "node:path";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
+
+setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
 function readEnvFile(path) {
   try {

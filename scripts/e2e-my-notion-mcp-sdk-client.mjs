@@ -2,6 +2,7 @@
 import { spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { Client } from "../packages/my-notion-cli/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
@@ -9,8 +10,8 @@ import { StdioClientTransport } from "../packages/my-notion-cli/node_modules/@mo
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
-const NETWORK_RETRY_ATTEMPTS = 3;
-const NETWORK_RETRY_DELAY_MS = 1_000;
+
+setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
 function readEnvFile(path) {
   try {
@@ -96,49 +97,61 @@ function getSiteUrl() {
   return convexUrl.replace(".convex.cloud", ".convex.site").replace(/\/+$/, "");
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMachineApi({ apiUrl, token }) {
+  let lastStatus = "not-started";
+  let lastCode = "UNKNOWN";
+
+  for (let attempt = 1; attempt <= 15; attempt += 1) {
+    try {
+      const authResponse = await fetch(`${apiUrl}/cli/v1/auth/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const authPayload = await authResponse.json().catch(() => null);
+      lastStatus = String(authResponse.status);
+      lastCode = authPayload?.success === false ? authPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      const documentResponse = await fetch(`${apiUrl}/cli/v1/documents`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: " " }),
+      });
+      const documentPayload = await documentResponse.json().catch(() => null);
+      lastStatus = `${authResponse.status}/${documentResponse.status}`;
+      lastCode = documentPayload?.success === false ? documentPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      if (
+        authResponse.ok &&
+        authPayload?.success === true &&
+        documentResponse.status === 422 &&
+        documentPayload?.error?.code === "VALIDATION_ERROR"
+      ) {
+        return;
+      }
+    } catch (error) {
+      lastStatus = error instanceof Error ? error.message : String(error);
+      lastCode = "NETWORK_ERROR";
+    }
+
+    await sleep(1_000);
+  }
+
+  throw new Error(`Machine API was not ready after Convex push. Last status: ${lastStatus}; code: ${lastCode}`);
+}
+
 function assert(condition, message) {
   if (!condition) {
     throw new Error(message);
   }
-}
-
-function sleep(ms) {
-  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
-}
-
-function isRetryableNetworkMessage(message) {
-  return (
-    message.includes("fetch failed") ||
-    message.includes("NETWORK_ERROR") ||
-    message.includes("TIMEOUT")
-  );
-}
-
-async function retryNetworkOperation(label, operation) {
-  let lastError;
-  for (let attempt = 1; attempt <= NETWORK_RETRY_ATTEMPTS; attempt += 1) {
-    try {
-      return await operation();
-    } catch (error) {
-      lastError = error;
-      const message = error instanceof Error ? error.message : String(error);
-      const shouldRetry =
-        attempt < NETWORK_RETRY_ATTEMPTS && isRetryableNetworkMessage(message);
-      if (!shouldRetry) {
-        throw error;
-      }
-      console.warn(
-        `[retry] ${label} failed on attempt ${attempt}/${NETWORK_RETRY_ATTEMPTS}: ${message}`,
-      );
-      await sleep(NETWORK_RETRY_DELAY_MS * attempt);
-    }
-  }
-
-  throw lastError ?? new Error(`${label} failed`);
-}
-
-async function runJsonWithNetworkRetry(label, command, args, options = {}) {
-  return retryNetworkOperation(label, async () => runJson(command, args, options));
 }
 
 async function createSdkClient(env) {
@@ -168,12 +181,6 @@ async function callTool(client, name, args) {
   return result.structuredContent;
 }
 
-async function callToolWithNetworkRetry(client, name, args) {
-  return retryNetworkOperation(`MCP tool ${name}`, async () =>
-    callTool(client, name, args),
-  );
-}
-
 async function callToolRaw(client, name, args) {
   const result = await client.callTool({
     name,
@@ -198,10 +205,10 @@ async function main() {
   let archivedDocument = null;
 
   try {
-    console.log("[1/10] Build CLI");
+    console.log("[1/11] Build CLI");
     run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
-    console.log(`[2/10] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/11] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
       "--filter",
       "@notion/web",
@@ -224,7 +231,10 @@ async function main() {
     const seededToken = parseLastJsonObject(seedOutput);
     tokenRecordId = seededToken.id;
 
-    console.log("[3/10] Validate auth failure through real MCP Client");
+    console.log("[3/11] Wait for Machine API readiness");
+    await waitForMachineApi({ apiUrl, token: pat.token });
+
+    console.log("[4/11] Validate auth failure through real MCP Client");
     invalidClient = await createSdkClient({
       HOME: tempHome,
       MY_NOTION_API_URL: apiUrl,
@@ -242,7 +252,7 @@ async function main() {
     await invalidClient.close();
     invalidClient = undefined;
 
-    console.log("[4/10] Connect real MCP SDK Client");
+    console.log("[5/11] Connect real MCP SDK Client");
     validClient = await createSdkClient({
       HOME: tempHome,
       MY_NOTION_API_URL: apiUrl,
@@ -250,7 +260,7 @@ async function main() {
     });
     assert(validClient.getServerVersion()?.name === "my-notion", "Unexpected MCP server name");
 
-    console.log("[5/10] Discover tools");
+    console.log("[6/11] Discover tools");
     const tools = await validClient.listTools();
     const toolNames = new Set((tools.tools ?? []).map((tool) => tool.name));
     for (const name of [
@@ -262,7 +272,7 @@ async function main() {
       assert(toolNames.has(name), `Missing MCP tool: ${name}`);
     }
 
-    console.log("[6/10] Validate dry-run create and update");
+    console.log("[7/11] Validate dry-run create and update");
     const createPreview = await callTool(validClient, "my_notion_docs_create", {
       title: `MCP SDK Dry Run ${uniqueKeyword}`,
       contentMarkdown: `# MCP SDK Dry Run\n\n${uniqueKeyword}`,
@@ -289,8 +299,8 @@ async function main() {
       "update dryRun did not include no-write message",
     );
 
-    console.log("[7/10] Confirm and create real document");
-    const created = await callToolWithNetworkRetry(validClient, "my_notion_docs_create", {
+    console.log("[8/11] Confirm and create real document");
+    const created = await callTool(validClient, "my_notion_docs_create", {
       title: `MCP SDK E2E ${uniqueKeyword}`,
       contentMarkdown: `# MCP SDK E2E\n\nInitial ${uniqueKeyword}.`,
       dryRun: false,
@@ -298,13 +308,13 @@ async function main() {
     createdDocumentId = created.document?.id;
     assert(createdDocumentId, "MCP create did not return document id");
 
-    console.log("[8/10] Fetch and update real document");
-    const fetched = await callToolWithNetworkRetry(validClient, "my_notion_docs_fetch", {
+    console.log("[9/11] Fetch and update real document");
+    const fetched = await callTool(validClient, "my_notion_docs_fetch", {
       id: createdDocumentId,
     });
     assert(fetched.markdown?.includes(uniqueKeyword), "MCP fetch did not return created content");
 
-    const updated = await callToolWithNetworkRetry(validClient, "my_notion_docs_update", {
+    const updated = await callTool(validClient, "my_notion_docs_update", {
       id: createdDocumentId,
       contentMarkdown: `Appended by real MCP SDK Client ${uniqueKeyword}.`,
       mode: "append",
@@ -315,8 +325,8 @@ async function main() {
       "MCP update did not append content",
     );
 
-    console.log("[9/10] Search real document");
-    const search = await callToolWithNetworkRetry(validClient, "my_notion_docs_search", {
+    console.log("[10/11] Search real document");
+    const search = await callTool(validClient, "my_notion_docs_search", {
       query: uniqueKeyword,
       limit: 5,
     });
@@ -326,10 +336,10 @@ async function main() {
       "MCP search did not find the created document",
     );
 
-    console.log("[10/10] Archive test document");
+    console.log("[11/11] Archive test document");
     await validClient.close();
     validClient = undefined;
-    archivedDocument = await runJsonWithNetworkRetry("archive test document", "node", [
+    archivedDocument = runJson("node", [
       cliEntry,
       "docs",
       "archive",
@@ -368,7 +378,7 @@ async function main() {
     if (createdDocumentId && !archivedDocument?.isArchived) {
       try {
         console.log("[cleanup] archive test document");
-        archivedDocument = await runJsonWithNetworkRetry("cleanup archive test document", "node", [
+        archivedDocument = runJson("node", [
           cliEntry,
           "docs",
           "archive",

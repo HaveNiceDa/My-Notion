@@ -15,6 +15,14 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 - In Agent mode, run `my-notion auth login --no-open`, send the printed authorization URL as a clickable Markdown link, then retry after approval.
 - Do not pass full PAT values through MCP tool arguments. The MCP server reads credentials from CLI config or environment variables.
 
+## Content Format Contract
+
+- MCP clients read and write Markdown only.
+- My-Notion stores editor content as BlockNote JSON internally.
+- The MCP server and Machine API expose `contentMarkdown` as the Agent-editable view.
+- The server handles Markdown <-> BlockNote blocks conversion.
+- Do not generate, parse, or pass BlockNote JSON in MCP tool arguments.
+
 ## Start Server
 
 Development entry:
@@ -116,6 +124,7 @@ Behavior:
 
 - Read-only.
 - Returns `structuredContent.document` and `structuredContent.markdown`.
+- `structuredContent.markdown` is serialized from internal BlockNote JSON and should be used for Agent edit round-trips.
 - Use this before overwrite operations.
 
 ### `my_notion_docs_create`
@@ -136,7 +145,7 @@ Behavior:
 
 - Writing tool.
 - `dryRun` defaults to `true`.
-- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, a preview document with id `dry-run`, and a text fallback saying no document was created.
+- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, `inputFormat: "markdown"`, `targetFormat: "blocknote-json"`, a preview document with id `dry-run`, and a text fallback saying no document was created.
 - Set `dryRun: false` only when the user explicitly approved creating the document.
 
 ### `my_notion_docs_update`
@@ -160,7 +169,7 @@ Behavior:
 - Writing tool.
 - `mode` is `append` or `overwrite`; default is `append`.
 - `dryRun` defaults to `true`.
-- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, an `update` preview, and a text fallback saying no document was updated.
+- Dry-run returns `structuredContent.dryRun: true`, `structuredContent.confirmationRequired: true`, `inputFormat: "markdown"`, `targetFormat: "blocknote-json"`, an `update` preview, and a text fallback saying no document was updated.
 - Fetch the document first before using `mode: "overwrite"`.
 - Set `dryRun: false` only after explicit user approval.
 

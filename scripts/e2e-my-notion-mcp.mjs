@@ -2,12 +2,15 @@
 import { spawn, spawnSync } from "node:child_process";
 import { createHash, randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { once } from "node:events";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
+
+setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
 function readEnvFile(path) {
   try {
@@ -92,6 +95,57 @@ function getSiteUrl() {
   }
 
   return convexUrl.replace(".convex.cloud", ".convex.site").replace(/\/+$/, "");
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMachineApi({ apiUrl, token }) {
+  let lastStatus = "not-started";
+  let lastCode = "UNKNOWN";
+
+  for (let attempt = 1; attempt <= 15; attempt += 1) {
+    try {
+      const authResponse = await fetch(`${apiUrl}/cli/v1/auth/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const authPayload = await authResponse.json().catch(() => null);
+      lastStatus = String(authResponse.status);
+      lastCode = authPayload?.success === false ? authPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      const documentResponse = await fetch(`${apiUrl}/cli/v1/documents`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: " " }),
+      });
+      const documentPayload = await documentResponse.json().catch(() => null);
+      lastStatus = `${authResponse.status}/${documentResponse.status}`;
+      lastCode = documentPayload?.success === false ? documentPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      if (
+        authResponse.ok &&
+        authPayload?.success === true &&
+        documentResponse.status === 422 &&
+        documentPayload?.error?.code === "VALIDATION_ERROR"
+      ) {
+        return;
+      }
+    } catch (error) {
+      lastStatus = error instanceof Error ? error.message : String(error);
+      lastCode = "NETWORK_ERROR";
+    }
+
+    await sleep(1_000);
+  }
+
+  throw new Error(`Machine API was not ready after Convex push. Last status: ${lastStatus}; code: ${lastCode}`);
 }
 
 function assert(condition, message) {
@@ -233,10 +287,10 @@ async function main() {
   let archivedDocument = null;
 
   try {
-    console.log("[1/9] Build CLI");
+    console.log("[1/10] Build CLI");
     run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
-    console.log(`[2/9] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/10] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
       "--filter",
       "@notion/web",
@@ -259,14 +313,17 @@ async function main() {
     const seededToken = parseLastJsonObject(seedOutput);
     tokenRecordId = seededToken.id;
 
-    console.log("[3/9] Start MCP STDIO server");
+    console.log("[3/10] Wait for Machine API readiness");
+    await waitForMachineApi({ apiUrl, token: pat.token });
+
+    console.log("[4/10] Start MCP STDIO server");
     client = new McpStdioClient({
       HOME: tempHome,
       MY_NOTION_API_URL: apiUrl,
       MY_NOTION_API_TOKEN: pat.token,
     });
 
-    console.log("[4/9] Initialize and list tools");
+    console.log("[5/10] Initialize and list tools");
     const initialized = await client.request("initialize", {
       protocolVersion: "2025-06-18",
       capabilities: {},
@@ -289,7 +346,7 @@ async function main() {
       assert(toolNames.has(name), `Missing MCP tool: ${name}`);
     }
 
-    console.log("[5/9] Validate dry-run write tools");
+    console.log("[6/10] Validate dry-run write tools");
     const createPreview = await callTool(client, "my_notion_docs_create", {
       title: `MCP Dry Run ${uniqueKeyword}`,
       contentMarkdown: `# MCP Dry Run\n\n${uniqueKeyword}`,
@@ -340,7 +397,7 @@ async function main() {
       "update error text fallback did not include readable failure context",
     );
 
-    console.log("[6/9] Create, fetch, and update through MCP");
+    console.log("[7/10] Create, fetch, and update through MCP");
     const created = await callTool(client, "my_notion_docs_create", {
       title: `MCP E2E ${uniqueKeyword}`,
       contentMarkdown: `# MCP E2E\n\nInitial ${uniqueKeyword}.`,
@@ -368,7 +425,7 @@ async function main() {
       "MCP update did not append Markdown content",
     );
 
-    console.log("[7/9] Search through MCP");
+    console.log("[8/10] Search through MCP");
     const search = await callTool(client, "my_notion_docs_search", {
       query: uniqueKeyword,
       limit: 5,
@@ -379,10 +436,10 @@ async function main() {
       "MCP search did not find the created document",
     );
 
-    console.log("[8/9] Close MCP server");
+    console.log("[9/10] Close MCP server");
     await client.close();
 
-    console.log("[9/9] Archive test document");
+    console.log("[10/10] Archive test document");
     archivedDocument = runJson("node", [
       cliEntry,
       "docs",

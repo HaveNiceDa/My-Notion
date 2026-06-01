@@ -54,6 +54,14 @@ Priority order:
 Agents should use `--format json` unless the desired output is Markdown content.
 Do not expose auth status JSON, config paths, token prefixes, or raw command output in user-facing replies unless debugging is explicitly requested.
 
+## Content Format Contract
+
+- Agents read and write Markdown only.
+- My-Notion stores `documents.content` as internal BlockNote JSON.
+- The server converts Markdown <-> BlockNote blocks for CLI, Skills, MCP, and Web Agent flows.
+- Use returned `contentMarkdown` as the editable view for document update round-trips.
+- Do not generate, parse, or ask the user to provide BlockNote JSON.
+
 ## Config
 
 First-run and health check entry:
@@ -286,7 +294,7 @@ Fetch Markdown body only:
 my-notion docs fetch --id <documentId> --format markdown
 ```
 
-Use Markdown output for summarization, rewriting, diffing, and append decisions.
+Use Markdown output for summarization, rewriting, diffing, append decisions, and overwrite round-trips. This Markdown is serialized from internal BlockNote JSON.
 
 ### Export
 
@@ -354,9 +362,10 @@ Append Markdown content:
 my-notion docs update --id <documentId> --content-file /tmp/append.md --mode append --format json
 ```
 
-Overwrite content:
+Overwrite content after fetching the current Markdown view:
 
 ```bash
+my-notion docs fetch --id <documentId> --format markdown
 my-notion docs update --id <documentId> --content-file /tmp/full.md --mode overwrite --format json
 ```
 
@@ -403,7 +412,7 @@ The first MCP version exposes:
 - `my_notion_docs_create`
 - `my_notion_docs_update`
 
-Writing tools default to dry-run mode. Set `dryRun: false` only after explicit user approval.
+Writing tools default to dry-run mode. Set `dryRun: false` only after explicit user approval. MCP clients should treat `structuredContent.markdown` / `contentMarkdown` as the editable Markdown view and never pass BlockNote JSON as tool arguments.
 
 ## Recommended Agent Patterns
 

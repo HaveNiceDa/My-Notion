@@ -1,8 +1,12 @@
 import type { ApiResponse, ApiTokenResult, DocumentResult } from "../types.js";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 300;
+const DNS_FAMILY_ATTEMPT_TIMEOUT_MS = 1_000;
+
+setDefaultAutoSelectFamilyAttemptTimeout(DNS_FAMILY_ATTEMPT_TIMEOUT_MS);
 
 function getAuthRecoveryMessage(code?: string) {
   if (code === "TOKEN_EXPIRED") {

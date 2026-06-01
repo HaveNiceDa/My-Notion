@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import { createHash, randomBytes } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
+
+setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
 function readEnvFile(path) {
   try {
@@ -90,7 +93,58 @@ function getSiteUrl() {
   return convexUrl.replace(".convex.cloud", ".convex.site").replace(/\/+$/, "");
 }
 
-function main() {
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForMachineApi({ apiUrl, token }) {
+  let lastStatus = "not-started";
+  let lastCode = "UNKNOWN";
+
+  for (let attempt = 1; attempt <= 15; attempt += 1) {
+    try {
+      const authResponse = await fetch(`${apiUrl}/cli/v1/auth/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const authPayload = await authResponse.json().catch(() => null);
+      lastStatus = String(authResponse.status);
+      lastCode = authPayload?.success === false ? authPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      const documentResponse = await fetch(`${apiUrl}/cli/v1/documents`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ title: " " }),
+      });
+      const documentPayload = await documentResponse.json().catch(() => null);
+      lastStatus = `${authResponse.status}/${documentResponse.status}`;
+      lastCode = documentPayload?.success === false ? documentPayload.error?.code ?? "UNKNOWN" : "OK";
+
+      if (
+        authResponse.ok &&
+        authPayload?.success === true &&
+        documentResponse.status === 422 &&
+        documentPayload?.error?.code === "VALIDATION_ERROR"
+      ) {
+        return;
+      }
+    } catch (error) {
+      lastStatus = error instanceof Error ? error.message : String(error);
+      lastCode = "NETWORK_ERROR";
+    }
+
+    await sleep(1_000);
+  }
+
+  throw new Error(`Machine API was not ready after Convex push. Last status: ${lastStatus}; code: ${lastCode}`);
+}
+
+async function main() {
   const testUserId = `test_cli_user_${Date.now()}`;
   const apiUrl = getSiteUrl();
   const pat = createPat();
@@ -123,10 +177,10 @@ function main() {
   const identityArgs = JSON.stringify({ subject: testUserId, tokenIdentifier: testUserId });
 
   try {
-    console.log(`[1/12] Build CLI`);
+    console.log(`[1/13] Build CLI`);
     run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
-    console.log(`[2/12] Seed PAT token: ${pat.tokenPrefix}...`);
+    console.log(`[2/13] Seed PAT token: ${pat.tokenPrefix}...`);
     const seedOutput = run("pnpm", [
     "--filter",
     "@notion/web",
@@ -149,7 +203,10 @@ function main() {
     const seededToken = parseLastJsonObject(seedOutput);
     tokenRecordId = seededToken.id;
 
-    console.log(`[3/12] auth login`);
+    console.log(`[3/13] Wait for Machine API readiness`);
+    await waitForMachineApi({ apiUrl, token: pat.token });
+
+    console.log(`[4/13] auth login`);
     const login = runJson("node", [
     cliEntry,
     "auth",
@@ -166,7 +223,7 @@ function main() {
       throw new Error("auth login did not authenticate");
     }
 
-    console.log(`[4/12] docs create`);
+    console.log(`[5/13] docs create`);
     created = runJson("node", [
     cliEntry,
     "docs",
@@ -183,7 +240,7 @@ function main() {
       throw new Error("docs create did not return document id");
     }
 
-    console.log(`[5/12] docs fetch`);
+    console.log(`[6/13] docs fetch`);
     const fetchedMarkdown = run("node", [
     cliEntry,
     "docs",
@@ -198,7 +255,7 @@ function main() {
       throw new Error("docs fetch did not include created content");
     }
 
-    console.log(`[6/12] docs update`);
+    console.log(`[7/13] docs update`);
     const updated = runJson("node", [
     cliEntry,
     "docs",
@@ -217,7 +274,7 @@ function main() {
       throw new Error("docs update did not append content");
     }
 
-    console.log(`[7/12] docs search`);
+    console.log(`[8/13] docs search`);
     searchResults = runJson("node", [
     cliEntry,
     "docs",
@@ -234,7 +291,7 @@ function main() {
       throw new Error("docs search did not find the created document");
     }
 
-    console.log(`[8/12] docs export`);
+    console.log(`[9/13] docs export`);
     const exportResult = runJson("node", [
       cliEntry,
       "docs",
@@ -252,7 +309,7 @@ function main() {
       throw new Error("docs export did not write expected Markdown content");
     }
 
-    console.log(`[9/12] docs import`);
+    console.log(`[10/13] docs import`);
     imported = runJson("node", [
       cliEntry,
       "docs",
@@ -269,7 +326,7 @@ function main() {
       throw new Error("docs import did not create expected document");
     }
 
-    console.log(`[10/12] docs archive`);
+    console.log(`[11/13] docs archive`);
     archivedDocument = runJson("node", [
       cliEntry,
       "docs",
@@ -314,7 +371,7 @@ function main() {
       throw new Error("archived document still appeared in docs search");
     }
 
-    console.log(`[11/12] tokens revoke-current`);
+    console.log(`[12/13] tokens revoke-current`);
     revokedToken = runJson("node", [
       cliEntry,
       "tokens",
@@ -344,7 +401,7 @@ function main() {
       throw new Error("revoked token still passed auth status");
     }
 
-    console.log(`[12/12] auth logout`);
+    console.log(`[13/13] auth logout`);
     const logout = runJson("node", [
       cliEntry,
       "auth",
@@ -442,7 +499,7 @@ function main() {
 }
 
 try {
-  main();
+  await main();
 } catch (error) {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
