@@ -120,6 +120,7 @@ pnpm --filter @mynotion/cli build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
+pnpm e2e:mcp:client
 pnpm sync:skills
 pnpm sync:skills:package
 pnpm sync:skills:check

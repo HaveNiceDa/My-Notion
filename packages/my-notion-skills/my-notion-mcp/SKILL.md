@@ -38,6 +38,47 @@ my-notion mcp serve --transport stdio
 
 Only `stdio` transport is supported in the first version. Do not assume HTTP MCP or OAuth discovery exists.
 
+## Real Client Verification
+
+Use this repository E2E when validating behavior with a real MCP SDK client:
+
+```bash
+pnpm e2e:mcp:client
+```
+
+This script uses `@modelcontextprotocol/sdk` `Client + StdioClientTransport` and verifies:
+
+- auth failure returns `isError: true` with `structuredContent.error`
+- tools/list discovers `my_notion_docs_search`, `my_notion_docs_fetch`, `my_notion_docs_create`, and `my_notion_docs_update`
+- create/update dry-run returns `confirmationRequired: true` and explicit no-write text
+- real create/fetch/update/search works after explicit approval by setting `dryRun: false`
+- test documents are archived and temporary PAT credentials are revoked
+
+Minimal SDK client shape:
+
+```js
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+const client = new Client({ name: "my-agent", version: "0.1.0" });
+const transport = new StdioClientTransport({
+  command: "my-notion",
+  args: ["mcp", "serve", "--transport", "stdio"],
+});
+
+await client.connect(transport);
+const tools = await client.listTools();
+const preview = await client.callTool({
+  name: "my_notion_docs_create",
+  arguments: {
+    title: "MCP Dry Run",
+    contentMarkdown: "# MCP Dry Run\n\nPreview only.",
+    dryRun: true,
+  },
+});
+await client.close();
+```
+
 ## Tools
 
 ### `my_notion_docs_search`

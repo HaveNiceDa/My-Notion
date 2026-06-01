@@ -43,6 +43,7 @@
 - 写工具默认 `dryRun: true`。
 - dry-run 输出明确包含 `confirmationRequired: true` 和 no-write 文案。
 - 错误输出统一包含 `isError: true`、`structuredContent.error` 和可读 text fallback。
+- 2026-06-01 已新增 `pnpm e2e:mcp:client`，使用真实 `@modelcontextprotocol/sdk` Client + `StdioClientTransport` 验证工具发现、认证失败、dry-run、确认式真实写入、读取、追加、搜索、归档和测试 PAT 撤销。
 
 ### Machine API
 
@@ -82,6 +83,7 @@
 - `pnpm e2e:cli`: ✅
 - `pnpm e2e:cli:errors`: ✅
 - `pnpm e2e:mcp`: ✅
+- `pnpm e2e:mcp:client`: ✅
 - `pnpm sync:skills`: ✅
 - `pnpm sync:skills:package`: ✅
 - `pnpm sync:skills:check`: ✅
@@ -105,7 +107,7 @@
 
 - P0 `my-notion config init` / `my-notion install` 初始化闭环：`my-notion config init` 已完成首版，提供面向人和 Agent 的首屏配置状态入口；后续可继续接入更真实的全局 Skills 安装探测和 npm 版本更新提示。
 - P0 Agent 写入格式策略：当前 CLI / Skills 主要让 Agent 输出 Markdown，但 Web 编辑器底层是 BlockNote。需要评估两条路线并形成决策：一是服务端/CLI 增加 Markdown -> BlockNote blocks 转换器，保持 Agent 侧输出简单；二是让 Agent 直接生成受约束的 BlockNote JSON，降低转换损耗但提高 Agent 适配成本。决策时需要重点比较可控性、兼容性、调试成本、错误恢复、未来移动端复用和导入导出一致性。
-- P0 MCP 模式真实验证：虽然 STDIO MVP 和 `pnpm e2e:mcp` 已完成，但仍需用真实 MCP Client / Agent 场景验证 `my-notion mcp serve --transport stdio` 的发现、认证、dry-run、确认链路、错误输出和文档写入体验，并补齐 README / Skills 中的最小可用示例。
+- P0 MCP 模式真实验证：已通过 `pnpm e2e:mcp:client` 使用真实 MCP SDK Client 验证 `my-notion mcp serve --transport stdio` 的发现、认证失败、dry-run、确认链路、错误输出和文档写入体验；README / Skills 已补最小 SDK Client 示例。后续可在更多第三方 MCP Client 中做兼容性体验验证。
 - `kb search`：仅在产品目标需要 Agent 检索知识库再回答/生成时启动。
 - `agent ask --format ndjson`：需要复用 ReAct Loop，并设计 streaming 事件契约。
 - HTTP MCP / OAuth 2.1：远程集成能力，复杂度较高，暂不阻塞当前交付。

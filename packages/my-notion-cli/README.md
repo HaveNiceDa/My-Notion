@@ -252,6 +252,39 @@ my-notion mcp serve --transport stdio
 
 MCP 写工具的 dry-run 输出会包含 `confirmationRequired: true`。只有用户明确批准后，Agent 才能把 `dryRun` 改为 `false` 执行真实写入。
 
+真实 MCP Client 验证入口：
+
+```bash
+pnpm e2e:mcp:client
+```
+
+该脚本使用 `@modelcontextprotocol/sdk` 的 `Client + StdioClientTransport` 启动 `my-notion mcp serve --transport stdio`，覆盖认证失败、工具发现、dry-run 预览、确认后真实创建、读取、追加、搜索、归档清理和测试 PAT 撤销。
+
+最小 SDK Client 示例：
+
+```js
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+
+const transport = new StdioClientTransport({
+  command: "my-notion",
+  args: ["mcp", "serve", "--transport", "stdio"],
+});
+const client = new Client({ name: "my-agent", version: "0.1.0" });
+
+await client.connect(transport);
+const tools = await client.listTools();
+const preview = await client.callTool({
+  name: "my_notion_docs_create",
+  arguments: {
+    title: "MCP Dry Run",
+    contentMarkdown: "# MCP Dry Run\n\nPreview only.",
+    dryRun: true,
+  },
+});
+await client.close();
+```
+
 ## Advanced Usage
 
 ### 输出格式
@@ -308,6 +341,7 @@ pnpm --filter @mynotion/cli build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp
+pnpm e2e:mcp:client
 pnpm sync:skills
 pnpm sync:skills:package
 pnpm sync:skills:check

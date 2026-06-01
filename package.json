@@ -19,6 +19,7 @@
     "e2e:cli": "node scripts/e2e-my-notion-cli.mjs",
     "e2e:cli:errors": "node scripts/e2e-my-notion-cli-errors.mjs",
     "e2e:mcp": "node scripts/e2e-my-notion-mcp.mjs",
+    "e2e:mcp:client": "node scripts/e2e-my-notion-mcp-sdk-client.mjs",
     "sync:skills": "node scripts/sync-my-notion-skills.mjs",
     "sync:skills:package": "node scripts/sync-my-notion-package-skills.mjs",
     "sync:skills:check": "node scripts/sync-my-notion-skills.mjs --check",
