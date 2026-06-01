@@ -68,7 +68,7 @@ export const documentReadTool: AgentTool = {
 export const documentWriteTool: AgentTool = {
   name: "document_write",
   description:
-    "创建新的 My-Notion 文档。当用户明确要求新建文档、整理成新页面、生成会议纪要/计划等内容时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。",
+    "创建新的 My-Notion 文档。当用户明确要求新建文档、整理成新页面、生成会议纪要/计划等内容时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。只生成 Markdown，系统会转换为 BlockNote blocks；不要生成 BlockNote JSON。",
   parameters: {
     type: "object",
     properties: {
@@ -78,7 +78,7 @@ export const documentWriteTool: AgentTool = {
       },
       contentMarkdown: {
         type: "string",
-        description: "新文档 Markdown 内容。",
+        description: "新文档 Markdown 内容。Agent 只生成 Markdown，不生成 BlockNote JSON。",
       },
       parentDocument: {
         type: "string",
@@ -101,7 +101,7 @@ export const documentWriteTool: AgentTool = {
 export const documentUpdateTool: AgentTool = {
   name: "document_update",
   description:
-    "更新已有 My-Notion 文档。可追加或替换当前文档内容，也可改标题。当用户要求修改/追加/重写当前文档时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。",
+    "更新已有 My-Notion 文档。可追加或替换当前文档内容，也可改标题。当用户要求修改/追加/重写当前文档时使用。默认只返回 dry-run 预览和 confirmationRequired，不得直接写入。先读取 contentMarkdown 再基于 Markdown 生成更新；不要生成 BlockNote JSON。",
   parameters: {
     type: "object",
     properties: {
@@ -115,7 +115,7 @@ export const documentUpdateTool: AgentTool = {
       },
       contentMarkdown: {
         type: "string",
-        description: "可选，要追加或替换的 Markdown 内容。",
+        description: "可选，要追加或替换的 Markdown 内容。读取文档后基于 contentMarkdown 二次编辑。",
       },
       mode: {
         type: "string",

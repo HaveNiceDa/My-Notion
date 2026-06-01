@@ -83,6 +83,8 @@ function buildDryRunResult(
     metadata: {
       recoverable: true,
       writeContract: "preview_then_confirm",
+      inputFormat: "markdown",
+      targetFormat: "blocknote-json",
     },
   };
 }

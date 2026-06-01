@@ -54,6 +54,9 @@ Agent 处理登录缺失时：
 - 用户可见回复只保留最终结果，例如文档标题、文档 ID、是否已创建/更新/归档。
 - 调用 CLI 时默认使用 `--format json`；读取正文时使用 `--format markdown`。
 - 长内容先写入临时 Markdown 文件，再用 `--content-file`。
+- Agent 默认只读写 Markdown；系统负责 Markdown <-> BlockNote blocks 双向转换。
+- `docs fetch/export` 返回的 Markdown 是从内部 BlockNote JSON 序列化得到的 Agent 可编辑视图。
+- 不要让 Agent 直接生成或解析 BlockNote JSON。
 - 更新已有文档默认用 `docs update --mode append`。
 - 只有用户明确要求替换全文时，才使用 `--mode overwrite`。
 - 不默认输出 `auth status` JSON、配置路径、token prefix、profile 细节或完整 CLI 原始响应。

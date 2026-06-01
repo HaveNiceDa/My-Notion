@@ -9,6 +9,14 @@ Use this skill when an Agent needs to create, read, search, list, update, import
 
 Before using this skill, ensure `my-notion-shared` authentication guidance is satisfied.
 
+## Content Format Contract
+
+- Agents read and write Markdown only.
+- My-Notion stores editor content as BlockNote JSON internally.
+- The server converts Markdown <-> BlockNote blocks for CLI, Skills, MCP, and Web Agent flows.
+- Use returned `contentMarkdown` as the editable view when modifying existing documents.
+- Do not generate, parse, or ask the user to provide BlockNote JSON.
+
 ## Core Workflow
 
 1. Check CLI setup and authentication silently when needed:
@@ -88,6 +96,8 @@ Markdown content only:
 my-notion docs fetch --id <documentId> --format markdown
 ```
 
+The Markdown returned by `docs fetch` and `docs export` is serialized from the internal BlockNote JSON. Use it for summaries, edits, and update round-trips.
+
 Prefer `--format markdown` when the next step is summarization, rewriting, diffing, or appending content.
 
 ## Import and Export Documents
@@ -104,7 +114,7 @@ Use `docs import` when the user provides a Markdown file that should become a ne
 my-notion docs import --title "Imported Document" --file /tmp/my-notion-doc.md --format json
 ```
 
-For edit-roundtrip workflows, export to a temporary Markdown file, modify the file, then import as a new document or update the original document explicitly.
+For edit-roundtrip workflows, export to a temporary Markdown file, modify the file, then import as a new document or update the original document explicitly. Do not edit internal BlockNote JSON.
 
 ## Search Documents
 
@@ -154,6 +164,8 @@ my-notion docs archive --id <documentId> --format json
 - Prefer temporary Markdown files over shell-escaped inline content for non-trivial documents.
 - Use `--format json` when parsing command output.
 - Use `--format markdown` when reading document bodies for language tasks.
+- Use returned `contentMarkdown` as the source for document updates.
+- Do not generate or parse BlockNote JSON.
 - Keep user-facing output concise: report the action result and document id; do not print auth status, config paths, token prefixes, profile details, or raw CLI JSON unless the user asks.
 - When login is required, share the authorization URL as a clickable Markdown link, e.g. `[打开 My-Notion CLI 授权](https://...)`.
 - Use `docs export --output` for backup, local editing, or handoff to external tools.

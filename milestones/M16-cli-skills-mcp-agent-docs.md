@@ -55,6 +55,7 @@
 ## 关键决策
 
 - CLI / MCP 的当前核心目标是 Agent 写文档，而不是知识库问答。
+- Agent 对外读写文档统一使用 Markdown；服务端负责 Markdown <-> BlockNote blocks 双向转换，BlockNote JSON 仅作为内部编辑器存储格式。
 - MCP 不是替代鉴权机制；MCP STDIO 复用 CLI 配置或环境变量中的 PAT。
 - 写操作必须默认安全：
   - CLI 写命令需要显式调用。
@@ -96,6 +97,7 @@
 ## 关联文档
 
 - `docs/my-notion-cli-release-checklist.md`
+- `docs/agent-document-write-format-strategy.md`
 - `packages/my-notion-skills/README.md`
 - `.trae/documents/my-notion-cli-skills-architecture-plan.md`
 
@@ -106,7 +108,7 @@
 ## 后续规划
 
 - P0 `my-notion config init` / `my-notion install` 初始化闭环：`my-notion config init` 已完成首版，提供面向人和 Agent 的首屏配置状态入口；后续可继续接入更真实的全局 Skills 安装探测和 npm 版本更新提示。
-- P0 Agent 写入格式策略：当前 CLI / Skills 主要让 Agent 输出 Markdown，但 Web 编辑器底层是 BlockNote。需要评估两条路线并形成决策：一是服务端/CLI 增加 Markdown -> BlockNote blocks 转换器，保持 Agent 侧输出简单；二是让 Agent 直接生成受约束的 BlockNote JSON，降低转换损耗但提高 Agent 适配成本。决策时需要重点比较可控性、兼容性、调试成本、错误恢复、未来移动端复用和导入导出一致性。
+- P0 Agent 写入格式策略：已决策为 Markdown <-> BlockNote blocks 双向转换。CLI / Skills / MCP / Web Agent 默认只读写 `contentMarkdown`；服务端负责转换为内部 BlockNote JSON，并在 fetch/export 时序列化回 Agent 可编辑 Markdown。普通 Agent 不直接生成或解析 BlockNote JSON。
 - P0 MCP 模式真实验证：已通过 `pnpm e2e:mcp:client` 使用真实 MCP SDK Client 验证 `my-notion mcp serve --transport stdio` 的发现、认证失败、dry-run、确认链路、错误输出和文档写入体验；README / Skills 已补最小 SDK Client 示例。后续可在更多第三方 MCP Client 中做兼容性体验验证。
 - `kb search`：仅在产品目标需要 Agent 检索知识库再回答/生成时启动。
 - `agent ask --format ndjson`：需要复用 ReAct Loop，并设计 streaming 事件契约。

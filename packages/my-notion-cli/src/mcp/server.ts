@@ -69,6 +69,8 @@ function toDocumentContent(document: DocumentResult) {
   return {
     document,
     markdown: document.contentMarkdown,
+    inputFormat: "markdown",
+    contentFormat: document.contentFormat,
   };
 }
 
@@ -170,6 +172,7 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
               dryRun: true,
               action: "create",
               confirmationRequired: true,
+              targetFormat: "blocknote-json",
               message,
               ...toDocumentContent(createDryRunDocument({ title, contentMarkdown })),
             },
@@ -182,6 +185,7 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
           {
             dryRun: false,
             action: "create",
+            targetFormat: "blocknote-json",
             message: "Document created in My-Notion.",
             ...toDocumentContent(document),
           },
@@ -225,6 +229,8 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
               dryRun: true,
               action: "update",
               confirmationRequired: true,
+              inputFormat: "markdown",
+              targetFormat: "blocknote-json",
               message,
               update: {
                 id,
@@ -247,6 +253,7 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
           {
             dryRun: false,
             action: "update",
+            targetFormat: "blocknote-json",
             message: "Document updated in My-Notion.",
             ...toDocumentContent(document),
           },

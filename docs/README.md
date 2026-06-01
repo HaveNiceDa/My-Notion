@@ -9,6 +9,7 @@
 | [ai-chat-refactor-plan.md](./ai-chat-refactor-plan.md) | Web Agent 当前基线与 M19-M22 下一阶段路线。 |
 | [web-mobile-gap-analysis.md](./web-mobile-gap-analysis.md) | 当前 Web / Mobile 能力差距与后续 backlog。 |
 | [blocknote-ai-editor-refactor-plan.md](./blocknote-ai-editor-refactor-plan.md) | BlockNote 编辑器 AI 的当前重构建议。 |
+| [agent-document-write-format-strategy.md](./agent-document-write-format-strategy.md) | Agent 文档读写格式策略：Markdown <-> BlockNote blocks 双向转换。 |
 | [my-notion-cli-release-checklist.md](./my-notion-cli-release-checklist.md) | `@mynotion/cli` / MCP / Skills 发布检查清单。 |
 
 ## 操作手册

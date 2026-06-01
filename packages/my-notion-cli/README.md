@@ -6,7 +6,7 @@
 
 ## Why My-Notion CLI?
 
-- **Agent-Native**：默认 JSON 输出、稳定错误信息、Markdown 文件输入，便于 Agent 可靠调用。
+- **Agent-Native**：默认 JSON 输出、稳定错误信息、Markdown 读写契约，便于 Agent 可靠调用。
 - **浏览器授权**：使用 Device Flow 登录，不要求用户在聊天中粘贴完整 `mnt_` Token。
 - **线上优先**：默认连接线上 `prod`，本地调试必须显式 `--local`，登录态互不污染。
 - **文档闭环**：覆盖 `create`、`fetch`、`search`、`list`、`update`、`archive`、`import`、`export`。
@@ -101,6 +101,7 @@ Agent 调用规则：
 - 版本检查：先运行 `my-notion update --check --format json`；如需更新，先向用户确认，再运行输出中的 `updateCli` 和 `updateSkills` 命令。
 - 登录缺失：运行 `my-notion auth login --no-open`，只把授权链接和用户码发给用户。
 - 文档写入：优先生成 Markdown 文件，再用 `--content-file` 创建或追加。
+- 文档读取：`docs fetch/export` 返回从 BlockNote JSON 序列化得到的 `contentMarkdown`；Agent 应基于 Markdown 二次编辑，不要解析或生成 BlockNote JSON。
 - 更新文档：默认 `docs update --mode append`；只有用户明确要求替换全文才用 `overwrite`。
 - 用户可见回复：只保留操作结果、文档标题、文档 ID 或必要错误摘要。
 - 不默认展示：完整 CLI JSON、配置路径、token prefix、profile 细节、完整 PAT。
@@ -251,6 +252,13 @@ my-notion mcp serve --transport stdio
 | `my_notion_docs_update` | 更新文档 | `dryRun: true`，默认 append |
 
 MCP 写工具的 dry-run 输出会包含 `confirmationRequired: true`。只有用户明确批准后，Agent 才能把 `dryRun` 改为 `false` 执行真实写入。
+
+文档内容格式契约：
+
+- Agent / CLI / MCP 默认只读写 Markdown。
+- 服务端负责 Markdown <-> BlockNote blocks 双向转换。
+- `content` 是内部 BlockNote JSON string；`contentMarkdown` 是 Agent 可编辑视图。
+- 不要让普通 Agent 直接生成或解析 BlockNote JSON。
 
 真实 MCP Client 验证入口：
 
