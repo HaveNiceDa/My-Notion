@@ -107,7 +107,7 @@ npm 包信息：
 package: @mynotion/cli
 bin:     my-notion
 tag:     beta
-current beta: 0.1.0-beta.0
+current beta: 0.1.0-beta.1
 ```
 
 发布前必须确认：
