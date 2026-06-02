@@ -52,6 +52,8 @@ export function AIChatPanel() {
     modelId,
     setModelId,
     enableThinking,
+    agentMode,
+    setAgentMode,
     sendMessage,
     toolCalls,
     createNewConversation,
@@ -85,6 +87,10 @@ export function AIChatPanel() {
   const handlePromptSelect = useCallback((prompt: string) => {
     setInput(prompt);
   }, [setInput]);
+
+  const handleExecutePlan = useCallback(async (prompt: string) => {
+    await sendMessage([], { inputOverride: prompt, mode: "chat" });
+  }, [sendMessage]);
 
   const convListRef = useRef<HTMLDivElement>(null);
   const convButtonRef = useRef<HTMLButtonElement>(null);
@@ -212,6 +218,7 @@ export function AIChatPanel() {
           toolCalls={toolCalls}
           messagesEndRef={messagesEndRef}
           conversationCreatedAt={conversationCreatedAt}
+          onExecutePlan={handleExecutePlan}
         />
       )}
 
@@ -220,6 +227,8 @@ export function AIChatPanel() {
           input={input}
           onInputChange={handleInputChange}
           onSend={sendMessage}
+          agentMode={agentMode}
+          onAgentModeChange={setAgentMode}
           modelId={modelId}
           onModelChange={setModelId}
           enableThinking={enableThinking}

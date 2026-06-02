@@ -33,7 +33,7 @@
 ## 下一批候选里程碑
 
 - M19 ⏳ 下一步：Planning 基础能力。重点完成 Plan 模式最小闭环：展示计划、确认计划、执行步骤、状态可见。
-- M20 ⏳ 候选：Spec + MCP 扩展。复杂写入前生成结构化规格，Web Agent 安全调用受控 MCP adapter。
+- M20 ⏳ 候选：MCP 扩展。Web Agent 安全调用受控 MCP adapter，并继续遵守确认式写入。
 - M21 ⏳ 候选：韧性与治理。流式重试、Memory 同步状态、Tool 结果契约进一步统一。
 - M22 ⏳ 后置：Harness 回补。Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估。
 - 详细路线见 `docs/ai-chat-refactor-plan.md`。

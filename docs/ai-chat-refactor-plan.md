@@ -9,7 +9,7 @@
 | 模块 | 已完成 | 当前缺口 |
 |---|---|---|
 | 工程基线 | `@notion/web` 已新增 `typecheck` script；`tsconfig` 不再 include `.next/dev` stale types；`build` 和 `typecheck` 可作为基础验证入口 | 后续每轮能力变更继续跑 `typecheck/build/lint` |
-| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace | Plan/Spec 仍未形成产品化确认流 |
+| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace | Plan 模式仍需产品化确认与执行闭环 |
 | Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`、`task_plan` | Web Agent MCP adapter 未做；tool registry 仍主要在 `apps/web` |
 | Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`，LLM 可继续推理 | 业务内 validation error 还可继续逐步补齐更统一的 `summary/sources/metadata` |
 | Memory | `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、写入/编辑/停用后缓存清理与 Qdrant 同步 | embedding 状态可视化、失败重试队列暂缓 |
@@ -41,10 +41,9 @@
 ### P1：产品基础能力
 
 1. **Plan 模式最小闭环**：基于 `task_plan` 做“生成计划 -> 用户确认 -> 步骤执行/状态展示”。
-2. **Spec 模式最小闭环**：复杂写入前先生成结构化规格，用户确认后再调用写类工具。
-3. **Web Agent MCP adapter**：复用现有 CLI/MCP 能力扩展工具生态，但继续遵守确认式写入。
-4. **流式重试**：网络中断时支持自动重试或给出可恢复续跑路径。
-5. **Tool 结果契约细化**：逐步让业务内 validation error 也统一带 `summary/sources/metadata/recoverable`。
+2. **Web Agent MCP adapter**：复用现有 CLI/MCP 能力扩展工具生态，但继续遵守确认式写入。
+3. **流式重试**：网络中断时支持自动重试或给出可恢复续跑路径。
+4. **Tool 结果契约细化**：逐步让业务内 validation error 也统一带 `summary/sources/metadata/recoverable`。
 
 ### P2：治理与体验增强
 
@@ -66,7 +65,7 @@
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
 | M19 | Planning 基础能力 | Plan 模式最小闭环：展示计划、确认计划、执行步骤、状态可见 |
-| M20 | Spec + MCP 扩展 | Spec 确认流可用于复杂写入；Web Agent 能安全调用受控 MCP adapter |
+| M20 | MCP 扩展 | Web Agent 能安全调用受控 MCP adapter，并继续遵守确认式写入 |
 | M21 | 韧性与治理 | 流式重试、Memory 同步状态、Tool 结果契约进一步统一 |
 | M22 | Harness 回补 | Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
 
@@ -75,6 +74,6 @@
 ## 当前建议下一步
 
 1. 先做 **Plan 模式最小闭环**，因为 `task_plan` 已完成，是最直接的基础能力延伸。
-2. 再做 **Spec 模式**，让复杂写入任务更安全、可确认。
-3. 然后做 **Web Agent MCP adapter**，补工具生态。
+2. 然后做 **Web Agent MCP adapter**，补工具生态。
+3. 再补 **流式重试与 Tool 结果契约细化**，提高执行韧性。
 4. 最后回补 Harness、Trace Replay 和真实质量评估。

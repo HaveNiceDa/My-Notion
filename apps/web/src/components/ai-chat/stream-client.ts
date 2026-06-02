@@ -1,5 +1,5 @@
 import { devLog } from "@notion/business/utils";
-import type { AgentStreamEvent } from "./types";
+import type { AgentRunMode, AgentStreamEvent } from "./types";
 import type { AIModelId } from "./models";
 import type { CurrentDocumentContext } from "@/src/lib/store/use-current-document-store";
 
@@ -20,6 +20,7 @@ export interface AgentStreamOptions {
   conversationId: string;
   enableThinking: boolean;
   currentDocument: CurrentDocumentContext | null;
+  mode?: AgentRunMode;
   callbacks: AgentStreamCallbacks;
 }
 
@@ -29,7 +30,7 @@ export interface AgentStreamOptions {
  * 事件类型：text-delta / reasoning-delta / tool-call-start / tool-call-delta / tool-result-delta / tool-call-result / finish / error
  */
 export async function runAgentStream(options: AgentStreamOptions) {
-  const { messages, model, conversationId, enableThinking, currentDocument, callbacks } = options;
+  const { messages, model, conversationId, enableThinking, currentDocument, mode, callbacks } = options;
 
   try {
     const response = await fetch("/api/agent/stream", {
@@ -41,6 +42,7 @@ export async function runAgentStream(options: AgentStreamOptions) {
         conversationId,
         enableThinking,
         currentDocument,
+        mode,
       }),
     });
 

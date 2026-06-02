@@ -104,6 +104,5 @@ pnpm exec playwright test
 截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0-beta.0` 已发布；Web Agent 已具备 ReAct Loop、RAG、Memory MVP、文档读写 dry-run、确认式写入和统一 tool fallback。下一阶段重点是：
 
 - Plan 模式最小闭环：计划生成、用户确认、步骤执行、状态展示。
-- Spec 模式：复杂写入前生成结构化规格。
 - Web Agent MCP adapter：让 Web Agent 安全调用受控 MCP 工具。
 - 流式重试、Tool 结果契约、Trace/Replay、Storybook、Memory/RAG 真实评估后续补齐。

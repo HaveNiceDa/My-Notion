@@ -8,11 +8,17 @@ import { cn } from "@notion/business/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { syncMemoryIndex } from "@/src/lib/agent/memory-sync-client";
-import type { ToolCallResult, KnowledgeSearchDoc } from "./types";
+import type {
+  KnowledgeSearchDoc,
+  TaskPlanStep,
+  TaskPlanToolResult,
+  ToolCallResult,
+} from "./types";
 
 interface ToolCallCardProps {
   toolResult: ToolCallResult;
   messageId?: Id<"aiMessages">;
+  onExecutePlan?: (prompt: string) => Promise<void>;
 }
 
 type RetrievalStrategy = "fast" | "balanced" | "deep";
@@ -123,20 +129,6 @@ interface DocumentWriteToolResult {
   document?: DocumentWritePreview;
   documentWriteStatus?: DocumentWriteStatus;
   savedDocumentId?: string;
-  error?: string;
-}
-
-interface TaskPlanStep {
-  id?: string;
-  title?: string;
-  description?: string;
-  status?: "pending" | "in_progress" | "completed" | "blocked";
-}
-
-interface TaskPlanToolResult {
-  objective?: string;
-  steps?: TaskPlanStep[];
-  summary?: string;
   error?: string;
 }
 
@@ -278,12 +270,48 @@ function DocumentReadResult({ result }: { result: { document?: { id: string; tit
   );
 }
 
-function TaskPlanResult({ result }: { result: TaskPlanToolResult }) {
+function buildPlanExecutionPrompt(
+  result: TaskPlanToolResult,
+  t: ReturnType<typeof useTranslations>,
+): string {
+  const steps = result.steps ?? [];
+  const stepList = steps
+    .map((step, index) => {
+      const description = step.description ? `: ${step.description}` : "";
+      return `${index + 1}. ${step.title ?? t("taskPlanUntitledStep")}${description}`;
+    })
+    .join("\n");
+
+  return [
+    t("planExecutionPromptIntro"),
+    "",
+    `${t("planExecutionPromptObjective")}: ${result.objective ?? ""}`,
+    "",
+    `${t("planExecutionPromptSteps")}:`,
+    stepList,
+  ].join("\n");
+}
+
+function TaskPlanResult({
+  result,
+  onExecutePlan,
+}: {
+  result: TaskPlanToolResult;
+  onExecutePlan?: (prompt: string) => Promise<void>;
+}) {
   const t = useTranslations("AI");
   const steps = result.steps ?? [];
+  const [executionStatus, setExecutionStatus] = useState<"idle" | "starting" | "started">("idle");
 
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  async function handleExecutePlan() {
+    if (!onExecutePlan || steps.length === 0) return;
+    setExecutionStatus("starting");
+    await onExecutePlan(buildPlanExecutionPrompt(result, t));
+    setExecutionStatus("started");
   }
 
   return (
@@ -311,6 +339,25 @@ function TaskPlanResult({ result }: { result: TaskPlanToolResult }) {
           </div>
         </div>
       ))}
+      {onExecutePlan && steps.length > 0 && (
+        <div className="flex items-center gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleExecutePlan}
+            disabled={executionStatus !== "idle"}
+            className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
+          >
+            {executionStatus === "starting"
+              ? t("planExecutionStarting")
+              : executionStatus === "started"
+                ? t("planExecutionStarted")
+                : t("executePlan")}
+          </button>
+          <span className="text-[11px] text-muted-foreground">
+            {executionStatus === "idle" ? t("planConfirmationRequired") : t("planExecutionVisible")}
+          </span>
+        </div>
+      )}
     </div>
   );
 }
@@ -714,7 +761,7 @@ function DocumentWriteResult({
   );
 }
 
-export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
+export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
   const isRunning = toolResult.status === "calling" || toolResult.status === "executing";
@@ -824,7 +871,7 @@ export function ToolCallCard({ toolResult, messageId }: ToolCallCardProps) {
           : t("memoryWritePreview");
     } else if (toolName === "task_plan") {
       const typedResult = result as unknown as TaskPlanToolResult;
-      resultContent = <TaskPlanResult result={typedResult} />;
+      resultContent = <TaskPlanResult result={typedResult} onExecutePlan={onExecutePlan} />;
       resultSummary = typedResult.summary ?? typedResult.objective ?? null;
     }
   }

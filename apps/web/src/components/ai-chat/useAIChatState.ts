@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useAIChatStore } from "@/src/lib/store/use-ai-chat-store";
-import type { ChatMessage, Conversation, ToolCall } from "./types";
+import type { AgentRunMode, ChatMessage, Conversation, ToolCall } from "./types";
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
 import type { useAIChatPersistence } from "./useAIChatPersistence";
@@ -29,6 +29,7 @@ export function useAIChatState(persistence: ReturnType<typeof useAIChatPersisten
   const [enableThinking] = useState(true);
   const [toolCalls, setToolCalls] = useState<ToolCall[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [agentMode, setAgentMode] = useState<AgentRunMode>("chat");
 
   const setModelId = useCallback((id: AIModelId) => {
     setModelIdState(id);
@@ -94,6 +95,7 @@ export function useAIChatState(persistence: ReturnType<typeof useAIChatPersisten
     isLoadingConversations,
     modelId, setModelId,
     enableThinking,
+    agentMode, setAgentMode,
     toolCalls, setToolCalls,
     uploadedImages, setUploadedImages,
     refreshConversations,

@@ -118,7 +118,7 @@ apps/mobile/
 ## 当前重点
 
 - 移动端基础文档与 AI Chat 能力已跑通，并已接入跨端共享业务状态、Convex 数据层和服务端安全代理。
-- 2026-05-31 当前 CLI/Skills/MCP 已发布 beta，项目主线转向 Web Agent 的 Plan/Spec/MCP adapter 产品化；Mobile 近期保持能力基线，后续重点对齐 Web 端 RAG、Tool、正文图片上传和文档树性能。
+- 2026-05-31 当前 CLI/Skills/MCP 已发布 beta，项目主线转向 Web Agent 的 Plan/MCP adapter 产品化；Mobile 近期保持能力基线，后续重点对齐 Web 端 RAG、Tool、正文图片上传和文档树性能。
 - 后续重点包括 Mobile AI 架构统一、知识库 RAG、Tool/Web Search 能力边界、正文图片上传、文档树查询优化、TestFlight/应用商店发布、离线缓存和推送通知。
 
 ## 关联文档

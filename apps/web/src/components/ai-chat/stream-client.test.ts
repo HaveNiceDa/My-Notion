@@ -110,6 +110,35 @@ describe("runAgentStream", () => {
     expect(callbacks.onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it("支持透传 Plan 模式到 Agent stream API", async () => {
+    const callbacks = createCallbacks();
+    const fetchMock = vi.fn().mockResolvedValue(createStreamResponse([
+      JSON.stringify({ type: "finish", model: "deepseek-v4-pro", usage: null }) + "\n",
+    ]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runAgentStream({
+      messages: [{ role: "user", content: "先规划" }],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: true,
+      currentDocument: null,
+      mode: "plan",
+      callbacks,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/agent/stream", expect.objectContaining({
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "先规划" }],
+        modelId: "deepseek-v4-pro",
+        conversationId: "conv-1",
+        enableThinking: true,
+        currentDocument: null,
+        mode: "plan",
+      }),
+    }));
+  });
+
   it("收到 error 事件时上报错误且不触发完成回调", async () => {
     const callbacks = createCallbacks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createStreamResponse([

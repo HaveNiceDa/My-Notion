@@ -25,6 +25,8 @@ export function useAIChat() {
     modelId: state.modelId,
     setModelId: state.setModelId,
     enableThinking: state.enableThinking,
+    agentMode: state.agentMode,
+    setAgentMode: state.setAgentMode,
     toolCalls: state.toolCalls,
     uploadedImages: state.uploadedImages,
     setUploadedImages: state.setUploadedImages,

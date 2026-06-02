@@ -19,6 +19,7 @@ type AgentRequestBody = {
   enableThinking?: boolean;
   conversationId?: string;
   currentDocument?: CurrentDocumentContext | null;
+  mode?: "chat" | "plan";
 };
 
 function getOpenAIClient(): OpenAI {
@@ -50,7 +51,17 @@ async function getAuthenticatedConvexClient(
 function buildSystemMessage(
   hasToolContext: boolean,
   memoryContext?: string,
+  mode: "chat" | "plan" = "chat",
 ): OpenAI.ChatCompletionSystemMessageParam {
+  const planModeInstruction = mode === "plan"
+    ? [
+      "The user is asking for a plan. You must call the task_plan tool exactly once before the final answer.",
+      "Do not execute the plan yet. Do not call write tools, memory write, or any irreversible operation in plan mode.",
+      "Make the plan concrete and ordered. Each step should be independently executable and have a clear title.",
+      "After calling task_plan, ask the user to review and confirm the plan before execution.",
+    ].join("\n")
+    : "";
+
   return {
     role: "system",
     content: [
@@ -60,6 +71,7 @@ function buildSystemMessage(
         ? "When the user's question requires information from multiple sources, call multiple tools in the same response instead of making separate calls. For example, if the user asks about both their notes and current events, call knowledge_search and web_search together."
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
       "Keep your answers concise and well-structured. Avoid overly long responses.",
+      planModeInstruction,
       memoryContext
         ? `Relevant long-term memories for this user:\n${memoryContext}\nUse these memories as soft context. The current user instruction always has higher priority.`
         : "",
@@ -149,6 +161,7 @@ export async function POST(req: NextRequest) {
 
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const enableThinking = Boolean(body.enableThinking);
+    const mode = body.mode === "plan" ? "plan" : "chat";
     const tracer = new AgentTracer({
       baseMetadata: {
         route: "/api/agent/stream",
@@ -165,7 +178,10 @@ export async function POST(req: NextRequest) {
     const responseId = `assistant-${Date.now()}`;
 
     // 构建可用 tool 列表和映射
-    const availableTools = buildAvailableTools(body.currentDocument);
+    // Plan 模式只暴露 task_plan，避免模型在用户确认前直接执行写入类工具。
+    const availableTools = buildAvailableTools(body.currentDocument).filter((tool) =>
+      mode === "plan" ? tool.name === "task_plan" : true,
+    );
     const toolMap = new Map(availableTools.map((t) => [t.name, t]));
     const openaiTools: OpenAI.ChatCompletionTool[] = availableTools.map((t) => ({
       type: "function" as const,
@@ -179,7 +195,7 @@ export async function POST(req: NextRequest) {
     });
 
     const allMessages: OpenAI.ChatCompletionMessageParam[] = [
-      buildSystemMessage(availableTools.length > 0, memoryContext),
+      buildSystemMessage(availableTools.length > 0, memoryContext, mode),
       ...messages,
     ];
 

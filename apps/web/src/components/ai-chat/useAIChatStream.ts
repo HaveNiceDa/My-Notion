@@ -4,7 +4,7 @@ import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
-import type { ChatMessage, ToolCallResult } from "./types";
+import type { AgentRunMode, ChatMessage, ToolCallResult } from "./types";
 import { runAgentStream } from "./stream-client";
 import type { useAIChatPersistence } from "./useAIChatPersistence";
 import type { useAIChatState } from "./useAIChatState";
@@ -24,10 +24,14 @@ export function useAIChatStream(
 
   const handleGetImages = useMemoizedFn(() => state.uploadedImages);
 
-  const sendMessage = useMemoizedFn(async (images: string[] = []) => {
-    if ((!state.input.trim() && images.length === 0) || state.isLoading || !user) return;
+  const sendMessage = useMemoizedFn(async (
+    images: string[] = [],
+    options: { inputOverride?: string; mode?: AgentRunMode } = {},
+  ) => {
+    const currentInput = options.inputOverride ?? state.input;
+    const runMode = options.mode ?? state.agentMode;
+    if ((!currentInput.trim() && images.length === 0) || state.isLoading || !user) return;
 
-    const currentInput = state.input;
     const currentImages = [...images];
 
     const messageContent = { text: currentInput, images: currentImages };
@@ -38,7 +42,9 @@ export function useAIChatStream(
       timestamp: new Date(),
     };
 
-    state.setInput("");
+    if (!options.inputOverride) {
+      state.setInput("");
+    }
     state.setUploadedImages([]);
     state.setIsLoading(true);
     state.setToolCalls([]);
@@ -124,6 +130,7 @@ export function useAIChatStream(
         conversationId: currentConversationId,
         enableThinking: state.enableThinking,
         currentDocument,
+        mode: runMode,
         callbacks: {
           onChunk: (chunk: string) => { currentContent += chunk; scheduleRender(); },
           onReasoningChunk: (chunk: string) => { if (state.enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },

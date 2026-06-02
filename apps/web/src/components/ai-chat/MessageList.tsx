@@ -13,9 +13,10 @@ import { ToolCallCard } from "./ToolCallCard";
 interface MessageItemProps {
   message: ChatMessage;
   activeToolCalls?: ToolCall[];
+  onExecutePlan?: (prompt: string) => Promise<void>;
 }
 
-const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) => {
+const MessageItem = React.memo(({ message, activeToolCalls, onExecutePlan }: MessageItemProps) => {
   const t = useTranslations("AI");
   const [showThinking, setShowThinking] = useState(true);
 
@@ -115,6 +116,7 @@ const MessageItem = React.memo(({ message, activeToolCalls }: MessageItemProps) 
             key={toolResult.id}
             toolResult={toolResult}
             messageId={persistedMessageId}
+            onExecutePlan={toolResult.name === "task_plan" ? onExecutePlan : undefined}
           />
         ))}
       </div>
@@ -263,6 +265,7 @@ interface MessageListProps {
   toolCalls?: ToolCall[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
+  onExecutePlan?: (prompt: string) => Promise<void>;
 }
 
 export const MessageList = React.memo(
@@ -272,6 +275,7 @@ export const MessageList = React.memo(
     toolCalls = [],
     messagesEndRef,
     conversationCreatedAt,
+    onExecutePlan,
   }: MessageListProps) => {
     const t = useTranslations("AI");
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -323,6 +327,7 @@ export const MessageList = React.memo(
             key={message.id}
             message={message}
             activeToolCalls={message.role === "assistant" && message.id === lastAssistantId && !message.toolResults?.length ? toolCalls : undefined}
+            onExecutePlan={onExecutePlan}
           />
         ))}
 

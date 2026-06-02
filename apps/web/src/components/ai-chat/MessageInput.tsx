@@ -3,6 +3,7 @@
 import {
   Send,
   Check,
+  ListChecks,
 } from "lucide-react";
 import { Button } from "@/src/components/ui/button";
 import { Textarea } from "@/src/components/ui/textarea";
@@ -18,11 +19,14 @@ import { memo, useState } from "react";
 import { useMemoizedFn } from "ahooks";
 import { AI_MODELS, MODEL_DISPLAY_NAMES } from "./models";
 import type { AIModelId } from "./models";
+import type { AgentRunMode } from "./types";
 
 interface MessageInputProps {
   input: string;
   onInputChange: (value: string) => void;
   onSend: (images?: string[]) => Promise<void>;
+  agentMode: AgentRunMode;
+  onAgentModeChange: (mode: AgentRunMode) => void;
   modelId: AIModelId;
   onModelChange: (id: AIModelId) => void;
   enableThinking: boolean;
@@ -34,6 +38,8 @@ const MessageInput = memo(
     input,
     onInputChange,
     onSend,
+    agentMode,
+    onAgentModeChange,
     modelId,
     onModelChange,
     isSending,
@@ -80,6 +86,21 @@ const MessageInput = memo(
         />
         <div className="flex items-center justify-between -ml-1 mt-1">
           <div className="flex items-center gap-0.5">
+            <Button
+              type="button"
+              className={cn(
+                "h-7 rounded-md px-2 text-xs font-medium transition-colors",
+                agentMode === "plan"
+                  ? "bg-primary/10 text-primary hover:bg-primary/15"
+                  : "bg-transparent hover:bg-muted text-muted-foreground",
+              )}
+              variant="ghost"
+              disabled={isSending}
+              onClick={() => onAgentModeChange(agentMode === "plan" ? "chat" : "plan")}
+            >
+              <ListChecks className="mr-1 h-3.5 w-3.5" />
+              {agentMode === "plan" ? t("planModeOn") : t("planMode")}
+            </Button>
             <Popover open={modelOpen} onOpenChange={setModelOpen}>
               <PopoverTrigger asChild>
                 <Button

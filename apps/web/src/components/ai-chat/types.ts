@@ -18,6 +18,22 @@ export interface ToolCallResult {
   duplicateCount?: number;
 }
 
+export type AgentRunMode = "chat" | "plan";
+
+export interface TaskPlanStep {
+  id?: string;
+  title?: string;
+  description?: string;
+  status?: "pending" | "in_progress" | "completed" | "blocked";
+}
+
+export interface TaskPlanToolResult {
+  objective?: string;
+  steps?: TaskPlanStep[];
+  summary?: string;
+  error?: string;
+}
+
 export interface ChatMessage {
   id: string;
   content: string;

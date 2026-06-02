@@ -10,6 +10,8 @@ vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
     const translations: Record<string, string> = {
       useAIToHandleTasks: "使用 AI 处理各种任务",
+      planMode: "计划",
+      planModeOn: "计划中",
       knowledgeSearchTool: "知识库检索",
       documentWriteTool: "文档写入",
       documentWritePreview: "文档写入预览",
@@ -18,6 +20,14 @@ vi.mock("next-intl", () => ({
       taskPlanPending: "待处理",
       taskPlanInProgress: "进行中",
       taskPlanCompleted: "已完成",
+      executePlan: "确认执行",
+      planConfirmationRequired: "确认后会按计划继续执行",
+      planExecutionStarting: "启动中...",
+      planExecutionStarted: "已开始执行",
+      planExecutionVisible: "执行过程会在新的回复中展示",
+      planExecutionPromptIntro: "请按以下已确认的计划开始执行。",
+      planExecutionPromptObjective: "目标",
+      planExecutionPromptSteps: "步骤",
       retrievalStrategyLabel: "检索策略",
       retrievalStrategyBalanced: "均衡",
       retrievalRecallStats: `召回 semantic=${values?.semantic ?? 0} keyword=${values?.keyword ?? 0} metadata=${values?.metadata ?? 0} fused=${values?.fused ?? 0}`,
@@ -59,6 +69,8 @@ describe("AI Chat 组件渲染", () => {
         input: "  ",
         onInputChange: vi.fn(),
         onSend: vi.fn(),
+        agentMode: "chat",
+        onAgentModeChange: vi.fn(),
         modelId: "deepseek-v4-pro",
         onModelChange: vi.fn(),
         enableThinking: true,
@@ -67,6 +79,7 @@ describe("AI Chat 组件渲染", () => {
     );
 
     expect(html).toContain("使用 AI 处理各种任务");
+    expect(html).toContain("计划");
     expect(html).toContain("DeepSeek V4 Pro");
     expect(html).toContain("disabled");
   });
@@ -77,6 +90,8 @@ describe("AI Chat 组件渲染", () => {
         input: "帮我总结",
         onInputChange: vi.fn(),
         onSend: vi.fn(),
+        agentMode: "plan",
+        onAgentModeChange: vi.fn(),
         modelId: "qwen3.6-27b",
         onModelChange: vi.fn(),
         enableThinking: true,
@@ -85,6 +100,7 @@ describe("AI Chat 组件渲染", () => {
     );
 
     expect(html).toContain("Qwen 3.6 27B");
+    expect(html).toContain("计划中");
     expect(html).toContain("animate-spin");
     expect(html).toContain("disabled");
   });
@@ -220,5 +236,27 @@ describe("AI Chat 组件渲染", () => {
     expect(html).toContain("已完成");
     expect(html).toContain("补 task_plan");
     expect(html).toContain("进行中");
+  });
+
+  it("ToolCallCard 在 task_plan 上展示确认执行入口", () => {
+    const html = render(
+      React.createElement(ToolCallCard, {
+        toolResult: {
+          id: "plan-2",
+          name: "task_plan",
+          status: "completed",
+          result: {
+            objective: "执行计划",
+            steps: [
+              { title: "第一步", status: "pending" },
+            ],
+          },
+        },
+        onExecutePlan: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("确认执行");
+    expect(html).toContain("确认后会按计划继续执行");
   });
 });
