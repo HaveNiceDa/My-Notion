@@ -9,7 +9,7 @@
 | 模块 | 已完成 | 当前缺口 |
 |---|---|---|
 | 工程基线 | `@notion/web` 已新增 `typecheck` script；`tsconfig` 不再 include `.next/dev` stale types；`build` 和 `typecheck` 可作为基础验证入口 | 后续每轮能力变更继续跑 `typecheck/build/lint` |
-| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace | Plan 模式仍需产品化确认与执行闭环 |
+| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace；Plan 模式最小闭环已完成 | 步骤级执行进度持久化和恢复可后续增强 |
 | Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`、`task_plan` | Web Agent MCP adapter 未做；tool registry 仍主要在 `apps/web` |
 | Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`，LLM 可继续推理 | 业务内 validation error 还可继续逐步补齐更统一的 `summary/sources/metadata` |
 | Memory | `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、写入/编辑/停用后缓存清理与 Qdrant 同步 | embedding 状态可视化、失败重试队列暂缓 |
@@ -21,8 +21,8 @@
 ## 已完成能力压缩清单
 
 - **UI/组件**：AI Chat sidebar、组件拆分、错误边界、自动滚动优化、Tool 卡片上下位置规则、重复只读工具折叠。
-- **Agent 基础**：ReAct loop、DashScope thinking 兼容、context compression、rate limiting、tool result cache、Agent trace console 观测。
-- **工具生态**：知识库检索、联网搜索、网页抽取、文档搜索/读取/写入/更新、长期记忆读取/写入、任务计划生成。
+- **Agent 基础**：ReAct loop、DashScope thinking 兼容、context compression、rate limiting、tool result cache、Agent trace console 观测、Plan 模式最小闭环。
+- **工具生态**：知识库检索、联网搜索、网页抽取、文档搜索/读取/写入/更新、长期记忆读取/写入、任务计划生成与确认执行。
 - **安全写入**：所有写类 tool 遵循“预览 -> 用户确认 -> 落库”，默认 dry-run 或 confirmationRequired。
 - **验证入口**：Web unit、Agent unit、`eval:retrieval`、`ci:ai-smoke`、无 secrets 版 GitHub Actions。
 
@@ -37,13 +37,14 @@
 | typecheck/build 基线 | ✅ 完成 | `pnpm --filter @notion/web typecheck` 和 `pnpm --filter @notion/web build` 可跑通 |
 | Tool 失败降级统一契约 | ✅ 完成 | tool 抛异常时统一转为 recoverable 结构化结果，ReAct 不因单个工具失败中断 |
 | `task_plan` tool | ✅ 完成 | Agent 可生成多步骤计划；前端 Tool 卡片可展示步骤和状态；已纳入 registry 和测试 |
+| Plan 模式最小闭环 | ✅ 完成 | Plan 模式只生成 `task_plan`；用户确认后按计划以 Chat 模式继续执行 |
 
 ### P1：产品基础能力
 
-1. **Plan 模式最小闭环**：基于 `task_plan` 做“生成计划 -> 用户确认 -> 步骤执行/状态展示”。
-2. **Web Agent MCP adapter**：复用现有 CLI/MCP 能力扩展工具生态，但继续遵守确认式写入。
-3. **流式重试**：网络中断时支持自动重试或给出可恢复续跑路径。
-4. **Tool 结果契约细化**：逐步让业务内 validation error 也统一带 `summary/sources/metadata/recoverable`。
+1. **Web Agent MCP adapter**：复用现有 CLI/MCP 能力扩展工具生态，但继续遵守确认式写入。
+2. **流式重试**：网络中断时支持自动重试或给出可恢复续跑路径。
+3. **Tool 结果契约细化**：逐步让业务内 validation error 也统一带 `summary/sources/metadata/recoverable`。
+4. **Plan 状态增强**：按需补步骤级执行事件、执行状态持久化和跨刷新恢复。
 
 ### P2：治理与体验增强
 
@@ -64,8 +65,8 @@
 
 | 里程碑 | 范围 | 完成标准 |
 |---|---|---|
-| M19 | Planning 基础能力 | Plan 模式最小闭环：展示计划、确认计划、执行步骤、状态可见 |
-| M20 | MCP 扩展 | Web Agent 能安全调用受控 MCP adapter，并继续遵守确认式写入 |
+| M19 | Planning 基础能力 | ✅ 已完成：展示计划、确认计划、执行步骤、状态可见 |
+| M20 | MCP 扩展 | ⏳ 下一步：Web Agent 能安全调用受控 MCP adapter，并继续遵守确认式写入 |
 | M21 | 韧性与治理 | 流式重试、Memory 同步状态、Tool 结果契约进一步统一 |
 | M22 | Harness 回补 | Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
 
@@ -73,7 +74,7 @@
 
 ## 当前建议下一步
 
-1. 先做 **Plan 模式最小闭环**，因为 `task_plan` 已完成，是最直接的基础能力延伸。
-2. 然后做 **Web Agent MCP adapter**，补工具生态。
-3. 再补 **流式重试与 Tool 结果契约细化**，提高执行韧性。
+1. 先做 **Web Agent MCP adapter**，补工具生态。
+2. 再补 **流式重试与 Tool 结果契约细化**，提高执行韧性。
+3. 按真实使用反馈补 **Plan 状态增强**。
 4. 最后回补 Harness、Trace Replay 和真实质量评估。

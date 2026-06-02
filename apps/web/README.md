@@ -59,7 +59,7 @@
 - **确认式写入**：文档写入、更新和记忆写入遵循预览/确认流程，写类工具默认 dry-run 或 `confirmationRequired`，避免 Agent 直接落库。
 - **流式协议**：通过 NDJSON 事件流输出 text delta、tool call、tool result、thinking、finish 等状态。
 - **稳定性**：包含环境变量启动校验、限流、工具结果缓存、长上下文压缩、统一 tool fallback、Qdrant 离线降级。
-- **当前缺口**：`task_plan` 已是基础工具和 UI 展示能力，完整 Plan 模式仍需补“生成计划 -> 用户确认 -> 步骤执行/状态展示”闭环。
+- **Plan 模式**：已基于 `task_plan` 完成最小闭环，支持生成计划、用户确认、确认后执行和状态展示；后续可按需增强步骤级状态持久化。
 
 ### CLI / Agent 生态
 

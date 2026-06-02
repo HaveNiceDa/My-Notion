@@ -132,7 +132,7 @@ pnpm exec playwright test
 
 ## 当前主线
 
-- P0：Plan 模式最小闭环，基于 `task_plan` 完成计划生成、用户确认、步骤执行和状态展示。
-- P1：Web Agent MCP adapter、流式重试和 Tool 结果契约细化。
+- P0：Plan 模式最小闭环已完成，基于 `task_plan` 支持计划生成、用户确认、确认后执行和状态展示。
+- P1：Web Agent MCP adapter、流式重试、Tool 结果契约细化和 Plan 状态增强。
 - P2：Memory/RAG 质量评估、Trace Replay、Storybook 和 Mobile AI/RAG 对齐。
 - 发布：[`@mynotion/cli@0.1.0-beta.0`](https://www.npmjs.com/package/@mynotion/cli) 已发布；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
