@@ -80,6 +80,7 @@ export function buildMemoryMetrics(active: AgentMemoryItem[], pending: AgentMemo
     reviewDueCount: active.filter((memory) => memory.reviewDueAt && memory.reviewDueAt <= now).length,
     sensitiveCount: active.filter((memory) => memory.privacy === "sensitive").length,
     recentlyUsedCount: active.filter((memory) => memory.lastUsedAt).length,
+    autoExtractedPendingCount: pending.filter((memory) => memory.source === "auto_extracted").length,
   };
 }
 

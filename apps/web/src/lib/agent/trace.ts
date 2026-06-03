@@ -11,7 +11,13 @@ export type AgentTraceEventType =
   | "tool_start"
   | "tool_end"
   | "tool_error"
-  | "tool_unknown";
+  | "tool_unknown"
+  | "memory_injected"
+  | "memory_search"
+  | "memory_proposed"
+  | "memory_committed"
+  | "memory_extraction_skipped"
+  | "memory_extraction_completed";
 
 export interface AgentTraceEvent {
   traceId: string;

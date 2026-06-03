@@ -5,6 +5,13 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
 import { Textarea } from "@/src/components/ui/textarea";
 import type { MemoryEditState, MemoryType } from "./types";
 import { MEMORY_TYPES } from "./utils";
@@ -29,19 +36,21 @@ export function MemoryForm({
   return (
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-[220px_160px]">
-        <select
+        <Select
           value={state.type}
-          onChange={(event) =>
-            onStateChange({ ...state, type: event.target.value as MemoryType })
-          }
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onValueChange={(value) => onStateChange({ ...state, type: value as MemoryType })}
         >
-          {MEMORY_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {t(`type_${type}`)}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {MEMORY_TYPES.map((type) => (
+              <SelectItem key={type} value={type}>
+                {t(`type_${type}`)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Input
           type="number"
           min="0"

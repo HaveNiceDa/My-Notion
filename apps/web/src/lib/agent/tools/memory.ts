@@ -101,6 +101,14 @@ export async function executeMemorySearch(
     const normalizedMemories = retrieval.memories.map((memory) =>
       normalizeMemoryResult(memory as unknown as Record<string, unknown>, { includeEvidence }),
     );
+    context.trace?.mark("memory_search", {
+      toolName: options.compatToolName ?? "memory_search",
+      queryLength: query?.length ?? 0,
+      resultCount: normalizedMemories.length,
+      retrieval: retrieval.retrieval,
+      memoryIds: normalizedMemories.map((memory) => memory.id).filter(Boolean),
+      unavailable: retrieval.unavailable,
+    });
 
     return {
       query,
@@ -161,6 +169,14 @@ export async function executeMemoryWrite(
         evidenceText: preview.evidenceText,
       });
       invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read", "memory_search"] });
+      context.trace?.mark("memory_proposed", {
+        proposalId: String(proposal.id),
+        source: preview.source,
+        type: preview.type,
+        contentLength: preview.content.length,
+        possibleDuplicateCount: proposal.possibleDuplicateIds.length,
+        possibleConflictCount: proposal.possibleConflictIds.length,
+      });
 
       return {
         dryRun: true,
@@ -183,6 +199,13 @@ export async function executeMemoryWrite(
     });
     invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read", "memory_search"] });
     const syncWarning = await syncMemorySafely(context.userId, memory);
+    context.trace?.mark("memory_committed", {
+      memoryId: String(memory.id),
+      source: preview.source,
+      type: preview.type,
+      contentLength: preview.content.length,
+      syncWarning,
+    });
 
     return {
       dryRun: false,

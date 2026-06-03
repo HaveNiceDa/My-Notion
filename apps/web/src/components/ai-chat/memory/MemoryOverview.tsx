@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, Clock, DatabaseZap, EyeOff, Inbox } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, DatabaseZap, EyeOff, Inbox, WandSparkles } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import type { AgentMemoryItem } from "./types";
@@ -21,10 +21,11 @@ export function MemoryOverview({ activeMemories, pendingMemories }: MemoryOvervi
     { key: "reviewDue", label: t("overviewReviewDue"), value: metrics.reviewDueCount, icon: Clock },
     { key: "sensitive", label: t("overviewSensitive"), value: metrics.sensitiveCount, icon: EyeOff },
     { key: "recentlyUsed", label: t("overviewRecentlyUsed"), value: metrics.recentlyUsedCount, icon: DatabaseZap },
+    { key: "autoExtracted", label: t("overviewAutoExtracted"), value: metrics.autoExtractedPendingCount, icon: WandSparkles },
   ];
 
   return (
-    <section className="grid gap-3 md:grid-cols-3">
+    <section className="grid gap-3 md:grid-cols-4">
       {cards.map((card) => {
         const Icon = card.icon;
         return (

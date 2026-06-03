@@ -38,6 +38,11 @@ const steps = [
     command: "pnpm",
     args: ["eval:retrieval"],
   },
+  {
+    name: "Memory eval",
+    command: "pnpm",
+    args: ["eval:memory"],
+  },
 ];
 
 async function main() {

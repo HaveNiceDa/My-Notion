@@ -1,5 +1,11 @@
 # M27 Agent Memory Eval And Auto Extraction
 
+## 状态
+
+- 状态：已完成
+- 完成时间：2026-06-03
+- 过程记录：`progress/20260603-195302.md`
+
 ## 目标
 
 在 M23-M26 建立可治理 Memory 基础后，引入 Memory Eval、Trace 观测和受控自动提取，让 Agent 能从会话中自动提出有价值的记忆候选，但默认进入 Inbox，不直接污染 active memory。
@@ -234,4 +240,3 @@ Schema foundation
 - Memory/RAG 真实质量评估。
 - Web Agent MCP adapter 与 Memory policy 联动。
 - Mobile AI/RAG 对齐。
-

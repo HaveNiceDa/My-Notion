@@ -201,6 +201,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       const toolContextWithStream: ToolContext = {
         ...toolContext,
         stream: { controller, encoder, toolCallId: toolCall.id },
+        trace,
       };
 
       // tool 执行失败时返回 error 作为 result，LLM 可据此决定是否重试

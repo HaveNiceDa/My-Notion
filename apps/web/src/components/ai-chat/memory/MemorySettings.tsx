@@ -3,6 +3,8 @@
 import { Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 
+import { Checkbox } from "@/src/components/ui/checkbox";
+
 const SETTINGS = [
   "settingAutoMode",
   "settingSensitivePolicy",
@@ -21,6 +23,13 @@ export function MemorySettings() {
         <h2 className="text-sm font-medium">{t("settingsTitle")}</h2>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">{t("settingsDescription")}</p>
+      <div className="mb-3 flex items-start gap-3 rounded-lg border bg-primary/5 p-3">
+        <Checkbox checked disabled aria-label={t("autoExtractSwitchLabel")} className="mt-0.5" />
+        <div>
+          <div className="text-sm font-medium">{t("autoExtractSwitchLabel")}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{t("autoExtractSwitchDescription")}</div>
+        </div>
+      </div>
       <div className="grid gap-3 md:grid-cols-2">
         {SETTINGS.map((key) => (
           <div key={key} className="rounded-lg border bg-muted/20 p-3">

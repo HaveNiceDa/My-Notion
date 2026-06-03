@@ -6,6 +6,13 @@ import { useTranslations } from "next-intl";
 import { Button } from "@/src/components/ui/button";
 import { Input } from "@/src/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/src/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -101,69 +108,81 @@ export function MemoryActiveList({
               className="pl-9"
             />
           </div>
-          <select
+          <Select
             value={filters.type}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, type: event.target.value as "all" | MemoryType })
-            }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            onValueChange={(value) => onFiltersChange({ ...filters, type: value as "all" | MemoryType })}
           >
-            <option value="all">{t("typeAll")}</option>
-            {MEMORY_TYPES.map((type) => (
-              <option key={type} value={type}>{t(`type_${type}`)}</option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("typeAll")}</SelectItem>
+              {MEMORY_TYPES.map((type) => (
+                <SelectItem key={type} value={type}>{t(`type_${type}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.kind}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, kind: event.target.value as "all" | MemoryKind })
-            }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            onValueChange={(value) => onFiltersChange({ ...filters, kind: value as "all" | MemoryKind })}
           >
-            <option value="all">{t("kindAll")}</option>
-            {MEMORY_KINDS.map((kind) => (
-              <option key={kind} value={kind}>{kind}</option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("kindAll")}</SelectItem>
+              {MEMORY_KINDS.map((kind) => (
+                <SelectItem key={kind} value={kind}>{kind}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.embeddingStatus}
-            onChange={(event) =>
+            onValueChange={(value) =>
               onFiltersChange({
                 ...filters,
-                embeddingStatus: event.target.value as "all" | MemoryEmbeddingStatus,
+                embeddingStatus: value as "all" | MemoryEmbeddingStatus,
               })
             }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
           >
-            <option value="all">{t("embeddingAll")}</option>
-            {EMBEDDING_STATUSES.map((status) => (
-              <option key={status} value={status}>{t(`embedding_${status}`)}</option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("embeddingAll")}</SelectItem>
+              {EMBEDDING_STATUSES.map((status) => (
+                <SelectItem key={status} value={status}>{t(`embedding_${status}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.privacy}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, privacy: event.target.value as "all" | MemoryPrivacy })
-            }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            onValueChange={(value) => onFiltersChange({ ...filters, privacy: value as "all" | MemoryPrivacy })}
           >
-            <option value="all">{t("privacyAll")}</option>
-            {PRIVACY_LEVELS.map((privacy) => (
-              <option key={privacy} value={privacy}>{t(`privacy_${privacy}`)}</option>
-            ))}
-          </select>
-          <select
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t("privacyAll")}</SelectItem>
+              {PRIVACY_LEVELS.map((privacy) => (
+                <SelectItem key={privacy} value={privacy}>{t(`privacy_${privacy}`)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
             value={filters.sort}
-            onChange={(event) =>
-              onFiltersChange({ ...filters, sort: event.target.value as ActiveMemoryFilters["sort"] })
-            }
-            className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+            onValueChange={(value) => onFiltersChange({ ...filters, sort: value as ActiveMemoryFilters["sort"] })}
           >
-            <option value="updated_desc">{t("sortUpdated")}</option>
-            <option value="importance_desc">{t("sortImportance")}</option>
-            <option value="usage_desc">{t("sortUsage")}</option>
-            <option value="review_due">{t("sortReviewDue")}</option>
-          </select>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated_desc">{t("sortUpdated")}</SelectItem>
+              <SelectItem value="importance_desc">{t("sortImportance")}</SelectItem>
+              <SelectItem value="usage_desc">{t("sortUsage")}</SelectItem>
+              <SelectItem value="review_due">{t("sortReviewDue")}</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

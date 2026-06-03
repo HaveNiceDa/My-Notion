@@ -11,6 +11,11 @@ import { enqueueEvent } from "@/src/lib/agent/stream";
 import { compressContext } from "@/src/lib/agent/context-compression";
 import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
 import { AgentTracer, getErrorMessage } from "@/src/lib/agent/trace";
+import {
+  extractMemoryCandidates,
+  proposeExtractedMemories,
+} from "@/src/lib/agent/memory-extractor";
+import type { MemoryExtractionMessage } from "@/src/lib/agent/memory-extractor";
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -19,6 +24,7 @@ type AgentRequestBody = {
   conversationId?: string;
   currentDocument?: CurrentDocumentContext | null;
   mode?: "chat" | "plan";
+  autoExtractMemories?: boolean;
 };
 
 function getOpenAIClient(): OpenAI {
@@ -181,6 +187,8 @@ export async function POST(req: NextRequest) {
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const enableThinking = Boolean(body.enableThinking);
     const mode = body.mode === "plan" ? "plan" : "chat";
+    const autoExtractMemories = mode === "chat"
+      && (body.autoExtractMemories === true || process.env.AGENT_MEMORY_AUTO_EXTRACT === "1");
     const tracer = new AgentTracer({
       baseMetadata: {
         route: "/api/agent/stream",
@@ -193,6 +201,13 @@ export async function POST(req: NextRequest) {
     const convex = await getAuthenticatedConvexClient(getToken);
     const latestUserText = extractLatestUserText(messages);
     const instructionMemory = await buildInstructionMemoryContext({ convex, userId });
+    if (instructionMemory.injectedMemoryIds.length > 0) {
+      tracer.mark("memory_injected", {
+        memoryIds: instructionMemory.injectedMemoryIds,
+        memoryCount: instructionMemory.injectedMemoryIds.length,
+        contentLength: instructionMemory.text?.length ?? 0,
+      });
+    }
     const encoder = new TextEncoder();
     const responseId = `assistant-${Date.now()}`;
 
@@ -240,6 +255,20 @@ export async function POST(req: NextRequest) {
             responseId,
             trace: tracer,
           });
+          const extraction = extractMemoryCandidates({
+            enabled: autoExtractMemories,
+            userId,
+            conversationId: body.conversationId,
+            messages: toMemoryExtractionMessages(messages),
+            currentDocument: body.currentDocument,
+          });
+          await proposeExtractedMemories({
+            convex,
+            userId,
+            conversationId: body.conversationId,
+            extraction,
+            trace: tracer,
+          });
           enqueueEvent(controller, encoder, { type: "finish", model, usage: null });
           tracer.event("run_end", elapsedSince(runStartedAt), {
             compressedMessageCount: compressedMessages.length,
@@ -277,4 +306,20 @@ export async function POST(req: NextRequest) {
 function elapsedSince(startedAt: number): number {
   const current = typeof performance !== "undefined" ? performance.now() : Date.now();
   return Math.round(current - startedAt);
+}
+
+function toMemoryExtractionMessages(
+  messages: OpenAI.ChatCompletionMessageParam[],
+): MemoryExtractionMessage[] {
+  return messages.flatMap((message) => {
+    if (
+      message.role !== "system"
+      && message.role !== "user"
+      && message.role !== "assistant"
+      && message.role !== "tool"
+    ) {
+      return [];
+    }
+    return [{ role: message.role, content: message.content }];
+  });
 }

@@ -1,4 +1,5 @@
 import type { ConvexHttpClient } from "convex/browser";
+import type { AgentTracer } from "../trace";
 
 // 当前文档上下文，由前端传入，表示用户正在查看的文档
 export interface CurrentDocumentContext {
@@ -21,6 +22,7 @@ export interface ToolContext {
   currentDocument?: CurrentDocumentContext | null;
   stream?: ToolStreamOutput;
   convex?: ConvexHttpClient;
+  trace?: AgentTracer;
 }
 
 // Tool 失败时统一返回可恢复结果，避免 ReAct 循环因异常中断。
