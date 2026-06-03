@@ -23,7 +23,7 @@ export function createInsertWhiteboardItem({
 
   return {
     title: isZh ? "画板" : "Whiteboard",
-    aliases: ["whiteboard", "board", "draw", "excalidraw", "绘图"],
+    aliases: ["画板", "白板", "绘图", "whiteboard", "board", "draw", "drawing", "excalidraw"],
     group: isZh ? "媒体" : "Media",
     icon: <Shapes className="h-4 w-4" />,
     onItemClick: async () => {
