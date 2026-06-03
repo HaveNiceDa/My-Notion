@@ -3,7 +3,6 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL, getActualModelId } from "@notion/ai/config";
-import { retrieveRelevantMemories } from "@notion/ai/server";
 import { api } from "@/convex/_generated/api";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
@@ -50,7 +49,7 @@ async function getAuthenticatedConvexClient(
 
 function buildSystemMessage(
   hasToolContext: boolean,
-  memoryContext?: string,
+  instructionMemoryContext?: string,
   mode: "chat" | "plan" = "chat",
 ): OpenAI.ChatCompletionSystemMessageParam {
   const planModeInstruction = mode === "plan"
@@ -72,8 +71,8 @@ function buildSystemMessage(
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
       "Keep your answers concise and well-structured. Avoid overly long responses.",
       planModeInstruction,
-      memoryContext
-        ? `Relevant long-term memories for this user:\n${memoryContext}\nUse these memories as soft context. The current user instruction always has higher priority.`
+      instructionMemoryContext
+        ? `Stable long-term instruction memories for this user:\n${instructionMemoryContext}\nTreat these as compact soft rules. The current user instruction and explicit system safety constraints still have higher priority. Use memory_search for deeper semantic, episodic, or procedural memories when needed.`
         : "",
     ].join("\n"),
   };
@@ -97,33 +96,53 @@ function extractLatestUserText(messages: OpenAI.ChatCompletionMessageParam[]): s
   return "";
 }
 
-async function buildMemoryContext(options: {
+interface InstructionMemoryContext {
+  text?: string;
+  injectedMemoryIds: string[];
+}
+
+async function buildInstructionMemoryContext(options: {
   convex: ConvexHttpClient | null;
   userId: string;
-  query: string;
-}): Promise<string | undefined> {
-  if (!options.convex || !options.query.trim()) return undefined;
+}): Promise<InstructionMemoryContext> {
+  if (!options.convex) return { injectedMemoryIds: [] };
 
   try {
     const memories = await options.convex.query(api.agentMemories.listAgentMemories, {
       limit: 100,
     });
-    const result = await retrieveRelevantMemories({
-      userId: options.userId,
-      query: options.query,
-      memories,
-      topK: 6,
-    });
-    if (result.memories.length === 0) return undefined;
-
-    return result.memories
-      .map((memory, index) =>
-        `${index + 1}. [${memory.type}] ${memory.content}${memory.reason ? ` (reason: ${memory.reason})` : ""}`,
+    const instructionMemories = memories
+      .filter((memory) =>
+        memory.kind === "instruction"
+        && memory.status === "active"
+        && memory.privacy !== "sensitive"
+        && memory.scopeLevel === "user"
+        && memory.scopeKey === options.userId,
       )
-      .join("\n");
+      .sort((a, b) => {
+        const importanceDelta = (b.importance ?? 0.5) - (a.importance ?? 0.5);
+        if (importanceDelta !== 0) return importanceDelta;
+        return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+      })
+      .slice(0, 6);
+    if (instructionMemories.length === 0) return { injectedMemoryIds: [] };
+
+    const lines: string[] = [];
+    let usedChars = 0;
+    for (const memory of instructionMemories) {
+      const line = `- [${memory.category ?? memory.type}] ${memory.summary || memory.content}`;
+      if (usedChars + line.length > 1_200) break;
+      lines.push(line);
+      usedChars += line.length;
+    }
+
+    return {
+      text: lines.join("\n"),
+      injectedMemoryIds: instructionMemories.map((memory) => String(memory.id)),
+    };
   } catch (error) {
-    console.warn("[Agent Memory] Failed to build memory context:", error);
-    return undefined;
+    console.warn("[Agent Memory] Failed to build instruction memory context:", error);
+    return { injectedMemoryIds: [] };
   }
 }
 
@@ -173,7 +192,7 @@ export async function POST(req: NextRequest) {
     const openai = getOpenAIClient();
     const convex = await getAuthenticatedConvexClient(getToken);
     const latestUserText = extractLatestUserText(messages);
-    const memoryContext = await buildMemoryContext({ convex, userId, query: latestUserText });
+    const instructionMemory = await buildInstructionMemoryContext({ convex, userId });
     const encoder = new TextEncoder();
     const responseId = `assistant-${Date.now()}`;
 
@@ -190,12 +209,14 @@ export async function POST(req: NextRequest) {
     tracer.mark("run_start", {
       inputMessageCount: messages.length,
       hasCurrentDocument: Boolean(body.currentDocument?.id),
-      memoryInjected: Boolean(memoryContext),
+      memoryInjected: Boolean(instructionMemory.text),
+      injectedMemoryIds: instructionMemory.injectedMemoryIds,
       toolNames: availableTools.map((tool) => tool.name),
+      latestUserTextLength: latestUserText.length,
     });
 
     const allMessages: OpenAI.ChatCompletionMessageParam[] = [
-      buildSystemMessage(availableTools.length > 0, memoryContext, mode),
+      buildSystemMessage(availableTools.length > 0, instructionMemory.text, mode),
       ...messages,
     ];
 

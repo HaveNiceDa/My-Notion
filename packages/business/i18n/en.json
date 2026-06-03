@@ -300,6 +300,7 @@
     "documentSearchTool": "Search documents",
     "webSearchTool": "Web search",
     "webExtractTool": "Read web page",
+    "memorySearchTool": "Search long-term memory",
     "memoryReadTool": "Read long-term memory",
     "memoryWriteTool": "Write long-term memory",
     "taskPlanTool": "Task plan",

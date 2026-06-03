@@ -300,6 +300,7 @@
     "documentSearchTool": "搜索文档",
     "webSearchTool": "联网搜索",
     "webExtractTool": "读取网页",
+    "memorySearchTool": "搜索长期记忆",
     "memoryReadTool": "读取长期记忆",
     "memoryWriteTool": "写入长期记忆",
     "taskPlanTool": "任务计划",

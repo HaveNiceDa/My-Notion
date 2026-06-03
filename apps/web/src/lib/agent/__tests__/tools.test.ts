@@ -24,6 +24,7 @@ import {
   documentSearchTool,
   webExtractTool,
   webSearchTool,
+  memorySearchTool,
   memoryReadTool,
   memoryWriteTool,
   taskPlanTool,
@@ -33,7 +34,7 @@ import { executeDocumentUpdate, executeDocumentWrite } from "../tools/document-w
 import { executeDocumentSearch } from "../tools/document-search";
 import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
-import { executeMemoryRead, executeMemoryWrite } from "../tools/memory";
+import { executeMemoryRead, executeMemorySearch, executeMemoryWrite } from "../tools/memory";
 import { executeTaskPlan } from "../tools/task-plan";
 import { withToolFallback } from "../tools/fallback";
 import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
@@ -47,6 +48,7 @@ describe("buildAvailableTools", () => {
     expect(names).toContain("web_search");
     expect(names).toContain("web_extract");
     expect(names).toContain("document_search");
+    expect(names).toContain("memory_search");
     expect(names).toContain("memory_read");
     expect(names).toContain("memory_write");
     expect(names).toContain("task_plan");
@@ -107,6 +109,12 @@ describe("AgentTool 定义", () => {
     expect(memoryWriteTool.parameters.required).toContain("content");
   });
 
+  it("memorySearchTool 使用 query 作为必填参数并支持分层过滤", () => {
+    expect(memorySearchTool.name).toBe("memory_search");
+    expect(memorySearchTool.parameters.required).toContain("query");
+    expect(memorySearchTool.parameters).toHaveProperty("properties");
+  });
+
   it("taskPlanTool 要求 objective 和 steps", () => {
     expect(taskPlanTool.name).toBe("task_plan");
     expect(taskPlanTool.parameters.required).toEqual(["objective", "steps"]);
@@ -126,6 +134,7 @@ describe("AgentTool 定义", () => {
       webSearchTool,
       webExtractTool,
       documentSearchTool,
+      memorySearchTool,
       memoryReadTool,
       memoryWriteTool,
       taskPlanTool,
@@ -597,9 +606,79 @@ describe("Memory tools", () => {
       type: "preference",
       limit: 100,
     });
+    expect(retrieveRelevantMemories).toHaveBeenCalledWith(expect.objectContaining({
+      query: "中文",
+      topK: 3,
+    }));
     expect(result.memories).toHaveLength(1);
     expect(result.metadata.count).toBe(1);
     expect(result.metadata.retrieval).toBe("semantic");
+  });
+
+  it("memory_search 支持 kind/category/scope 过滤并返回 scoreBreakdown", async () => {
+    const query = vi.fn().mockResolvedValue([
+      {
+        id: "m1",
+        type: "preference",
+        kind: "instruction",
+        category: "user_preference",
+        scopeLevel: "user",
+        scopeKey: "user-1",
+        privacy: "normal",
+        content: "用户偏好中文",
+        matchScore: 1,
+      },
+      {
+        id: "m2",
+        type: "project",
+        kind: "semantic",
+        category: "project_fact",
+        scopeLevel: "user",
+        scopeKey: "user-1",
+        privacy: "normal",
+        content: "项目事实",
+        matchScore: 1,
+      },
+    ]);
+    vi.mocked(retrieveRelevantMemories).mockResolvedValue({
+      memories: [{
+        id: "m1",
+        type: "preference",
+        kind: "instruction",
+        category: "user_preference",
+        scopeLevel: "user",
+        scopeKey: "user-1",
+        content: "用户偏好中文",
+        matchScore: 0.82,
+        scoreBreakdown: { semantic: 0.8, scope: 1 },
+      }],
+      retrieval: "semantic",
+    });
+
+    const result = await executeMemorySearch(
+      {
+        query: "中文",
+        kinds: ["instruction"],
+        categories: ["user_preference"],
+        scopes: [{ level: "user", key: "user-1" }],
+        limit: 5,
+      },
+      { ...baseCtx, convex: { query } as any },
+    ) as any;
+
+    expect(retrieveRelevantMemories).toHaveBeenCalledWith(expect.objectContaining({
+      memories: [expect.objectContaining({ id: "m1" })],
+      scopes: [{ level: "user", key: "user-1" }],
+      topK: 5,
+    }));
+    expect(result.memories[0]).toMatchObject({
+      id: "m1",
+      kind: "instruction",
+      category: "user_preference",
+      score: 0.82,
+      scoreBreakdown: { semantic: 0.8, scope: 1 },
+    });
+    expect(result.metadata.memoryIds).toEqual(["m1"]);
   });
 
   it("memory_write 默认 dry-run，不写入 Convex", async () => {

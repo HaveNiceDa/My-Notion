@@ -231,6 +231,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           resultLength: resultStr.length,
           recoverable: typeof parsedResult?.recoverable === "boolean" ? parsedResult.recoverable : undefined,
           sourceCount: Array.isArray(parsedResult?.sources) ? parsedResult.sources.length : undefined,
+          memoryIds: extractMemoryIdsForTrace(parsedResult),
         });
       }
       debugLog(
@@ -292,6 +293,24 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
 function nowMs(): number {
   return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
+function extractMemoryIdsForTrace(result: Record<string, unknown>): string[] | undefined {
+  const metadata = result.metadata;
+  if (metadata && typeof metadata === "object") {
+    const memoryIds = (metadata as Record<string, unknown>).memoryIds;
+    if (Array.isArray(memoryIds)) {
+      return memoryIds.flatMap((id) => typeof id === "string" ? [id] : []);
+    }
+  }
+
+  const memories = result.memories;
+  if (!Array.isArray(memories)) return undefined;
+  return memories.flatMap((memory) => {
+    if (!memory || typeof memory !== "object") return [];
+    const id = (memory as Record<string, unknown>).id;
+    return typeof id === "string" ? [id] : [];
+  });
 }
 
 function debugLog(message: string): void {

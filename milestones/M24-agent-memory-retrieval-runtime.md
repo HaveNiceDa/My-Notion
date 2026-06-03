@@ -1,5 +1,11 @@
 # M24 Agent Memory Retrieval Runtime
 
+## 状态
+
+- 状态：已完成
+- 完成时间：2026-06-03
+- 过程记录：`progress/20260603-175455.md`
+
 ## 目标
 
 在 M23 的 schema 基础上，重构 Agent Memory 的读取与运行时注入机制：移除读路径 upsert，引入 scope-aware `memory_search`，并把自动注入收敛为 compact instruction memory。
@@ -225,4 +231,3 @@ M24 完成后进入 M25：
 
 - M25 的 `memory_propose` / Inbox 依赖 M24 的 `memory_search` 做重复与冲突预检查。
 - M25 的 Tool 卡片可利用 M24 的 evidence 和 score 信息做更可信的确认提示。
-

@@ -23,7 +23,7 @@ interface ToolCallCardProps {
 
 type RetrievalStrategy = "fast" | "balanced" | "deep";
 type MemoryType = "preference" | "project" | "episodic";
-type MemorySource = "user_explicit" | "agent_proposed" | "manual";
+type MemorySource = "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
 
 interface KnowledgeSearchMetadata {
   semanticCount?: number;
@@ -60,10 +60,19 @@ interface KnowledgeSearchToolResult {
 interface MemoryItem {
   id?: string;
   type?: MemoryType;
+  kind?: string;
+  category?: string;
+  scope?: {
+    level?: string;
+    key?: string;
+  };
   content?: string;
   source?: MemorySource;
   reason?: string;
   confidence?: number;
+  importance?: number;
+  score?: number;
+  scoreBreakdown?: Record<string, number>;
   expiresAt?: number;
   supersedesMemoryId?: string;
 }
@@ -487,13 +496,22 @@ function MemoryReadResult({ result }: { result: MemoryReadToolResult }) {
       {memories.map((memory, idx) => (
         <div key={memory.id ?? idx} className="rounded-md bg-background/70 px-2 py-1.5 text-xs">
           <div className="font-medium text-foreground">{memory.content}</div>
-          {memory.type && (
-            <div className="text-[10px] text-muted-foreground">{memory.type}</div>
+          {(memory.kind || memory.category || memory.type || typeof memory.score === "number") && (
+            <div className="text-[10px] text-muted-foreground">
+              {[memory.kind ?? memory.type, memory.category, formatMemoryScore(memory.score)]
+                .filter(Boolean)
+                .join(" · ")}
+            </div>
           )}
         </div>
       ))}
     </div>
   );
+}
+
+function formatMemoryScore(score: number | undefined): string | null {
+  if (typeof score !== "number" || !Number.isFinite(score)) return null;
+  return `score ${score.toFixed(2)}`;
 }
 
 function MemoryWriteResult({
@@ -783,12 +801,14 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
               ? t("webSearchTool")
               : toolName === "web_extract"
                 ? t("webExtractTool")
-        : toolName === "memory_read"
-          ? t("memoryReadTool")
-          : toolName === "memory_write"
-            ? t("memoryWriteTool")
-            : toolName === "task_plan"
-              ? t("taskPlanTool")
+        : toolName === "memory_search"
+          ? t("memorySearchTool")
+          : toolName === "memory_read"
+            ? t("memoryReadTool")
+            : toolName === "memory_write"
+              ? t("memoryWriteTool")
+              : toolName === "task_plan"
+                ? t("taskPlanTool")
             : toolName;
 
   const ToolIcon =
@@ -850,7 +870,7 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
       resultContent = <DocumentSearchResult result={typedResult} />;
       const count = typedResult.documents?.length ?? 0;
       resultSummary = count > 0 ? t("referencedDocsCount", { count }) : t("noDocumentsFound");
-    } else if (toolName === "memory_read") {
+    } else if (toolName === "memory_read" || toolName === "memory_search") {
       const typedResult = result as unknown as MemoryReadToolResult;
       resultContent = <MemoryReadResult result={typedResult} />;
       const count = typedResult.memories?.length ?? 0;

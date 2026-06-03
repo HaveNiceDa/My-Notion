@@ -1,19 +1,32 @@
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
+import type { AgentMemoryRecord, RelevantMemoryResult } from "@notion/ai/server";
 import { invalidateToolResultCache } from "../tool-result-cache";
 import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
+type MemoryKind = "instruction" | "semantic" | "episodic" | "procedural";
 type MemorySource = "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
+type MemoryScopeLevel = "user" | "workspace" | "project" | "document" | "conversation" | "module" | "path";
 
 const MEMORY_TYPES = new Set<MemoryType>(["preference", "project", "episodic"]);
+const MEMORY_KINDS = new Set<MemoryKind>(["instruction", "semantic", "episodic", "procedural"]);
 const MEMORY_SOURCES = new Set<MemorySource>([
   "user_explicit",
   "agent_proposed",
   "manual",
   "auto_extracted",
   "system",
+]);
+const MEMORY_SCOPE_LEVELS = new Set<MemoryScopeLevel>([
+  "user",
+  "workspace",
+  "project",
+  "document",
+  "conversation",
+  "module",
+  "path",
 ]);
 
 interface MemoryWritePreview {
@@ -25,9 +38,24 @@ interface MemoryWritePreview {
   expiresAt?: number;
 }
 
+interface MemoryScope {
+  level: MemoryScopeLevel;
+  key: string;
+}
+
 export async function executeMemoryRead(
   args: Record<string, unknown>,
   context: ToolContext,
+): Promise<unknown> {
+  return executeMemorySearch({ ...args, types: parseMemoryType(args.type) ? [args.type] : undefined }, context, {
+    compatToolName: "memory_read",
+  });
+}
+
+export async function executeMemorySearch(
+  args: Record<string, unknown>,
+  context: ToolContext,
+  options: { compatToolName?: "memory_read" | "memory_search" } = {},
 ): Promise<unknown> {
   if (!context.convex) {
     return { memories: [], error: "Convex client is not available", recoverable: true };
@@ -35,32 +63,55 @@ export async function executeMemoryRead(
 
   const query = typeof args.query === "string" ? args.query : undefined;
   const type = parseMemoryType(args.type);
+  const types = parseMemoryTypes(args.types, type);
+  const kinds = parseMemoryKinds(args.kinds);
+  const categories = parseStringArray(args.categories);
+  const scopes = parseMemoryScopes(args.scopes, context);
+  const includeSensitive = args.includeSensitive === true;
+  const includeEvidence = args.includeEvidence === true;
   const limit = typeof args.limit === "number" ? Math.min(Math.max(Math.floor(args.limit), 1), 20) : 8;
 
   try {
     const memories = await context.convex.query(api.agentMemories.listAgentMemories, {
       query: undefined,
-      type,
+      type: types.length === 1 ? types[0] : undefined,
       limit: 100,
     });
-    const retrieval = query
+    const filteredMemories = memories.filter((memory) =>
+      matchesTypes(memory, types)
+      && matchesKinds(memory, kinds)
+      && matchesCategories(memory, categories)
+      && matchesScopes(memory, scopes)
+      && (includeSensitive || memory.privacy !== "sensitive"),
+    );
+    const retrieval: RelevantMemoryResult = query
       ? await retrieveRelevantMemories({
         userId: context.userId,
         query,
-        memories,
+        memories: filteredMemories,
         topK: limit,
+        scopes,
       })
-      : { memories: memories.slice(0, limit), retrieval: "fallback" as const };
+      : { memories: filteredMemories.slice(0, limit) as AgentMemoryRecord[], retrieval: "fallback" };
+    const normalizedMemories = retrieval.memories.map((memory) =>
+      normalizeMemoryResult(memory as unknown as Record<string, unknown>, { includeEvidence }),
+    );
 
     return {
       query,
       type,
-      memories: retrieval.memories,
+      types: types.length > 0 ? types : undefined,
+      kinds: kinds.length > 0 ? kinds : undefined,
+      categories: categories.length > 0 ? categories : undefined,
+      scopes,
+      memories: normalizedMemories,
       metadata: {
-        count: retrieval.memories.length,
+        count: normalizedMemories.length,
         retrieval: retrieval.retrieval,
         unavailable: retrieval.unavailable,
         error: retrieval.error,
+        memoryIds: normalizedMemories.map((memory) => memory.id).filter(Boolean),
+        toolName: options.compatToolName ?? "memory_search",
       },
     };
   } catch (error) {
@@ -106,7 +157,7 @@ export async function executeMemoryWrite(
         ? args.supersedesMemoryId as Id<"agentMemories">
         : undefined,
     });
-    invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read"] });
+    invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read", "memory_search"] });
     const syncWarning = await syncMemorySafely(context.userId, memory);
 
     return {
@@ -175,6 +226,115 @@ function parseMemoryType(value: unknown): MemoryType | undefined {
   return typeof value === "string" && MEMORY_TYPES.has(value as MemoryType)
     ? value as MemoryType
     : undefined;
+}
+
+function parseMemoryTypes(value: unknown, fallback?: MemoryType): MemoryType[] {
+  const values = Array.isArray(value) ? value : [];
+  const parsed = values.flatMap((item) => {
+    const type = parseMemoryType(item);
+    return type ? [type] : [];
+  });
+  return parsed.length > 0 ? Array.from(new Set(parsed)) : fallback ? [fallback] : [];
+}
+
+function parseMemoryKinds(value: unknown): MemoryKind[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.flatMap((item) =>
+    typeof item === "string" && MEMORY_KINDS.has(item as MemoryKind) ? [item as MemoryKind] : [],
+  )));
+}
+
+function parseStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return Array.from(new Set(value.flatMap((item) =>
+    typeof item === "string" && item.trim() ? [item.trim()] : [],
+  )));
+}
+
+function parseMemoryScopes(value: unknown, context: ToolContext): MemoryScope[] {
+  const scopes: MemoryScope[] = [{ level: "user", key: context.userId }];
+  if (context.currentDocument?.id) {
+    scopes.push({ level: "document", key: context.currentDocument.id });
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (!item || typeof item !== "object") continue;
+      const record = item as Record<string, unknown>;
+      const level = typeof record.level === "string" && MEMORY_SCOPE_LEVELS.has(record.level as MemoryScopeLevel)
+        ? record.level as MemoryScopeLevel
+        : undefined;
+      const key = typeof record.key === "string" && record.key.trim() ? record.key.trim() : undefined;
+      if (level && key) scopes.push({ level, key });
+    }
+  }
+  return dedupeScopes(scopes);
+}
+
+function dedupeScopes(scopes: MemoryScope[]): MemoryScope[] {
+  const seen = new Set<string>();
+  return scopes.filter((scope) => {
+    const key = `${scope.level}:${scope.key}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function matchesTypes(memory: { type?: string }, types: MemoryType[]): boolean {
+  return types.length === 0 || types.includes(memory.type as MemoryType);
+}
+
+function matchesKinds(memory: { kind?: string }, kinds: MemoryKind[]): boolean {
+  return kinds.length === 0 || kinds.includes(memory.kind as MemoryKind);
+}
+
+function matchesCategories(memory: { category?: string }, categories: string[]): boolean {
+  return categories.length === 0 || Boolean(memory.category && categories.includes(memory.category));
+}
+
+function matchesScopes(memory: { scopeLevel?: string; scopeKey?: string }, scopes: MemoryScope[]): boolean {
+  if (scopes.length === 0) return true;
+  if (!memory.scopeLevel || !memory.scopeKey) return true;
+  return scopes.some((scope) => scope.level === memory.scopeLevel && scope.key === memory.scopeKey)
+    || memory.scopeLevel === "user";
+}
+
+function normalizeMemoryResult(memory: Record<string, unknown>, options: { includeEvidence: boolean }) {
+  const normalized = {
+    id: memory.id,
+    type: memory.type,
+    kind: memory.kind,
+    category: memory.category,
+    scope: {
+      level: memory.scopeLevel,
+      key: memory.scopeKey,
+    },
+    content: memory.content,
+    summary: memory.summary,
+    source: memory.source,
+    reason: memory.reason,
+    confidence: memory.confidence,
+    importance: memory.importance,
+    privacy: memory.privacy,
+    status: memory.status,
+    expiresAt: memory.expiresAt,
+    updatedAt: memory.updatedAt,
+    lastUsedAt: memory.lastUsedAt,
+    usageCount: memory.usageCount,
+    score: memory.matchScore,
+    scoreBreakdown: memory.scoreBreakdown,
+  };
+  return options.includeEvidence
+    ? {
+      ...normalized,
+      evidence: {
+        conversationId: memory.evidenceConversationId,
+        messageId: memory.evidenceMessageId,
+        documentId: memory.evidenceDocumentId,
+        sourceText: memory.evidenceText,
+      },
+    }
+    : normalized;
 }
 
 function parseMemorySource(value: unknown): MemorySource | undefined {

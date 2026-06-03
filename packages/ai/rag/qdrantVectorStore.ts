@@ -19,9 +19,15 @@ interface DocumentIndexMetadata {
 interface AgentMemoryIndexItem {
   id: string;
   type: string;
+  kind?: string;
+  category?: string;
+  scopeLevel?: string;
+  scopeKey?: string;
   content: string;
+  summary?: string;
   reason?: string;
   confidence?: number;
+  importance?: number;
   source?: string;
   updatedAt?: number;
 }
@@ -378,9 +384,23 @@ export class QdrantVectorStoreWrapper {
 
   async upsertAgentMemory(userId: string, memory: AgentMemoryIndexItem): Promise<void> {
     const documentId = memoryDocumentId(memory.id);
-    const contentHash = hashText(`${memory.type}:${memory.content}:${memory.reason ?? ""}:${memory.updatedAt ?? ""}`);
+    const contentHash = hashText([
+      memory.type,
+      memory.kind,
+      memory.category,
+      memory.scopeLevel,
+      memory.scopeKey,
+      memory.content,
+      memory.summary,
+      memory.reason,
+      memory.updatedAt,
+    ].filter(Boolean).join(":"));
     const pageContent = [
       `类型: ${memory.type}`,
+      memory.kind ? `分层: ${memory.kind}` : "",
+      memory.category ? `类别: ${memory.category}` : "",
+      memory.scopeLevel && memory.scopeKey ? `作用域: ${memory.scopeLevel}:${memory.scopeKey}` : "",
+      memory.summary ? `摘要: ${memory.summary}` : "",
       `内容: ${memory.content}`,
       memory.reason ? `原因: ${memory.reason}` : "",
     ].filter(Boolean).join("\n");
@@ -394,10 +414,15 @@ export class QdrantVectorStoreWrapper {
         kind: "agentMemory",
         memoryId: memory.id,
         memoryType: memory.type,
-        title: `Memory: ${memory.type}`,
+        memoryKind: memory.kind,
+        memoryCategory: memory.category,
+        memoryScopeLevel: memory.scopeLevel,
+        memoryScopeKey: memory.scopeKey,
+        title: `Memory: ${memory.kind ?? memory.type}`,
         updatedAt: memory.updatedAt ?? Date.now(),
-        tags: ["agent-memory", memory.type],
+        tags: ["agent-memory", memory.type, memory.kind, memory.category].filter(Boolean) as string[],
         confidence: memory.confidence ?? 1,
+        importance: memory.importance,
         source: memory.source,
       },
       embedding,

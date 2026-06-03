@@ -4,7 +4,7 @@ import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
 import { executeDocumentSearch } from "./document-search";
 import { executeWebExtract } from "./web-extract";
 import { executeWebSearch } from "./web-search";
-import { executeMemoryRead, executeMemoryWrite } from "./memory";
+import { executeMemoryRead, executeMemorySearch, executeMemoryWrite } from "./memory";
 import { executeTaskPlan } from "./task-plan";
 import { withToolFallback } from "./fallback";
 import type { ToolContext } from "./types";
@@ -209,10 +209,73 @@ export const documentSearchTool: AgentTool = {
 };
 
 // 长期记忆读取 tool：读取用户偏好、项目事实和阶段性对话结论
+export const memorySearchTool: AgentTool = {
+  name: "memory_search",
+  description:
+    "按查询、记忆分层、类别和作用域搜索用户长期记忆。当回答需要遵循长期偏好、项目约束、历史决策、工具经验或跨会话上下文时优先使用。默认只返回非敏感 active 记忆，并包含可解释 scoreBreakdown。",
+  parameters: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description: "用于匹配记忆的当前问题或关键词。",
+      },
+      kinds: {
+        type: "array",
+        description: "可选记忆分层过滤：instruction=稳定规则/偏好；semantic=长期事实；episodic=会话事件；procedural=工作流经验。",
+        items: {
+          type: "string",
+          enum: ["instruction", "semantic", "episodic", "procedural"],
+        },
+      },
+      categories: {
+        type: "array",
+        description: "可选细分类过滤，例如 user_preference、project_fact、session_note。",
+        items: { type: "string" },
+      },
+      scopes: {
+        type: "array",
+        description: "可选作用域过滤。未传时默认使用当前 user scope，并在有当前文档时包含 document scope。",
+        items: {
+          type: "object",
+          properties: {
+            level: {
+              type: "string",
+              enum: ["user", "workspace", "project", "document", "conversation", "module", "path"],
+            },
+            key: {
+              type: "string",
+            },
+          },
+          required: ["level", "key"],
+        },
+      },
+      limit: {
+        type: "number",
+        description: "返回记忆数量，默认 8，最大 20。",
+      },
+      includeSensitive: {
+        type: "boolean",
+        description: "是否包含 sensitive 记忆，默认 false。",
+      },
+      includeEvidence: {
+        type: "boolean",
+        description: "是否返回证据字段，默认 false。",
+      },
+    },
+    required: ["query"],
+  },
+  execute: withToolFallback({
+    name: "memory_search",
+    execute: async (args, ctx) => executeMemorySearch(args, ctx),
+  }),
+};
+
+// 兼容旧 memory_read：内部复用 memory_search，后续可逐步下线
 export const memoryReadTool: AgentTool = {
   name: "memory_read",
   description:
-    "读取用户长期记忆，包括用户偏好、项目事实和重要对话结论。当回答需要遵循用户长期偏好、项目约束或跨会话历史时使用此工具。",
+    "兼容旧版长期记忆读取工具。新请求优先使用 memory_search；仅在需要按旧 type=preference/project/episodic 过滤时使用。",
   parameters: {
     type: "object",
     properties: {
