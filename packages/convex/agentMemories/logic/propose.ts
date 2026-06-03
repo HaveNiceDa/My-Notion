@@ -2,7 +2,6 @@ import { mutation } from "@convex/server";
 import { v } from "convex/values";
 import {
   memoryCategoryValidator,
-  memoryEmbeddingStatusValidator,
   memoryKindValidator,
   memoryPrivacyValidator,
   memoryScopeLevelValidator,
@@ -10,9 +9,9 @@ import {
   memoryStabilityValidator,
   memoryTypeValidator,
 } from "../model";
-import { buildMemoryPatch } from "./shared";
+import { buildMemoryPatch, contentOverlapScore } from "./shared";
 
-export const createAgentMemory = mutation({
+export const proposeAgentMemory = mutation({
   args: {
     type: memoryTypeValidator,
     content: v.string(),
@@ -36,8 +35,6 @@ export const createAgentMemory = mutation({
     privacy: v.optional(memoryPrivacyValidator),
     expiresAt: v.optional(v.number()),
     reviewDueAt: v.optional(v.number()),
-    embeddingStatus: v.optional(memoryEmbeddingStatusValidator),
-    supersedesMemoryId: v.optional(v.id("agentMemories")),
   },
   handler: async (ctx, args) => {
     const identity = await ctx.auth.getUserIdentity();
@@ -47,36 +44,39 @@ export const createAgentMemory = mutation({
 
     const now = Date.now();
     const memoryPatch = buildMemoryPatch(args, identity.subject);
+    const candidates = await ctx.db
+      .query("agentMemories")
+      .withIndex("by_user_and_status", (q) =>
+        q.eq("userId", identity.subject).eq("status", "active"),
+      )
+      .take(100);
+    const relatedMemoryIds = candidates
+      .filter((candidate) =>
+        (candidate.kind ?? "") === memoryPatch.kind
+        && (candidate.category ?? "") === memoryPatch.category
+        && (candidate.scopeLevel ?? "user") === memoryPatch.scopeLevel
+        && (candidate.scopeKey ?? identity.subject) === memoryPatch.scopeKey,
+      )
+      .filter((candidate) => contentOverlapScore(candidate.content, memoryPatch.content) >= 0.5)
+      .slice(0, 5)
+      .map((candidate) => candidate._id);
     const memoryId = await ctx.db.insert("agentMemories", {
       userId: identity.subject,
       ...memoryPatch,
       source: args.source,
-      status: "active",
+      status: "pending_review",
+      conflictsWith: relatedMemoryIds.length > 0 ? relatedMemoryIds : undefined,
       createdAt: now,
       updatedAt: now,
     });
-
-    if (args.supersedesMemoryId) {
-      const oldMemory = await ctx.db.get(args.supersedesMemoryId);
-      if (!oldMemory || oldMemory.userId !== identity.subject) {
-        throw new Error("Memory to supersede not found");
-      }
-      await ctx.db.patch(args.supersedesMemoryId, {
-        status: "superseded",
-        supersededBy: memoryId,
-        updatedAt: now,
-      });
-      await ctx.db.patch(memoryId, {
-        supersedes: [args.supersedesMemoryId],
-        updatedAt: now,
-      });
-    }
 
     return {
       id: memoryId,
       ...memoryPatch,
       source: args.source,
-      status: "active",
+      status: "pending_review",
+      possibleDuplicateIds: relatedMemoryIds,
+      possibleConflictIds: relatedMemoryIds,
       createdAt: now,
       updatedAt: now,
     };

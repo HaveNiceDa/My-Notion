@@ -304,7 +304,7 @@ export const memoryReadTool: AgentTool = {
 export const memoryWriteTool: AgentTool = {
   name: "memory_write",
   description:
-    "写入用户长期记忆。仅在用户明确要求“记住/以后都按这个来”或 Agent 提议并获得用户确认后使用。默认必须 dryRun=true 预览，不得直接写入；只有用户明确批准该记忆后才可设置 dryRun=false。",
+    "提议写入用户长期记忆。默认 dryRun=true 会创建 pending_review proposal 并进入 Memory Inbox，不会直接变成 active；只有用户在 Tool 卡片或 Inbox 中确认后才会 commit 为 active。",
   parameters: {
     type: "object",
     properties: {
@@ -319,7 +319,7 @@ export const memoryWriteTool: AgentTool = {
       },
       source: {
         type: "string",
-        enum: ["user_explicit", "agent_proposed", "manual"],
+        enum: ["user_explicit", "agent_proposed", "manual", "auto_extracted", "system"],
         description: "写入来源。用户明确要求记住时用 user_explicit；Agent 提议后用户确认时用 agent_proposed。",
       },
       reason: {
@@ -333,6 +333,10 @@ export const memoryWriteTool: AgentTool = {
       expiresAt: {
         type: "number",
         description: "可选过期时间戳，适合临时或阶段性记忆。",
+      },
+      evidenceText: {
+        type: "string",
+        description: "可选证据原文，说明这条记忆从哪段用户表达或上下文中提取。",
       },
       supersedesMemoryId: {
         type: "string",

@@ -85,10 +85,14 @@ interface MemoryReadToolResult {
 interface MemoryWriteToolResult {
   dryRun?: boolean;
   confirmationRequired?: boolean;
+  proposalId?: string;
+  proposalStatus?: "pending_review" | "active" | "rejected";
   message?: string;
   memory?: MemoryItem;
-  memoryWriteStatus?: "saved" | "cancelled";
+  memoryWriteStatus?: "saved" | "cancelled" | "inbox";
   savedMemoryId?: string;
+  possibleDuplicateIds?: string[];
+  possibleConflictIds?: string[];
   error?: string;
 }
 
@@ -524,14 +528,17 @@ function MemoryWriteResult({
   messageId?: Id<"aiMessages">;
 }) {
   const t = useTranslations("AI");
-  const createMemory = useMutation(api.agentMemories.createAgentMemory);
+  const commitMemory = useMutation(api.agentMemories.commitAgentMemory);
+  const rejectMemory = useMutation(api.agentMemories.rejectAgentMemory);
   const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
   const initialStatus = result.memoryWriteStatus === "saved"
     ? "saved"
     : result.memoryWriteStatus === "cancelled"
       ? "cancelled"
-      : "idle";
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "cancelled" | "error">(initialStatus);
+      : result.memoryWriteStatus === "inbox"
+        ? "inbox"
+        : "idle";
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "inbox" | "cancelled" | "error">(initialStatus);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (result.error) {
@@ -540,29 +547,21 @@ function MemoryWriteResult({
 
   const memory = result.memory;
   const canConfirm = Boolean(result.dryRun && result.confirmationRequired && memory?.content);
+  const proposalId = result.proposalId ?? memory?.id;
 
   async function handleSaveMemory() {
-    if (!memory?.content || !memory.type) return;
+    if (!proposalId) return;
     setStatus("saving");
     setErrorMessage(null);
 
     try {
-      const savedMemory = await createMemory({
-        type: memory.type,
-        content: memory.content,
-        source: memory.source ?? "agent_proposed",
-        reason: memory.reason,
-        confidence: memory.confidence,
-        expiresAt: memory.expiresAt,
-        supersedesMemoryId: memory.supersedesMemoryId
-          ? memory.supersedesMemoryId as Id<"agentMemories">
-          : undefined,
-      });
+      const savedMemory = await commitMemory({ memoryId: proposalId as Id<"agentMemories"> });
       if (messageId) {
         await updateToolResultState({
           messageId,
           toolCallId,
           status: "saved",
+          proposalId: proposalId as Id<"agentMemories">,
           savedMemoryId: savedMemory.id,
         });
       }
@@ -584,10 +583,36 @@ function MemoryWriteResult({
 
   async function handleCancelMemory() {
     setStatus("cancelled");
+
+    try {
+      if (proposalId) {
+        await rejectMemory({ memoryId: proposalId as Id<"agentMemories"> });
+      }
+      if (messageId) {
+        await updateToolResultState({
+          messageId,
+          toolCallId,
+          status: "cancelled",
+          proposalId: proposalId ? proposalId as Id<"agentMemories"> : undefined,
+        });
+      }
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    }
+  }
+
+  async function handleKeepInInbox() {
+    setStatus("inbox");
     if (!messageId) return;
 
     try {
-      await updateToolResultState({ messageId, toolCallId, status: "cancelled" });
+      await updateToolResultState({
+        messageId,
+        toolCallId,
+        status: "inbox",
+        proposalId: proposalId ? proposalId as Id<"agentMemories"> : undefined,
+      });
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -599,7 +624,9 @@ function MemoryWriteResult({
       <div className="font-medium text-foreground">
         {status === "cancelled"
           ? t("memoryCancelled")
-          : status === "saved" || !result.dryRun
+          : status === "inbox"
+            ? t("memorySentToInbox")
+            : status === "saved" || !result.dryRun
             ? t("memorySaved")
             : t("memoryWritePreview")}
       </div>
@@ -609,10 +636,15 @@ function MemoryWriteResult({
       {memory?.content && (
         <div className="text-muted-foreground">{memory.content}</div>
       )}
+      {result.possibleDuplicateIds && result.possibleDuplicateIds.length > 0 && (
+        <div className="text-amber-600 dark:text-amber-400">
+          {t("memoryDuplicateHint", { count: result.possibleDuplicateIds.length })}
+        </div>
+      )}
       {errorMessage && (
         <div className="text-destructive">{t("memorySaveFailed")}: {errorMessage}</div>
       )}
-      {canConfirm && status !== "saved" && status !== "cancelled" && (
+      {canConfirm && status !== "saved" && status !== "cancelled" && status !== "inbox" && (
         <div className="flex gap-2 pt-1">
           <button
             type="button"
@@ -621,6 +653,14 @@ function MemoryWriteResult({
             className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
           >
             {status === "saving" ? t("memorySaving") : t("saveMemory")}
+          </button>
+          <button
+            type="button"
+            onClick={handleKeepInInbox}
+            disabled={status === "saving"}
+            className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
+          >
+            {t("sendMemoryToInbox")}
           </button>
           <button
             type="button"

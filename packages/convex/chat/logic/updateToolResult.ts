@@ -4,6 +4,7 @@ import { v } from "convex/values";
 const toolResultStatusValidator = v.union(
   v.literal("saved"),
   v.literal("cancelled"),
+  v.literal("inbox"),
   v.literal("applied"),
 );
 
@@ -12,6 +13,7 @@ export const updateToolResultState = mutation({
     messageId: v.id("aiMessages"),
     toolCallId: v.string(),
     status: toolResultStatusValidator,
+    proposalId: v.optional(v.id("agentMemories")),
     savedMemoryId: v.optional(v.id("agentMemories")),
     savedDocumentId: v.optional(v.id("documents")),
   },
@@ -55,6 +57,7 @@ export const updateToolResultState = mutation({
           ...(isMemoryWrite
             ? {
               memoryWriteStatus: args.status,
+              proposalId: args.proposalId,
               savedMemoryId: args.savedMemoryId,
             }
             : {

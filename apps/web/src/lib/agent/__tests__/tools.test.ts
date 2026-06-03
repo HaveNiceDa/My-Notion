@@ -681,8 +681,17 @@ describe("Memory tools", () => {
     expect(result.metadata.memoryIds).toEqual(["m1"]);
   });
 
-  it("memory_write 默认 dry-run，不写入 Convex", async () => {
-    const mutation = vi.fn();
+  it("memory_write 默认创建 pending proposal，不直接写 active", async () => {
+    const mutation = vi.fn().mockResolvedValue({
+      id: "proposal-1",
+      type: "preference",
+      content: "用户偏好中文",
+      source: "agent_proposed",
+      confidence: 1,
+      status: "pending_review",
+      possibleDuplicateIds: [],
+      possibleConflictIds: [],
+    });
     const result = await executeMemoryWrite(
       { content: "用户偏好中文", type: "preference" },
       { ...baseCtx, convex: { mutation } as any },
@@ -690,8 +699,15 @@ describe("Memory tools", () => {
 
     expect(result.dryRun).toBe(true);
     expect(result.confirmationRequired).toBe(true);
+    expect(result.action).toBe("memory_propose");
+    expect(result.proposalId).toBe("proposal-1");
+    expect(result.proposalStatus).toBe("pending_review");
     expect(result.memory.content).toBe("用户偏好中文");
-    expect(mutation).not.toHaveBeenCalled();
+    expect(mutation).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      content: "用户偏好中文",
+      type: "preference",
+      source: "agent_proposed",
+    }));
   });
 
   it("memory_write dryRun=false 时写入 Convex", async () => {

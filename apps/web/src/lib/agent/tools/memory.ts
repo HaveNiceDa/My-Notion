@@ -36,6 +36,11 @@ interface MemoryWritePreview {
   reason?: string;
   confidence: number;
   expiresAt?: number;
+  evidenceConversationId?: Id<"aiConversations">;
+  evidenceMessageId?: Id<"aiMessages">;
+  evidenceDocumentId?: Id<"documents">;
+  evidenceToolCallId?: string;
+  evidenceText?: string;
 }
 
 interface MemoryScope {
@@ -135,22 +140,41 @@ export async function executeMemoryWrite(
   }
 
   const dryRun = args.dryRun !== false;
-  if (dryRun) {
+  if (!context.convex) {
     return {
       dryRun: true,
       confirmationRequired: true,
-      action: "memory_write",
-      message:
-        "Dry run only. No memory was saved. Set dryRun=false only after explicit user approval.",
+      action: "memory_propose",
+      message: "Convex client is not available. Preview only; no proposal was created.",
       memory: preview,
     };
   }
 
-  if (!context.convex) {
-    return { error: "Convex client is not available", recoverable: true };
-  }
-
   try {
+    if (dryRun) {
+      const proposal = await context.convex.mutation(api.agentMemories.proposeAgentMemory, {
+        ...preview,
+        evidenceConversationId: preview.evidenceConversationId,
+        evidenceMessageId: preview.evidenceMessageId,
+        evidenceDocumentId: preview.evidenceDocumentId,
+        evidenceToolCallId: preview.evidenceToolCallId,
+        evidenceText: preview.evidenceText,
+      });
+      invalidateToolResultCache({ userId: context.userId, toolNames: ["memory_read", "memory_search"] });
+
+      return {
+        dryRun: true,
+        confirmationRequired: true,
+        action: "memory_propose",
+        message: "Memory proposal created in Inbox. Confirm to activate it, or cancel to reject it.",
+        proposalId: proposal.id,
+        proposalStatus: proposal.status,
+        memory: proposal,
+        possibleDuplicateIds: proposal.possibleDuplicateIds,
+        possibleConflictIds: proposal.possibleConflictIds,
+      };
+    }
+
     const memory = await context.convex.mutation(api.agentMemories.createAgentMemory, {
       ...preview,
       supersedesMemoryId: typeof args.supersedesMemoryId === "string"
@@ -216,6 +240,15 @@ function buildWritePreview(args: Record<string, unknown>): MemoryWritePreview {
     source: parseMemorySource(args.source) ?? "agent_proposed",
     reason: typeof args.reason === "string" && args.reason.trim() ? args.reason.trim() : undefined,
     confidence: clampConfidence(args.confidence),
+    evidenceConversationId: parseAiConversationId(args.evidenceConversationId),
+    evidenceMessageId: parseAiMessageId(args.evidenceMessageId),
+    evidenceDocumentId: parseDocumentId(args.evidenceDocumentId),
+    evidenceToolCallId: typeof args.evidenceToolCallId === "string" && args.evidenceToolCallId.trim()
+      ? args.evidenceToolCallId.trim()
+      : undefined,
+    evidenceText: typeof args.evidenceText === "string" && args.evidenceText.trim()
+      ? args.evidenceText.trim()
+      : undefined,
     expiresAt: typeof args.expiresAt === "number" && Number.isFinite(args.expiresAt)
       ? args.expiresAt
       : undefined,
@@ -226,6 +259,18 @@ function parseMemoryType(value: unknown): MemoryType | undefined {
   return typeof value === "string" && MEMORY_TYPES.has(value as MemoryType)
     ? value as MemoryType
     : undefined;
+}
+
+function parseAiConversationId(value: unknown): Id<"aiConversations"> | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() as Id<"aiConversations"> : undefined;
+}
+
+function parseAiMessageId(value: unknown): Id<"aiMessages"> | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() as Id<"aiMessages"> : undefined;
+}
+
+function parseDocumentId(value: unknown): Id<"documents"> | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() as Id<"documents"> : undefined;
 }
 
 function parseMemoryTypes(value: unknown, fallback?: MemoryType): MemoryType[] {

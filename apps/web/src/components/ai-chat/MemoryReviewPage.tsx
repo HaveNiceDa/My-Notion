@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { useTranslations } from "next-intl";
-import { Brain, Pencil, Plus, Save, Trash2, X } from "lucide-react";
+import { AlertTriangle, Brain, Check, Inbox, Pencil, Plus, Save, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 
 import { api } from "@/convex/_generated/api";
@@ -30,9 +30,13 @@ interface AgentMemoryReviewItem {
   id: Id<"agentMemories">;
   type: MemoryType;
   content: string;
-  source: "user_explicit" | "agent_proposed" | "manual";
+  source: "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
   reason?: string;
   confidence: number;
+  kind?: string;
+  category?: string;
+  evidenceText?: string;
+  conflictsWith?: Id<"agentMemories">[];
   createdAt: number;
   updatedAt: number;
   expiresAt?: number;
@@ -73,7 +77,12 @@ export function MemoryReviewPage() {
   const memories = useQuery(api.agentMemories.listAgentMemories, queryArgs) as
     | AgentMemoryReviewItem[]
     | undefined;
+  const pendingMemories = useQuery(api.agentMemories.listPendingAgentMemories, { limit: 50 }) as
+    | AgentMemoryReviewItem[]
+    | undefined;
   const createMemory = useMutation(api.agentMemories.createAgentMemory);
+  const commitMemory = useMutation(api.agentMemories.commitAgentMemory);
+  const rejectMemory = useMutation(api.agentMemories.rejectAgentMemory);
   const updateMemory = useMutation(api.agentMemories.updateAgentMemory);
   const deactivateMemory = useMutation(api.agentMemories.deactivateAgentMemory);
 
@@ -191,6 +200,59 @@ export function MemoryReviewPage() {
       .catch((error) => console.warn("[Agent Memory Sync] delete failed:", error));
   }
 
+  async function handleAcceptProposal(memory: AgentMemoryReviewItem, edit?: EditState) {
+    const nextState = edit ?? {
+      type: memory.type,
+      content: memory.content,
+      reason: memory.reason ?? "",
+      confidence: String(memory.confidence),
+    };
+    const content = nextState.content.trim();
+    if (!content) {
+      toast.error(t("contentRequired"));
+      return;
+    }
+    const confidence = Number(nextState.confidence);
+    if (!Number.isFinite(confidence) || confidence < 0 || confidence > 1) {
+      toast.error(t("confidenceInvalid"));
+      return;
+    }
+
+    const promise = commitMemory({
+      memoryId: memory.id,
+      type: nextState.type,
+      content,
+      confidence,
+      ...(nextState.reason.trim() ? { reason: nextState.reason.trim() } : {}),
+    });
+    toast.promise(promise, {
+      loading: t("acceptingProposal"),
+      success: t("proposalAccepted"),
+      error: t("proposalAcceptFailed"),
+    });
+
+    const savedMemory = await promise;
+    await syncMemoryIndex({
+      id: savedMemory.id,
+      type: savedMemory.type,
+      content: savedMemory.content,
+      reason: savedMemory.reason,
+      confidence: savedMemory.confidence,
+      source: savedMemory.source,
+      updatedAt: savedMemory.updatedAt,
+    }).catch((error) => console.warn("[Agent Memory Sync] accept proposal failed:", error));
+  }
+
+  async function handleRejectProposal(memoryId: Id<"agentMemories">) {
+    const promise = rejectMemory({ memoryId });
+    toast.promise(promise, {
+      loading: t("rejectingProposal"),
+      success: t("proposalRejected"),
+      error: t("proposalRejectFailed"),
+    });
+    await promise;
+  }
+
   return (
     <div className="mx-auto flex min-h-full w-full max-w-5xl flex-col px-6 py-14">
       <header className="mb-8 flex flex-col gap-3">
@@ -223,6 +285,34 @@ export function MemoryReviewPage() {
           />
         </section>
       )}
+
+      <section className="mb-5 rounded-xl border bg-background/80 p-4 shadow-sm">
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Inbox className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-medium">{t("inboxTitle")}</h2>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {t("pendingCount", { count: pendingMemories?.length ?? 0 })}
+          </span>
+        </div>
+        {pendingMemories === undefined ? (
+          <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">{t("loading")}</div>
+        ) : pendingMemories.length === 0 ? (
+          <div className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground">{t("inboxEmpty")}</div>
+        ) : (
+          <div className="space-y-3">
+            {pendingMemories.map((memory) => (
+              <MemoryProposalCard
+                key={memory.id}
+                memory={memory}
+                onAccept={(edit) => handleAcceptProposal(memory, edit)}
+                onReject={() => handleRejectProposal(memory.id)}
+              />
+            ))}
+          </div>
+        )}
+      </section>
 
       <section className="mb-5 grid gap-3 rounded-xl border bg-background/80 p-4 shadow-sm md:grid-cols-[1fr_220px]">
         <Input
@@ -419,6 +509,80 @@ function MemoryReviewCard({
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+          </div>
+        </div>
+      )}
+    </article>
+  );
+}
+
+interface MemoryProposalCardProps {
+  memory: AgentMemoryReviewItem;
+  onAccept: (edit?: EditState) => void;
+  onReject: () => void;
+}
+
+function MemoryProposalCard({ memory, onAccept, onReject }: MemoryProposalCardProps) {
+  const t = useTranslations("MemoryReview");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editState, setEditState] = useState<EditState>({
+    type: memory.type,
+    content: memory.content,
+    reason: memory.reason ?? "",
+    confidence: String(memory.confidence),
+  });
+
+  return (
+    <article className="rounded-lg border border-dashed bg-muted/20 p-3">
+      {isEditing ? (
+        <MemoryForm
+          state={editState}
+          onStateChange={setEditState}
+          onCancel={() => setIsEditing(false)}
+          onSave={() => onAccept(editState)}
+          saveLabel={t("acceptEditedProposal")}
+        />
+      ) : (
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">
+              {t(`type_${memory.type}`)}
+            </span>
+            {memory.kind && <span>{memory.kind}</span>}
+            {memory.category && <span>{memory.category}</span>}
+            <span>{t(`source_${memory.source}`)}</span>
+            <span>{t("confidenceValue", { value: memory.confidence.toFixed(1) })}</span>
+          </div>
+          <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{memory.content}</p>
+          {memory.reason && (
+            <p className="rounded-md bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+              {t("reasonLabel")}: {memory.reason}
+            </p>
+          )}
+          {memory.evidenceText && (
+            <p className="line-clamp-2 rounded-md bg-background/70 px-3 py-2 text-xs text-muted-foreground">
+              {t("evidenceLabel")}: {memory.evidenceText}
+            </p>
+          )}
+          {memory.conflictsWith && memory.conflictsWith.length > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+              <AlertTriangle className="h-3.5 w-3.5" />
+              {t("possibleDuplicateHint", { count: memory.conflictsWith.length })}
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+              <Pencil className="h-4 w-4" />
+              {t("edit")}
+            </Button>
+            <Button type="button" variant="ghost" size="sm" onClick={onReject}>
+              <X className="h-4 w-4" />
+              {t("rejectProposal")}
+            </Button>
+            <Button type="button" size="sm" onClick={() => onAccept()}>
+              <Check className="h-4 w-4" />
+              {t("acceptProposal")}
+            </Button>
           </div>
         </div>
       )}

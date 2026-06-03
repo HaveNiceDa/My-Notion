@@ -1,5 +1,11 @@
 # M25 Agent Memory Inbox Confirmation
 
+## 状态
+
+- 状态：已完成
+- 完成时间：2026-06-03
+- 过程记录：`progress/20260603-181537.md`
+
 ## 目标
 
 把 Agent 记忆写入从“Tool 卡片单点确认”升级为“提议进入 Inbox、用户集中审核、确认后提交”的治理链路。
@@ -179,4 +185,3 @@ M25 完成后进入 M26：
 - M26 复用 M25 的 Inbox 数据与 mutations。
 - M26 在此基础上增加 Overview、Active、Conflicts、Settings、Detail Drawer。
 - M25 的 proposal/evidence 是 M26 “信任与治理体验”的核心数据来源。
-
