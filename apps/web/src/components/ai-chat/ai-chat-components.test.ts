@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 import { MessageInput } from "./MessageInput";
 import { MessageList } from "./MessageList";
 import { ToolCallCard } from "./ToolCallCard";
+import { MemoryOverview } from "./memory/MemoryOverview";
 import type { ChatMessage, ToolCallResult } from "./types";
+import type { AgentMemoryItem } from "./memory/types";
 
 vi.mock("next-intl", () => ({
   useTranslations: () => (key: string, values?: Record<string, unknown>) => {
@@ -28,6 +30,12 @@ vi.mock("next-intl", () => ({
       planExecutionPromptIntro: "请按以下已确认的计划开始执行。",
       planExecutionPromptObjective: "目标",
       planExecutionPromptSteps: "步骤",
+      overviewActive: "活跃记忆",
+      overviewPending: "待审核",
+      overviewSyncFailed: "同步失败",
+      overviewReviewDue: "需要复查",
+      overviewSensitive: "敏感记忆",
+      overviewRecentlyUsed: "最近使用",
       retrievalStrategyLabel: "检索策略",
       retrievalStrategyBalanced: "均衡",
       retrievalRecallStats: `召回 semantic=${values?.semantic ?? 0} keyword=${values?.keyword ?? 0} metadata=${values?.metadata ?? 0} fused=${values?.fused ?? 0}`,
@@ -258,5 +266,44 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("确认执行");
     expect(html).toContain("确认后会按计划继续执行");
+  });
+
+  it("MemoryOverview 展示 Memory Center 的核心状态指标", () => {
+    const now = Date.now();
+    const activeMemories = [
+      {
+        id: "m1",
+        type: "preference",
+        content: "用户偏好中文",
+        source: "manual",
+        confidence: 1,
+        privacy: "sensitive",
+        embeddingStatus: "failed",
+        reviewDueAt: now - 1,
+        lastUsedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ] as AgentMemoryItem[];
+    const pendingMemories = [
+      {
+        id: "p1",
+        type: "episodic",
+        content: "待审核记忆",
+        source: "agent_proposed",
+        confidence: 1,
+        createdAt: now,
+        updatedAt: now,
+      },
+    ] as AgentMemoryItem[];
+
+    const html = render(
+      React.createElement(MemoryOverview, { activeMemories, pendingMemories }),
+    );
+
+    expect(html).toContain("活跃记忆");
+    expect(html).toContain("待审核");
+    expect(html).toContain("同步失败");
+    expect(html).toContain("敏感记忆");
   });
 });

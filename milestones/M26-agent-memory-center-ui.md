@@ -1,5 +1,11 @@
 # M26 Agent Memory Center UI
 
+## 状态
+
+- 状态：已完成
+- 完成时间：2026-06-03
+- 过程记录：`progress/20260603-183215.md`
+
 ## 目标
 
 将现有 `/memories` 从“长期记忆 CRUD 列表”升级为 “Memory Center”，让用户能集中理解、审核、治理和调试 Agent 的长期记忆。
@@ -239,4 +245,3 @@ M26 完成后进入 M27：
 - M27 可以在 Overview 中接入 Eval 和自动提取统计。
 - M27 的自动提取 proposals 进入 M26 已有 Inbox。
 - M27 的 retrieval/write/conflict 指标可在 Memory Center 后续增强展示。
-
