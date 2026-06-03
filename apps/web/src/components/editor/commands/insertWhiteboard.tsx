@@ -6,7 +6,12 @@ import type { MyNotionBlockNoteEditor } from "../blocks/schema";
 interface InsertWhiteboardItemOptions {
   editor: MyNotionBlockNoteEditor;
   documentId: Id<"documents">;
-  locale: string;
+  copy: {
+    title: string;
+    aliases: string[];
+    group: string;
+    untitled: string;
+  };
   createWhiteboard: (input: {
     title: string;
     documentId: Id<"documents">;
@@ -16,19 +21,17 @@ interface InsertWhiteboardItemOptions {
 export function createInsertWhiteboardItem({
   editor,
   documentId,
-  locale,
+  copy,
   createWhiteboard,
 }: InsertWhiteboardItemOptions) {
-  const isZh = locale.startsWith("zh");
-
   return {
-    title: isZh ? "画板" : "Whiteboard",
-    aliases: ["画板", "白板", "绘图", "whiteboard", "board", "draw", "drawing", "excalidraw"],
-    group: isZh ? "媒体" : "Media",
+    title: copy.title,
+    aliases: copy.aliases,
+    group: copy.group,
     icon: <Shapes className="h-4 w-4" />,
     onItemClick: async () => {
       const whiteboard = await createWhiteboard({
-        title: isZh ? "未命名画板" : "Untitled whiteboard",
+        title: copy.untitled,
         documentId,
       });
       insertOrUpdateBlockForSlashMenu(editor, {

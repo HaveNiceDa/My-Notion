@@ -143,6 +143,23 @@
     "noStarredPages": "快去收藏你喜好的文章吧～",
     "noKnowledgeBasePages": "暂无知识库文档"
   },
+  "Whiteboard": {
+    "title": "画板",
+    "untitled": "未命名画板",
+    "blankTitle": "空白画板",
+    "blankDescription": "点击进入编辑",
+    "openLabel": "打开画板",
+    "fullscreenDescription": "全屏画板编辑器，编辑完成后返回文档。",
+    "loading": "正在加载画板...",
+    "exit": "退出",
+    "nameLabel": "画板名称",
+    "statusDirty": "有未保存更改",
+    "statusSaving": "保存中...",
+    "statusSaved": "已保存",
+    "statusError": "保存失败",
+    "slashGroup": "媒体",
+    "slashAliases": ["画板", "白板", "绘图", "whiteboard", "board", "draw", "drawing", "excalidraw"]
+  },
   "Modals": {
     "settings": {
       "mySettings": "我的设置",

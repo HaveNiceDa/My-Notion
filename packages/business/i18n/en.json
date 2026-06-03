@@ -143,6 +143,23 @@
     "noStarredPages": "Go star your favorite articles!",
     "noKnowledgeBasePages": "No knowledge base pages yet"
   },
+  "Whiteboard": {
+    "title": "Whiteboard",
+    "untitled": "Untitled whiteboard",
+    "blankTitle": "Blank whiteboard",
+    "blankDescription": "Click to edit",
+    "openLabel": "Open whiteboard",
+    "fullscreenDescription": "Fullscreen whiteboard editor. Return to the document when editing is complete.",
+    "loading": "Loading whiteboard...",
+    "exit": "Exit",
+    "nameLabel": "Whiteboard name",
+    "statusDirty": "Unsaved changes",
+    "statusSaving": "Saving...",
+    "statusSaved": "Saved",
+    "statusError": "Failed to save",
+    "slashGroup": "Media",
+    "slashAliases": ["whiteboard", "board", "draw", "drawing", "excalidraw"]
+  },
   "Modals": {
     "settings": {
       "mySettings": "My settings",

@@ -8,6 +8,7 @@ import {
 import { getAISlashMenuItems } from "@blocknote/xl-ai";
 import { useMutation } from "convex/react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -48,7 +49,7 @@ function filterAndRankSuggestionItems<T extends { title: string; aliases?: reado
 export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
   const params = useParams();
   const documentId = params.documentId as Id<"documents">;
-  const locale = (params.locale as string) || "en";
+  const t = useTranslations("Whiteboard");
   const createWhiteboard = useMutation(api.whiteboards.create);
 
   return (
@@ -59,7 +60,12 @@ export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
         const whiteboardItem = createInsertWhiteboardItem({
           editor,
           documentId,
-          locale,
+          copy: {
+            title: t("title"),
+            aliases: t.raw("slashAliases"),
+            group: t("slashGroup"),
+            untitled: t("untitled"),
+          },
           createWhiteboard,
         });
         const targetGroup = whiteboardItem.group;

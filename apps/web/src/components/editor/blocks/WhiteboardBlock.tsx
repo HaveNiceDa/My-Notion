@@ -11,7 +11,7 @@ export const WhiteboardBlock = createReactBlockSpec(
     propSchema: {
       ...defaultProps,
       whiteboardId: { default: "" },
-      title: { default: "未命名画板" },
+              title: { default: "" },
       thumbnailUrl: { default: "" },
       engine: { default: "excalidraw", values: ["excalidraw"] },
     },

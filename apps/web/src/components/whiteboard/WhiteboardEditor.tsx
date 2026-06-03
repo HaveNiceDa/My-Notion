@@ -13,6 +13,7 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import "@excalidraw/excalidraw/index.css";
 
 import { parseInitialExcalidrawData } from "./excalidraw/scene";
@@ -83,6 +84,7 @@ function stringifyScenePayload(payload: ScenePayload) {
 }
 
 export function WhiteboardEditor({ title, sceneJson, onSave, onRename, onClose }: WhiteboardEditorProps) {
+  const t = useTranslations("Whiteboard");
   const [status, setStatus] = useState<SaveStatus>("idle");
   const [draftTitle, setDraftTitle] = useState(title);
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
@@ -119,7 +121,7 @@ export function WhiteboardEditor({ title, sceneJson, onSave, onRename, onClose }
   };
 
   const commitTitle = async () => {
-    const nextTitle = draftTitle.trim() || "未命名画板";
+    const nextTitle = draftTitle.trim() || t("untitled");
     setDraftTitle(nextTitle);
     if (!onRename || nextTitle === title) return;
     try {
@@ -154,13 +156,13 @@ export function WhiteboardEditor({ title, sceneJson, onSave, onRename, onClose }
               onClick={onClose}
             >
               <ArrowLeft className="h-4 w-4" />
-              退出
+              {t("exit")}
             </button>
           ) : null}
           <input
             className="h-8 min-w-0 max-w-[42vw] rounded-md bg-transparent px-2 text-sm font-medium outline-none transition hover:bg-muted focus:bg-muted focus:ring-1 focus:ring-ring"
             value={draftTitle}
-            aria-label="画板名称"
+            aria-label={t("nameLabel")}
             onChange={(event) => setDraftTitle(event.target.value)}
             onBlur={() => {
               void commitTitle();
@@ -177,10 +179,10 @@ export function WhiteboardEditor({ title, sceneJson, onSave, onRename, onClose }
           />
         </div>
         <div className="text-xs text-muted-foreground">
-          {status === "dirty" && "有未保存更改"}
-          {status === "saving" && "保存中..."}
-          {status === "saved" && "已保存"}
-          {status === "error" && "保存失败"}
+          {status === "dirty" && t("statusDirty")}
+          {status === "saving" && t("statusSaving")}
+          {status === "saved" && t("statusSaved")}
+          {status === "error" && t("statusError")}
         </div>
       </div>
       <div className="min-h-0 flex-1">

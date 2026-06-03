@@ -2,6 +2,7 @@
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useMutation, useQuery } from "convex/react";
+import { useTranslations } from "next-intl";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { cn } from "@notion/business/utils";
@@ -24,6 +25,7 @@ export function WhiteboardFullscreenDialog({
   open,
   onOpenChange,
 }: WhiteboardFullscreenDialogProps) {
+  const t = useTranslations("Whiteboard");
   const id = whiteboardId as Id<"whiteboards">;
   const whiteboard = useQuery(api.whiteboards.getById, open ? { whiteboardId: id } : "skip");
   const activeWhiteboard = whiteboard ?? initialWhiteboard;
@@ -49,10 +51,10 @@ export function WhiteboardFullscreenDialog({
           )}
         >
           <DialogPrimitive.Title className="sr-only">
-            {activeWhiteboard?.title ?? "画板"}
+            {activeWhiteboard?.title ?? t("title")}
           </DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
-            全屏画板编辑器，编辑完成后返回文档。
+            {t("fullscreenDescription")}
           </DialogPrimitive.Description>
         {activeWhiteboard ? (
           <WhiteboardEditor
@@ -76,7 +78,7 @@ export function WhiteboardFullscreenDialog({
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-            正在加载画板...
+            {t("loading")}
           </div>
         )}
         </DialogPrimitive.Content>
