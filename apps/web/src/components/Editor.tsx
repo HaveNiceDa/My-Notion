@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, forwardRef, useImperativeHandle } from "react";
-import { BlockNoteEditor, PartialBlock } from "@blocknote/core";
+import { PartialBlock } from "@blocknote/core";
 import { useCreateBlockNote } from "@blocknote/react";
 import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/mantine/style.css";
@@ -17,6 +17,7 @@ import { EditorSlashMenu } from "./editor/EditorSlashMenu";
 import { EditorAIMenuController } from "./editor/EditorAIMenuController";
 import { useEditorAITransport } from "./editor/useEditorAITransport";
 import { getBlockNoteDictionary, getAILocaleDict } from "./editor/editor-locale";
+import { myNotionBlockNoteSchema } from "./editor/blocks/schema";
 
 interface EditorProps {
   onChange: (value: string) => void;
@@ -41,7 +42,8 @@ const Editor = forwardRef<EditorRef, EditorProps>(
       return response.url;
     };
 
-    const editor: BlockNoteEditor = useCreateBlockNote({
+    const editor = useCreateBlockNote({
+      schema: myNotionBlockNoteSchema,
       initialContent: initialContent
         ? (JSON.parse(initialContent) as PartialBlock[])
         : undefined,

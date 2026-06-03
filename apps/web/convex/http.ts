@@ -2,6 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
+import type { WhiteboardDslDocument } from "@notion/business/whiteboard";
 
 type ApiErrorCode =
   | "BAD_REQUEST"
@@ -73,6 +74,15 @@ async function parseJsonBody(req: Request) {
   }
 }
 
+function parseWhiteboardDslBody(value: unknown): WhiteboardDslDocument | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const candidate = value as Partial<WhiteboardDslDocument>;
+  if (candidate.version !== "mwb-dsl-v1" || !Array.isArray(candidate.nodes)) {
+    return undefined;
+  }
+  return candidate as WhiteboardDslDocument;
+}
+
 function endpointKey(method: string, pathname: string) {
   if (pathname === "/cli/v1/auth/status") {
     return `${method} /cli/v1/auth/status`;
@@ -88,6 +98,12 @@ function endpointKey(method: string, pathname: string) {
   }
   if (pathname.startsWith("/cli/v1/documents/")) {
     return `${method} /cli/v1/documents/:id`;
+  }
+  if (pathname === "/cli/v1/whiteboards") {
+    return `${method} /cli/v1/whiteboards`;
+  }
+  if (pathname.startsWith("/cli/v1/whiteboards/")) {
+    return `${method} /cli/v1/whiteboards/:id`;
   }
   return `${method} ${pathname}`;
 }
@@ -323,6 +339,110 @@ const cliHttpAction = httpAction(async (ctx, req) => {
           return auditedError(404, "NOT_FOUND", "Document not found");
         }
         return auditedSuccess(document);
+      }
+    }
+
+    if (pathname === "/cli/v1/whiteboards" && method === "GET") {
+      const limit = Number(url.searchParams.get("limit") ?? 20);
+      const documentIdParam = url.searchParams.get("documentId");
+      const whiteboards = await ctx.runQuery(internal.cli.searchCliWhiteboards, {
+        userId: auth.userId,
+        documentId: documentIdParam
+          ? (documentIdParam as Id<"documents">)
+          : undefined,
+        limit: Number.isFinite(limit) ? limit : 20,
+      });
+      return auditedSuccess({ whiteboards });
+    }
+
+    if (pathname === "/cli/v1/whiteboards" && method === "POST") {
+      const body = await parseJsonBody(req);
+      if (typeof body.title !== "string" || body.title.trim().length === 0) {
+        return auditedError(422, "VALIDATION_ERROR", "title is required");
+      }
+      const dsl = parseWhiteboardDslBody(body.dsl);
+      const whiteboard = await ctx.runMutation(internal.cli.createCliWhiteboard, {
+        userId: auth.userId,
+        title: body.title.trim(),
+        documentId:
+          typeof body.documentId === "string"
+            ? (body.documentId as Id<"documents">)
+            : undefined,
+        dsl,
+      });
+      return auditedSuccess(whiteboard, { status: 201 });
+    }
+
+    const whiteboardPrefix = "/cli/v1/whiteboards/";
+    if (pathname.startsWith(whiteboardPrefix)) {
+      const suffix = pathname.slice(whiteboardPrefix.length);
+      const [rawWhiteboardId, action] = suffix.split("/");
+      const whiteboardId = decodeURIComponent(rawWhiteboardId) as Id<"whiteboards">;
+      if (!whiteboardId) {
+        return auditedError(422, "VALIDATION_ERROR", "whiteboard id is required");
+      }
+
+      if (method === "GET" && !action) {
+        const whiteboard = await ctx.runQuery(internal.cli.getCliWhiteboard, {
+          userId: auth.userId,
+          whiteboardId,
+        });
+        if (!whiteboard) {
+          return auditedError(404, "NOT_FOUND", "Whiteboard not found");
+        }
+        return auditedSuccess(whiteboard);
+      }
+
+      if (method === "PATCH" && !action) {
+        const body = await parseJsonBody(req);
+        const dsl = parseWhiteboardDslBody(body.dsl);
+        const whiteboard = await ctx.runMutation(internal.cli.updateCliWhiteboard, {
+          userId: auth.userId,
+          whiteboardId,
+          title: typeof body.title === "string" ? body.title : undefined,
+          dsl,
+          sceneJson:
+            typeof body.sceneJson === "string" ? body.sceneJson : undefined,
+        });
+        if (!whiteboard) {
+          return auditedError(404, "NOT_FOUND", "Whiteboard not found");
+        }
+        return auditedSuccess(whiteboard);
+      }
+
+      if (method === "POST" && action === "export") {
+        const body = await parseJsonBody(req);
+        const format = body.format === "json" || body.format === "svg"
+          ? body.format
+          : "json";
+        const whiteboard = await ctx.runQuery(internal.cli.getCliWhiteboard, {
+          userId: auth.userId,
+          whiteboardId,
+        });
+        if (!whiteboard) {
+          return auditedError(404, "NOT_FOUND", "Whiteboard not found");
+        }
+        const content =
+          format === "json"
+            ? whiteboard.sceneJson
+            : `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="#fff"/><text x="32" y="48" font-family="sans-serif" font-size="24">${whiteboard.title}</text><text x="32" y="88" font-family="sans-serif" font-size="14">Export this whiteboard as JSON for full fidelity.</text></svg>`;
+        return auditedSuccess({
+          id: whiteboard.id,
+          title: whiteboard.title,
+          format,
+          content,
+        });
+      }
+
+      if (method === "DELETE" && !action) {
+        const whiteboard = await ctx.runMutation(internal.cli.archiveCliWhiteboard, {
+          userId: auth.userId,
+          whiteboardId,
+        });
+        if (!whiteboard) {
+          return auditedError(404, "NOT_FOUND", "Whiteboard not found");
+        }
+        return auditedSuccess(whiteboard);
       }
     }
 

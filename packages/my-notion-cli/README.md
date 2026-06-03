@@ -20,6 +20,7 @@
 | `config` | 初始化/检查 CLI 环境、profile、登录态、Skills 和 MCP 下一步命令 |
 | `auth` | 浏览器 Device Flow 登录、状态检查、清除本机登录态 |
 | `docs` | 创建、读取、搜索、列出、更新、归档、导入和导出文档 |
+| `whiteboards` | 通过 `mwb-dsl-v1` DSL 创建、读取、更新、导出和归档 Excalidraw 画板 |
 | `tokens` | 撤销当前 CLI PAT，使本机凭据在服务端失效 |
 | `mcp` | 启动 MCP STDIO server，给 MCP Client 暴露文档工具 |
 | `install` | 输出 npm、Skills 和 Agent 安装检查信息 |
@@ -206,6 +207,10 @@ my-notion docs fetch --id <documentId> --format markdown
 my-notion docs update --id <documentId> --mode append --content-file ./append.md --format json
 my-notion docs export --id <documentId> --output ./document.md
 my-notion docs import --title "导入文档" --file ./document.md --format json
+my-notion whiteboards create --title "架构图" --dsl-file ./board.mwb.yaml --document-id <documentId> --format json
+my-notion whiteboards update --id <whiteboardId> --dsl-file ./board.mwb.yaml --format json
+my-notion whiteboards fetch --id <whiteboardId> --format json
+my-notion whiteboards export --id <whiteboardId> --format json --output ./board.excalidraw
 my-notion docs archive --id <documentId> --format json
 ```
 

@@ -108,6 +108,64 @@ describe("MyNotionClient", () => {
     );
   });
 
+  it("sends whiteboard DSL create and export requests", async () => {
+    const fetchMock = vi.mocked(globalThis.fetch);
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          id: "wb_1",
+          title: "Board",
+          engine: "excalidraw",
+          sceneJson: "{}",
+          isArchived: false,
+          createdAt: 1,
+          updatedAt: 1,
+        },
+      }),
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        success: true,
+        data: {
+          id: "wb_1",
+          title: "Board",
+          format: "json",
+          content: "{}",
+        },
+      }),
+    );
+
+    const client = new MyNotionClient({
+      apiUrl: "https://example.convex.site",
+      token: "mnt_test",
+    });
+    const dsl = {
+      version: "mwb-dsl-v1",
+      nodes: [{ id: "a", type: "box", text: "A" }],
+    };
+
+    await client.createWhiteboard({ title: "Board", documentId: "doc_1", dsl });
+    await client.exportWhiteboard({ id: "wb_1", format: "json" });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      "https://example.convex.site/cli/v1/whiteboards",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ title: "Board", documentId: "doc_1", dsl }),
+      }),
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      "https://example.convex.site/cli/v1/whiteboards/wb_1/export",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ format: "json" }),
+      }),
+    );
+  });
+
   it("does not retry structured rate limit errors and preserves requestId", async () => {
     const fetchMock = vi.mocked(globalThis.fetch);
     fetchMock.mockResolvedValueOnce(

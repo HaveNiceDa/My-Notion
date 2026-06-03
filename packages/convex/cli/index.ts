@@ -1,10 +1,18 @@
 import { v } from "convex/values";
 import { internalMutation, internalQuery, mutation, query } from "@convex/server";
+import type { Id } from "@convex/dataModel";
 import {
   appendMarkdownToBlockNoteJson,
   blockNoteJsonToMarkdown,
   markdownToBlockNoteJson,
 } from "../documents/logic/markdown";
+import {
+  parseWhiteboardDsl,
+  stringifyWhiteboardScene,
+  whiteboardDslToExcalidrawScene,
+} from "@notion/business/whiteboard";
+import type { WhiteboardDslDocument } from "@notion/business/whiteboard";
+import { whiteboardDslValidator } from "../whiteboards";
 
 const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
 const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
@@ -71,6 +79,34 @@ function toDocumentResult(document: {
     isPublished: document.isPublished,
     isInKnowledgeBase: Boolean(document.isInKnowledgeBase),
     lastEditedTime: document.lastEditedTime ?? null,
+  };
+}
+
+function toWhiteboardResult(whiteboard: {
+  _id: string;
+  title: string;
+  documentId?: string;
+  engine: "excalidraw";
+  sceneJson: string;
+  thumbnailDataUrl?: string;
+  sourceDsl?: string;
+  sourceDslVersion?: "mwb-dsl-v1";
+  isArchived: boolean;
+  createdAt: number;
+  updatedAt: number;
+}) {
+  return {
+    id: whiteboard._id,
+    title: whiteboard.title,
+    documentId: whiteboard.documentId,
+    engine: whiteboard.engine,
+    sceneJson: whiteboard.sceneJson,
+    thumbnailDataUrl: whiteboard.thumbnailDataUrl,
+    sourceDsl: whiteboard.sourceDsl,
+    sourceDslVersion: whiteboard.sourceDslVersion,
+    isArchived: whiteboard.isArchived,
+    createdAt: whiteboard.createdAt,
+    updatedAt: whiteboard.updatedAt,
   };
 }
 
@@ -649,6 +685,153 @@ export const archiveCliDocument = internalMutation({
     }
 
     return toDocumentResult(archivedDocument);
+  },
+});
+
+async function assertCliDocumentOwner(
+  ctx: {
+    db: {
+      get: (
+        id: Id<"documents">,
+      ) => Promise<{ userId: string; isArchived?: boolean } | null>;
+    };
+  },
+  documentId: Id<"documents"> | undefined,
+  userId: string,
+) {
+  if (!documentId) return;
+  const document = await ctx.db.get(documentId);
+  if (!document || document.isArchived || document.userId !== userId) {
+    throw new Error("Document not found");
+  }
+}
+
+export const createCliWhiteboard = internalMutation({
+  args: {
+    userId: v.string(),
+    title: v.string(),
+    documentId: v.optional(v.id("documents")),
+    dsl: v.optional(whiteboardDslValidator),
+  },
+  handler: async (ctx, args) => {
+    await assertCliDocumentOwner(ctx, args.documentId, args.userId);
+    const timestamp = now();
+    const dsl = args.dsl ? parseWhiteboardDsl(args.dsl as WhiteboardDslDocument) : undefined;
+    const sceneJson = dsl
+      ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
+      : stringifyWhiteboardScene({
+          type: "excalidraw",
+          version: 2,
+          source: "my-notion",
+          elements: [],
+          appState: {
+            viewBackgroundColor: "#ffffff",
+            currentItemStrokeColor: "#1e1e1e",
+            currentItemBackgroundColor: "transparent",
+            gridSize: null,
+          },
+          files: {},
+        });
+    const whiteboardId = await ctx.db.insert("whiteboards", {
+      title: args.title,
+      userId: args.userId,
+      documentId: args.documentId,
+      engine: "excalidraw",
+      sceneJson,
+      sourceDsl: args.dsl ? JSON.stringify(args.dsl, null, 2) : undefined,
+      sourceDslVersion: args.dsl?.version,
+      isArchived: false,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+    const whiteboard = await ctx.db.get(whiteboardId);
+    if (!whiteboard) throw new Error("Failed to create whiteboard");
+    return toWhiteboardResult(whiteboard);
+  },
+});
+
+export const getCliWhiteboard = internalQuery({
+  args: {
+    userId: v.string(),
+    whiteboardId: v.id("whiteboards"),
+  },
+  handler: async (ctx, args) => {
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (!whiteboard || whiteboard.isArchived || whiteboard.userId !== args.userId) {
+      return null;
+    }
+    return toWhiteboardResult(whiteboard);
+  },
+});
+
+export const searchCliWhiteboards = internalQuery({
+  args: {
+    userId: v.string(),
+    documentId: v.optional(v.id("documents")),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
+    const rows = args.documentId
+      ? await ctx.db
+          .query("whiteboards")
+          .withIndex("by_document", (q) => q.eq("documentId", args.documentId))
+          .take(limit)
+      : await ctx.db
+          .query("whiteboards")
+          .withIndex("by_user_updated", (q) => q.eq("userId", args.userId))
+          .order("desc")
+          .take(limit);
+    return rows
+      .filter((whiteboard) => !whiteboard.isArchived && whiteboard.userId === args.userId)
+      .map(toWhiteboardResult);
+  },
+});
+
+export const updateCliWhiteboard = internalMutation({
+  args: {
+    userId: v.string(),
+    whiteboardId: v.id("whiteboards"),
+    title: v.optional(v.string()),
+    dsl: v.optional(whiteboardDslValidator),
+    sceneJson: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (!whiteboard || whiteboard.isArchived || whiteboard.userId !== args.userId) {
+      return null;
+    }
+    const dsl = args.dsl ? parseWhiteboardDsl(args.dsl as WhiteboardDslDocument) : undefined;
+    await ctx.db.patch(args.whiteboardId, {
+      title: args.title ?? dsl?.title ?? whiteboard.title,
+      sceneJson: dsl
+        ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
+        : args.sceneJson ?? whiteboard.sceneJson,
+      sourceDsl: args.dsl ? JSON.stringify(args.dsl, null, 2) : whiteboard.sourceDsl,
+      sourceDslVersion: args.dsl?.version ?? whiteboard.sourceDslVersion,
+      updatedAt: now(),
+    });
+    const updated = await ctx.db.get(args.whiteboardId);
+    if (!updated) throw new Error("Failed to update whiteboard");
+    return toWhiteboardResult(updated);
+  },
+});
+
+export const archiveCliWhiteboard = internalMutation({
+  args: {
+    userId: v.string(),
+    whiteboardId: v.id("whiteboards"),
+  },
+  handler: async (ctx, args) => {
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (!whiteboard || whiteboard.userId !== args.userId) return null;
+    await ctx.db.patch(args.whiteboardId, {
+      isArchived: true,
+      updatedAt: now(),
+    });
+    const updated = await ctx.db.get(args.whiteboardId);
+    if (!updated) throw new Error("Failed to archive whiteboard");
+    return toWhiteboardResult(updated);
   },
 });
 

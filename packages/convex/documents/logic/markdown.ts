@@ -271,6 +271,17 @@ function blockToMarkdown(block: BlockNoteBlock, index: number) {
     }
     case "divider":
       return "---";
+    case "whiteboard": {
+      const title =
+        typeof block.props?.title === "string" && block.props.title.trim()
+          ? block.props.title.trim()
+          : "Untitled whiteboard";
+      const whiteboardId =
+        typeof block.props?.whiteboardId === "string" ? block.props.whiteboardId : "";
+      return whiteboardId
+        ? `![My-Notion Whiteboard: ${title}](mynotion-whiteboard://${whiteboardId})`
+        : `![My-Notion Whiteboard: ${title}](mynotion-whiteboard://unknown)`;
+    }
     default:
       return text;
   }

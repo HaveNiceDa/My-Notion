@@ -1,18 +1,28 @@
 "use client";
 
-import type { BlockNoteEditor } from "@blocknote/core";
 import { filterSuggestionItems } from "@blocknote/core/extensions";
 import {
   SuggestionMenuController,
   getDefaultReactSlashMenuItems,
 } from "@blocknote/react";
 import { getAISlashMenuItems } from "@blocknote/xl-ai";
+import { useMutation } from "convex/react";
+import { useParams } from "next/navigation";
+
+import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
+import type { MyNotionBlockNoteEditor } from "./blocks/schema";
+import { createInsertWhiteboardItem } from "./commands/insertWhiteboard";
 
 interface EditorSlashMenuProps {
-  editor: BlockNoteEditor<any, any, any>;
+  editor: MyNotionBlockNoteEditor;
 }
 
 export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
+  const params = useParams();
+  const documentId = params.documentId as Id<"documents">;
+  const createWhiteboard = useMutation(api.whiteboards.create);
+
   return (
     <SuggestionMenuController
       triggerCharacter="/"
@@ -20,6 +30,11 @@ export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
         filterSuggestionItems(
           [
             ...getDefaultReactSlashMenuItems(editor),
+            createInsertWhiteboardItem({
+              editor,
+              documentId,
+              createWhiteboard,
+            }),
             ...getAISlashMenuItems(editor),
           ],
           query,

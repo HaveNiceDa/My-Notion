@@ -13,6 +13,7 @@ import type * as aiChat from "../aiChat.js";
 import type * as cli from "../cli.js";
 import type * as documents from "../documents.js";
 import type * as http from "../http.js";
+import type * as whiteboards from "../whiteboards.js";
 
 import type {
   ApiFromModules,
@@ -26,6 +27,7 @@ declare const fullApi: ApiFromModules<{
   cli: typeof cli;
   documents: typeof documents;
   http: typeof http;
+  whiteboards: typeof whiteboards;
 }>;
 
 /**

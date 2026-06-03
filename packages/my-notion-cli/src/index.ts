@@ -7,6 +7,7 @@ import { runInstallCommand } from "./commands/install.js";
 import { runMcpCommand } from "./commands/mcp.js";
 import { runTokensCommand } from "./commands/tokens.js";
 import { runUpdateCommand } from "./commands/update.js";
+import { runWhiteboardsCommand } from "./commands/whiteboards.js";
 import { writeError } from "./format/output.js";
 import type { ParsedArgs } from "./types.js";
 
@@ -55,6 +56,11 @@ Usage:
   my-notion docs archive --id <documentId>
   my-notion docs export --id <documentId> [--output document.md]
   my-notion docs import --title <title> --file document.md
+  my-notion whiteboards create --title <title> [--dsl-file board.mwb.yaml] [--document-id <documentId>]
+  my-notion whiteboards fetch --id <whiteboardId>
+  my-notion whiteboards list [--document-id <documentId>] [--limit 20]
+  my-notion whiteboards update --id <whiteboardId> [--dsl-file board.mwb.yaml]
+  my-notion whiteboards export --id <whiteboardId> [--format json|svg] [--output board.json]
   my-notion install [--skills] [--check]
   my-notion update [--check] [--tag beta|latest]
   my-notion mcp serve --transport stdio
@@ -92,6 +98,11 @@ async function main() {
 
   if (command === "docs") {
     await runDocsCommand(args);
+    return;
+  }
+
+  if (command === "whiteboards") {
+    await runWhiteboardsCommand(args);
     return;
   }
 
