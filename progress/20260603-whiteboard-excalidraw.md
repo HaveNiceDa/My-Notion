@@ -14,6 +14,9 @@
 - CLI 新增 `whiteboards` 命令组，支持 create/fetch/list/update/export/archive。
 - MCP 新增 `my_notion_whiteboards_*` 工具，写入类工具默认 dry-run。
 - Markdown 导出遇到 `whiteboard` block 时输出 `mynotion-whiteboard://<id>` 稳定占位。
+- Web 交互已按飞书画板方向收敛：文档内展示整宽纯缩略图，单击进入全屏画板，左上角支持退出和编辑画板名称。
+- 缩略图加载态已改为 loading 动画，移除点阵背景和画笔占位；Slash 菜单画板图标改为绘图类图标，并补充 `Media` / `媒体` 分组国际化。
+- 全屏画板弹层改为画板专用白色全屏过渡，复用已加载画板数据以减少进入/退出闪烁。
 
 ## 关键约束
 
@@ -26,6 +29,8 @@
 - 增加更完善的 Excalidraw thumbnail 生成与 SVG 导出保真。
 - 为 DSL 布局增加更强的自动排布与冲突检测。
 - 视体验需要补充独立画板页面、移动端只读预览和 Agent 画板生成工具卡片。
+- 画板缩略图仍依赖退出/保存时生成，后续可继续优化为空画板预览、缩略图生成频率和更高保真导出。
+- 暂未实现多人协作、移动端完整编辑、Agent 根据文档一键生成画板的产品化工具卡片。
 
 ## 验证补充
 

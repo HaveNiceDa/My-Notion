@@ -21,6 +21,7 @@ interface EditorSlashMenuProps {
 export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
   const params = useParams();
   const documentId = params.documentId as Id<"documents">;
+  const locale = (params.locale as string) || "en";
   const createWhiteboard = useMutation(api.whiteboards.create);
 
   return (
@@ -33,6 +34,7 @@ export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
             createInsertWhiteboardItem({
               editor,
               documentId,
+              locale,
               createWhiteboard,
             }),
             ...getAISlashMenuItems(editor),

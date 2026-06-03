@@ -1,4 +1,4 @@
-import { PenLine } from "lucide-react";
+import { Shapes } from "lucide-react";
 import { insertOrUpdateBlockForSlashMenu } from "@blocknote/core/extensions";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { MyNotionBlockNoteEditor } from "../blocks/schema";
@@ -6,6 +6,7 @@ import type { MyNotionBlockNoteEditor } from "../blocks/schema";
 interface InsertWhiteboardItemOptions {
   editor: MyNotionBlockNoteEditor;
   documentId: Id<"documents">;
+  locale: string;
   createWhiteboard: (input: {
     title: string;
     documentId: Id<"documents">;
@@ -15,16 +16,19 @@ interface InsertWhiteboardItemOptions {
 export function createInsertWhiteboardItem({
   editor,
   documentId,
+  locale,
   createWhiteboard,
 }: InsertWhiteboardItemOptions) {
+  const isZh = locale.startsWith("zh");
+
   return {
-    title: "画板",
+    title: isZh ? "画板" : "Whiteboard",
     aliases: ["whiteboard", "board", "draw", "excalidraw", "绘图"],
-    group: "Media",
-    icon: <PenLine className="h-4 w-4" />,
+    group: isZh ? "媒体" : "Media",
+    icon: <Shapes className="h-4 w-4" />,
     onItemClick: async () => {
       const whiteboard = await createWhiteboard({
-        title: "未命名画板",
+        title: isZh ? "未命名画板" : "Untitled whiteboard",
         documentId,
       });
       insertOrUpdateBlockForSlashMenu(editor, {
