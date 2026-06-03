@@ -5,10 +5,16 @@ import { invalidateToolResultCache } from "../tool-result-cache";
 import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
-type MemorySource = "user_explicit" | "agent_proposed" | "manual";
+type MemorySource = "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
 
 const MEMORY_TYPES = new Set<MemoryType>(["preference", "project", "episodic"]);
-const MEMORY_SOURCES = new Set<MemorySource>(["user_explicit", "agent_proposed", "manual"]);
+const MEMORY_SOURCES = new Set<MemorySource>([
+  "user_explicit",
+  "agent_proposed",
+  "manual",
+  "auto_extracted",
+  "system",
+]);
 
 interface MemoryWritePreview {
   type: MemoryType;

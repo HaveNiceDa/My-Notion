@@ -1,5 +1,11 @@
 # M23 Agent Memory Schema Foundation
 
+## 状态
+
+- 状态：已完成
+- 完成时间：2026-06-03
+- 过程记录：`progress/20260603-172805.md`
+
 ## 目标
 
 把当前 `agentMemories` 从 MVP 单表扩展为可承载长期治理的 Memory 基础模型，为后续检索、Inbox、Memory Center 和自动提取打底。
@@ -226,4 +232,3 @@ M23 完成后进入 M24：
 - M24 使用 `kind/category/scope` 实现 `memory_search`。
 - M24 使用 `embeddingStatus` 移除读路径 upsert。
 - M25 使用 `pending_review` 和 evidence 字段实现 Inbox。
-
