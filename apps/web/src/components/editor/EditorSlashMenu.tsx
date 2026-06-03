@@ -27,21 +27,36 @@ export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
   return (
     <SuggestionMenuController
       triggerCharacter="/"
-      getItems={async (query) =>
-        filterSuggestionItems(
+      getItems={async (query) => {
+        const defaultItems = getDefaultReactSlashMenuItems(editor);
+        const whiteboardItem = createInsertWhiteboardItem({
+          editor,
+          documentId,
+          locale,
+          createWhiteboard,
+        });
+        const targetGroup = whiteboardItem.group;
+        const lastGroupIndex = defaultItems.reduce(
+          (lastIndex, item, index) => (item.group === targetGroup ? index : lastIndex),
+          -1,
+        );
+        const itemsWithWhiteboard =
+          lastGroupIndex >= 0
+            ? [
+                ...defaultItems.slice(0, lastGroupIndex + 1),
+                whiteboardItem,
+                ...defaultItems.slice(lastGroupIndex + 1),
+              ]
+            : [...defaultItems, whiteboardItem];
+
+        return filterSuggestionItems(
           [
-            ...getDefaultReactSlashMenuItems(editor),
-            createInsertWhiteboardItem({
-              editor,
-              documentId,
-              locale,
-              createWhiteboard,
-            }),
+            ...itemsWithWhiteboard,
             ...getAISlashMenuItems(editor),
           ],
           query,
-        )
-      }
+        );
+      }}
     />
   );
 }

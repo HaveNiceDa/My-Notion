@@ -32,6 +32,20 @@ interface AgentMemoryIndexItem {
   updatedAt?: number;
 }
 
+function resolveQdrantApiKey(url: string | undefined, apiKey: string | undefined) {
+  if (!apiKey || !url) return undefined;
+
+  try {
+    const parsedUrl = new URL(url);
+    const isLocalHttp =
+      parsedUrl.protocol === "http:" &&
+      ["localhost", "127.0.0.1", "0.0.0.0"].includes(parsedUrl.hostname);
+    return isLocalHttp ? undefined : apiKey;
+  } catch {
+    return apiKey;
+  }
+}
+
 export class QdrantVectorStoreWrapper {
   private qdrantClient: QdrantClient;
   private userId: string;
@@ -44,9 +58,12 @@ export class QdrantVectorStoreWrapper {
     const cleanUserId = userId.replace(/^user_/, "");
     this.collectionName = `user_${cleanUserId}_knowledge_base`;
 
+    const qdrantUrl = process.env.NEXT_PUBLIC_QDRANT_URL;
+    const qdrantApiKey = resolveQdrantApiKey(qdrantUrl, process.env.NEXT_PUBLIC_QDRANT_API_KEY);
+
     this.qdrantClient = new QdrantClient({
-      url: process.env.NEXT_PUBLIC_QDRANT_URL,
-      apiKey: process.env.NEXT_PUBLIC_QDRANT_API_KEY,
+      url: qdrantUrl,
+      apiKey: qdrantApiKey,
       checkCompatibility: false,
     });
   }
