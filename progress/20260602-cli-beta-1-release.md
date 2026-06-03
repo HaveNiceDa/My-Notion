@@ -4,7 +4,7 @@
 
 - 发布 npm beta 包：`@mynotion/cli@0.1.0-beta.1`。
 - `beta` dist-tag 已更新到 `0.1.0-beta.1`。
-- `latest` dist-tag 仍保留在 `0.1.0-beta.0`，稳定版发布前不切换。
+- `latest` dist-tag 已按产品展示需要更新到 `0.1.0-beta.1`，npm 包首页默认展示当前最新 beta。
 
 ## 本次包含
 
@@ -33,6 +33,7 @@
 ## 发布后校验
 
 - `npm view @mynotion/cli@beta version bin dist-tags --json`：通过，`beta` 指向 `0.1.0-beta.1`。
+- `npm view @mynotion/cli dist-tags versions --json`：通过，`beta` 和 `latest` 均指向 `0.1.0-beta.1`。
 - `npx @mynotion/cli@beta --help`：通过。
 - `npx @mynotion/cli@beta install --check --format json`：通过，返回 `version: "0.1.0-beta.1"` 且 `skillsBundled: true`。
 
