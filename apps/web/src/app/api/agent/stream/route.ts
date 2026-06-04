@@ -119,15 +119,10 @@ async function buildInstructionMemoryContext(options: {
     });
     const instructionMemories = memories
       .filter((memory) =>
-        memory.kind === "instruction"
-        && memory.status === "active"
-        && memory.privacy !== "sensitive"
-        && memory.scopeLevel === "user"
-        && memory.scopeKey === options.userId,
+        memory.status === "active"
+        && (memory.type === "preference" || memory.type === "project"),
       )
       .sort((a, b) => {
-        const importanceDelta = (b.importance ?? 0.5) - (a.importance ?? 0.5);
-        if (importanceDelta !== 0) return importanceDelta;
         return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
       })
       .slice(0, 6);
@@ -136,7 +131,7 @@ async function buildInstructionMemoryContext(options: {
     const lines: string[] = [];
     let usedChars = 0;
     for (const memory of instructionMemories) {
-      const line = `- [${memory.category ?? memory.type}] ${memory.summary || memory.content}`;
+      const line = `- [${memory.type}] ${memory.summary || memory.content}`;
       if (usedChars + line.length > 1_200) break;
       lines.push(line);
       usedChars += line.length;

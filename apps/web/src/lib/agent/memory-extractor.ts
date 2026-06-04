@@ -1,7 +1,6 @@
 import type { ConvexHttpClient } from "convex/browser";
 
 import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import type { AgentTracer } from "./trace";
 import type { CurrentDocumentContext } from "./tools/types";
 
@@ -149,19 +148,12 @@ export async function proposeExtractedMemories(
   for (const proposal of options.extraction.proposals) {
     const created = await options.convex.mutation(api.agentMemories.proposeAgentMemory, {
       type: proposal.type,
-      kind: proposal.kind,
-      category: proposal.category,
-      scopeLevel: proposal.scopeLevel,
-      scopeKey: proposal.scopeKey,
       content: proposal.content,
       summary: proposal.summary,
       source: "auto_extracted",
       reason: proposal.reason,
-      evidenceConversationId: parseConversationId(options.conversationId),
       evidenceText: proposal.evidenceText,
       confidence: proposal.confidence,
-      importance: proposal.importance,
-      privacy: proposal.privacy,
     });
     proposalIds.push(String(created.id));
   }
@@ -271,8 +263,4 @@ function normalizeContent(value: string): string {
 
 function truncate(value: string, maxLength: number): string {
   return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
-}
-
-function parseConversationId(value: string | undefined): Id<"aiConversations"> | undefined {
-  return value && value.trim() ? value.trim() as Id<"aiConversations"> : undefined;
 }

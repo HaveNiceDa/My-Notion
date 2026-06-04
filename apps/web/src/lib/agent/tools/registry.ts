@@ -7,7 +7,6 @@ import {
   webSearchTool,
   webExtractTool,
   memorySearchTool,
-  memoryReadTool,
   memoryWriteTool,
   taskPlanTool,
 } from "./definitions";
@@ -25,7 +24,6 @@ export function buildAvailableTools(
     webExtractTool,
     documentSearchTool,
     memorySearchTool,
-    memoryReadTool,
     memoryWriteTool,
     taskPlanTool,
     documentWriteTool,

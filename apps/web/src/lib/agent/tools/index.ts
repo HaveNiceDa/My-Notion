@@ -6,7 +6,7 @@ export {
   webSearchTool,
   webExtractTool,
   documentSearchTool,
-  memoryReadTool,
+  memorySearchTool,
   memoryWriteTool,
   taskPlanTool,
 } from "./definitions";
@@ -18,5 +18,6 @@ export { executeDocumentSearch } from "./document-search";
 export { executeKnowledgeSearch } from "./knowledge-search";
 export { executeWebSearch } from "./web-search";
 export { executeWebExtract } from "./web-extract";
+export { executeMemorySearch, executeMemoryWrite } from "./memory";
 export { executeTaskPlan } from "./task-plan";
 export type { CurrentDocumentContext, ToolContext } from "./types";

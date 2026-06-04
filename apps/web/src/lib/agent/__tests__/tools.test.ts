@@ -25,7 +25,6 @@ import {
   webExtractTool,
   webSearchTool,
   memorySearchTool,
-  memoryReadTool,
   memoryWriteTool,
   taskPlanTool,
 } from "../tools/definitions";
@@ -34,7 +33,7 @@ import { executeDocumentUpdate, executeDocumentWrite } from "../tools/document-w
 import { executeDocumentSearch } from "../tools/document-search";
 import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
-import { executeMemoryRead, executeMemorySearch, executeMemoryWrite } from "../tools/memory";
+import { executeMemorySearch, executeMemoryWrite } from "../tools/memory";
 import { executeTaskPlan } from "../tools/task-plan";
 import { withToolFallback } from "../tools/fallback";
 import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
@@ -49,7 +48,6 @@ describe("buildAvailableTools", () => {
     expect(names).toContain("web_extract");
     expect(names).toContain("document_search");
     expect(names).toContain("memory_search");
-    expect(names).toContain("memory_read");
     expect(names).toContain("memory_write");
     expect(names).toContain("task_plan");
     expect(names).toContain("document_write");
@@ -109,7 +107,7 @@ describe("AgentTool 定义", () => {
     expect(memoryWriteTool.parameters.required).toContain("content");
   });
 
-  it("memorySearchTool 使用 query 作为必填参数并支持分层过滤", () => {
+  it("memorySearchTool 使用 query 作为必填参数", () => {
     expect(memorySearchTool.name).toBe("memory_search");
     expect(memorySearchTool.parameters.required).toContain("query");
     expect(memorySearchTool.parameters).toHaveProperty("properties");
@@ -135,7 +133,6 @@ describe("AgentTool 定义", () => {
       webExtractTool,
       documentSearchTool,
       memorySearchTool,
-      memoryReadTool,
       memoryWriteTool,
       taskPlanTool,
       documentWriteTool,
@@ -582,13 +579,13 @@ describe("Memory tools", () => {
     model: "test-model",
   };
 
-  it("memory_read 缺少 Convex client 时返回可恢复错误", async () => {
-    const result = await executeMemoryRead({ query: "偏好" }, baseCtx) as any;
+  it("memory_search 缺少 Convex client 时返回可恢复错误", async () => {
+    const result = await executeMemorySearch({ query: "偏好" }, baseCtx) as any;
     expect(result.memories).toEqual([]);
     expect(result.recoverable).toBe(true);
   });
 
-  it("memory_read 调用 Convex 查询并返回记忆", async () => {
+  it("memory_search 调用 Convex 查询并返回记忆", async () => {
     const query = vi.fn().mockResolvedValue([
       { id: "m1", type: "preference", content: "用户偏好中文", matchScore: 1 },
     ]);
@@ -596,7 +593,7 @@ describe("Memory tools", () => {
       memories: [{ id: "m1", type: "preference", content: "用户偏好中文", matchScore: 0.8 }],
       retrieval: "semantic",
     });
-    const result = await executeMemoryRead(
+    const result = await executeMemorySearch(
       { query: "中文", type: "preference", limit: 3 },
       { ...baseCtx, convex: { query } as any },
     ) as any;
@@ -615,13 +612,11 @@ describe("Memory tools", () => {
     expect(result.metadata.retrieval).toBe("semantic");
   });
 
-  it("memory_search 支持 kind/category/scope 过滤并返回 scoreBreakdown", async () => {
+  it("memory_search 只按业务类型和当前上下文检索记忆", async () => {
     const query = vi.fn().mockResolvedValue([
       {
         id: "m1",
         type: "preference",
-        kind: "instruction",
-        category: "user_preference",
         scopeLevel: "user",
         scopeKey: "user-1",
         privacy: "normal",
@@ -631,9 +626,7 @@ describe("Memory tools", () => {
       {
         id: "m2",
         type: "project",
-        kind: "semantic",
-        category: "project_fact",
-        scopeLevel: "user",
+        scopeLevel: "document",
         scopeKey: "user-1",
         privacy: "normal",
         content: "项目事实",
@@ -644,13 +637,10 @@ describe("Memory tools", () => {
       memories: [{
         id: "m1",
         type: "preference",
-        kind: "instruction",
-        category: "user_preference",
         scopeLevel: "user",
         scopeKey: "user-1",
         content: "用户偏好中文",
         matchScore: 0.82,
-        scoreBreakdown: { semantic: 0.8, scope: 1 },
       }],
       retrieval: "semantic",
     });
@@ -658,9 +648,7 @@ describe("Memory tools", () => {
     const result = await executeMemorySearch(
       {
         query: "中文",
-        kinds: ["instruction"],
-        categories: ["user_preference"],
-        scopes: [{ level: "user", key: "user-1" }],
+        type: "preference",
         limit: 5,
       },
       { ...baseCtx, convex: { query } as any },
@@ -673,10 +661,7 @@ describe("Memory tools", () => {
     }));
     expect(result.memories[0]).toMatchObject({
       id: "m1",
-      kind: "instruction",
-      category: "user_preference",
       score: 0.82,
-      scoreBreakdown: { semantic: 0.8, scope: 1 },
     });
     expect(result.metadata.memoryIds).toEqual(["m1"]);
   });
@@ -689,8 +674,6 @@ describe("Memory tools", () => {
       source: "agent_proposed",
       confidence: 1,
       status: "pending_review",
-      possibleDuplicateIds: [],
-      possibleConflictIds: [],
     });
     const result = await executeMemoryWrite(
       { content: "用户偏好中文", type: "preference" },

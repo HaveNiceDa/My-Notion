@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json() as MemorySyncBody;
     const invalidatedCacheCount = invalidateToolResultCache({
       userId,
-      toolNames: ["memory_read"],
+      toolNames: ["memory_search"],
     });
 
     try {

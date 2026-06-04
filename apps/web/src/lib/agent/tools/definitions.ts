@@ -4,7 +4,7 @@ import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
 import { executeDocumentSearch } from "./document-search";
 import { executeWebExtract } from "./web-extract";
 import { executeWebSearch } from "./web-search";
-import { executeMemoryRead, executeMemorySearch, executeMemoryWrite } from "./memory";
+import { executeMemorySearch, executeMemoryWrite } from "./memory";
 import { executeTaskPlan } from "./task-plan";
 import { withToolFallback } from "./fallback";
 import type { ToolContext } from "./types";
@@ -220,47 +220,9 @@ export const memorySearchTool: AgentTool = {
         type: "string",
         description: "用于匹配记忆的当前问题或关键词。",
       },
-      kinds: {
-        type: "array",
-        description: "内部高级过滤字段，通常不需要传。用于兼容旧的记忆分层。",
-        items: {
-          type: "string",
-          enum: ["instruction", "semantic", "episodic", "procedural"],
-        },
-      },
-      categories: {
-        type: "array",
-        description: "内部高级过滤字段，通常不需要传。用于兼容旧的细分类。",
-        items: { type: "string" },
-      },
-      scopes: {
-        type: "array",
-        description: "内部高级过滤字段，通常不需要传。未传时默认使用当前用户和当前文档上下文。",
-        items: {
-          type: "object",
-          properties: {
-            level: {
-              type: "string",
-              enum: ["user", "workspace", "project", "document", "conversation", "module", "path"],
-            },
-            key: {
-              type: "string",
-            },
-          },
-          required: ["level", "key"],
-        },
-      },
       limit: {
         type: "number",
         description: "返回记忆数量，默认 8，最大 20。",
-      },
-      includeSensitive: {
-        type: "boolean",
-        description: "是否包含敏感记忆，默认 false。除非用户明确要求，否则不要设置为 true。",
-      },
-      includeEvidence: {
-        type: "boolean",
-        description: "是否返回来源证据，默认 false。仅在用户询问记忆来源时使用。",
       },
     },
     required: ["query"],
@@ -268,35 +230,6 @@ export const memorySearchTool: AgentTool = {
   execute: withToolFallback({
     name: "memory_search",
     execute: async (args, ctx) => executeMemorySearch(args, ctx),
-  }),
-};
-
-// 兼容旧 memory_read：内部复用 memory_search，后续可逐步下线
-export const memoryReadTool: AgentTool = {
-  name: "memory_read",
-  description:
-    "兼容旧版记忆读取工具。新请求优先使用 memory_search；仅在需要按旧 type=preference/project/episodic 过滤时使用。",
-  parameters: {
-    type: "object",
-    properties: {
-      query: {
-        type: "string",
-        description: "用于匹配记忆的当前问题或关键词；不传时返回最近的活跃记忆。",
-      },
-      type: {
-        type: "string",
-        enum: ["preference", "project", "episodic"],
-        description: "可选记忆类型过滤：preference=用户偏好，project=项目规则，episodic=最近决策。",
-      },
-      limit: {
-        type: "number",
-        description: "返回记忆数量，默认 8，最大 20。",
-      },
-    },
-  },
-  execute: withToolFallback({
-    name: "memory_read",
-    execute: async (args, ctx) => executeMemoryRead(args, ctx),
   }),
 };
 
@@ -330,17 +263,9 @@ export const memoryWriteTool: AgentTool = {
         type: "number",
         description: "置信度 0-1，默认 1。",
       },
-      expiresAt: {
-        type: "number",
-        description: "可选过期时间戳，通常不需要传。",
-      },
       evidenceText: {
         type: "string",
         description: "可选来源原文，说明这条记忆来自哪段用户表达。",
-      },
-      supersedesMemoryId: {
-        type: "string",
-        description: "内部兼容字段，通常不需要传。",
       },
       dryRun: {
         type: "boolean",

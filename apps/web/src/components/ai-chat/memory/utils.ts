@@ -53,21 +53,3 @@ export function formatDate(value: number | undefined): string {
     minute: "2-digit",
   }).format(new Date(value));
 }
-
-export function buildMemoryMetrics(active: AgentMemoryItem[], pending: AgentMemoryItem[]) {
-  const now = Date.now();
-  return {
-    activeCount: active.length,
-    pendingCount: pending.length,
-    syncFailedCount: active.filter((memory) => memory.embeddingStatus === "failed").length,
-    reviewDueCount: active.filter((memory) => memory.reviewDueAt && memory.reviewDueAt <= now).length,
-    sensitiveCount: active.filter((memory) => memory.privacy === "sensitive").length,
-    recentlyUsedCount: active.filter((memory) => memory.lastUsedAt).length,
-    autoExtractedPendingCount: pending.filter((memory) => memory.source === "auto_extracted").length,
-  };
-}
-
-export function scopeLabel(memory: AgentMemoryItem): string {
-  if (!memory.scopeLevel || !memory.scopeKey) return "user";
-  return `${memory.scopeLevel}:${memory.scopeKey}`;
-}

@@ -9,7 +9,7 @@ const CACHEABLE_TOOL_NAMES = new Set([
   "web_extract",
   "document_search",
   "document_read",
-  "memory_read",
+  "memory_search",
 ]);
 
 interface ToolCacheEntry {

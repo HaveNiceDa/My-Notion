@@ -1,6 +1,5 @@
 import { query } from "@convex/server";
 import { v } from "convex/values";
-import { deriveMemoryDefaults } from "../model";
 
 export const listPendingAgentMemories = query({
   args: {
@@ -21,38 +20,19 @@ export const listPendingAgentMemories = query({
       .order("desc")
       .take(limit);
 
-    return memories.map((memory) => {
-      const defaults = deriveMemoryDefaults(memory.type, identity.subject);
-      return {
-        id: memory._id,
-        type: memory.type,
-        kind: memory.kind ?? defaults.kind,
-        category: memory.category ?? defaults.category,
-        scopeLevel: memory.scopeLevel ?? defaults.scopeLevel,
-        scopeKey: memory.scopeKey ?? defaults.scopeKey,
-        content: memory.content,
-        source: memory.source,
-        reason: memory.reason,
-        summary: memory.summary,
-        tags: memory.tags,
-        evidenceConversationId: memory.evidenceConversationId,
-        evidenceMessageId: memory.evidenceMessageId,
-        evidenceDocumentId: memory.evidenceDocumentId,
-        evidenceToolCallId: memory.evidenceToolCallId,
-        evidenceText: memory.evidenceText,
-        evidenceUrl: memory.evidenceUrl,
-        confidence: memory.confidence,
-        importance: memory.importance ?? defaults.importance,
-        stability: memory.stability ?? defaults.stability,
-        privacy: memory.privacy ?? defaults.privacy,
-        status: memory.status,
-        conflictsWith: memory.conflictsWith,
-        createdAt: memory.createdAt,
-        updatedAt: memory.updatedAt,
-        expiresAt: memory.expiresAt,
-        reviewDueAt: memory.reviewDueAt,
-        embeddingStatus: memory.embeddingStatus ?? defaults.embeddingStatus,
-      };
-    });
+    return memories.map((memory) => ({
+      id: memory._id,
+      type: memory.type,
+      content: memory.content,
+      source: memory.source,
+      reason: memory.reason,
+      summary: memory.summary,
+      tags: memory.tags,
+      evidenceText: memory.evidenceText,
+      confidence: memory.confidence,
+      status: memory.status,
+      createdAt: memory.createdAt,
+      updatedAt: memory.updatedAt,
+    }));
   },
 });

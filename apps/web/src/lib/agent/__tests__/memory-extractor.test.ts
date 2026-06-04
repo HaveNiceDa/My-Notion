@@ -84,7 +84,7 @@ describe("memory-extractor", () => {
     expect(mutation).toHaveBeenCalledTimes(1);
     expect(mutation.mock.calls[0]?.[1]).toMatchObject({
       source: "auto_extracted",
-      evidenceConversationId: "conversation-1",
+      type: "preference",
     });
   });
 });

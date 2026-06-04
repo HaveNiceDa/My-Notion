@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, Check, Inbox, Pencil, X } from "lucide-react";
+import { Check, Inbox, Pencil, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 import { Button } from "@/src/components/ui/button";
@@ -93,13 +93,7 @@ function MemoryProposalCard({ memory, onAccept, onReject }: MemoryProposalCardPr
               {t("evidenceLabel")}: {memory.evidenceText}
             </p>
           )}
-          {memory.conflictsWith && memory.conflictsWith.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              {t("possibleDuplicateHint")}
-            </div>
-          )}
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
               <Pencil className="h-4 w-4" />
               {t("edit")}
