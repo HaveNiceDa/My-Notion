@@ -35,7 +35,7 @@ export const commitAgentMemory = mutation({
       tags: args.tags ?? memory.tags,
       evidenceText: memory.evidenceText,
       confidence: args.confidence ?? memory.confidence,
-    }, identity.subject);
+    });
 
     await ctx.db.patch(args.memoryId, {
       ...memoryPatch,

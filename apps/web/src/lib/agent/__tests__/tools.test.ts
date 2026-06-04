@@ -617,18 +617,12 @@ describe("Memory tools", () => {
       {
         id: "m1",
         type: "preference",
-        scopeLevel: "user",
-        scopeKey: "user-1",
-        privacy: "normal",
         content: "用户偏好中文",
         matchScore: 1,
       },
       {
         id: "m2",
         type: "project",
-        scopeLevel: "document",
-        scopeKey: "user-1",
-        privacy: "normal",
         content: "项目事实",
         matchScore: 1,
       },
@@ -637,8 +631,6 @@ describe("Memory tools", () => {
       memories: [{
         id: "m1",
         type: "preference",
-        scopeLevel: "user",
-        scopeKey: "user-1",
         content: "用户偏好中文",
         matchScore: 0.82,
       }],
@@ -656,7 +648,6 @@ describe("Memory tools", () => {
 
     expect(retrieveRelevantMemories).toHaveBeenCalledWith(expect.objectContaining({
       memories: [expect.objectContaining({ id: "m1" })],
-      scopes: [{ level: "user", key: "user-1" }],
       topK: 5,
     }));
     expect(result.memories[0]).toMatchObject({

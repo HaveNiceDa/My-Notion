@@ -255,7 +255,6 @@ export async function POST(req: NextRequest) {
             userId,
             conversationId: body.conversationId,
             messages: toMemoryExtractionMessages(messages),
-            currentDocument: body.currentDocument,
           });
           await proposeExtractedMemories({
             convex,

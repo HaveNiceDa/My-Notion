@@ -24,7 +24,7 @@ export const createAgentMemory = mutation({
     }
 
     const now = Date.now();
-    const memoryPatch = buildMemoryPatch(args, identity.subject);
+    const memoryPatch = buildMemoryPatch(args);
     const memoryId = await ctx.db.insert("agentMemories", {
       userId: identity.subject,
       ...memoryPatch,

@@ -20,8 +20,7 @@ describe("memory-extractor", () => {
 
     expect(result.proposals).toHaveLength(1);
     expect(result.proposals[0]?.type).toBe("preference");
-    expect(result.proposals[0]?.kind).toBe("instruction");
-    expect(result.proposals[0]?.scopeLevel).toBe("user");
+    expect(result.proposals[0]?.content).toContain("中文沟通");
   });
 
   it("将明确的文档/画板规则归类为项目规则", () => {
@@ -38,7 +37,7 @@ describe("memory-extractor", () => {
 
     expect(result.proposals).toHaveLength(1);
     expect(result.proposals[0]?.type).toBe("project");
-    expect(result.proposals[0]?.category).toBe("project_rule");
+    expect(result.proposals[0]?.content).toContain("画板缩略图");
   });
 
   it("默认跳过敏感内容，避免污染 Inbox", () => {

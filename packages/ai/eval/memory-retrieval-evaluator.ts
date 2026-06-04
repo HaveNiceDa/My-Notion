@@ -1,5 +1,4 @@
 import { fallbackRankMemories } from "../server/memory";
-import type { AgentMemoryRecord } from "../server/memory";
 import type { MemoryRetrievalEvalCase } from "./memory-retrieval-eval-fixtures";
 
 export interface MemoryRetrievalCaseMetric {
@@ -8,9 +7,6 @@ export interface MemoryRetrievalCaseMetric {
   recallAtK: number;
   precisionAtK: number;
   reciprocalRank: number;
-  wrongScopeHitRate: number;
-  staleHitRate: number;
-  sensitiveLeakageRate: number;
   failures: string[];
   retrievedIds: string[];
 }
@@ -22,9 +18,6 @@ export interface MemoryRetrievalEvalSummary {
   recallAtK: number;
   precisionAtK: number;
   mrr: number;
-  wrongScopeHitRate: number;
-  staleHitRate: number;
-  sensitiveLeakageRate: number;
   caseMetrics: MemoryRetrievalCaseMetric[];
 }
 
@@ -37,47 +30,24 @@ export function runMemoryRetrievalEval(cases: MemoryRetrievalEvalCase[]): Memory
     recallAtK: average(caseMetrics.map((metric) => metric.recallAtK)),
     precisionAtK: average(caseMetrics.map((metric) => metric.precisionAtK)),
     mrr: average(caseMetrics.map((metric) => metric.reciprocalRank)),
-    wrongScopeHitRate: average(caseMetrics.map((metric) => metric.wrongScopeHitRate)),
-    staleHitRate: average(caseMetrics.map((metric) => metric.staleHitRate)),
-    sensitiveLeakageRate: average(caseMetrics.map((metric) => metric.sensitiveLeakageRate)),
     caseMetrics,
   };
 }
 
 export function evaluateMemoryRetrievalCase(evalCase: MemoryRetrievalEvalCase): MemoryRetrievalCaseMetric {
-  const safeMemories = evalCase.memories.filter((memory) =>
-    memory.status !== "deleted"
-    && memory.status !== "rejected"
-    && memory.privacy !== "sensitive"
-    && !isStale(memory)
-    && matchesAnyScope(memory, evalCase.scopes),
-  );
-  const retrieved = fallbackRankMemories(evalCase.query, safeMemories, evalCase.topK, evalCase.scopes);
+  const retrieved = fallbackRankMemories(evalCase.query, evalCase.memories, evalCase.topK);
   const retrievedIds = retrieved.map((memory) => memory.id);
   const expectedIds = new Set(evalCase.expectedMemoryIds);
   const forbiddenIds = new Set(evalCase.forbiddenMemoryIds ?? []);
   const hitCount = retrievedIds.filter((id) => expectedIds.has(id)).length;
   const firstExpectedRank = retrievedIds.findIndex((id) => expectedIds.has(id));
-  const wrongScopeHits = retrieved.filter((memory) => !matchesAnyScope(memory, evalCase.scopes));
-  const staleHits = retrieved.filter(isStale);
-  const sensitiveHits = retrieved.filter((memory) => memory.privacy === "sensitive");
   const failures: string[] = [];
 
   for (const expectedId of expectedIds) {
-    if (!retrievedIds.includes(expectedId)) {
-      failures.push(`missing expected memory ${expectedId}`);
-    }
+    if (!retrievedIds.includes(expectedId)) failures.push(`missing expected memory ${expectedId}`);
   }
   for (const forbiddenId of forbiddenIds) {
-    if (retrievedIds.includes(forbiddenId)) {
-      failures.push(`retrieved forbidden memory ${forbiddenId}`);
-    }
-  }
-  if (sensitiveHits.length > 0) {
-    failures.push(`sensitive leakage ${sensitiveHits.map((memory) => memory.id).join(",")}`);
-  }
-  if (staleHits.length > 0) {
-    failures.push(`stale hit ${staleHits.map((memory) => memory.id).join(",")}`);
+    if (retrievedIds.includes(forbiddenId)) failures.push(`retrieved forbidden memory ${forbiddenId}`);
   }
 
   return {
@@ -86,9 +56,6 @@ export function evaluateMemoryRetrievalCase(evalCase: MemoryRetrievalEvalCase): 
     recallAtK: expectedIds.size === 0 ? 1 : hitCount / expectedIds.size,
     precisionAtK: retrieved.length === 0 ? 0 : hitCount / retrieved.length,
     reciprocalRank: firstExpectedRank === -1 ? 0 : 1 / (firstExpectedRank + 1),
-    wrongScopeHitRate: retrieved.length === 0 ? 0 : wrongScopeHits.length / retrieved.length,
-    staleHitRate: retrieved.length === 0 ? 0 : staleHits.length / retrieved.length,
-    sensitiveLeakageRate: retrieved.length === 0 ? 0 : sensitiveHits.length / retrieved.length,
     failures,
     retrievedIds,
   };
@@ -103,9 +70,6 @@ export function formatMemoryRetrievalEvalSummary(summary: MemoryRetrievalEvalSum
     `recall@k: ${formatMetric(summary.recallAtK)}`,
     `precision@k: ${formatMetric(summary.precisionAtK)}`,
     `mrr: ${formatMetric(summary.mrr)}`,
-    `wrongScopeHitRate: ${formatMetric(summary.wrongScopeHitRate)}`,
-    `staleHitRate: ${formatMetric(summary.staleHitRate)}`,
-    `sensitiveLeakageRate: ${formatMetric(summary.sensitiveLeakageRate)}`,
     "",
     "Cases",
     ...summary.caseMetrics.map((metric) =>
@@ -115,24 +79,8 @@ export function formatMemoryRetrievalEvalSummary(summary: MemoryRetrievalEvalSum
   const failures = summary.caseMetrics.flatMap((metric) =>
     metric.failures.map((failure) => `${metric.id}: ${failure}`),
   );
-  if (failures.length > 0) {
-    lines.push("", "Failures", ...failures);
-  }
+  if (failures.length > 0) lines.push("", "Failures", ...failures);
   return lines.join("\n");
-}
-
-function matchesAnyScope(memory: AgentMemoryRecord, scopes: MemoryRetrievalEvalCase["scopes"]): boolean {
-  if (!scopes?.length) return true;
-  if (memory.scopeLevel === "user") return true;
-  return scopes.some((scope) => scope.level === memory.scopeLevel && scope.key === memory.scopeKey);
-}
-
-function isStale(memory: AgentMemoryRecord): boolean {
-  const now = Date.now();
-  return Boolean(
-    (memory.expiresAt && memory.expiresAt <= now)
-    || (memory.reviewDueAt && memory.reviewDueAt <= now),
-  );
 }
 
 function average(values: number[]): number {

@@ -3,44 +3,15 @@ import { getOrCreateVectorStore } from "./vector-store-cache";
 export interface AgentMemoryRecord {
   id: string;
   type: "preference" | "project" | "episodic";
-  kind?: "instruction" | "semantic" | "episodic" | "procedural";
-  category?: string;
-  scopeLevel?: string;
-  scopeKey?: string;
   content: string;
   summary?: string;
   reason?: string;
   confidence?: number;
-  importance?: number;
-  privacy?: "normal" | "sensitive";
   status?: string;
-  evidenceConversationId?: string;
-  evidenceMessageId?: string;
-  evidenceDocumentId?: string;
   evidenceText?: string;
   updatedAt?: number;
-  lastUsedAt?: number;
-  usageCount?: number;
-  reviewDueAt?: number;
-  expiresAt?: number;
   source?: string;
   matchScore?: number;
-  scoreBreakdown?: MemoryScoreBreakdown;
-}
-
-export interface MemoryScope {
-  level: string;
-  key: string;
-}
-
-export interface MemoryScoreBreakdown {
-  semantic?: number;
-  scope?: number;
-  importance?: number;
-  confidence?: number;
-  recency?: number;
-  usage?: number;
-  stalenessPenalty?: number;
 }
 
 export interface RelevantMemoryResult {
@@ -75,7 +46,6 @@ export async function retrieveRelevantMemories(options: {
   query: string;
   memories: AgentMemoryRecord[];
   topK?: number;
-  scopes?: MemoryScope[];
 }): Promise<RelevantMemoryResult> {
   const topK = Math.min(Math.max(options.topK ?? 8, 1), 20);
   const activeMemories = options.memories.filter((memory) => memory.content.trim());
@@ -94,7 +64,7 @@ export async function retrieveRelevantMemories(options: {
     const memories: AgentMemoryRecord[] = semanticHits
       .flatMap((hit) => {
         const memory = byId.get(hit.memoryId);
-        return memory ? [rankMemory(memory, { semanticScore: hit.score, scopes: options.scopes })] : [];
+        return memory ? [rankMemory(memory, hit.score)] : [];
       })
       .sort(sortByMatchScore)
       .slice(0, topK);
@@ -102,12 +72,12 @@ export async function retrieveRelevantMemories(options: {
     return {
       memories: memories.length > 0
         ? memories
-        : fallbackRankMemories(options.query, activeMemories, topK, options.scopes),
+        : fallbackRankMemories(options.query, activeMemories, topK),
       retrieval: memories.length > 0 ? "semantic" : "fallback",
     };
   } catch (error) {
     return {
-      memories: fallbackRankMemories(options.query, activeMemories, topK, options.scopes),
+      memories: fallbackRankMemories(options.query, activeMemories, topK),
       retrieval: "fallback",
       unavailable: true,
       error: error instanceof Error ? error.message : String(error),
@@ -119,17 +89,12 @@ export function fallbackRankMemories(
   query: string,
   memories: AgentMemoryRecord[],
   topK: number,
-  scopes?: MemoryScope[],
 ): AgentMemoryRecord[] {
   const tokens = tokenize(query);
   return memories
     .map((memory) => {
       const haystack = [
         memory.type,
-        memory.kind,
-        memory.category,
-        memory.scopeLevel,
-        memory.scopeKey,
         memory.content,
         memory.summary,
         memory.reason,
@@ -137,76 +102,19 @@ export function fallbackRankMemories(
       const tokenScore = tokens.length === 0
         ? 1
         : tokens.reduce((score, token) => score + (haystack.includes(token) ? 1 : 0), 0);
-      return rankMemory(memory, {
-        semanticScore: Math.min(tokenScore / Math.max(tokens.length, 1), 1),
-        scopes,
-      });
+      return rankMemory(memory, Math.min(tokenScore / Math.max(tokens.length, 1), 1));
     })
     .filter((memory) => !tokens.length || (memory.matchScore ?? 0) > 0)
     .sort(sortByMatchScore)
     .slice(0, topK);
 }
 
-function rankMemory(
-  memory: AgentMemoryRecord,
-  options: {
-    semanticScore: number;
-    scopes?: MemoryScope[];
-  },
-): AgentMemoryRecord {
-  const semantic = clampScore(options.semanticScore);
-  const scope = scopeScore(memory, options.scopes);
-  const importance = clampScore(memory.importance ?? 0.5);
+function rankMemory(memory: AgentMemoryRecord, semanticScore: number): AgentMemoryRecord {
+  const semantic = clampScore(semanticScore);
   const confidence = clampScore(memory.confidence ?? 1);
   const recency = memory.updatedAt ? recencyBoost(memory.updatedAt) : 0;
-  const usage = usageBoost(memory.usageCount);
-  const stalenessPenalty = stalePenalty(memory);
-  const matchScore = Math.max(
-    0,
-    semantic * 0.45
-      + scope * 0.20
-      + importance * 0.15
-      + confidence * 0.10
-      + recency * 0.05
-      + usage * 0.05
-      - stalenessPenalty,
-  );
-
-  return {
-    ...memory,
-    matchScore,
-    scoreBreakdown: {
-      semantic,
-      scope,
-      importance,
-      confidence,
-      recency,
-      usage,
-      stalenessPenalty,
-    },
-  };
-}
-
-function scopeScore(memory: AgentMemoryRecord, scopes: MemoryScope[] | undefined): number {
-  if (!scopes?.length) return memory.scopeLevel === "user" ? 1 : 0.5;
-  if (!memory.scopeLevel || !memory.scopeKey) return 0.25;
-  return scopes.some((scope) => scope.level === memory.scopeLevel && scope.key === memory.scopeKey)
-    ? 1
-    : memory.scopeLevel === "user"
-      ? 0.7
-      : 0;
-}
-
-function usageBoost(usageCount: number | undefined): number {
-  if (!usageCount || usageCount <= 0) return 0;
-  return Math.min(Math.log10(usageCount + 1) / 2, 1);
-}
-
-function stalePenalty(memory: AgentMemoryRecord): number {
-  const now = Date.now();
-  if (memory.expiresAt && memory.expiresAt <= now) return 1;
-  if (memory.reviewDueAt && memory.reviewDueAt <= now) return 0.2;
-  return 0;
+  const matchScore = Math.max(0, semantic * 0.75 + confidence * 0.15 + recency * 0.10);
+  return { ...memory, matchScore };
 }
 
 function clampScore(value: number): number {

@@ -7,7 +7,6 @@ import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
 type MemorySource = "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
-type MemoryScopeLevel = "user" | "document";
 
 const MEMORY_TYPES = new Set<MemoryType>(["preference", "project", "episodic"]);
 const MEMORY_SOURCES = new Set<MemorySource>([
@@ -26,11 +25,6 @@ interface MemoryWritePreview {
   evidenceText?: string;
 }
 
-interface MemoryScope {
-  level: MemoryScopeLevel;
-  key: string;
-}
-
 export async function executeMemorySearch(
   args: Record<string, unknown>,
   context: ToolContext,
@@ -42,7 +36,6 @@ export async function executeMemorySearch(
   const query = typeof args.query === "string" ? args.query : undefined;
   const type = parseMemoryType(args.type);
   const types = parseMemoryTypes(args.types, type);
-  const scopes = buildDefaultMemoryScopes(context);
   const limit = typeof args.limit === "number" ? Math.min(Math.max(Math.floor(args.limit), 1), 20) : 8;
 
   try {
@@ -60,7 +53,6 @@ export async function executeMemorySearch(
         query,
         memories: filteredMemories,
         topK: limit,
-        scopes,
       })
       : { memories: filteredMemories.slice(0, limit) as AgentMemoryRecord[], retrieval: "fallback" };
     const normalizedMemories = retrieval.memories.map((memory) =>
@@ -232,24 +224,6 @@ function parseMemoryTypes(value: unknown, fallback?: MemoryType): MemoryType[] {
     return type ? [type] : [];
   });
   return parsed.length > 0 ? Array.from(new Set(parsed)) : fallback ? [fallback] : [];
-}
-
-function buildDefaultMemoryScopes(context: ToolContext): MemoryScope[] {
-  const scopes: MemoryScope[] = [{ level: "user", key: context.userId }];
-  if (context.currentDocument?.id) {
-    scopes.push({ level: "document", key: context.currentDocument.id });
-  }
-  return dedupeScopes(scopes);
-}
-
-function dedupeScopes(scopes: MemoryScope[]): MemoryScope[] {
-  const seen = new Set<string>();
-  return scopes.filter((scope) => {
-    const key = `${scope.level}:${scope.key}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
 }
 
 function matchesTypes(memory: { type?: string }, types: MemoryType[]): boolean {

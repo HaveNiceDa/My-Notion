@@ -2,11 +2,8 @@ import type { ConvexHttpClient } from "convex/browser";
 
 import { api } from "@/convex/_generated/api";
 import type { AgentTracer } from "./trace";
-import type { CurrentDocumentContext } from "./tools/types";
 
-export type ExtractedMemoryKind = "instruction" | "semantic" | "episodic" | "procedural";
 export type ExtractedMemoryType = "preference" | "project" | "episodic";
-export type ExtractedMemoryScopeLevel = "user" | "project" | "document" | "conversation" | "module" | "path";
 
 export interface MemoryExtractionMessage {
   role: "system" | "user" | "assistant" | "tool";
@@ -15,17 +12,11 @@ export interface MemoryExtractionMessage {
 
 export interface ExtractedMemoryCandidate {
   type: ExtractedMemoryType;
-  kind: ExtractedMemoryKind;
-  category: string;
-  scopeLevel: ExtractedMemoryScopeLevel;
-  scopeKey: string;
   content: string;
   summary?: string;
   evidenceText: string;
   confidence: number;
-  importance: number;
   reason: string;
-  privacy: "normal" | "sensitive";
 }
 
 export interface MemoryExtractionResult {
@@ -43,7 +34,6 @@ export interface ExtractMemoryCandidatesOptions {
   userId: string;
   conversationId?: string;
   messages: MemoryExtractionMessage[];
-  currentDocument?: CurrentDocumentContext | null;
   minConfidence?: number;
   maxProposals?: number;
   allowSensitive?: boolean;
@@ -101,14 +91,7 @@ export function extractMemoryCandidates(options: ExtractMemoryCandidatesOptions)
       continue;
     }
 
-    const candidate = buildCandidate({
-      userId: options.userId,
-      conversationId: options.conversationId,
-      currentDocument: options.currentDocument,
-      signal,
-      evidenceText: text,
-      sensitive,
-    });
+    const candidate = buildCandidate({ signal, evidenceText: text });
     if (candidate.confidence < minConfidence) {
       rejected.push({ reason: "low_confidence", evidenceText: candidate.evidenceText });
       continue;
@@ -179,31 +162,19 @@ function extractSignal(text: string): { content: string; explicit: boolean } | n
 }
 
 function buildCandidate(options: {
-  userId: string;
-  conversationId?: string;
-  currentDocument?: CurrentDocumentContext | null;
   signal: { content: string; explicit: boolean };
   evidenceText: string;
-  sensitive: boolean;
 }): ExtractedMemoryCandidate {
-  const scope = inferScope(options);
   const content = truncate(options.signal.content, MAX_CONTENT_LENGTH);
-  const negativePreference = /不要|别|禁止|不能/.test(options.evidenceText);
   const type = inferBusinessMemoryType(options.signal.content, options.evidenceText);
 
   return {
     type,
-    kind: negativePreference || options.signal.explicit ? "instruction" : "semantic",
-    category: defaultCategoryForBusinessType(type, negativePreference),
-    scopeLevel: scope.level,
-    scopeKey: scope.key,
     content,
     summary: content,
     evidenceText: truncate(options.evidenceText, MAX_EVIDENCE_LENGTH),
     confidence: options.signal.explicit ? 0.86 : 0.68,
-    importance: scope.level === "user" ? 0.75 : 0.65,
     reason: "Auto-extracted from an explicit user memory signal; pending user confirmation before activation.",
-    privacy: options.sensitive ? "sensitive" : "normal",
   };
 }
 
@@ -215,27 +186,10 @@ function inferBusinessMemoryType(content: string, evidenceText: string): Extract
   return "preference";
 }
 
-function defaultCategoryForBusinessType(type: ExtractedMemoryType, negativePreference: boolean): string {
-  if (type === "project") return "project_rule";
-  if (type === "episodic") return "recent_decision";
-  return negativePreference ? "negative_preference" : "user_preference";
-}
-
-function inferScope(options: {
-  userId: string;
-  conversationId?: string;
-  currentDocument?: CurrentDocumentContext | null;
-}): { level: ExtractedMemoryScopeLevel; key: string } {
-  if (options.currentDocument?.id) {
-    return { level: "document", key: options.currentDocument.id };
-  }
-  return { level: "user", key: options.userId };
-}
-
 function dedupeCandidates(candidates: ExtractedMemoryCandidate[]): ExtractedMemoryCandidate[] {
   const seen = new Set<string>();
   return candidates.filter((candidate) => {
-    const key = `${candidate.scopeLevel}:${candidate.scopeKey}:${candidate.kind}:${candidate.content.toLowerCase()}`;
+    const key = `${candidate.type}:${candidate.content.toLowerCase()}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
