@@ -69,6 +69,9 @@ async function createThumbnail(payload: ScenePayload) {
 function sanitizeSerializableAppState(appState: ScenePayload["appState"]) {
   const serializableAppState = { ...(appState as unknown as Record<string, unknown>) };
   delete serializableAppState.collaborators;
+  delete serializableAppState.openDialog;
+  delete serializableAppState.openMenu;
+  delete serializableAppState.openSidebar;
   return serializableAppState;
 }
 

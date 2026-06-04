@@ -183,12 +183,20 @@ export const updateScene = mutation({
     const whiteboard = await ctx.db.get(args.whiteboardId);
     if (!whiteboard || whiteboard.isArchived) throw new Error("Whiteboard not found");
     if (whiteboard.userId !== userId) throw new Error("Unauthorized");
-    await ctx.db.patch(args.whiteboardId, {
+    const patch: {
+      title: string;
+      sceneJson: string;
+      thumbnailDataUrl?: string;
+      updatedAt: number;
+    } = {
       title: args.title ?? whiteboard.title,
       sceneJson: args.sceneJson,
-      thumbnailDataUrl: args.thumbnailDataUrl,
       updatedAt: now(),
-    });
+    };
+    if (args.thumbnailDataUrl !== undefined) {
+      patch.thumbnailDataUrl = args.thumbnailDataUrl;
+    }
+    await ctx.db.patch(args.whiteboardId, patch);
     const updated = await ctx.db.get(args.whiteboardId);
     if (!updated) throw new Error("Failed to update whiteboard");
     return toResult(updated);

@@ -8,6 +8,9 @@ function sanitizeAppState(appState: unknown) {
 
   const serializableAppState = { ...(appState as Record<string, unknown>) };
   delete serializableAppState.collaborators;
+  delete serializableAppState.openDialog;
+  delete serializableAppState.openMenu;
+  delete serializableAppState.openSidebar;
   return serializableAppState;
 }
 
