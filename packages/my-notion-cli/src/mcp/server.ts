@@ -288,6 +288,29 @@ function registerDocumentTools(server: McpServer, client: MyNotionClient) {
 
 function registerWhiteboardTools(server: McpServer, client: MyNotionClient) {
   server.registerTool(
+    "my_notion_whiteboards_list",
+    {
+      title: "列出 My-Notion 画板",
+      description: "列出当前 PAT 用户的画板，可按文档 ID 过滤。",
+      inputSchema: {
+        documentId: z.string().optional().describe("可选，关联的 My-Notion 文档 ID。"),
+        limit: z.number().int().min(1).max(50).optional().describe("最多返回的画板数量。"),
+      },
+      annotations: {
+        readOnlyHint: true,
+      },
+    },
+    async ({ documentId, limit }) => {
+      try {
+        const result = await client.listWhiteboards({ documentId, limit });
+        return toToolResult({ whiteboards: result.whiteboards });
+      } catch (error) {
+        return toErrorToolResult(error, "whiteboard_list");
+      }
+    },
+  );
+
+  server.registerTool(
     "my_notion_whiteboards_read",
     {
       title: "读取 My-Notion 画板",
@@ -403,6 +426,29 @@ function registerWhiteboardTools(server: McpServer, client: MyNotionClient) {
         );
       } catch (error) {
         return toErrorToolResult(error, "whiteboard_update");
+      }
+    },
+  );
+
+  server.registerTool(
+    "my_notion_whiteboards_export",
+    {
+      title: "导出 My-Notion 画板",
+      description: "导出画板为 scene JSON、SVG 占位预览或包含 scene/thumbnail/svg 的 package。",
+      inputSchema: {
+        id: z.string().min(1).describe("My-Notion 画板 ID。"),
+        format: z.enum(["json", "svg", "package"]).default("json").describe("导出格式。"),
+      },
+      annotations: {
+        readOnlyHint: true,
+      },
+    },
+    async ({ id, format }) => {
+      try {
+        const exported = await client.exportWhiteboard({ id, format });
+        return toToolResult({ export: exported });
+      } catch (error) {
+        return toErrorToolResult(error, "whiteboard_export");
       }
     },
   );

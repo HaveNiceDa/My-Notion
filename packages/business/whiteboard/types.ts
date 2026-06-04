@@ -12,6 +12,27 @@ export type WhiteboardDslNodeType =
   | "frame";
 
 export type WhiteboardDslEdgeType = "arrow" | "line";
+export type WhiteboardDslLayoutKind = "grid" | "flow" | "freeform";
+export type WhiteboardDslRankDirection = "LR" | "TB";
+
+export interface WhiteboardDslSpacing {
+  x?: number;
+  y?: number;
+}
+
+export interface WhiteboardDslBounds {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}
+
+export interface WhiteboardDslLayout {
+  kind?: WhiteboardDslLayoutKind;
+  rankDirection?: WhiteboardDslRankDirection;
+  spacing?: WhiteboardDslSpacing;
+  bounds?: WhiteboardDslBounds;
+}
 
 export interface WhiteboardDslNode {
   id: string;
@@ -42,6 +63,7 @@ export interface WhiteboardDslGroup {
 export interface WhiteboardDslDocument {
   version: WhiteboardDslVersion;
   title?: string;
+  layout?: WhiteboardDslLayout;
   nodes: WhiteboardDslNode[];
   edges?: WhiteboardDslEdge[];
   groups?: WhiteboardDslGroup[];
@@ -57,6 +79,7 @@ export interface ExcalidrawSceneData {
   type: "excalidraw";
   version: number;
   source: "my-notion";
+  myNotionSceneVersion?: number;
   elements: ExcalidrawElementLike[];
   appState: ExcalidrawAppStateLike;
   files: Record<string, unknown>;

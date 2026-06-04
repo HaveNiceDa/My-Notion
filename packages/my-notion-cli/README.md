@@ -211,10 +211,12 @@ my-notion whiteboards create --title "架构图" --dsl-file ./board.mwb.yaml --d
 my-notion whiteboards update --id <whiteboardId> --dsl-file ./board.mwb.yaml --format json
 my-notion whiteboards fetch --id <whiteboardId> --format json
 my-notion whiteboards export --id <whiteboardId> --format json --output ./board.excalidraw
+my-notion whiteboards export --id <whiteboardId> --format package --output ./board-package
 my-notion docs archive --id <documentId> --format json
 ```
 
 推荐顺序：先 `search/list` 确认是否已有文档，再 `create/import`；修改已有文档时优先 `append`。
+画板完整包导出会写入 `scene.json`、`thumbnail.txt` 和 `whiteboard.svg`，用于备份或跨环境迁移。
 
 ### 4. Tokens
 

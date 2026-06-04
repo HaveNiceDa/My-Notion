@@ -3,6 +3,7 @@ import { mutation, query } from "@convex/server";
 import type { Id } from "@convex/dataModel";
 import {
   createEmptyExcalidrawScene,
+  migrateExcalidrawScene,
   parseWhiteboardDsl,
   stringifyWhiteboardScene,
   whiteboardDslToExcalidrawScene,
@@ -43,9 +44,25 @@ const dslGroupValidator = v.object({
   nodeIds: v.array(v.string()),
 });
 
+const dslLayoutValidator = v.object({
+  kind: v.optional(v.union(v.literal("grid"), v.literal("flow"), v.literal("freeform"))),
+  rankDirection: v.optional(v.union(v.literal("LR"), v.literal("TB"))),
+  spacing: v.optional(v.object({
+    x: v.optional(v.number()),
+    y: v.optional(v.number()),
+  })),
+  bounds: v.optional(v.object({
+    x: v.optional(v.number()),
+    y: v.optional(v.number()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+  })),
+});
+
 export const whiteboardDslValidator = v.object({
   version: v.literal("mwb-dsl-v1"),
   title: v.optional(v.string()),
+  layout: v.optional(dslLayoutValidator),
   nodes: v.array(dslNodeValidator),
   edges: v.optional(v.array(dslEdgeValidator)),
   groups: v.optional(v.array(dslGroupValidator)),
@@ -101,7 +118,7 @@ async function assertDocumentOwner(
 }
 
 function sceneFromInput(args: { sceneJson?: string; dsl?: WhiteboardDslDocument }) {
-  if (args.sceneJson) return args.sceneJson;
+  if (args.sceneJson) return stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson)));
   if (args.dsl) {
     const dsl = parseWhiteboardDsl(args.dsl);
     return stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl));
@@ -190,7 +207,7 @@ export const updateScene = mutation({
       updatedAt: number;
     } = {
       title: args.title ?? whiteboard.title,
-      sceneJson: args.sceneJson,
+      sceneJson: stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson))),
       updatedAt: now(),
     };
     if (args.thumbnailDataUrl !== undefined) {

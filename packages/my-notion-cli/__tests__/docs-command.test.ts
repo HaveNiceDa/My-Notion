@@ -82,20 +82,20 @@ describe("runDocsCommand", () => {
     );
   });
 
-  it("uses append only when the mode option explicitly asks for it", async () => {
+  it("uses append by default and overwrite only when explicitly requested", async () => {
     const { runDocsCommand } = await import("../src/commands/docs.js");
 
     await runDocsCommand(
       args(["docs", "update"], {
         id: "doc_1",
         content: "Append me",
-        mode: "append",
       }),
     );
     await runDocsCommand(
       args(["docs", "update"], {
         id: "doc_2",
         content: "Replace me",
+        mode: "overwrite",
       }),
     );
 

@@ -1,4 +1,5 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { parse as parseYaml } from "yaml";
 import { MyNotionClient } from "../client/http-client.js";
 import {
@@ -48,6 +49,25 @@ function readDsl(options: Record<string, string | boolean>) {
   return parsed;
 }
 
+type WhiteboardPackageFile = {
+  path: string;
+  content: string;
+};
+
+function writePackage(output: string, content: string) {
+  const parsed = JSON.parse(content) as { files?: WhiteboardPackageFile[] };
+  if (!Array.isArray(parsed.files)) {
+    throw new Error("Invalid whiteboard package export.");
+  }
+  mkdirSync(output, { recursive: true });
+  for (const file of parsed.files) {
+    if (!file.path || file.path.includes("..") || file.path.startsWith("/")) {
+      throw new Error(`Invalid package file path: ${file.path}`);
+    }
+    writeFileSync(join(output, file.path), file.content, "utf8");
+  }
+}
+
 async function create(args: ParsedArgs) {
   const title = readStringOption(args.options, "title");
   if (!title) {
@@ -94,14 +114,18 @@ async function update(args: ParsedArgs) {
 async function exportWhiteboard(args: ParsedArgs) {
   const id = readStringOption(args.options, "id") ?? args.positionals[2];
   if (!id) {
-    throw new Error("Missing whiteboard id. Usage: my-notion whiteboards export --id <whiteboardId> [--format json|svg] [--output file]");
+    throw new Error("Missing whiteboard id. Usage: my-notion whiteboards export --id <whiteboardId> [--format json|svg|package] [--output file-or-dir]");
   }
   const rawFormat = readStringOption(args.options, "format");
-  const format = rawFormat === "svg" ? "svg" : "json";
+  const format = rawFormat === "svg" || rawFormat === "package" ? rawFormat : "json";
   const exported = await createClient(args).exportWhiteboard({ id, format });
   const output = readStringOption(args.options, "output");
   if (output) {
-    writeFileSync(output, exported.content, "utf8");
+    if (format === "package") {
+      writePackage(output, exported.content);
+    } else {
+      writeFileSync(output, exported.content, "utf8");
+    }
     writeOutput(
       {
         id: exported.id,

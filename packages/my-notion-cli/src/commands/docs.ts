@@ -126,7 +126,7 @@ async function update(args: ParsedArgs) {
     throw new Error("Missing document id. Usage: my-notion docs update --id <id>");
   }
 
-  const mode = args.options.mode === "append" ? "append" : "overwrite";
+  const mode = args.options.mode === "overwrite" ? "overwrite" : "append";
   const document = await createClient(args).updateDocument({
     id,
     title: readStringOption(args.options, "title"),

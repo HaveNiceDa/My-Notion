@@ -7,6 +7,8 @@ import {
   markdownToBlockNoteJson,
 } from "../documents/logic/markdown";
 import {
+  createEmptyExcalidrawScene,
+  migrateExcalidrawScene,
   parseWhiteboardDsl,
   stringifyWhiteboardScene,
   whiteboardDslToExcalidrawScene,
@@ -14,7 +16,12 @@ import {
 import type { WhiteboardDslDocument } from "@notion/business/whiteboard";
 import { whiteboardDslValidator } from "../whiteboards";
 
-const DEFAULT_DOC_SCOPES = ["docs:read", "docs:write"] as const;
+const DEFAULT_CLI_SCOPES = [
+  "docs:read",
+  "docs:write",
+  "whiteboards:read",
+  "whiteboards:write",
+] as const;
 const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
 const DEVICE_FLOW_TOKEN_NAME = "CLI Browser Login";
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -163,7 +170,7 @@ export const createApiTokenRecord = mutation({
       name: args.name,
       tokenHash: args.tokenHash,
       tokenPrefix: args.tokenPrefix,
-      scopes: args.scopes ?? [...DEFAULT_DOC_SCOPES],
+      scopes: args.scopes ?? [...DEFAULT_CLI_SCOPES],
       createdAt: now(),
       expiresAt: args.expiresAt,
     });
@@ -212,12 +219,16 @@ export const ensureDefaultApiTokenRecord = mutation({
       .filter((token) => token.name === DEFAULT_CLI_TOKEN_NAME && !token.revokedAt)
       .sort(latestFirst)[0];
     if (existing?.tokenPlaintext) {
+      const nextScopes = Array.from(new Set([...existing.scopes, ...DEFAULT_CLI_SCOPES]));
+      if (nextScopes.length !== existing.scopes.length) {
+        await ctx.db.patch(existing._id, { scopes: nextScopes });
+      }
       for (const token of defaultTokens) {
         if (token._id !== existing._id) {
           await ctx.db.delete(token._id);
         }
       }
-      return toApiTokenResult(existing);
+      return toApiTokenResult({ ...existing, scopes: nextScopes });
     }
 
     if (existing) {
@@ -225,7 +236,7 @@ export const ensureDefaultApiTokenRecord = mutation({
         tokenHash: args.tokenHash,
         tokenPrefix: args.tokenPrefix,
         tokenPlaintext: args.tokenPlaintext,
-        scopes: [...DEFAULT_DOC_SCOPES],
+        scopes: [...DEFAULT_CLI_SCOPES],
       });
 
       for (const token of defaultTokens) {
@@ -238,7 +249,7 @@ export const ensureDefaultApiTokenRecord = mutation({
         ...existing,
         tokenPrefix: args.tokenPrefix,
         tokenPlaintext: args.tokenPlaintext,
-        scopes: [...DEFAULT_DOC_SCOPES],
+        scopes: [...DEFAULT_CLI_SCOPES],
       });
     }
 
@@ -249,7 +260,7 @@ export const ensureDefaultApiTokenRecord = mutation({
       tokenHash: args.tokenHash,
       tokenPrefix: args.tokenPrefix,
       tokenPlaintext: args.tokenPlaintext,
-      scopes: [...DEFAULT_DOC_SCOPES],
+      scopes: [...DEFAULT_CLI_SCOPES],
       createdAt,
     });
 
@@ -262,7 +273,7 @@ export const ensureDefaultApiTokenRecord = mutation({
       name: DEFAULT_CLI_TOKEN_NAME,
       tokenPrefix: args.tokenPrefix,
       tokenPlaintext: args.tokenPlaintext,
-      scopes: [...DEFAULT_DOC_SCOPES],
+      scopes: [...DEFAULT_CLI_SCOPES],
       createdAt,
     });
   },
@@ -296,7 +307,7 @@ export const resetDefaultApiTokenRecord = mutation({
         tokenHash: args.tokenHash,
         tokenPrefix: args.tokenPrefix,
         tokenPlaintext: args.tokenPlaintext,
-        scopes: [...DEFAULT_DOC_SCOPES],
+        scopes: [...DEFAULT_CLI_SCOPES],
         createdAt,
       });
 
@@ -309,7 +320,7 @@ export const resetDefaultApiTokenRecord = mutation({
         name: DEFAULT_CLI_TOKEN_NAME,
         tokenPrefix: args.tokenPrefix,
         tokenPlaintext: args.tokenPlaintext,
-        scopes: [...DEFAULT_DOC_SCOPES],
+        scopes: [...DEFAULT_CLI_SCOPES],
         createdAt,
       });
     }
@@ -318,7 +329,7 @@ export const resetDefaultApiTokenRecord = mutation({
       tokenHash: args.tokenHash,
       tokenPrefix: args.tokenPrefix,
       tokenPlaintext: args.tokenPlaintext,
-      scopes: [...DEFAULT_DOC_SCOPES],
+      scopes: [...DEFAULT_CLI_SCOPES],
     });
 
     for (const token of defaultTokens) {
@@ -331,7 +342,7 @@ export const resetDefaultApiTokenRecord = mutation({
       ...existing,
       tokenPrefix: args.tokenPrefix,
       tokenPlaintext: args.tokenPlaintext,
-      scopes: [...DEFAULT_DOC_SCOPES],
+      scopes: [...DEFAULT_CLI_SCOPES],
     });
   },
 });
@@ -645,8 +656,9 @@ export const updateCliDocument = internalMutation({
     }
 
     if (args.contentMarkdown !== undefined) {
+      const mode = args.mode ?? "append";
       patch.content =
-        args.mode === "append"
+        mode === "append"
           ? appendMarkdownToBlockNoteJson(document.content, args.contentMarkdown)
           : markdownToBlockNoteJson(args.contentMarkdown);
     }
@@ -719,19 +731,7 @@ export const createCliWhiteboard = internalMutation({
     const dsl = args.dsl ? parseWhiteboardDsl(args.dsl as WhiteboardDslDocument) : undefined;
     const sceneJson = dsl
       ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
-      : stringifyWhiteboardScene({
-          type: "excalidraw",
-          version: 2,
-          source: "my-notion",
-          elements: [],
-          appState: {
-            viewBackgroundColor: "#ffffff",
-            currentItemStrokeColor: "#1e1e1e",
-            currentItemBackgroundColor: "transparent",
-            gridSize: null,
-          },
-          files: {},
-        });
+      : stringifyWhiteboardScene(createEmptyExcalidrawScene());
     const whiteboardId = await ctx.db.insert("whiteboards", {
       title: args.title,
       userId: args.userId,
@@ -806,7 +806,9 @@ export const updateCliWhiteboard = internalMutation({
       title: args.title ?? dsl?.title ?? whiteboard.title,
       sceneJson: dsl
         ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
-        : args.sceneJson ?? whiteboard.sceneJson,
+        : args.sceneJson
+          ? stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson)))
+          : whiteboard.sceneJson,
       sourceDsl: args.dsl ? JSON.stringify(args.dsl, null, 2) : whiteboard.sourceDsl,
       sourceDslVersion: args.dsl?.version ?? whiteboard.sourceDslVersion,
       updatedAt: now(),
@@ -866,7 +868,7 @@ export const createCliDeviceAuthSession = mutation({
       userCodeHash: args.userCodeHash,
       userCodeDisplay: args.userCodeDisplay,
       status: "pending",
-      scopes: args.scopes.length > 0 ? args.scopes : [...DEFAULT_DOC_SCOPES],
+      scopes: args.scopes.length > 0 ? args.scopes : [...DEFAULT_CLI_SCOPES],
       profile: args.profile,
       apiUrl: args.apiUrl,
       webUrl: args.webUrl,
@@ -1076,7 +1078,7 @@ export const consumeCliDeviceAuthSessionAndCreateToken = mutation({
       name: DEVICE_FLOW_TOKEN_NAME,
       tokenHash: args.tokenHash,
       tokenPrefix: args.tokenPrefix,
-      scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_DOC_SCOPES],
+      scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_CLI_SCOPES],
       createdAt,
     });
 
@@ -1091,7 +1093,7 @@ export const consumeCliDeviceAuthSessionAndCreateToken = mutation({
         id: tokenId,
         name: DEVICE_FLOW_TOKEN_NAME,
         tokenPrefix: args.tokenPrefix,
-        scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_DOC_SCOPES],
+        scopes: session.scopes.length > 0 ? session.scopes : [...DEFAULT_CLI_SCOPES],
         createdAt,
         lastUsedAt: null,
         expiresAt: null,

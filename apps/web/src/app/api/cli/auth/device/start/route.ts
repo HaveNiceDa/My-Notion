@@ -35,7 +35,9 @@ export async function POST(req: NextRequest) {
       deviceCodeHash: sha256Hex(deviceCode),
       userCodeHash: sha256Hex(userCode),
       userCodeDisplay: userCode,
-      scopes: body.scopes?.length ? body.scopes : ["docs:read", "docs:write"],
+      scopes: body.scopes?.length
+        ? body.scopes
+        : ["docs:read", "docs:write", "whiteboards:read", "whiteboards:write"],
       profile: body.profile,
       apiUrl: body.apiUrl,
       webUrl,

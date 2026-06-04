@@ -60,7 +60,7 @@ Usage:
   my-notion whiteboards fetch --id <whiteboardId>
   my-notion whiteboards list [--document-id <documentId>] [--limit 20]
   my-notion whiteboards update --id <whiteboardId> [--dsl-file board.mwb.yaml]
-  my-notion whiteboards export --id <whiteboardId> [--format json|svg] [--output board.json]
+  my-notion whiteboards export --id <whiteboardId> [--format json|svg|package] [--output board.json|dir]
   my-notion install [--skills] [--check]
   my-notion update [--check] [--tag beta|latest]
   my-notion mcp serve --transport stdio

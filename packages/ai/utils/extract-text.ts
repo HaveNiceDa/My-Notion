@@ -1,9 +1,22 @@
 type BlockNode = {
   type?: string;
   text?: string;
+  props?: Record<string, unknown>;
   content?: BlockNode[];
   children?: BlockNode[];
 };
+
+function whiteboardNodeToText(node: BlockNode) {
+  const title =
+    typeof node.props?.title === "string" && node.props.title.trim()
+      ? node.props.title.trim()
+      : "Untitled whiteboard";
+  const whiteboardId =
+    typeof node.props?.whiteboardId === "string" && node.props.whiteboardId.trim()
+      ? node.props.whiteboardId.trim()
+      : "unknown";
+  return `\n![My-Notion Whiteboard: ${title}](mynotion-whiteboard://${whiteboardId})\n`;
+}
 
 export function extractTextFromDocument(content: string): string {
   try {
@@ -20,6 +33,10 @@ export function extractTextFromDocument(content: string): string {
       }
 
       if (typeof node === "object" && node !== null) {
+        if (node.type === "whiteboard") {
+          text += whiteboardNodeToText(node);
+        }
+
         if (node.content && Array.isArray(node.content)) {
           for (const child of node.content) {
             if (child.type === "text" && child.text) {

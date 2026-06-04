@@ -4,9 +4,11 @@ import type {
   ExcalidrawSceneData,
   WhiteboardDslDocument,
   WhiteboardDslEdge,
+  WhiteboardDslLayout,
   WhiteboardDslNode,
 } from "./types";
 
+export const MY_NOTION_WHITEBOARD_SCENE_VERSION = 1;
 const DEFAULT_NODE_WIDTH = 220;
 const DEFAULT_NODE_HEIGHT = 96;
 const GRID_COLUMNS = 3;
@@ -30,12 +32,42 @@ function nowForElement(seed: string) {
   return 1_700_000_000_000 + (hashText(seed) % 100_000_000);
 }
 
-function positionNode(node: WhiteboardDslNode, index: number) {
-  const column = index % GRID_COLUMNS;
-  const row = Math.floor(index / GRID_COLUMNS);
+function normalizeSpacing(layout?: WhiteboardDslLayout) {
   return {
-    x: node.x ?? column * GRID_X_GAP,
-    y: node.y ?? row * GRID_Y_GAP,
+    x: layout?.spacing?.x ?? GRID_X_GAP,
+    y: layout?.spacing?.y ?? GRID_Y_GAP,
+  };
+}
+
+function positionNode(node: WhiteboardDslNode, index: number, layout?: WhiteboardDslLayout) {
+  const spacing = normalizeSpacing(layout);
+  const bounds = layout?.bounds;
+  const originX = bounds?.x ?? 0;
+  const originY = bounds?.y ?? 0;
+  const kind = layout?.kind ?? "grid";
+  const rankDirection = layout?.rankDirection ?? "LR";
+
+  if (node.x !== undefined || node.y !== undefined || kind === "freeform") {
+    return {
+      x: node.x ?? originX,
+      y: node.y ?? originY,
+    };
+  }
+
+  if (kind === "flow") {
+    return rankDirection === "TB"
+      ? { x: originX, y: originY + index * spacing.y }
+      : { x: originX + index * spacing.x, y: originY };
+  }
+
+  const columns = bounds?.width
+    ? Math.max(1, Math.floor(bounds.width / spacing.x))
+    : GRID_COLUMNS;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+  return {
+    x: originX + column * spacing.x,
+    y: originY + row * spacing.y,
   };
 }
 
@@ -108,8 +140,8 @@ function createTextElement(
   };
 }
 
-function createNodeElements(node: WhiteboardDslNode, index: number) {
-  const { x, y } = positionNode(node, index);
+function createNodeElements(node: WhiteboardDslNode, index: number, layout?: WhiteboardDslLayout) {
+  const { x, y } = positionNode(node, index, layout);
   const width = node.width ?? DEFAULT_NODE_WIDTH;
   const height = node.height ?? (node.type === "text" ? 40 : DEFAULT_NODE_HEIGHT);
   const shapeType = nodeShapeType(node);
@@ -194,6 +226,7 @@ export function createEmptyExcalidrawScene(): ExcalidrawSceneData {
     type: "excalidraw",
     version: 2,
     source: "my-notion",
+    myNotionSceneVersion: MY_NOTION_WHITEBOARD_SCENE_VERSION,
     elements: [],
     appState: {
       viewBackgroundColor: "#ffffff",
@@ -210,7 +243,7 @@ export function createEmptyExcalidrawScene(): ExcalidrawSceneData {
 
 export function whiteboardDslToExcalidrawScene(dsl: WhiteboardDslDocument): ExcalidrawSceneData {
   const scene = createEmptyExcalidrawScene();
-  const nodeElements = dsl.nodes.map(createNodeElements);
+  const nodeElements = dsl.nodes.map((node, index) => createNodeElements(node, index, dsl.layout));
   const nodeMap = new Map(nodeElements.map((node) => [node.nodeId, node]));
   scene.elements.push(...nodeElements.flatMap((node) => node.elements));
   scene.elements.push(...(dsl.edges ?? []).flatMap((edge, index) => createEdgeElement(edge, index, nodeMap)));
@@ -218,7 +251,44 @@ export function whiteboardDslToExcalidrawScene(dsl: WhiteboardDslDocument): Exca
 }
 
 export function stringifyWhiteboardScene(scene: ExcalidrawSceneData) {
-  return JSON.stringify(scene, null, 2);
+  return JSON.stringify(migrateExcalidrawScene(scene), null, 2);
+}
+
+function sanitizeSceneAppState(appState: unknown) {
+  const defaultAppState = createEmptyExcalidrawScene().appState;
+  if (!appState || typeof appState !== "object" || Array.isArray(appState)) {
+    return defaultAppState;
+  }
+  const serializableAppState = { ...(appState as Record<string, unknown>) };
+  delete serializableAppState.collaborators;
+  delete serializableAppState.openDialog;
+  delete serializableAppState.openMenu;
+  delete serializableAppState.openSidebar;
+  return {
+    ...defaultAppState,
+    ...serializableAppState,
+  } as ExcalidrawSceneData["appState"];
+}
+
+export function migrateExcalidrawScene(input: unknown): ExcalidrawSceneData {
+  const emptyScene = createEmptyExcalidrawScene();
+  if (!input || typeof input !== "object" || Array.isArray(input)) {
+    return emptyScene;
+  }
+
+  const candidate = input as Partial<ExcalidrawSceneData>;
+  return {
+    type: "excalidraw",
+    version: typeof candidate.version === "number" ? candidate.version : emptyScene.version,
+    source: "my-notion",
+    myNotionSceneVersion: MY_NOTION_WHITEBOARD_SCENE_VERSION,
+    elements: Array.isArray(candidate.elements) ? candidate.elements : [],
+    appState: sanitizeSceneAppState(candidate.appState),
+    files:
+      candidate.files && typeof candidate.files === "object" && !Array.isArray(candidate.files)
+        ? candidate.files
+        : {},
+  };
 }
 
 export function parseWhiteboardDsl(input: unknown): WhiteboardDslDocument {
@@ -235,6 +305,10 @@ export function parseWhiteboardDsl(input: unknown): WhiteboardDslDocument {
   return {
     version: "mwb-dsl-v1",
     title: typeof candidate.title === "string" ? candidate.title : undefined,
+    layout:
+      candidate.layout && typeof candidate.layout === "object" && !Array.isArray(candidate.layout)
+        ? candidate.layout
+        : undefined,
     nodes: candidate.nodes,
     edges: Array.isArray(candidate.edges) ? candidate.edges : [],
     groups: Array.isArray(candidate.groups) ? candidate.groups : [],

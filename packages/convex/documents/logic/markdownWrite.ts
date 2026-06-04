@@ -116,8 +116,9 @@ export const updateFromMarkdown = mutation({
     }
 
     if (args.contentMarkdown !== undefined) {
+      const mode = args.mode ?? "append";
       patch.content =
-        args.mode === "append"
+        mode === "append"
           ? appendMarkdownToBlockNoteJson(document.content, args.contentMarkdown)
           : markdownToBlockNoteJson(args.contentMarkdown);
     }

@@ -83,6 +83,115 @@ function parseWhiteboardDslBody(value: unknown): WhiteboardDslDocument | undefin
   return candidate as WhiteboardDslDocument;
 }
 
+function requiredScopeForEndpoint(method: string, pathname: string) {
+  if (pathname.startsWith("/cli/v1/whiteboards")) {
+    return method === "GET" || (method === "POST" && pathname.endsWith("/export"))
+      ? "whiteboards:read"
+      : "whiteboards:write";
+  }
+  return method === "GET" ? "docs:read" : "docs:write";
+}
+
+function escapeXml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+type SvgSceneElement = {
+  type?: string;
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  strokeColor?: string;
+  backgroundColor?: string;
+  text?: string;
+  fontSize?: number;
+  points?: Array<[number, number]>;
+};
+
+function isSceneElement(value: unknown): value is SvgSceneElement {
+  return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function createFallbackWhiteboardSvg(title: string) {
+  const safeTitle = escapeXml(title);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540"><rect width="100%" height="100%" fill="#fff"/><rect x="24" y="24" width="912" height="492" rx="18" fill="#fff" stroke="#d0d7de"/><text x="48" y="72" font-family="sans-serif" font-size="24" font-weight="600" fill="#24292f">${safeTitle}</text><text x="48" y="112" font-family="sans-serif" font-size="14" fill="#57606a">Open scene.json in My-Notion or Excalidraw for full fidelity.</text></svg>`;
+}
+
+function renderSceneElementToSvg(element: SvgSceneElement) {
+  const x = element.x ?? 0;
+  const y = element.y ?? 0;
+  const width = element.width ?? 0;
+  const height = element.height ?? 0;
+  const stroke = escapeXml(element.strokeColor ?? "#1e1e1e");
+  const fill = escapeXml(element.backgroundColor && element.backgroundColor !== "transparent"
+    ? element.backgroundColor
+    : "none");
+
+  if (element.type === "text") {
+    const text = escapeXml(element.text ?? "");
+    const fontSize = element.fontSize ?? 20;
+    return `<text x="${x}" y="${y + fontSize}" font-family="sans-serif" font-size="${fontSize}" fill="${stroke}">${text}</text>`;
+  }
+
+  if (element.type === "ellipse") {
+    return `<ellipse cx="${x + width / 2}" cy="${y + height / 2}" rx="${Math.abs(width / 2)}" ry="${Math.abs(height / 2)}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+  }
+
+  if (element.type === "diamond") {
+    const points = [
+      `${x + width / 2},${y}`,
+      `${x + width},${y + height / 2}`,
+      `${x + width / 2},${y + height}`,
+      `${x},${y + height / 2}`,
+    ].join(" ");
+    return `<polygon points="${points}" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+  }
+
+  if ((element.type === "arrow" || element.type === "line") && Array.isArray(element.points)) {
+    const points = element.points
+      .map((point) => `${x + point[0]},${y + point[1]}`)
+      .join(" ");
+    const marker = element.type === "arrow" ? ' marker-end="url(#arrowhead)"' : "";
+    return `<polyline points="${points}" fill="none" stroke="${stroke}" stroke-width="2"${marker}/>`;
+  }
+
+  if (element.type === "rectangle" || element.type === "frame") {
+    return `<rect x="${x}" y="${y}" width="${Math.abs(width)}" height="${Math.abs(height)}" rx="12" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+  }
+
+  return "";
+}
+
+function createWhiteboardSvg(title: string, sceneJson: string) {
+  try {
+    const parsed = JSON.parse(sceneJson) as { elements?: unknown };
+    const elements = Array.isArray(parsed.elements)
+      ? parsed.elements.filter(isSceneElement)
+      : [];
+    if (elements.length === 0) return createFallbackWhiteboardSvg(title);
+    const minX = Math.min(...elements.map((element) => element.x ?? 0));
+    const minY = Math.min(...elements.map((element) => element.y ?? 0));
+    const maxX = Math.max(...elements.map((element) => (element.x ?? 0) + Math.abs(element.width ?? 0)));
+    const maxY = Math.max(...elements.map((element) => (element.y ?? 0) + Math.abs(element.height ?? 0)));
+    const padding = 48;
+    const viewBox = [
+      minX - padding,
+      minY - padding,
+      Math.max(maxX - minX + padding * 2, 320),
+      Math.max(maxY - minY + padding * 2, 180),
+    ].join(" ");
+    const body = elements.map(renderSceneElementToSvg).filter(Boolean).join("");
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="${viewBox}"><defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#1e1e1e"/></marker></defs><rect width="100%" height="100%" fill="#fff"/>${body}</svg>`;
+  } catch {
+    return createFallbackWhiteboardSvg(title);
+  }
+}
+
 function endpointKey(method: string, pathname: string) {
   if (pathname === "/cli/v1/auth/status") {
     return `${method} /cli/v1/auth/status`;
@@ -124,8 +233,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
   const url = new URL(req.url);
   const method = req.method.toUpperCase();
   const pathname = url.pathname;
-  const requiredScope =
-    method === "GET" ? "docs:read" : "docs:write";
+  const requiredScope = requiredScopeForEndpoint(method, pathname);
   const skipScopeCheck =
     pathname === "/cli/v1/auth/status" ||
     pathname === "/cli/v1/tokens/revoke-current";
@@ -310,7 +418,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         const mode =
           body.mode === "append" || body.mode === "overwrite"
             ? body.mode
-            : "overwrite";
+            : "append";
 
         const document = await ctx.runMutation(internal.cli.updateCliDocument, {
           userId: auth.userId,
@@ -412,7 +520,7 @@ const cliHttpAction = httpAction(async (ctx, req) => {
 
       if (method === "POST" && action === "export") {
         const body = await parseJsonBody(req);
-        const format = body.format === "json" || body.format === "svg"
+        const format = body.format === "json" || body.format === "svg" || body.format === "package"
           ? body.format
           : "json";
         const whiteboard = await ctx.runQuery(internal.cli.getCliWhiteboard, {
@@ -422,10 +530,43 @@ const cliHttpAction = httpAction(async (ctx, req) => {
         if (!whiteboard) {
           return auditedError(404, "NOT_FOUND", "Whiteboard not found");
         }
+        const svg = createWhiteboardSvg(whiteboard.title, whiteboard.sceneJson);
         const content =
           format === "json"
             ? whiteboard.sceneJson
-            : `<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540"><rect width="100%" height="100%" fill="#fff"/><text x="32" y="48" font-family="sans-serif" font-size="24">${whiteboard.title}</text><text x="32" y="88" font-family="sans-serif" font-size="14">Export this whiteboard as JSON for full fidelity.</text></svg>`;
+            : format === "svg"
+              ? svg
+              : JSON.stringify(
+                  {
+                    version: 1,
+                    whiteboard: {
+                      id: whiteboard.id,
+                      title: whiteboard.title,
+                      engine: whiteboard.engine,
+                      sourceDslVersion: whiteboard.sourceDslVersion,
+                      exportedAt: Date.now(),
+                    },
+                    files: [
+                      {
+                        path: "scene.json",
+                        mimeType: "application/json",
+                        content: whiteboard.sceneJson,
+                      },
+                      {
+                        path: "thumbnail.txt",
+                        mimeType: "text/plain",
+                        content: whiteboard.thumbnailDataUrl ?? "",
+                      },
+                      {
+                        path: "whiteboard.svg",
+                        mimeType: "image/svg+xml",
+                        content: svg,
+                      },
+                    ],
+                  },
+                  null,
+                  2,
+                );
         return auditedSuccess({
           id: whiteboard.id,
           title: whiteboard.title,
@@ -503,6 +644,42 @@ http.route({
 
 http.route({
   pathPrefix: "/cli/v1/documents/",
+  method: "DELETE",
+  handler: cliHttpAction,
+});
+
+http.route({
+  path: "/cli/v1/whiteboards",
+  method: "GET",
+  handler: cliHttpAction,
+});
+
+http.route({
+  path: "/cli/v1/whiteboards",
+  method: "POST",
+  handler: cliHttpAction,
+});
+
+http.route({
+  pathPrefix: "/cli/v1/whiteboards/",
+  method: "GET",
+  handler: cliHttpAction,
+});
+
+http.route({
+  pathPrefix: "/cli/v1/whiteboards/",
+  method: "PATCH",
+  handler: cliHttpAction,
+});
+
+http.route({
+  pathPrefix: "/cli/v1/whiteboards/",
+  method: "POST",
+  handler: cliHttpAction,
+});
+
+http.route({
+  pathPrefix: "/cli/v1/whiteboards/",
   method: "DELETE",
   handler: cliHttpAction,
 });

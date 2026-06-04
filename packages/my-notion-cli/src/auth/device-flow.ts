@@ -100,7 +100,7 @@ export async function startDeviceAuthorization(profile: ResolvedProfile) {
       webUrl: profile.webUrl,
       machineName: hostname(),
       clientName: "my-notion-cli",
-      scopes: ["docs:read", "docs:write"],
+      scopes: ["docs:read", "docs:write", "whiteboards:read", "whiteboards:write"],
     },
   );
 }

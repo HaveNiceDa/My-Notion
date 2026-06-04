@@ -88,7 +88,7 @@ export type WhiteboardResult = {
 export type WhiteboardExportResult = {
   id: string;
   title: string;
-  format: "json" | "svg";
+  format: "json" | "svg" | "package";
   content: string;
 };
 

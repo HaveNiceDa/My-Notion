@@ -168,7 +168,7 @@ export class MyNotionClient {
     );
   }
 
-  exportWhiteboard(input: { id: string; format: "json" | "svg" }) {
+  exportWhiteboard(input: { id: string; format: "json" | "svg" | "package" }) {
     return this.request<WhiteboardExportResult>(
       `/cli/v1/whiteboards/${encodeURIComponent(input.id)}/export`,
       {

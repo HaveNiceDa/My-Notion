@@ -326,6 +326,7 @@ my-notion docs update \
 注意：
 
 - `append` 更安全，适合追加笔记、会议纪要、任务记录。
+- 未显式传 `--mode` 时默认使用 `append`。
 - `overwrite` 会替换原文档内容，只有在明确需要重写全文时使用。
 
 ## 10. 导出文档

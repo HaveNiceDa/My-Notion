@@ -1,4 +1,4 @@
-import { createEmptyExcalidrawScene } from "@notion/business/whiteboard";
+import { createEmptyExcalidrawScene, migrateExcalidrawScene } from "@notion/business/whiteboard";
 import type { ExcalidrawInitialDataState } from "@excalidraw/excalidraw/types";
 
 function sanitizeAppState(appState: unknown) {
@@ -25,15 +25,11 @@ export function parseInitialExcalidrawData(sceneJson?: string): ExcalidrawInitia
   }
 
   try {
-    const parsed = JSON.parse(sceneJson) as {
-      elements?: unknown;
-      appState?: unknown;
-      files?: unknown;
-    };
+    const parsed = migrateExcalidrawScene(JSON.parse(sceneJson));
     return {
-      elements: Array.isArray(parsed.elements) ? parsed.elements : [],
+      elements: parsed.elements,
       appState: sanitizeAppState(parsed.appState),
-      files: typeof parsed.files === "object" && parsed.files ? parsed.files : {},
+      files: parsed.files,
     } as unknown as ExcalidrawInitialDataState;
   } catch {
     const scene = createEmptyExcalidrawScene();

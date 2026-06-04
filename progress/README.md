@@ -14,6 +14,7 @@
 - `20260603-183215.md`：M26 Agent Memory Center UI，覆盖 `/memories` Memory Center、Overview、Inbox、Active、Conflicts、Settings 和 Detail Drawer。
 - `20260603-195302.md`：M27 Agent Memory Eval And Auto Extraction，覆盖 Memory Eval、trace lifecycle、受控自动提取和 shadcn Select 统一。
 - `20260603-whiteboard-excalidraw.md`：Excalidraw 画板能力基础建设，覆盖 whiteboards 资源模型、BlockNote 自定义画板块、全屏编辑器和 CLI/MCP DSL 写入链路。
+- `20260604-cli-whiteboard-contract-hardening.md`：CLI 与画板契约加固，覆盖默认 append、DSL layout、package 导出、whiteboards scope 和 scene 迁移层。
 
 ## 阅读规则
 

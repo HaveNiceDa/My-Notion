@@ -15,6 +15,7 @@ import type { ExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import { ArrowLeft } from "lucide-react";
 import { useTranslations } from "next-intl";
 import "@excalidraw/excalidraw/index.css";
+import { MY_NOTION_WHITEBOARD_SCENE_VERSION } from "@notion/business/whiteboard";
 
 import { parseInitialExcalidrawData } from "./excalidraw/scene";
 
@@ -80,6 +81,7 @@ function stringifyScenePayload(payload: ScenePayload) {
     type: "excalidraw",
     version: 2,
     source: "my-notion",
+    myNotionSceneVersion: MY_NOTION_WHITEBOARD_SCENE_VERSION,
     elements: payload.elements,
     appState: sanitizeSerializableAppState(payload.appState),
     files: payload.files,
