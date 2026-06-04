@@ -13,23 +13,24 @@ interface MemoryInboxProps {
   pendingMemories: AgentMemoryItem[] | undefined;
   onAccept: (memory: AgentMemoryItem, edit?: MemoryEditState) => void;
   onReject: (memory: AgentMemoryItem) => void;
-  onOpenDetail: (memory: AgentMemoryItem) => void;
 }
 
 export function MemoryInbox({
   pendingMemories,
   onAccept,
   onReject,
-  onOpenDetail,
 }: MemoryInboxProps) {
   const t = useTranslations("MemoryReview");
 
   return (
     <section className="rounded-xl border bg-background/80 p-4 shadow-sm">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Inbox className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-medium">{t("inboxTitle")}</h2>
+        <div>
+          <div className="flex items-center gap-2">
+            <Inbox className="h-4 w-4 text-primary" />
+            <h2 className="text-sm font-medium">{t("inboxTitle")}</h2>
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">{t("inboxDescription")}</p>
         </div>
         <span className="text-xs text-muted-foreground">
           {t("pendingCount", { count: pendingMemories?.length ?? 0 })}
@@ -47,7 +48,6 @@ export function MemoryInbox({
               memory={memory}
               onAccept={(edit) => onAccept(memory, edit)}
               onReject={() => onReject(memory)}
-              onOpenDetail={() => onOpenDetail(memory)}
             />
           ))}
         </div>
@@ -60,10 +60,9 @@ interface MemoryProposalCardProps {
   memory: AgentMemoryItem;
   onAccept: (edit?: MemoryEditState) => void;
   onReject: () => void;
-  onOpenDetail: () => void;
 }
 
-function MemoryProposalCard({ memory, onAccept, onReject, onOpenDetail }: MemoryProposalCardProps) {
+function MemoryProposalCard({ memory, onAccept, onReject }: MemoryProposalCardProps) {
   const t = useTranslations("MemoryReview");
   const [isEditing, setIsEditing] = useState(false);
   const [editState, setEditState] = useState<MemoryEditState>(createEditState(memory));
@@ -80,10 +79,10 @@ function MemoryProposalCard({ memory, onAccept, onReject, onOpenDetail }: Memory
         />
       ) : (
         <div className="space-y-3">
-          <button type="button" className="block w-full text-left" onClick={onOpenDetail}>
+          <div>
             <MemoryBadges memory={memory} />
             <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-foreground">{memory.content}</p>
-          </button>
+          </div>
           {memory.reason && (
             <p className="rounded-md bg-background/70 px-3 py-2 text-xs text-muted-foreground">
               {t("reasonLabel")}: {memory.reason}
@@ -97,7 +96,7 @@ function MemoryProposalCard({ memory, onAccept, onReject, onOpenDetail }: Memory
           {memory.conflictsWith && memory.conflictsWith.length > 0 && (
             <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
               <AlertTriangle className="h-3.5 w-3.5" />
-              {t("possibleDuplicateHint", { count: memory.conflictsWith.length })}
+              {t("possibleDuplicateHint")}
             </div>
           )}
           <div className="flex justify-end gap-2">
@@ -107,7 +106,7 @@ function MemoryProposalCard({ memory, onAccept, onReject, onOpenDetail }: Memory
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={onReject}>
               <X className="h-4 w-4" />
-              {t("rejectProposal")}
+              {t("ignoreProposal")}
             </Button>
             <Button type="button" size="sm" onClick={() => onAccept()}>
               <Check className="h-4 w-4" />
@@ -127,10 +126,7 @@ function MemoryBadges({ memory }: { memory: AgentMemoryItem }) {
       <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">
         {t(`type_${memory.type}`)}
       </span>
-      {memory.kind && <span>{memory.kind}</span>}
-      {memory.category && <span>{memory.category}</span>}
       <span>{t(`source_${memory.source}`)}</span>
-      <span>{t("confidenceValue", { value: memory.confidence.toFixed(1) })}</span>
     </div>
   );
 }

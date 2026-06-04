@@ -10,10 +10,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { deleteMemoryIndex, syncMemoryIndex } from "@/src/lib/agent/memory-sync-client";
 import { MemoryActiveList } from "./MemoryActiveList";
-import { MemoryConflicts } from "./MemoryConflicts";
-import { MemoryDetailDrawer } from "./MemoryDetailDrawer";
 import { MemoryInbox } from "./MemoryInbox";
-import { MemoryOverview } from "./MemoryOverview";
 import { MemorySettings } from "./MemorySettings";
 import type { ActiveMemoryFilters, AgentMemoryItem, MemoryEditState } from "./types";
 import { createEditState, validateEditState } from "./utils";
@@ -21,10 +18,6 @@ import { createEditState, validateEditState } from "./utils";
 const DEFAULT_FILTERS: ActiveMemoryFilters = {
   query: "",
   type: "all",
-  kind: "all",
-  embeddingStatus: "all",
-  privacy: "all",
-  sort: "updated_desc",
 };
 
 export function MemoryCenterPage() {
@@ -34,7 +27,6 @@ export function MemoryCenterPage() {
   const [createState, setCreateState] = useState<MemoryEditState>(createEditState());
   const [editingId, setEditingId] = useState<Id<"agentMemories"> | null>(null);
   const [editState, setEditState] = useState<MemoryEditState | null>(null);
-  const [selectedMemory, setSelectedMemory] = useState<AgentMemoryItem | null>(null);
 
   const activeMemories = useQuery(api.agentMemories.listAgentMemories, { limit: 100 }) as
     | AgentMemoryItem[]
@@ -66,12 +58,12 @@ export function MemoryCenterPage() {
 
   async function handleCreate() {
     try {
-      const { content, confidence } = validateEditState(createState);
+      const { content } = validateEditState(createState);
       const promise = createMemory({
         type: createState.type,
         content,
         source: "manual",
-        confidence,
+        confidence: 1,
         ...(createState.reason.trim() ? { reason: createState.reason.trim() } : {}),
       });
       toast.promise(promise, {
@@ -91,12 +83,12 @@ export function MemoryCenterPage() {
   async function handleSave(memory: AgentMemoryItem) {
     if (!editState) return;
     try {
-      const { content, confidence } = validateEditState(editState);
+      const { content } = validateEditState(editState);
       const promise = updateMemory({
         memoryId: memory.id,
         type: editState.type,
         content,
-        confidence,
+        confidence: 1,
         ...(editState.reason.trim() ? { reason: editState.reason.trim() } : {}),
       });
       toast.promise(promise, {
@@ -128,12 +120,12 @@ export function MemoryCenterPage() {
   async function handleAcceptProposal(memory: AgentMemoryItem, edit?: MemoryEditState) {
     try {
       const nextState = edit ?? createEditState(memory);
-      const { content, confidence } = validateEditState(nextState);
+      const { content } = validateEditState(nextState);
       const promise = commitMemory({
         memoryId: memory.id,
         type: nextState.type,
         content,
-        confidence,
+        confidence: 1,
         ...(nextState.reason.trim() ? { reason: nextState.reason.trim() } : {}),
       });
       toast.promise(promise, {
@@ -160,9 +152,6 @@ export function MemoryCenterPage() {
     await promise;
   }
 
-  const active = activeMemories ?? [];
-  const pending = pendingMemories ?? [];
-
   return (
     <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-5 px-6 py-14">
       <header className="flex flex-col gap-3">
@@ -177,12 +166,10 @@ export function MemoryCenterPage() {
         </div>
       </header>
 
-      <MemoryOverview activeMemories={active} pendingMemories={pending} />
       <MemoryInbox
         pendingMemories={pendingMemories}
         onAccept={handleAcceptProposal}
         onReject={handleRejectProposal}
-        onOpenDetail={setSelectedMemory}
       />
       <MemoryActiveList
         memories={activeMemories}
@@ -201,11 +188,8 @@ export function MemoryCenterPage() {
         onCancelEdit={cancelEdit}
         onSave={handleSave}
         onDelete={handleDelete}
-        onOpenDetail={setSelectedMemory}
       />
-      <MemoryConflicts memories={active} onOpenDetail={setSelectedMemory} />
       <MemorySettings />
-      <MemoryDetailDrawer memory={selectedMemory} onClose={() => setSelectedMemory(null)} />
     </div>
   );
 }
@@ -236,10 +220,6 @@ function showValidationError(
 ) {
   if (error instanceof Error && error.message === "contentRequired") {
     toast.error(t("contentRequired"));
-    return;
-  }
-  if (error instanceof Error && error.message === "confidenceInvalid") {
-    toast.error(t("confidenceInvalid"));
     return;
   }
   throw error;

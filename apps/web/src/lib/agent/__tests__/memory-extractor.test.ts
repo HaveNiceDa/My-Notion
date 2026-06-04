@@ -19,8 +19,26 @@ describe("memory-extractor", () => {
     });
 
     expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.type).toBe("preference");
     expect(result.proposals[0]?.kind).toBe("instruction");
     expect(result.proposals[0]?.scopeLevel).toBe("user");
+  });
+
+  it("将明确的文档/画板规则归类为项目规则", () => {
+    const result = extractMemoryCandidates({
+      enabled: true,
+      userId: "user-1",
+      messages: [
+        {
+          role: "user",
+          content: "以后请记住画板缩略图必须保持整宽展示。",
+        },
+      ],
+    });
+
+    expect(result.proposals).toHaveLength(1);
+    expect(result.proposals[0]?.type).toBe("project");
+    expect(result.proposals[0]?.category).toBe("project_rule");
   });
 
   it("默认跳过敏感内容，避免污染 Inbox", () => {

@@ -46,16 +46,9 @@ export interface MemoryEditState {
   type: MemoryType;
   content: string;
   reason: string;
-  confidence: string;
 }
-
-export type ActiveSort = "updated_desc" | "importance_desc" | "usage_desc" | "review_due";
 
 export interface ActiveMemoryFilters {
   query: string;
   type: "all" | MemoryType;
-  kind: "all" | MemoryKind;
-  embeddingStatus: "all" | MemoryEmbeddingStatus;
-  privacy: "all" | MemoryPrivacy;
-  sort: ActiveSort;
 }

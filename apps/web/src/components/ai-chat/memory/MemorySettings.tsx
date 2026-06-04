@@ -1,16 +1,12 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import { CheckCircle2, EyeOff, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-import { Checkbox } from "@/src/components/ui/checkbox";
-
 const SETTINGS = [
-  "settingAutoMode",
+  "settingConfirmFirst",
   "settingSensitivePolicy",
-  "settingDefaultScope",
-  "settingEpisodicTtl",
-  "settingInlinePrompt",
+  "settingBusinessScope",
 ] as const;
 
 export function MemorySettings() {
@@ -23,17 +19,15 @@ export function MemorySettings() {
         <h2 className="text-sm font-medium">{t("settingsTitle")}</h2>
       </div>
       <p className="mb-3 text-xs text-muted-foreground">{t("settingsDescription")}</p>
-      <div className="mb-3 flex items-start gap-3 rounded-lg border bg-primary/5 p-3">
-        <Checkbox checked disabled aria-label={t("autoExtractSwitchLabel")} className="mt-0.5" />
-        <div>
-          <div className="text-sm font-medium">{t("autoExtractSwitchLabel")}</div>
-          <div className="mt-1 text-xs text-muted-foreground">{t("autoExtractSwitchDescription")}</div>
-        </div>
-      </div>
       <div className="grid gap-3 md:grid-cols-2">
         {SETTINGS.map((key) => (
           <div key={key} className="rounded-lg border bg-muted/20 p-3">
-            <div className="text-sm font-medium">{t(`${key}Title`)}</div>
+            <div className="flex items-center gap-2 text-sm font-medium">
+              {key === "settingSensitivePolicy"
+                ? <EyeOff className="h-4 w-4 text-primary" />
+                : <CheckCircle2 className="h-4 w-4 text-primary" />}
+              {t(`${key}Title`)}
+            </div>
             <div className="mt-1 text-xs text-muted-foreground">{t(`${key}Description`)}</div>
           </div>
         ))}

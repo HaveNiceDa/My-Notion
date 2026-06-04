@@ -208,11 +208,11 @@ export const documentSearchTool: AgentTool = {
   }),
 };
 
-// 长期记忆读取 tool：读取用户偏好、项目事实和阶段性对话结论
+// 长期记忆读取 tool：读取用户偏好、项目规则和最近决策
 export const memorySearchTool: AgentTool = {
   name: "memory_search",
   description:
-    "按查询、记忆分层、类别和作用域搜索用户长期记忆。当回答需要遵循长期偏好、项目约束、历史决策、工具经验或跨会话上下文时优先使用。默认只返回非敏感 active 记忆，并包含可解释 scoreBreakdown。",
+    "搜索用户已确认的 AI 记忆，包括用户偏好、项目/文档/画板规则和最近决策。当回答需要遵循这些长期上下文时使用。默认只返回非敏感、已生效的记忆。",
   parameters: {
     type: "object",
     properties: {
@@ -222,7 +222,7 @@ export const memorySearchTool: AgentTool = {
       },
       kinds: {
         type: "array",
-        description: "可选记忆分层过滤：instruction=稳定规则/偏好；semantic=长期事实；episodic=会话事件；procedural=工作流经验。",
+        description: "内部高级过滤字段，通常不需要传。用于兼容旧的记忆分层。",
         items: {
           type: "string",
           enum: ["instruction", "semantic", "episodic", "procedural"],
@@ -230,12 +230,12 @@ export const memorySearchTool: AgentTool = {
       },
       categories: {
         type: "array",
-        description: "可选细分类过滤，例如 user_preference、project_fact、session_note。",
+        description: "内部高级过滤字段，通常不需要传。用于兼容旧的细分类。",
         items: { type: "string" },
       },
       scopes: {
         type: "array",
-        description: "可选作用域过滤。未传时默认使用当前 user scope，并在有当前文档时包含 document scope。",
+        description: "内部高级过滤字段，通常不需要传。未传时默认使用当前用户和当前文档上下文。",
         items: {
           type: "object",
           properties: {
@@ -256,11 +256,11 @@ export const memorySearchTool: AgentTool = {
       },
       includeSensitive: {
         type: "boolean",
-        description: "是否包含 sensitive 记忆，默认 false。",
+        description: "是否包含敏感记忆，默认 false。除非用户明确要求，否则不要设置为 true。",
       },
       includeEvidence: {
         type: "boolean",
-        description: "是否返回证据字段，默认 false。",
+        description: "是否返回来源证据，默认 false。仅在用户询问记忆来源时使用。",
       },
     },
     required: ["query"],
@@ -275,7 +275,7 @@ export const memorySearchTool: AgentTool = {
 export const memoryReadTool: AgentTool = {
   name: "memory_read",
   description:
-    "兼容旧版长期记忆读取工具。新请求优先使用 memory_search；仅在需要按旧 type=preference/project/episodic 过滤时使用。",
+    "兼容旧版记忆读取工具。新请求优先使用 memory_search；仅在需要按旧 type=preference/project/episodic 过滤时使用。",
   parameters: {
     type: "object",
     properties: {
@@ -286,7 +286,7 @@ export const memoryReadTool: AgentTool = {
       type: {
         type: "string",
         enum: ["preference", "project", "episodic"],
-        description: "可选记忆类型过滤：preference=用户偏好，project=项目事实，episodic=阶段性对话结论。",
+        description: "可选记忆类型过滤：preference=用户偏好，project=项目规则，episodic=最近决策。",
       },
       limit: {
         type: "number",
@@ -300,22 +300,22 @@ export const memoryReadTool: AgentTool = {
   }),
 };
 
-// 长期记忆写入 tool：默认 dry-run，必须用户明确确认后才允许真实写入
+// 长期记忆写入 tool：默认进入待确认，必须用户确认后才生效
 export const memoryWriteTool: AgentTool = {
   name: "memory_write",
   description:
-    "提议写入用户长期记忆。默认 dryRun=true 会创建 pending_review proposal 并进入 Memory Inbox，不会直接变成 active；只有用户在 Tool 卡片或 Inbox 中确认后才会 commit 为 active。",
+    "提议让 AI 记住一条用户偏好、项目规则或最近决策。默认 dryRun=true 会进入待确认，不会直接生效；只有用户在 Tool 卡片或记忆页面确认后才会变成已记住。",
   parameters: {
     type: "object",
     properties: {
       type: {
         type: "string",
         enum: ["preference", "project", "episodic"],
-        description: "记忆类型：preference=用户偏好，project=项目事实，episodic=阶段性对话结论。",
+        description: "记忆类型：preference=用户偏好，project=项目规则，episodic=最近决策。",
       },
       content: {
         type: "string",
-        description: "要保存的记忆正文，应简洁、可解释、避免敏感信息泛化。",
+        description: "要记住的内容，应简洁、具体、可解释，避免保存敏感信息。",
       },
       source: {
         type: "string",
@@ -324,7 +324,7 @@ export const memoryWriteTool: AgentTool = {
       },
       reason: {
         type: "string",
-        description: "写入原因，用于 Memory Review 审查。",
+        description: "为什么这条内容值得记住，用于用户确认。",
       },
       confidence: {
         type: "number",
@@ -332,15 +332,15 @@ export const memoryWriteTool: AgentTool = {
       },
       expiresAt: {
         type: "number",
-        description: "可选过期时间戳，适合临时或阶段性记忆。",
+        description: "可选过期时间戳，通常不需要传。",
       },
       evidenceText: {
         type: "string",
-        description: "可选证据原文，说明这条记忆从哪段用户表达或上下文中提取。",
+        description: "可选来源原文，说明这条记忆来自哪段用户表达。",
       },
       supersedesMemoryId: {
         type: "string",
-        description: "可选，被这条记忆取代的旧记忆 ID。",
+        description: "内部兼容字段，通常不需要传。",
       },
       dryRun: {
         type: "boolean",

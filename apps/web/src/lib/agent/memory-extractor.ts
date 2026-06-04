@@ -72,6 +72,9 @@ const EXPLICIT_MEMORY_PATTERNS = [
 ];
 
 const SENSITIVE_PATTERN = /(token|api[_-]?key|secret|password|密码|密钥|身份证|手机号|邮箱|sk-[a-z0-9_-]+)/iu;
+const PREFERENCE_PATTERN = /(偏好|喜欢|希望|不要|别|禁止|不能|回答|沟通|语气|风格)/iu;
+const PROJECT_RULE_PATTERN = /(项目|文档|画板|白板|workspace|document|whiteboard|规则|约束|流程)/iu;
+const DECISION_PATTERN = /(决定|结论|决策|方案|取舍|本次|这次|当前任务)/iu;
 const MAX_CONTENT_LENGTH = 180;
 const MAX_EVIDENCE_LENGTH = 400;
 
@@ -194,11 +197,12 @@ function buildCandidate(options: {
   const scope = inferScope(options);
   const content = truncate(options.signal.content, MAX_CONTENT_LENGTH);
   const negativePreference = /不要|别|禁止|不能/.test(options.evidenceText);
+  const type = inferBusinessMemoryType(options.signal.content, options.evidenceText);
 
   return {
-    type: scope.level === "conversation" ? "episodic" : "preference",
+    type,
     kind: negativePreference || options.signal.explicit ? "instruction" : "semantic",
-    category: negativePreference ? "negative_preference" : "user_preference",
+    category: defaultCategoryForBusinessType(type, negativePreference),
     scopeLevel: scope.level,
     scopeKey: scope.key,
     content,
@@ -206,9 +210,23 @@ function buildCandidate(options: {
     evidenceText: truncate(options.evidenceText, MAX_EVIDENCE_LENGTH),
     confidence: options.signal.explicit ? 0.86 : 0.68,
     importance: scope.level === "user" ? 0.75 : 0.65,
-    reason: "Auto-extracted from explicit user memory signal; pending human review before activation.",
+    reason: "Auto-extracted from an explicit user memory signal; pending user confirmation before activation.",
     privacy: options.sensitive ? "sensitive" : "normal",
   };
+}
+
+function inferBusinessMemoryType(content: string, evidenceText: string): ExtractedMemoryType {
+  const text = `${content}\n${evidenceText}`;
+  if (PREFERENCE_PATTERN.test(text)) return "preference";
+  if (DECISION_PATTERN.test(text)) return "episodic";
+  if (PROJECT_RULE_PATTERN.test(text)) return "project";
+  return "preference";
+}
+
+function defaultCategoryForBusinessType(type: ExtractedMemoryType, negativePreference: boolean): string {
+  if (type === "project") return "project_rule";
+  if (type === "episodic") return "recent_decision";
+  return negativePreference ? "negative_preference" : "user_preference";
 }
 
 function inferScope(options: {

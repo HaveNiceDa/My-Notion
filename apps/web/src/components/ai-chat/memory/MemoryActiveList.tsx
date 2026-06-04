@@ -27,19 +27,12 @@ import type {
   ActiveMemoryFilters,
   AgentMemoryItem,
   MemoryEditState,
-  MemoryEmbeddingStatus,
-  MemoryKind,
-  MemoryPrivacy,
   MemoryType,
 } from "./types";
 import {
-  EMBEDDING_STATUSES,
   filterActiveMemories,
   formatDate,
-  MEMORY_KINDS,
   MEMORY_TYPES,
-  PRIVACY_LEVELS,
-  scopeLabel,
 } from "./utils";
 import { MemoryForm } from "./MemoryForm";
 
@@ -60,7 +53,6 @@ interface MemoryActiveListProps {
   onCancelEdit: () => void;
   onSave: (memory: AgentMemoryItem) => void;
   onDelete: (memory: AgentMemoryItem) => void;
-  onOpenDetail: (memory: AgentMemoryItem) => void;
 }
 
 export function MemoryActiveList({
@@ -80,7 +72,6 @@ export function MemoryActiveList({
   onCancelEdit,
   onSave,
   onDelete,
-  onOpenDetail,
 }: MemoryActiveListProps) {
   const t = useTranslations("MemoryReview");
   const visibleMemories = memories ? filterActiveMemories(memories, filters) : undefined;
@@ -98,7 +89,7 @@ export function MemoryActiveList({
             {t("newMemory")}
           </Button>
         </div>
-        <div className="grid gap-3 md:grid-cols-[1fr_140px_150px_150px_150px_150px]">
+        <div className="grid gap-3 md:grid-cols-[1fr_180px]">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -120,67 +111,6 @@ export function MemoryActiveList({
               {MEMORY_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>{t(`type_${type}`)}</SelectItem>
               ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.kind}
-            onValueChange={(value) => onFiltersChange({ ...filters, kind: value as "all" | MemoryKind })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("kindAll")}</SelectItem>
-              {MEMORY_KINDS.map((kind) => (
-                <SelectItem key={kind} value={kind}>{kind}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.embeddingStatus}
-            onValueChange={(value) =>
-              onFiltersChange({
-                ...filters,
-                embeddingStatus: value as "all" | MemoryEmbeddingStatus,
-              })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("embeddingAll")}</SelectItem>
-              {EMBEDDING_STATUSES.map((status) => (
-                <SelectItem key={status} value={status}>{t(`embedding_${status}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.privacy}
-            onValueChange={(value) => onFiltersChange({ ...filters, privacy: value as "all" | MemoryPrivacy })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t("privacyAll")}</SelectItem>
-              {PRIVACY_LEVELS.map((privacy) => (
-                <SelectItem key={privacy} value={privacy}>{t(`privacy_${privacy}`)}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={filters.sort}
-            onValueChange={(value) => onFiltersChange({ ...filters, sort: value as ActiveMemoryFilters["sort"] })}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="updated_desc">{t("sortUpdated")}</SelectItem>
-              <SelectItem value="importance_desc">{t("sortImportance")}</SelectItem>
-              <SelectItem value="usage_desc">{t("sortUsage")}</SelectItem>
-              <SelectItem value="review_due">{t("sortReviewDue")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -220,7 +150,6 @@ export function MemoryActiveList({
               onCancelEdit={onCancelEdit}
               onSave={() => onSave(memory)}
               onDelete={() => onDelete(memory)}
-              onOpenDetail={() => onOpenDetail(memory)}
             />
           ))
         )}
@@ -238,7 +167,6 @@ interface MemoryActiveCardProps {
   onCancelEdit: () => void;
   onSave: () => void;
   onDelete: () => void;
-  onOpenDetail: () => void;
 }
 
 function MemoryActiveCard({
@@ -250,7 +178,6 @@ function MemoryActiveCard({
   onCancelEdit,
   onSave,
   onDelete,
-  onOpenDetail,
 }: MemoryActiveCardProps) {
   const t = useTranslations("MemoryReview");
 
@@ -266,60 +193,50 @@ function MemoryActiveCard({
         />
       ) : (
         <div className="space-y-3">
-          <button type="button" className="block w-full text-left" onClick={onOpenDetail}>
+          <div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <span className="rounded-full bg-primary/10 px-2 py-1 text-primary">
                 {t(`type_${memory.type}`)}
               </span>
-              {memory.kind && <span>{memory.kind}</span>}
-              {memory.category && <span>{memory.category}</span>}
-              <span>{scopeLabel(memory)}</span>
-              <span>{t(`embedding_${memory.embeddingStatus ?? "pending"}`)}</span>
-              <span>{t(`privacy_${memory.privacy ?? "normal"}`)}</span>
+              <span>{t(`source_${memory.source}`)}</span>
               <span>{t("updatedAt", { date: formatDate(memory.updatedAt) })}</span>
             </div>
             <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-foreground">
               {memory.summary || memory.content}
             </p>
-          </button>
+          </div>
           {memory.reason && (
             <p className="rounded-md bg-muted/60 px-3 py-2 text-xs text-muted-foreground">
               {t("reasonLabel")}: {memory.reason}
             </p>
           )}
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs text-muted-foreground">
-              {t("usageValue", { count: memory.usageCount ?? 0 })} ·{" "}
-              {t("importanceValue", { value: (memory.importance ?? 0.5).toFixed(1) })}
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="ghost" size="sm" onClick={onStartEdit}>
-                <Pencil className="h-4 w-4" />
-                {t("edit")}
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="ghost" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                    {t("delete")}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {t("deleteConfirmDescription")}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={onDelete}>
-                      {t("confirmDelete")}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" size="sm" onClick={onStartEdit}>
+              <Pencil className="h-4 w-4" />
+              {t("edit")}
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="ghost" size="sm">
+                  <Trash2 className="h-4 w-4" />
+                  {t("delete")}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{t("deleteConfirmTitle")}</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {t("deleteConfirmDescription")}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete}>
+                    {t("confirmDelete")}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       )}

@@ -78,7 +78,7 @@ function buildSystemMessage(
       "Keep your answers concise and well-structured. Avoid overly long responses.",
       planModeInstruction,
       instructionMemoryContext
-        ? `Stable long-term instruction memories for this user:\n${instructionMemoryContext}\nTreat these as compact soft rules. The current user instruction and explicit system safety constraints still have higher priority. Use memory_search for deeper semantic, episodic, or procedural memories when needed.`
+        ? `User-confirmed preferences and project rules:\n${instructionMemoryContext}\nTreat these as compact soft rules. The current user instruction and explicit system safety constraints still have higher priority. Use memory_search when you need more confirmed preferences, project rules, or recent decisions.`
         : "",
     ].join("\n"),
   };

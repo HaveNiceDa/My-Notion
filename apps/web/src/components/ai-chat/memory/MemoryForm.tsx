@@ -35,7 +35,7 @@ export function MemoryForm({
 
   return (
     <div className="space-y-3">
-      <div className="grid gap-3 md:grid-cols-[220px_160px]">
+      <div className="grid gap-3 md:grid-cols-[220px_1fr]">
         <Select
           value={state.type}
           onValueChange={(value) => onStateChange({ ...state, type: value as MemoryType })}
@@ -51,17 +51,9 @@ export function MemoryForm({
             ))}
           </SelectContent>
         </Select>
-        <Input
-          type="number"
-          min="0"
-          max="1"
-          step="0.1"
-          value={state.confidence}
-          onChange={(event) =>
-            onStateChange({ ...state, confidence: event.target.value })
-          }
-          aria-label={t("confidence")}
-        />
+        <p className="flex items-center rounded-md border bg-muted/30 px-3 text-xs text-muted-foreground">
+          {t("formHint")}
+        </p>
       </div>
       <Textarea
         value={state.content}
