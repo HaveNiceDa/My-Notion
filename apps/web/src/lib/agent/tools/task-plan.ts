@@ -1,4 +1,5 @@
 import type { ToolContext } from "./types";
+import { buildToolMetadata } from "./result-contract";
 
 type TaskPlanStatus = "pending" | "in_progress" | "completed" | "blocked";
 
@@ -37,6 +38,7 @@ export async function executeTaskPlan(
     recoverable: true,
     sources: [],
     metadata: {
+      ...buildToolMetadata("task_plan"),
       stepCount: steps.length,
       currentStepId: currentStep.id,
       completedCount: steps.filter((step) => step.status === "completed").length,
@@ -82,9 +84,6 @@ function buildTaskPlanError(error: string) {
     summary: `task_plan failed: ${error}`,
     recoverable: true,
     sources: [],
-    metadata: {
-      toolName: "task_plan",
-      reason: "validation_error",
-    },
+    metadata: buildToolMetadata("task_plan", { reason: "validation_error" }),
   };
 }

@@ -1,4 +1,5 @@
 import type { RecoverableToolError, ToolContext } from "./types";
+import { buildToolMetadata } from "./result-contract";
 
 type ToolExecutor = (args: Record<string, unknown>, context: ToolContext) => Promise<unknown>;
 
@@ -30,7 +31,7 @@ export function buildRecoverableToolError(
     recoverable: true,
     sources: [],
     metadata: {
-      toolName,
+      ...buildToolMetadata(toolName),
       reason,
     },
   };

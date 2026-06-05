@@ -270,6 +270,29 @@ describe("AI Chat 组件渲染", () => {
     expect(html).toContain("确认后会按计划继续执行");
   });
 
+  it("ToolCallCard 可从已持久化状态恢复 task_plan 已执行状态", () => {
+    const html = render(
+      React.createElement(ToolCallCard, {
+        toolResult: {
+          id: "plan-3",
+          name: "task_plan",
+          status: "completed",
+          result: {
+            objective: "执行计划",
+            planExecutionStatus: "started",
+            steps: [
+              { title: "第一步", status: "pending" },
+            ],
+          },
+        },
+        onExecutePlan: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("已开始执行");
+    expect(html).toContain("执行过程会在新的回复中展示");
+  });
+
   it("MemoryInbox 展示待确认记忆的精简确认入口", () => {
     const now = Date.now();
     const pendingMemories = [

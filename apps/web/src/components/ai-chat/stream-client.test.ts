@@ -181,4 +181,64 @@ describe("runAgentStream", () => {
     }));
     expect(callbacks.onComplete).not.toHaveBeenCalled();
   });
+
+  it("首个请求在收到事件前网络失败时自动重试", async () => {
+    const callbacks = createCallbacks();
+    const fetchMock = vi.fn()
+      .mockRejectedValueOnce(new TypeError("network down"))
+      .mockResolvedValueOnce(createStreamResponse([
+        JSON.stringify({ type: "text-delta", id: "msg", delta: "恢复" }) + "\n",
+        JSON.stringify({ type: "finish", model: "deepseek-v4-pro", usage: null }) + "\n",
+      ]));
+    callbacks.onRetry = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: true,
+      currentDocument: null,
+      callbacks,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(callbacks.onRetry).toHaveBeenCalledTimes(1);
+    expect(callbacks.onChunk).toHaveBeenCalledWith("恢复");
+    expect(callbacks.onComplete).toHaveBeenCalledTimes(1);
+    expect(callbacks.onError).not.toHaveBeenCalled();
+  });
+
+  it("收到部分事件后中断不重试，避免重复输出", async () => {
+    const callbacks = createCallbacks();
+    callbacks.onRetry = vi.fn();
+    const encoder = new TextEncoder();
+    let sentFirstChunk = false;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (!sentFirstChunk) {
+          sentFirstChunk = true;
+          controller.enqueue(encoder.encode(JSON.stringify({ type: "text-delta", id: "msg", delta: "部分" }) + "\n"));
+          return;
+        }
+        controller.error(new Error("stream interrupted"));
+      },
+    });
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(body, { status: 200 })));
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: true,
+      currentDocument: null,
+      callbacks,
+    });
+
+    expect(callbacks.onChunk).toHaveBeenCalledWith("部分");
+    expect(callbacks.onRetry).not.toHaveBeenCalled();
+    expect(callbacks.onError).toHaveBeenCalledWith(expect.objectContaining({
+      message: "stream interrupted",
+    }));
+  });
 });

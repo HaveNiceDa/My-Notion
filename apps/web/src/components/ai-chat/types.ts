@@ -31,6 +31,7 @@ export interface TaskPlanToolResult {
   objective?: string;
   steps?: TaskPlanStep[];
   summary?: string;
+  planExecutionStatus?: "started" | "cancelled";
   error?: string;
 }
 

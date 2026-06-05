@@ -6,6 +6,7 @@ const toolResultStatusValidator = v.union(
   v.literal("cancelled"),
   v.literal("inbox"),
   v.literal("applied"),
+  v.literal("started"),
 );
 
 export const updateToolResultState = mutation({
@@ -42,7 +43,8 @@ export const updateToolResultState = mutation({
       const isMemoryWrite = toolResult.name === "memory_write";
       const isDocumentWrite =
         toolResult.name === "document_write" || toolResult.name === "document_update";
-      if (!isMemoryWrite && !isDocumentWrite) {
+      const isTaskPlan = toolResult.name === "task_plan";
+      if (!isMemoryWrite && !isDocumentWrite && !isTaskPlan) {
         return toolResult;
       }
 
@@ -54,16 +56,14 @@ export const updateToolResultState = mutation({
         ...toolResult,
         result: {
           ...result,
-          ...(isMemoryWrite
-            ? {
-              memoryWriteStatus: args.status,
-              proposalId: args.proposalId,
-              savedMemoryId: args.savedMemoryId,
-            }
-            : {
-              documentWriteStatus: args.status,
-              savedDocumentId: args.savedDocumentId,
-            }),
+          ...buildToolResultStatePatch({
+            status: args.status,
+            isMemoryWrite,
+            isTaskPlan,
+            proposalId: args.proposalId,
+            savedMemoryId: args.savedMemoryId,
+            savedDocumentId: args.savedDocumentId,
+          }),
           confirmationRequired: false,
         },
       };
@@ -89,6 +89,30 @@ function parseMessageContent(content: string): Record<string, unknown> {
   } catch {}
 
   return { content };
+}
+
+function buildToolResultStatePatch(args: {
+  status: string;
+  isMemoryWrite: boolean;
+  isTaskPlan: boolean;
+  proposalId?: string;
+  savedMemoryId?: string;
+  savedDocumentId?: string;
+}) {
+  if (args.isMemoryWrite) {
+    return {
+      memoryWriteStatus: args.status,
+      proposalId: args.proposalId,
+      savedMemoryId: args.savedMemoryId,
+    };
+  }
+  if (args.isTaskPlan) {
+    return { planExecutionStatus: args.status };
+  }
+  return {
+    documentWriteStatus: args.status,
+    savedDocumentId: args.savedDocumentId,
+  };
 }
 
 function parseToolResults(value: unknown): Array<Record<string, unknown>> {

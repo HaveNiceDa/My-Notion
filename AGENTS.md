@@ -101,6 +101,6 @@ pnpm exec playwright test
 
 ## 当前主线
 
-截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0-beta.1` 已发布到 `beta` 和 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory MVP、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环和受控 My-Notion MCP adapter。下一阶段重点是：
+截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0-beta.1` 已发布到 `beta` 和 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory MVP、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环、受控 My-Notion MCP adapter、流式安全重试、`tool-result-v1` 契约基建和 Plan 执行状态持久化。下一阶段重点是：
 
-- 流式重试、Tool 结果契约、Plan 状态增强、Trace/Replay、Storybook、Memory/RAG 真实评估后续补齐。
+- Tool 契约全量统一、完整流式续跑、Trace/Replay、Storybook、Memory/RAG 真实评估后续补齐。

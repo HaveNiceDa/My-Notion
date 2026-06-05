@@ -42,9 +42,9 @@
 ### P1：产品基础能力
 
 1. **Web Agent MCP adapter**：✅ 已完成最小闭环。复用现有 CLI/MCP 能力扩展工具生态，第一版通过受控 My-Notion MCP 文档工具白名单接入，并继续遵守确认式写入。
-2. **流式重试**：网络中断时支持自动重试或给出可恢复续跑路径。
-3. **Tool 结果契约细化**：逐步让业务内 validation error 也统一带 `summary/sources/metadata/recoverable`。
-4. **Plan 状态增强**：按需补步骤级执行事件、执行状态持久化和跨刷新恢复。
+2. **流式重试**：✅ 已完成最小闭环。网络中断且尚未收到任何事件时支持安全重试；完整续跑后置。
+3. **Tool 结果契约细化**：✅ 已完成基建。新增 `tool-result-v1` metadata；全量 result shape 统一后置。
+4. **Plan 状态增强**：✅ 已完成最小闭环。确认执行状态可写回并恢复；步骤级事件和完整跨刷新恢复后置。
 
 ### P2：治理与体验增强
 
@@ -67,14 +67,14 @@
 |---|---|---|
 | M19 | Planning 基础能力 | ✅ 已完成：展示计划、确认计划、执行步骤、状态可见 |
 | M20 | MCP 扩展 | ✅ 已完成最小闭环：Web Agent 能安全调用受控 My-Notion MCP adapter，并继续遵守确认式写入 |
-| M21 | 韧性与治理 | 流式重试、Memory 同步状态、Tool 结果契约进一步统一 |
+| M21 | 韧性与治理 | ✅ 已完成最小闭环：流式安全重试、`tool-result-v1` 契约基建、Plan 执行状态持久化 |
 | M22 | Harness 回补 | Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
 
 ---
 
 ## 当前建议下一步
 
-1. 先按真实对话验证 **Web Agent MCP adapter** 的工具选择稳定性，必要时微调 tool description。
-2. 再补 **流式重试与 Tool 结果契约细化**，提高执行韧性。
-3. 按真实使用反馈补 **Plan 状态增强**。
+1. 先按真实对话验证 **Web Agent MCP adapter** 和 M21 重试/状态恢复体验。
+2. 继续推进 **Tool 契约全量统一**，逐步让所有 tool result 具备稳定 `summary/sources/metadata/recoverable`。
+3. 设计 **完整流式续跑** 和步骤级 Plan 执行事件。
 4. 最后回补 Harness、Trace Replay 和真实质量评估。

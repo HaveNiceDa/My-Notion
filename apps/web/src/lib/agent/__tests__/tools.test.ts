@@ -177,6 +177,7 @@ describe("AgentTool 定义", () => {
       recoverable: true,
       metadata: {
         toolName: "knowledge_search",
+        contractVersion: "tool-result-v1",
         reason: "execution_error",
       },
     });
@@ -218,6 +219,7 @@ describe("My-Notion MCP adapter", () => {
     });
     expect(result.documents[0]).toMatchObject({ id: "doc-1", title: "Roadmap" });
     expect(result.metadata).toMatchObject({ adapter: "my-notion-mcp", safety: "read_only" });
+    expect(result.metadata.contractVersion).toBe("tool-result-v1");
   });
 
   it("docs create 强制返回 document_write dry-run 预览", async () => {
@@ -236,6 +238,7 @@ describe("My-Notion MCP adapter", () => {
       adapter: "my-notion-mcp",
     });
     expect(result.metadata).toMatchObject({ safety: "dry_run_only" });
+    expect(result.metadata.contractVersion).toBe("tool-result-v1");
   });
 
   it("docs update 将 MCP id 映射为 document_update 预览", async () => {

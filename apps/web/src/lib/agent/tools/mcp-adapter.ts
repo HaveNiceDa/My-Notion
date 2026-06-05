@@ -1,6 +1,7 @@
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
+import { buildToolMetadata, mergeToolMetadata } from "./result-contract";
 import type { ToolContext } from "./types";
 
 type MyNotionMcpToolName =
@@ -27,6 +28,8 @@ interface DocumentRecord {
 }
 
 interface McpMetadata {
+  toolName: string;
+  contractVersion: "tool-result-v1";
   adapter: "my-notion-mcp";
   mcpToolName: MyNotionMcpToolName;
   transport: "in_process";
@@ -178,6 +181,7 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 
 function buildMetadata(toolName: MyNotionMcpToolName, safety: McpMetadata["safety"]): McpMetadata {
   return {
+    ...buildToolMetadata("mcp_my_notion_call"),
     adapter: "my-notion-mcp",
     mcpToolName: toolName,
     transport: "in_process",
@@ -195,10 +199,12 @@ function attachMcpMetadata(
     ...result,
     toolName,
     adapter: "my-notion-mcp",
-    metadata: {
-      ...(isRecord(result.metadata) ? result.metadata : {}),
-      ...buildMetadata(toolName, safety),
-    },
+    metadata: mergeToolMetadata("mcp_my_notion_call", result.metadata, {
+      adapter: "my-notion-mcp",
+      mcpToolName: toolName,
+      transport: "in_process",
+      safety,
+    }),
   };
 }
 
@@ -210,11 +216,11 @@ function buildMcpError(toolName: string, message: string) {
     summary: `${toolName} failed: ${message}`,
     recoverable: true,
     sources: [],
-    metadata: {
+    metadata: buildToolMetadata("mcp_my_notion_call", {
       adapter: "my-notion-mcp",
-      toolName,
+      mcpToolName: toolName,
       reason: "validation_error",
-    },
+    }),
   };
 }
 

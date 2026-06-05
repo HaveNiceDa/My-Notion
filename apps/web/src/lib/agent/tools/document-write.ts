@@ -1,4 +1,5 @@
 import type { ToolContext } from "./types";
+import { buildToolMetadata } from "./result-contract";
 
 type DocumentWriteAction = "document_write" | "document_update";
 type DocumentUpdateMode = "overwrite" | "append";
@@ -81,6 +82,7 @@ function buildDryRunResult(
     summary: payload.summary,
     document: payload.document,
     metadata: {
+      ...buildToolMetadata(action),
       recoverable: true,
       writeContract: "preview_then_confirm",
       inputFormat: "markdown",

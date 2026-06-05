@@ -1,5 +1,6 @@
 import type { ConvexHttpClient } from "convex/browser";
 import type { AgentTracer } from "../trace";
+import type { ToolResultErrorReason } from "./result-contract";
 
 // 当前文档上下文，由前端传入，表示用户正在查看的文档
 export interface CurrentDocumentContext {
@@ -33,6 +34,7 @@ export interface RecoverableToolError {
   sources: [];
   metadata: {
     toolName: string;
-    reason: "validation_error" | "execution_error" | "unavailable";
+    contractVersion: "tool-result-v1";
+    reason: ToolResultErrorReason;
   };
 }

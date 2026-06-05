@@ -308,14 +308,20 @@ function buildPlanExecutionPrompt(
 
 function TaskPlanResult({
   result,
+  toolCallId,
+  messageId,
   onExecutePlan,
 }: {
   result: TaskPlanToolResult;
+  toolCallId: string;
+  messageId?: Id<"aiMessages">;
   onExecutePlan?: (prompt: string) => Promise<void>;
 }) {
   const t = useTranslations("AI");
   const steps = result.steps ?? [];
-  const [executionStatus, setExecutionStatus] = useState<"idle" | "starting" | "started">("idle");
+  const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
+  const initialStatus = result.planExecutionStatus === "started" ? "started" : "idle";
+  const [executionStatus, setExecutionStatus] = useState<"idle" | "starting" | "started">(initialStatus);
 
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
@@ -324,6 +330,9 @@ function TaskPlanResult({
   async function handleExecutePlan() {
     if (!onExecutePlan || steps.length === 0) return;
     setExecutionStatus("starting");
+    if (messageId) {
+      await updateToolResultState({ messageId, toolCallId, status: "started" });
+    }
     await onExecutePlan(buildPlanExecutionPrompt(result, t));
     setExecutionStatus("started");
   }
@@ -980,7 +989,14 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
           : t("memoryWritePreview");
     } else if (toolName === "task_plan") {
       const typedResult = result as unknown as TaskPlanToolResult;
-      resultContent = <TaskPlanResult result={typedResult} onExecutePlan={onExecutePlan} />;
+      resultContent = (
+        <TaskPlanResult
+          result={typedResult}
+          toolCallId={toolResult.id}
+          messageId={messageId}
+          onExecutePlan={onExecutePlan}
+        />
+      );
       resultSummary = typedResult.summary ?? typedResult.objective ?? null;
     } else if (toolName === "mcp_my_notion_call") {
       const typedResult = result as unknown as McpAdapterToolResult;
