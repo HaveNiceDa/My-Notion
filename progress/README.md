@@ -15,6 +15,7 @@
 - `20260603-195302.md`：M27 Agent Memory Eval And Auto Extraction，覆盖 Memory Eval、trace lifecycle、受控自动提取和 shadcn Select 统一。
 - `20260603-whiteboard-excalidraw.md`：Excalidraw 画板能力基础建设，覆盖 whiteboards 资源模型、BlockNote 自定义画板块、全屏编辑器和 CLI/MCP DSL 写入链路。
 - `20260604-cli-whiteboard-contract-hardening.md`：CLI 与画板契约加固，覆盖默认 append、DSL layout、package 导出、whiteboards scope 和 scene 迁移层。
+- `20260605-whiteboard-bandwidth-temporary-disable.md`：画板带宽问题临时止血，覆盖 Convex DB 大字段热路径问题、新建入口暂停和已有画板静态渲染。
 
 ## 阅读规则
 

@@ -6,14 +6,8 @@ import {
   getDefaultReactSlashMenuItems,
 } from "@blocknote/react";
 import { getAISlashMenuItems } from "@blocknote/xl-ai";
-import { useMutation } from "convex/react";
-import { useParams } from "next/navigation";
-import { useTranslations } from "next-intl";
 
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 import type { MyNotionBlockNoteEditor } from "./blocks/schema";
-import { createInsertWhiteboardItem } from "./commands/insertWhiteboard";
 
 interface EditorSlashMenuProps {
   editor: MyNotionBlockNoteEditor;
@@ -47,43 +41,15 @@ function filterAndRankSuggestionItems<T extends { title: string; aliases?: reado
 }
 
 export function EditorSlashMenu({ editor }: EditorSlashMenuProps) {
-  const params = useParams();
-  const documentId = params.documentId as Id<"documents">;
-  const t = useTranslations("Whiteboard");
-  const createWhiteboard = useMutation(api.whiteboards.create);
-
   return (
     <SuggestionMenuController
       triggerCharacter="/"
       getItems={async (query) => {
         const defaultItems = getDefaultReactSlashMenuItems(editor);
-        const whiteboardItem = createInsertWhiteboardItem({
-          editor,
-          documentId,
-          copy: {
-            title: t("title"),
-            aliases: t.raw("slashAliases"),
-            group: t("slashGroup"),
-            untitled: t("untitled"),
-          },
-          createWhiteboard,
-        });
-        const targetGroup = whiteboardItem.group;
-        const firstGroupIndex = defaultItems.findIndex(
-          (item) => item.group === targetGroup,
-        );
-        const itemsWithWhiteboard =
-          firstGroupIndex >= 0
-            ? [
-                ...defaultItems.slice(0, firstGroupIndex),
-                whiteboardItem,
-                ...defaultItems.slice(firstGroupIndex),
-              ]
-            : [...defaultItems, whiteboardItem];
 
         return filterAndRankSuggestionItems(
           [
-            ...itemsWithWhiteboard,
+            ...defaultItems,
             ...getAISlashMenuItems(editor),
           ],
           query,
