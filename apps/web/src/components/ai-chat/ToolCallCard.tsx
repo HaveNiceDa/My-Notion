@@ -133,6 +133,19 @@ interface DocumentWriteToolResult {
   error?: string;
 }
 
+interface McpAdapterToolResult {
+  toolName?: string;
+  adapter?: string;
+  summary?: string;
+  action?: "document_write" | "document_update";
+  dryRun?: boolean;
+  confirmationRequired?: boolean;
+  document?: DocumentWritePreview & { id?: string };
+  documents?: Array<DocumentSearchItem & { id?: string }>;
+  markdown?: string;
+  error?: string;
+}
+
 function getDocumentUrl(documentId: string): string {
   if (typeof window !== "undefined") {
     const locale = window.location.pathname.split("/")[1] || "zh-CN";
@@ -468,6 +481,59 @@ function DocumentSearchResult({ result }: { result: DocumentSearchToolResult }) 
           </div>
         </a>
       ))}
+    </div>
+  );
+}
+
+function McpAdapterResult({ result }: { result: McpAdapterToolResult }) {
+  const t = useTranslations("AI");
+  if (result.error) {
+    return <span className="text-destructive text-xs">{result.error}</span>;
+  }
+
+  const documents = result.documents ?? [];
+  return (
+    <div className="space-y-1.5 rounded-md bg-background/70 px-2 py-1.5 text-xs">
+      <div className="font-medium text-foreground">
+        {result.toolName ?? t("mcpMyNotionTool")}
+      </div>
+      {result.summary && (
+        <div className="text-muted-foreground">{result.summary}</div>
+      )}
+      {result.document?.id && (
+        <a
+          href={getDocumentUrl(result.document.id)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex text-[11px] font-medium text-primary hover:underline"
+        >
+          {result.document.title ?? t("untitledDocument")}
+        </a>
+      )}
+      {documents.length > 0 && (
+        <div className="space-y-1">
+          {documents.map((doc) => {
+            const documentId = doc.documentId ?? doc.id;
+            return (
+              <a
+                key={documentId ?? doc.title}
+                href={documentId ? getDocumentUrl(documentId) : undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent transition-colors"
+              >
+                <FileText className="h-3 w-3 shrink-0 mt-0.5 text-muted-foreground" />
+                <span className="truncate font-medium text-foreground">{doc.title || t("untitledDocument")}</span>
+              </a>
+            );
+          })}
+        </div>
+      )}
+      {result.markdown && (
+        <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded bg-background p-2 text-[11px] text-muted-foreground">
+          {result.markdown}
+        </pre>
+      )}
     </div>
   );
 }
@@ -830,6 +896,8 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
               ? t("memoryWriteTool")
               : toolName === "task_plan"
                 ? t("taskPlanTool")
+                : toolName === "mcp_my_notion_call"
+                  ? t("mcpMyNotionTool")
             : toolName;
 
   const ToolIcon =
@@ -914,6 +982,20 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
       const typedResult = result as unknown as TaskPlanToolResult;
       resultContent = <TaskPlanResult result={typedResult} onExecutePlan={onExecutePlan} />;
       resultSummary = typedResult.summary ?? typedResult.objective ?? null;
+    } else if (toolName === "mcp_my_notion_call") {
+      const typedResult = result as unknown as McpAdapterToolResult;
+      if (typedResult.action === "document_write" || typedResult.action === "document_update") {
+        resultContent = (
+          <DocumentWriteResult
+            result={typedResult as DocumentWriteToolResult}
+            toolCallId={toolResult.id}
+            messageId={messageId}
+          />
+        );
+      } else {
+        resultContent = <McpAdapterResult result={typedResult} />;
+      }
+      resultSummary = typedResult.summary ?? typedResult.toolName ?? null;
     }
   }
 

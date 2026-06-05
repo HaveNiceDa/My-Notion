@@ -6,6 +6,7 @@ import { executeWebExtract } from "./web-extract";
 import { executeWebSearch } from "./web-search";
 import { executeMemorySearch, executeMemoryWrite } from "./memory";
 import { executeTaskPlan } from "./task-plan";
+import { executeMyNotionMcpAdapter } from "./mcp-adapter";
 import { withToolFallback } from "./fallback";
 import type { ToolContext } from "./types";
 
@@ -325,5 +326,37 @@ export const taskPlanTool: AgentTool = {
   execute: withToolFallback({
     name: "task_plan",
     execute: async (args, ctx) => executeTaskPlan(args, ctx),
+  }),
+};
+
+// 受控 My-Notion MCP adapter：第一版仅开放文档工具白名单，写工具在 adapter 层强制 dry-run。
+export const myNotionMcpTool: AgentTool = {
+  name: "mcp_my_notion_call",
+  description:
+    "通过受控 My-Notion MCP adapter 调用内置 MCP 工具。仅支持白名单：my_notion_docs_search、my_notion_docs_fetch、my_notion_docs_create、my_notion_docs_update。写入类工具会被强制 dryRun=true，只返回预览，真实写入必须由用户在 UI 中确认。",
+  parameters: {
+    type: "object",
+    properties: {
+      toolName: {
+        type: "string",
+        enum: [
+          "my_notion_docs_search",
+          "my_notion_docs_fetch",
+          "my_notion_docs_create",
+          "my_notion_docs_update",
+        ],
+        description: "要调用的 My-Notion MCP 工具名称。",
+      },
+      input: {
+        type: "object",
+        description:
+          "MCP 工具入参。search: { query?, limit? }；fetch: { id }；create: { title, contentMarkdown }；update: { id, title?, contentMarkdown?, mode? }。",
+      },
+    },
+    required: ["toolName"],
+  },
+  execute: withToolFallback({
+    name: "mcp_my_notion_call",
+    execute: async (args, ctx) => executeMyNotionMcpAdapter(args, ctx),
   }),
 };

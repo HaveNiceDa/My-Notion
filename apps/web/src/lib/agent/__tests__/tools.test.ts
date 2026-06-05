@@ -26,6 +26,7 @@ import {
   webSearchTool,
   memorySearchTool,
   memoryWriteTool,
+  myNotionMcpTool,
   taskPlanTool,
 } from "../tools/definitions";
 import { executeKnowledgeSearch } from "../tools/knowledge-search";
@@ -35,6 +36,7 @@ import { executeWebExtract } from "../tools/web-extract";
 import { executeWebSearch } from "../tools/web-search";
 import { executeMemorySearch, executeMemoryWrite } from "../tools/memory";
 import { executeTaskPlan } from "../tools/task-plan";
+import { executeMyNotionMcpAdapter } from "../tools/mcp-adapter";
 import { withToolFallback } from "../tools/fallback";
 import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
 import { getJson } from "serpapi";
@@ -49,6 +51,7 @@ describe("buildAvailableTools", () => {
     expect(names).toContain("document_search");
     expect(names).toContain("memory_search");
     expect(names).toContain("memory_write");
+    expect(names).toContain("mcp_my_notion_call");
     expect(names).toContain("task_plan");
     expect(names).toContain("document_write");
   });
@@ -118,6 +121,20 @@ describe("AgentTool 定义", () => {
     expect(taskPlanTool.parameters.required).toEqual(["objective", "steps"]);
   });
 
+  it("myNotionMcpTool 只暴露受控 MCP 白名单入口", () => {
+    expect(myNotionMcpTool.name).toBe("mcp_my_notion_call");
+    expect(myNotionMcpTool.parameters.required).toEqual(["toolName"]);
+    const properties = myNotionMcpTool.parameters.properties as Record<string, unknown>;
+    expect(properties.toolName).toMatchObject({
+      enum: [
+        "my_notion_docs_search",
+        "my_notion_docs_fetch",
+        "my_notion_docs_create",
+        "my_notion_docs_update",
+      ],
+    });
+  });
+
   it("document_write 和 document_update 使用 dry-run 写入契约", () => {
     expect(documentWriteTool.name).toBe("document_write");
     expect(documentWriteTool.parameters.required).toEqual(["title", "contentMarkdown"]);
@@ -134,6 +151,7 @@ describe("AgentTool 定义", () => {
       documentSearchTool,
       memorySearchTool,
       memoryWriteTool,
+      myNotionMcpTool,
       taskPlanTool,
       documentWriteTool,
       documentUpdateTool,
@@ -164,6 +182,81 @@ describe("AgentTool 定义", () => {
     });
     expect(result.summary).toContain("knowledge_search failed");
     expect(result.sources).toEqual([]);
+  });
+});
+
+describe("My-Notion MCP adapter", () => {
+  const baseCtx = {
+    userId: "user-1",
+    model: "test-model",
+  };
+
+  it("拒绝非白名单 MCP 工具", async () => {
+    const result = await executeMyNotionMcpAdapter(
+      { toolName: "external_tool", input: {} },
+      baseCtx,
+    ) as any;
+    expect(result).toMatchObject({
+      adapter: "my-notion-mcp",
+      recoverable: true,
+    });
+  });
+
+  it("docs search 通过 Convex 元数据搜索执行", async () => {
+    const query = vi.fn().mockResolvedValue({
+      documents: [{ documentId: "doc-1", title: "Roadmap" }],
+    });
+    const result = await executeMyNotionMcpAdapter(
+      { toolName: "my_notion_docs_search", input: { query: "roadmap", limit: 50 } },
+      { ...baseCtx, convex: { query } as any },
+    ) as any;
+
+    expect(query).toHaveBeenCalledWith(expect.anything(), {
+      query: "roadmap",
+      limit: 30,
+      includeArchived: false,
+    });
+    expect(result.documents[0]).toMatchObject({ id: "doc-1", title: "Roadmap" });
+    expect(result.metadata).toMatchObject({ adapter: "my-notion-mcp", safety: "read_only" });
+  });
+
+  it("docs create 强制返回 document_write dry-run 预览", async () => {
+    const result = await executeMyNotionMcpAdapter(
+      {
+        toolName: "my_notion_docs_create",
+        input: { title: "计划", contentMarkdown: "# Plan", dryRun: false },
+      },
+      baseCtx,
+    ) as any;
+
+    expect(result).toMatchObject({
+      action: "document_write",
+      dryRun: true,
+      confirmationRequired: true,
+      adapter: "my-notion-mcp",
+    });
+    expect(result.metadata).toMatchObject({ safety: "dry_run_only" });
+  });
+
+  it("docs update 将 MCP id 映射为 document_update 预览", async () => {
+    const result = await executeMyNotionMcpAdapter(
+      {
+        toolName: "my_notion_docs_update",
+        input: { id: "doc-1", contentMarkdown: "补充", mode: "append", dryRun: false },
+      },
+      baseCtx,
+    ) as any;
+
+    expect(result).toMatchObject({
+      action: "document_update",
+      dryRun: true,
+      confirmationRequired: true,
+      document: {
+        documentId: "doc-1",
+        contentMarkdown: "补充",
+        mode: "append",
+      },
+    });
   });
 });
 

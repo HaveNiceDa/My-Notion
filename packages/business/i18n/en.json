@@ -326,6 +326,7 @@
     "memorySearchTool": "Search long-term memory",
     "memoryWriteTool": "Write long-term memory",
     "taskPlanTool": "Task plan",
+    "mcpMyNotionTool": "My-Notion MCP",
     "taskPlanPending": "Pending",
     "taskPlanInProgress": "In progress",
     "taskPlanCompleted": "Completed",

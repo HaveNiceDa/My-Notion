@@ -8,6 +8,7 @@ export {
   documentSearchTool,
   memorySearchTool,
   memoryWriteTool,
+  myNotionMcpTool,
   taskPlanTool,
 } from "./definitions";
 export type { AgentTool } from "./definitions";
@@ -20,4 +21,5 @@ export { executeWebSearch } from "./web-search";
 export { executeWebExtract } from "./web-extract";
 export { executeMemorySearch, executeMemoryWrite } from "./memory";
 export { executeTaskPlan } from "./task-plan";
+export { executeMyNotionMcpAdapter } from "./mcp-adapter";
 export type { CurrentDocumentContext, ToolContext } from "./types";

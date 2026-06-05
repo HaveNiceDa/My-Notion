@@ -329,6 +329,7 @@
     "memorySearchTool": "搜索长期记忆",
     "memoryWriteTool": "写入长期记忆",
     "taskPlanTool": "任务计划",
+    "mcpMyNotionTool": "My-Notion MCP",
     "taskPlanPending": "待处理",
     "taskPlanInProgress": "进行中",
     "taskPlanCompleted": "已完成",

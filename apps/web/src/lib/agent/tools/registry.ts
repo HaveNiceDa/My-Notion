@@ -8,6 +8,7 @@ import {
   webExtractTool,
   memorySearchTool,
   memoryWriteTool,
+  myNotionMcpTool,
   taskPlanTool,
 } from "./definitions";
 import type { AgentTool } from "./definitions";
@@ -25,6 +26,7 @@ export function buildAvailableTools(
     documentSearchTool,
     memorySearchTool,
     memoryWriteTool,
+    myNotionMcpTool,
     taskPlanTool,
     documentWriteTool,
   ];
