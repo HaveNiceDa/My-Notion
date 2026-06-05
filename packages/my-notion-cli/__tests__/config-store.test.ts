@@ -94,7 +94,7 @@ describe("config store", () => {
   it("uses the default online API URL and still requires a token", async () => {
     const store = await loadStore();
 
-    expect(store.resolveApiUrl({})).toBe("https://laudable-albatross-174.convex.site");
+    expect(store.resolveApiUrl({})).toBe("https://moonlit-ptarmigan-478.convex.site");
     expect(() => store.resolveToken({})).toThrow("my-notion auth login");
     expect(() => store.resolveToken({})).toThrow(".local/share/my-notion/config.json");
   });

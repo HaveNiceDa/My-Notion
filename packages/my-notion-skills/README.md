@@ -81,7 +81,7 @@ packages/my-notion-cli/skills/
 ## Safety
 
 - 不在 Skill 文档、日志、聊天或代码仓库中写入完整 PAT。
-- CLI 默认连接 `https://laudable-albatross-174.convex.site`；连接其他部署时再传 `--local`、`--api-url` 或设置 `MY_NOTION_API_URL`。
+- CLI 默认连接 `https://moonlit-ptarmigan-478.convex.site`；连接其他部署时再传 `--local`、`--api-url` 或设置 `MY_NOTION_API_URL`。
 - 线上登录态使用 `~/.local/share/my-notion/config.json`；本地登录态使用 `~/.local/share/my-notion/config.local.json`。
 - 授权 URL 只能包含 `user_code`；不要输出或保存 `device_code`。
 - MCP 写工具默认 `dryRun: true`，只有用户明确批准后才执行真实写入。

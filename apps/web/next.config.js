@@ -18,7 +18,13 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "handsome-stoat-500.convex.cloud",
+        hostname: "capable-hippopotamus-766.convex.cloud",
+        port: "",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "moonlit-ptarmigan-478.convex.cloud",
         port: "",
         pathname: "**",
       },

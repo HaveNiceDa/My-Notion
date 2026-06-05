@@ -49,7 +49,7 @@ Priority order:
 1. Command flags: `--profile`, `--local`, `--web-url`, `--api-url`, `--token`
 2. Environment variables: `MY_NOTION_PROFILE`, `MY_NOTION_WEB_URL`, `MY_NOTION_API_URL`, `MY_NOTION_API_TOKEN`
 3. Saved profile config: prod uses `~/.local/share/my-notion/config.json`; local uses `~/.local/share/my-notion/config.local.json`
-4. Default online profile: Web `https://notion-j9zj.vercel.app`, API `https://laudable-albatross-174.convex.site`
+4. Default online profile: Web `https://notion-j9zj.vercel.app`, API `https://moonlit-ptarmigan-478.convex.site`
 
 Agents should use `--format json` unless the desired output is Markdown content.
 Do not expose auth status JSON, config paths, token prefixes, or raw command output in user-facing replies unless debugging is explicitly requested.

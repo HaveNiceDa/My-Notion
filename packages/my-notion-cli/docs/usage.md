@@ -15,7 +15,7 @@ My-Notion CLI 用来让用户或 Agent 通过命令行安全地操作 My-Notion 
 当前项目的默认 Machine API 地址是：
 
 ```bash
-https://laudable-albatross-174.convex.site
+https://moonlit-ptarmigan-478.convex.site
 ```
 
 如果用户不指定 `--api-url`，CLI 默认使用这个线上地址。登录命令示例：
@@ -58,7 +58,7 @@ CLI 默认不要求用户复制 PAT。首次登录时：
 当前项目可以直接使用：
 
 ```bash
-https://laudable-albatross-174.convex.site
+https://moonlit-ptarmigan-478.convex.site
 ```
 
 如果以后换了 Convex 部署，API 地址有两种确认方式：
@@ -69,13 +69,13 @@ https://laudable-albatross-174.convex.site
 例如：
 
 ```text
-NEXT_PUBLIC_CONVEX_URL=https://laudable-albatross-174.convex.cloud
+NEXT_PUBLIC_CONVEX_URL=https://moonlit-ptarmigan-478.convex.cloud
 ```
 
 对应 CLI API URL 是：
 
 ```text
-https://laudable-albatross-174.convex.site
+https://moonlit-ptarmigan-478.convex.site
 ```
 
 ## 1. 准备工作
@@ -88,7 +88,7 @@ https://laudable-albatross-174.convex.site
 - 服务端 API 地址；不指定时默认使用当前线上地址：
 
 ```bash
-https://laudable-albatross-174.convex.site
+https://moonlit-ptarmigan-478.convex.site
 ```
 
 - 如需连接其他部署，可指定 Convex `.site` 地址，例如：
@@ -435,7 +435,7 @@ my-notion config init --check --format json
 
 ## 16. 环境变量配置
 
-如果不想写入本地配置文件，也可以用环境变量。`MY_NOTION_API_URL` 可选，不设置时默认使用 `https://laudable-albatross-174.convex.site`：
+如果不想写入本地配置文件，也可以用环境变量。`MY_NOTION_API_URL` 可选，不设置时默认使用 `https://moonlit-ptarmigan-478.convex.site`：
 
 ```bash
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
@@ -456,7 +456,7 @@ my-notion docs search --query "项目" --format json
 - 命令行参数最高，例如 `--profile`、`--web-url`、`--api-url`、`--token`。
 - 环境变量其次。
 - 对应环境的本地配置再次：线上 `config.json`，本地 `config.local.json`。
-- 默认线上地址 `https://laudable-albatross-174.convex.site` 最后。
+- 默认线上地址 `https://moonlit-ptarmigan-478.convex.site` 最后。
 
 ## 17. 推荐完整流程
 

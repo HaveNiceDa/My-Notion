@@ -50,7 +50,7 @@ The CLI talks to My-Notion through Convex HTTP Actions. The recommended setup is
 
 - `profile`: optional. Defaults to online `prod`. Use `--local` for local/dev testing; never let a local login become the default entry.
 - `webUrl`: the My-Notion Web URL used for browser authorization. Defaults to `https://notion-j9zj.vercel.app`; local debugging commonly uses `http://localhost:3000`.
-- `apiUrl`: the Convex `.site` Machine API URL used after login. Defaults to `https://laudable-albatross-174.convex.site`.
+- `apiUrl`: the Convex `.site` Machine API URL used after login. Defaults to `https://moonlit-ptarmigan-478.convex.site`.
 
 First-time setup:
 

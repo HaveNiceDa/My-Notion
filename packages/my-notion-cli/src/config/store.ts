@@ -16,7 +16,7 @@ import type {
   ResolvedProfile,
 } from "../types.js";
 
-export const DEFAULT_API_URL = "https://laudable-albatross-174.convex.site";
+export const DEFAULT_API_URL = "https://moonlit-ptarmigan-478.convex.site";
 export const DEFAULT_WEB_URL = "https://notion-j9zj.vercel.app";
 export const DEFAULT_PROFILE = "prod";
 export const DEFAULT_LOCAL_PROFILE = "local";

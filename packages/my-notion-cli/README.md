@@ -125,7 +125,7 @@ pnpm sync:skills:check
 
 ```text
 Web URL: https://notion-j9zj.vercel.app
-API URL: https://laudable-albatross-174.convex.site
+API URL: https://moonlit-ptarmigan-478.convex.site
 Config:  ~/.local/share/my-notion/config.json
 ```
 

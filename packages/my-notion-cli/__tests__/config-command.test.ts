@@ -55,7 +55,7 @@ describe("runConfigCommand", () => {
         initialized: true,
         profile: expect.objectContaining({
           name: "prod",
-          apiUrl: "https://laudable-albatross-174.convex.site",
+          apiUrl: "https://moonlit-ptarmigan-478.convex.site",
           webUrl: "https://notion-j9zj.vercel.app",
           tokenConfigured: false,
           configPath,
@@ -74,7 +74,7 @@ describe("runConfigCommand", () => {
       profiles: Record<string, { apiUrl?: string; webUrl?: string; token?: string }>;
     };
     expect(saved.profiles.prod).toMatchObject({
-      apiUrl: "https://laudable-albatross-174.convex.site",
+      apiUrl: "https://moonlit-ptarmigan-478.convex.site",
       webUrl: "https://notion-j9zj.vercel.app",
     });
     expect(saved.profiles.prod.token).toBeUndefined();
