@@ -7,15 +7,30 @@ vi.mock("@notion/ai/utils", () => ({
 import { executeDocumentRead } from "../tools/document-read";
 import { extractTextFromDocument } from "@notion/ai/utils";
 
+function expectDocumentReadContract(result: Record<string, unknown>) {
+  expect(typeof result.summary).toBe("string");
+  expect(Array.isArray(result.sources)).toBe(true);
+  for (const source of result.sources as Array<Record<string, unknown>>) {
+    expect(source.type).toBe("document");
+  }
+  expect(result.recoverable).toBe(true);
+  expect(result.metadata).toMatchObject({
+    toolName: "document_read",
+    contractVersion: "tool-result-v1",
+  });
+}
+
 describe("executeDocumentRead", () => {
   it("无当前文档时返回错误", () => {
-    const result = executeDocumentRead(null);
-    expect(result).toEqual({ document: null, error: "current document is not available" });
+    const result = executeDocumentRead(null) as Record<string, unknown>;
+    expect(result).toMatchObject({ document: null, error: "current document is not available" });
+    expectDocumentReadContract(result);
   });
 
   it("无文档 id 时返回错误", () => {
-    const result = executeDocumentRead({ id: "", title: "Test" });
-    expect(result).toEqual({ document: null, error: "current document is not available" });
+    const result = executeDocumentRead({ id: "", title: "Test" }) as Record<string, unknown>;
+    expect(result).toMatchObject({ document: null, error: "current document is not available" });
+    expectDocumentReadContract(result);
   });
 
   it("有文档时返回文档信息", () => {
@@ -28,6 +43,7 @@ describe("executeDocumentRead", () => {
     expect(result.document.id).toBe("doc-1");
     expect(result.document.title).toBe("My Document");
     expect(result.document.content).toBe("Hello world");
+    expectDocumentReadContract(result as unknown as Record<string, unknown>);
   });
 
   it("无标题时使用 Untitled", () => {
@@ -74,7 +90,8 @@ describe("executeDocumentRead", () => {
   });
 
   it("undefined 传入时返回错误", () => {
-    const result = executeDocumentRead(undefined);
-    expect(result).toEqual({ document: null, error: "current document is not available" });
+    const result = executeDocumentRead(undefined) as Record<string, unknown>;
+    expect(result).toMatchObject({ document: null, error: "current document is not available" });
+    expectDocumentReadContract(result);
   });
 });

@@ -18,6 +18,8 @@
 - `20260605-whiteboard-bandwidth-temporary-disable.md`：画板带宽问题临时止血，覆盖 Convex DB 大字段热路径问题、新建入口暂停和已有画板静态渲染。
 - `20260605-233018.md`：M20 Web Agent MCP Adapter 最小闭环，覆盖受控 MCP 文档工具白名单、dry-run 强制保护和前端确认复用。
 - `20260605-234802.md`：M21 韧性与治理最小闭环，覆盖流式安全重试、`tool-result-v1` 契约基建和 Plan 执行状态持久化。
+- `20260606-091356.md`：Tool 结果契约全量统一，覆盖主要 Web Agent tools 的 `summary/sources/metadata/recoverable` 收敛。
+- `20260606-095037.md`：强类型 Sources 与流式续跑协议设计，覆盖 `ToolResultSource` union 和 checkpoint/resume 协议。
 
 ## 阅读规则
 

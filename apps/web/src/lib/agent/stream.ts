@@ -13,6 +13,35 @@ export type AgentStreamEvent =
   | { type: "finish"; model: string; usage: null }
   | { type: "error"; message: string };
 
+export type AgentCheckpointKind =
+  | "run_started"
+  | "assistant_delta"
+  | "tool_call_started"
+  | "tool_call_arguments_completed"
+  | "tool_call_result_persisted"
+  | "iteration_completed"
+  | "run_finished"
+  | "run_failed";
+
+export interface AgentStreamEnvelope<TEvent = AgentStreamEvent> {
+  runId: string;
+  seq: number;
+  event: TEvent;
+  createdAt: number;
+}
+
+export interface AgentStreamResumeCursor {
+  runId: string;
+  lastAppliedSeq: number;
+  assistantMessageId: string;
+}
+
+export type AgentResumeControlEvent =
+  | { type: "run-start"; runId: string; seq: number; assistantMessageId: string }
+  | { type: "checkpoint"; runId: string; seq: number; checkpointKind: AgentCheckpointKind }
+  | { type: "resume-start"; runId: string; fromSeq: number; replayedCount: number }
+  | { type: "resume-unavailable"; runId: string; reason: string; recoverable: boolean };
+
 // 向流中写入一个 NDJSON 事件
 export function enqueueEvent(
   controller: ReadableStreamDefaultController<Uint8Array>,

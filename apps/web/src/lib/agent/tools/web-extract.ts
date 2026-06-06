@@ -1,5 +1,6 @@
 import { enqueueEvent } from "../stream";
 import type { ToolContext } from "./types";
+import { buildToolErrorResult, withToolResultContract } from "./result-contract";
 
 const MAX_CONTENT_LENGTH = 12_000;
 const FETCH_TIMEOUT_MS = 12_000;
@@ -28,7 +29,11 @@ export async function executeWebExtract(
   const url = typeof args.url === "string" ? args.url.trim() : "";
   const validation = validateExtractUrl(url);
   if (!validation.ok) {
-    return { url, content: "", error: validation.error, recoverable: true };
+    return {
+      url,
+      content: "",
+      ...buildToolErrorResult("web_extract", validation.error, { reason: "validation_error" }),
+    };
   }
 
   try {
@@ -44,13 +49,20 @@ export async function executeWebExtract(
         ].join("\n\n"),
       });
     }
-    return page;
+    return withToolResultContract("web_extract", { ...page }, {
+      summary: `Extracted ${page.content.length} characters from ${page.finalUrl}.`,
+      sources: [{
+        type: "web",
+        url: page.finalUrl,
+        title: page.title,
+      }],
+      metadata: page.metadata,
+    });
   } catch (error) {
     return {
       url,
       content: "",
-      error: error instanceof Error ? error.message : String(error),
-      recoverable: true,
+      ...buildToolErrorResult("web_extract", error),
     };
   }
 }

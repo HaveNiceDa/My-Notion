@@ -11,7 +11,7 @@
 | 工程基线 | `@notion/web` 已新增 `typecheck` script；`tsconfig` 不再 include `.next/dev` stale types；`build` 和 `typecheck` 可作为基础验证入口 | 后续每轮能力变更继续跑 `typecheck/build/lint` |
 | Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace；Plan 模式最小闭环已完成 | 步骤级执行进度持久化和恢复可后续增强 |
 | Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`、`task_plan` | Web Agent MCP adapter 未做；tool registry 仍主要在 `apps/web` |
-| Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`，LLM 可继续推理 | 业务内 validation error 还可继续逐步补齐更统一的 `summary/sources/metadata` |
+| Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`；`sources` 已收敛为 `document/web/memory` 强类型 union | 后续可补更细粒度 source 字段和 UI 展示 |
 | Memory | `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、写入/编辑/停用后缓存清理与 Qdrant 同步 | embedding 状态可视化、失败重试队列暂缓 |
 | RAG | `retrieveKnowledge(options)` 支持 `fast/balanced/deep`；默认 `balanced`；已有 hybrid recall、RRF、context packing、citation quality、最小 synthetic eval | 真实/脱敏 eval、rerank adapter 暂缓 |
 | Harness | Agent 单测、AI Chat 组件测试、mock E2E 用例、本地 `ci:ai-smoke`、无 secrets 版 AI smoke workflow | Storybook、Memory eval、real retrieval eval、Tool Trace Replay、Agent golden set 暂缓 |
@@ -42,8 +42,8 @@
 ### P1：产品基础能力
 
 1. **Web Agent MCP adapter**：✅ 已完成最小闭环。复用现有 CLI/MCP 能力扩展工具生态，第一版通过受控 My-Notion MCP 文档工具白名单接入，并继续遵守确认式写入。
-2. **流式重试**：✅ 已完成最小闭环。网络中断且尚未收到任何事件时支持安全重试；完整续跑后置。
-3. **Tool 结果契约细化**：✅ 已完成基建。新增 `tool-result-v1` metadata；全量 result shape 统一后置。
+2. **流式重试**：✅ 已完成最小闭环与完整续跑协议设计。网络中断且尚未收到任何事件时支持安全重试；checkpoint/resume 协议见 `docs/agent-stream-resume-protocol.md`。
+3. **Tool 结果契约细化**：✅ 已完成主要 Web Agent tools 收敛。新增 `tool-result-v1`，主要工具均稳定携带 `summary/sources/metadata/recoverable`，且 `sources` 已强类型化。
 4. **Plan 状态增强**：✅ 已完成最小闭环。确认执行状态可写回并恢复；步骤级事件和完整跨刷新恢复后置。
 
 ### P2：治理与体验增强
@@ -67,14 +67,14 @@
 |---|---|---|
 | M19 | Planning 基础能力 | ✅ 已完成：展示计划、确认计划、执行步骤、状态可见 |
 | M20 | MCP 扩展 | ✅ 已完成最小闭环：Web Agent 能安全调用受控 My-Notion MCP adapter，并继续遵守确认式写入 |
-| M21 | 韧性与治理 | ✅ 已完成最小闭环：流式安全重试、`tool-result-v1` 契约基建、Plan 执行状态持久化 |
-| M22 | Harness 回补 | Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
+| M21 | 韧性与治理 | ✅ 已完成：流式安全重试、`tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化 |
+| M22 | Harness 回补 | 完整流式续跑实现、Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
 
 ---
 
 ## 当前建议下一步
 
 1. 先按真实对话验证 **Web Agent MCP adapter** 和 M21 重试/状态恢复体验。
-2. 继续推进 **Tool 契约全量统一**，逐步让所有 tool result 具备稳定 `summary/sources/metadata/recoverable`。
-3. 设计 **完整流式续跑** 和步骤级 Plan 执行事件。
+2. 实现 **完整流式续跑 Phase 1**：服务端输出 `run-start/checkpoint`，前端记录 `runId/lastAppliedSeq`。
+3. 实现事件日志持久化与 backlog replay。
 4. 最后回补 Harness、Trace Replay 和真实质量评估。

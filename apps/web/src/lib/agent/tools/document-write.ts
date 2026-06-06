@@ -1,5 +1,5 @@
 import type { ToolContext } from "./types";
-import { buildToolMetadata } from "./result-contract";
+import { buildToolErrorResult, withToolResultContract } from "./result-contract";
 
 type DocumentWriteAction = "document_write" | "document_update";
 type DocumentUpdateMode = "overwrite" | "append";
@@ -25,10 +25,10 @@ export async function executeDocumentWrite(
 ): Promise<unknown> {
   const preview = buildWritePreview(args);
   if (!preview.title) {
-    return { error: "title is required", recoverable: true };
+    return buildToolErrorResult("document_write", "title is required", { reason: "validation_error" });
   }
   if (!preview.contentMarkdown) {
-    return { error: "contentMarkdown is required", recoverable: true };
+    return buildToolErrorResult("document_write", "contentMarkdown is required", { reason: "validation_error" });
   }
 
   return buildDryRunResult("document_write", {
@@ -43,10 +43,10 @@ export async function executeDocumentUpdate(
 ): Promise<unknown> {
   const preview = buildUpdatePreview(args, context);
   if (!preview.documentId) {
-    return { error: "documentId is required", recoverable: true };
+    return buildToolErrorResult("document_update", "documentId is required", { reason: "validation_error" });
   }
   if (!preview.title && !preview.contentMarkdown) {
-    return { error: "title or contentMarkdown is required", recoverable: true };
+    return buildToolErrorResult("document_update", "title or contentMarkdown is required", { reason: "validation_error" });
   }
 
   const targetTitle = context.currentDocument?.id === preview.documentId
@@ -73,22 +73,23 @@ function buildDryRunResult(
     summary: string;
   },
 ) {
-  return {
+  return withToolResultContract(action, {
     dryRun: true,
     confirmationRequired: true,
     action,
     message:
       "Dry run only. No document was changed. Confirm in the UI before applying this write.",
-    summary: payload.summary,
     document: payload.document,
+  }, {
+    summary: payload.summary,
+    sources: [],
     metadata: {
-      ...buildToolMetadata(action),
       recoverable: true,
       writeContract: "preview_then_confirm",
       inputFormat: "markdown",
       targetFormat: "blocknote-json",
     },
-  };
+  });
 }
 
 function buildWritePreview(args: Record<string, unknown>): DocumentWritePreview {

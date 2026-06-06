@@ -1,4 +1,5 @@
 import { api } from "../../../../convex/_generated/api";
+import { buildToolErrorResult, withToolResultContract } from "./result-contract";
 import type { ToolContext } from "./types";
 
 export async function executeDocumentSearch(
@@ -6,7 +7,10 @@ export async function executeDocumentSearch(
   context: ToolContext,
 ): Promise<unknown> {
   if (!context.convex) {
-    return { documents: [], error: "Convex client is not available", recoverable: true };
+    return {
+      documents: [],
+      ...buildToolErrorResult("document_search", "Convex client is not available", { reason: "unavailable" }),
+    };
   }
 
   const query = typeof args.query === "string" && args.query.trim()
@@ -21,18 +25,33 @@ export async function executeDocumentSearch(
     : undefined;
 
   try {
-    return await context.convex.query(api.documents.searchMetadata, {
+    const result = await context.convex.query(api.documents.searchMetadata, {
       query,
       limit,
       includeArchived,
       updatedAfter,
     });
+    const documents = Array.isArray(result.documents) ? result.documents : [];
+    return withToolResultContract("document_search", result, {
+      summary: `Found ${documents.length} document(s).`,
+      sources: documents.map((document) => ({
+        type: "document",
+        documentId: document.documentId,
+        title: document.title,
+      })),
+      metadata: {
+        query,
+        limit,
+        includeArchived,
+        updatedAfter,
+        count: documents.length,
+      },
+    });
   } catch (error) {
     return {
       query,
       documents: [],
-      error: error instanceof Error ? error.message : String(error),
-      recoverable: true,
+      ...buildToolErrorResult("document_search", error),
     };
   }
 }

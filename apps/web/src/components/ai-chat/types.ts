@@ -1,4 +1,5 @@
 import type { Id } from "@/convex/_generated/dataModel";
+import type { ToolResultSource } from "@/src/lib/agent/tools/result-contract";
 
 export interface KnowledgeSearchDoc {
   documentId: string;
@@ -16,6 +17,17 @@ export interface ToolCallResult {
   parameters?: Record<string, unknown>;
   result?: unknown;
   duplicateCount?: number;
+}
+
+export interface ToolResultEnvelope {
+  summary: string;
+  sources: ToolResultSource[];
+  recoverable: boolean;
+  metadata: {
+    toolName: string;
+    contractVersion: "tool-result-v1";
+    [key: string]: unknown;
+  };
 }
 
 export type AgentRunMode = "chat" | "plan";
@@ -70,3 +82,19 @@ export type AgentStreamEvent =
   | { type: "tool-call-result"; toolCallId: string; result: unknown }
   | { type: "finish"; model: string; usage: null }
   | { type: "error"; message: string };
+
+export type AgentCheckpointKind =
+  | "run_started"
+  | "assistant_delta"
+  | "tool_call_started"
+  | "tool_call_arguments_completed"
+  | "tool_call_result_persisted"
+  | "iteration_completed"
+  | "run_finished"
+  | "run_failed";
+
+export interface AgentStreamResumeCursor {
+  runId: string;
+  lastAppliedSeq: number;
+  assistantMessageId: string;
+}

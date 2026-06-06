@@ -10,6 +10,7 @@
 | [web-mobile-gap-analysis.md](./web-mobile-gap-analysis.md) | 当前 Web / Mobile 能力差距与后续 backlog。 |
 | [blocknote-ai-editor-refactor-plan.md](./blocknote-ai-editor-refactor-plan.md) | BlockNote 编辑器 AI 的当前重构建议。 |
 | [agent-document-write-format-strategy.md](./agent-document-write-format-strategy.md) | Agent 文档读写格式策略：Markdown <-> BlockNote blocks 双向转换。 |
+| [agent-stream-resume-protocol.md](./agent-stream-resume-protocol.md) | Web Agent 完整流式续跑 checkpoint/resume 协议设计。 |
 | [my-notion-cli-release-checklist.md](./my-notion-cli-release-checklist.md) | `@mynotion/cli` / MCP / Skills 发布检查清单。 |
 
 ## 操作手册

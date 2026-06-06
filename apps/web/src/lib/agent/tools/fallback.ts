@@ -1,5 +1,5 @@
 import type { RecoverableToolError, ToolContext } from "./types";
-import { buildToolMetadata } from "./result-contract";
+import { buildToolErrorResult } from "./result-contract";
 
 type ToolExecutor = (args: Record<string, unknown>, context: ToolContext) => Promise<unknown>;
 
@@ -24,15 +24,5 @@ export function buildRecoverableToolError(
   error: unknown,
   reason: RecoverableToolError["metadata"]["reason"] = "execution_error",
 ): RecoverableToolError {
-  const message = error instanceof Error ? error.message : String(error);
-  return {
-    error: message,
-    summary: `${toolName} failed: ${message}`,
-    recoverable: true,
-    sources: [],
-    metadata: {
-      ...buildToolMetadata(toolName),
-      reason,
-    },
-  };
+  return buildToolErrorResult(toolName, error, { reason }) as RecoverableToolError;
 }

@@ -1,7 +1,7 @@
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
 import { executeDocumentUpdate, executeDocumentWrite } from "./document-write";
-import { buildToolMetadata, mergeToolMetadata } from "./result-contract";
+import { buildToolErrorResult, buildToolMetadata, mergeToolMetadata, withToolResultContract } from "./result-contract";
 import type { ToolContext } from "./types";
 
 type MyNotionMcpToolName =
@@ -83,13 +83,19 @@ async function executeDocsSearch(
     }))
     : [];
 
-  return {
+  return withToolResultContract("mcp_my_notion_call", {
     toolName,
     adapter: "my-notion-mcp",
-    summary: `MCP docs search returned ${documents.length} document(s).`,
     documents,
-    metadata: buildMetadata(toolName, "read_only"),
-  };
+  }, {
+    summary: `MCP docs search returned ${documents.length} document(s).`,
+    sources: documents.map((document) => ({
+      type: "document",
+      documentId: document.documentId,
+      title: document.title,
+    })),
+    metadata: { ...buildMetadata(toolName, "read_only") },
+  });
 }
 
 async function executeDocsFetch(
@@ -111,10 +117,9 @@ async function executeDocsFetch(
   }) as DocumentRecord;
   const markdown = blockNoteJsonToMarkdown(document.content);
 
-  return {
+  return withToolResultContract("mcp_my_notion_call", {
     toolName,
     adapter: "my-notion-mcp",
-    summary: `Fetched document "${document.title ?? "Untitled"}" through the controlled MCP adapter.`,
     document: {
       id: document._id,
       title: document.title ?? "Untitled",
@@ -126,8 +131,15 @@ async function executeDocsFetch(
     markdown,
     inputFormat: "markdown",
     contentFormat: "blocknote-json",
-    metadata: buildMetadata(toolName, "read_only"),
-  };
+  }, {
+    summary: `Fetched document "${document.title ?? "Untitled"}" through the controlled MCP adapter.`,
+    sources: [{
+      type: "document",
+      documentId: document._id,
+      title: document.title ?? "Untitled",
+    }],
+    metadata: { ...buildMetadata(toolName, "read_only") },
+  });
 }
 
 async function executeDocsCreate(
@@ -212,14 +224,12 @@ function buildMcpError(toolName: string, message: string) {
   return {
     toolName,
     adapter: "my-notion-mcp",
-    error: message,
-    summary: `${toolName} failed: ${message}`,
-    recoverable: true,
-    sources: [],
-    metadata: buildToolMetadata("mcp_my_notion_call", {
-      adapter: "my-notion-mcp",
-      mcpToolName: toolName,
+    ...buildToolErrorResult("mcp_my_notion_call", message, {
       reason: "validation_error",
+      metadata: {
+        adapter: "my-notion-mcp",
+        mcpToolName: toolName,
+      },
     }),
   };
 }

@@ -41,6 +41,19 @@ import { withToolFallback } from "../tools/fallback";
 import { retrieveKnowledge, retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
 import { getJson } from "serpapi";
 
+function expectToolContract(result: Record<string, unknown>, toolName: string) {
+  expect(typeof result.summary).toBe("string");
+  expect(Array.isArray(result.sources)).toBe(true);
+  for (const source of result.sources as Array<Record<string, unknown>>) {
+    expect(["document", "web", "memory"]).toContain(source.type);
+  }
+  expect(result.recoverable).toBe(true);
+  expect(result.metadata).toMatchObject({
+    toolName,
+    contractVersion: "tool-result-v1",
+  });
+}
+
 describe("buildAvailableTools", () => {
   it("始终包含只读基础工具和写入预览工具", () => {
     const tools = buildAvailableTools();
@@ -181,6 +194,7 @@ describe("AgentTool 定义", () => {
         reason: "execution_error",
       },
     });
+    expectToolContract(result, "knowledge_search");
     expect(result.summary).toContain("knowledge_search failed");
     expect(result.sources).toEqual([]);
   });
@@ -314,6 +328,7 @@ describe("Document search tool", () => {
     const result = await executeDocumentSearch({ query: "roadmap" }, baseCtx) as any;
     expect(result.documents).toEqual([]);
     expect(result.recoverable).toBe(true);
+    expectToolContract(result, "document_search");
   });
 
   it("调用 Convex 元数据搜索并限制 limit", async () => {
@@ -334,6 +349,7 @@ describe("Document search tool", () => {
       updatedAfter: 123,
     });
     expect(result.documents[0].title).toBe("Roadmap");
+    expectToolContract(result, "document_search");
   });
 });
 
@@ -354,6 +370,7 @@ describe("Document write tools", () => {
     expect(result.action).toBe("document_write");
     expect(result.document.title).toBe("会议纪要");
     expect(result.document.contentMarkdown).toContain("Agenda");
+    expectToolContract(result, "document_write");
   });
 
   it("document_write 空标题或内容返回可恢复错误", async () => {
@@ -387,13 +404,15 @@ describe("Document write tools", () => {
 
 describe("executeKnowledgeSearch", () => {
   it("空 query 返回错误", async () => {
-    const result = await executeKnowledgeSearch("user-1", { query: "" });
-    expect(result).toEqual({ query: "", documents: [], error: "query is required" });
+    const result = await executeKnowledgeSearch("user-1", { query: "" }) as Record<string, unknown>;
+    expect(result).toMatchObject({ query: "", documents: [], error: "query is required" });
+    expectToolContract(result, "knowledge_search");
   });
 
   it("非字符串 query 返回错误", async () => {
-    const result = await executeKnowledgeSearch("user-1", { query: 123 });
-    expect(result).toEqual({ query: "", documents: [], error: "query is required" });
+    const result = await executeKnowledgeSearch("user-1", { query: 123 }) as Record<string, unknown>;
+    expect(result).toMatchObject({ query: "", documents: [], error: "query is required" });
+    expectToolContract(result, "knowledge_search");
   });
 
   it("正常搜索返回结果", async () => {
@@ -414,6 +433,7 @@ describe("executeKnowledgeSearch", () => {
     expect(result.documents[0].documentId).toBe("d1");
     expect(result.documents[0].score).toBe(0.95);
     expect(result.documents[0].sources).toEqual(["semantic"]);
+    expectToolContract(result, "knowledge_search");
     expect(retrieveKnowledge).toHaveBeenCalledWith({
       userId: "user-1",
       query: "test",
@@ -487,6 +507,7 @@ describe("executeKnowledgeSearch", () => {
     const result = await executeKnowledgeSearch("user-1", { query: "test" }) as any;
     expect(result.documents).toEqual([]);
     expect(result.error).toBe("DB error");
+    expectToolContract(result, "knowledge_search");
   });
 
   it("metadata 缺失时使用默认值", async () => {
@@ -512,13 +533,15 @@ describe("executeWebSearch", () => {
   };
 
   it("空 query 返回错误", async () => {
-    const result = await executeWebSearch({ query: "" }, baseCtx);
-    expect(result).toEqual({ query: "", results: [], error: "query is required" });
+    const result = await executeWebSearch({ query: "" }, baseCtx) as Record<string, unknown>;
+    expect(result).toMatchObject({ query: "", results: [], error: "query is required" });
+    expectToolContract(result, "web_search");
   });
 
   it("非字符串 query 返回错误", async () => {
-    const result = await executeWebSearch({ query: null }, baseCtx);
-    expect(result).toEqual({ query: "", results: [], error: "query is required" });
+    const result = await executeWebSearch({ query: null }, baseCtx) as Record<string, unknown>;
+    expect(result).toMatchObject({ query: "", results: [], error: "query is required" });
+    expectToolContract(result, "web_search");
   });
 
   it("SERPAPI_API_KEY 未配置时返回错误", async () => {
@@ -528,6 +551,7 @@ describe("executeWebSearch", () => {
     const result = await executeWebSearch({ query: "test" }, baseCtx) as any;
     expect(result.error).toBe("SERPAPI_API_KEY is not configured");
     expect(result.results).toEqual([]);
+    expectToolContract(result, "web_search");
 
     if (originalKey) process.env.SERPAPI_API_KEY = originalKey;
   });
@@ -549,6 +573,7 @@ describe("executeWebSearch", () => {
       link: "https://a.com",
       snippet: "Snippet 1",
     });
+    expectToolContract(result, "web_search");
   });
 
   it("搜索结果最多返回 5 条", async () => {
@@ -579,6 +604,7 @@ describe("executeWebSearch", () => {
     const result = await executeWebSearch({ query: "test" }, baseCtx) as any;
     expect(result.results).toEqual([]);
     expect(result.error).toBe("Network error");
+    expectToolContract(result, "web_search");
   });
 
   it("有 stream 上下文时推送 tool-result-delta", async () => {
@@ -663,6 +689,7 @@ describe("executeWebExtract", () => {
     expect(result.description).toBe("Demo page");
     expect(result.content).toContain("Hello world");
     expect(result.content).not.toContain("bad()");
+    expectToolContract(result, "web_extract");
     expect(fetchMock).toHaveBeenCalledWith(expect.any(URL), expect.objectContaining({
       redirect: "follow",
     }));
@@ -679,6 +706,7 @@ describe("Memory tools", () => {
     const result = await executeMemorySearch({ query: "偏好" }, baseCtx) as any;
     expect(result.memories).toEqual([]);
     expect(result.recoverable).toBe(true);
+    expectToolContract(result, "memory_search");
   });
 
   it("memory_search 调用 Convex 查询并返回记忆", async () => {
@@ -706,6 +734,7 @@ describe("Memory tools", () => {
     expect(result.memories).toHaveLength(1);
     expect(result.metadata.count).toBe(1);
     expect(result.metadata.retrieval).toBe("semantic");
+    expectToolContract(result, "memory_search");
   });
 
   it("memory_search 只按业务类型和当前上下文检索记忆", async () => {
@@ -773,6 +802,7 @@ describe("Memory tools", () => {
     expect(result.proposalId).toBe("proposal-1");
     expect(result.proposalStatus).toBe("pending_review");
     expect(result.memory.content).toBe("用户偏好中文");
+    expectToolContract(result, "memory_write");
     expect(mutation).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       content: "用户偏好中文",
       type: "preference",
@@ -806,6 +836,7 @@ describe("Memory tools", () => {
     }));
     expect(result.dryRun).toBe(false);
     expect(result.memory.id).toBe("m1");
+    expectToolContract(result, "memory_write");
     expect(syncAgentMemory).toHaveBeenCalledWith({
       userId: "user-1",
       memory: expect.objectContaining({
@@ -819,5 +850,6 @@ describe("Memory tools", () => {
     const result = await executeMemoryWrite({ content: "   " }, baseCtx) as any;
     expect(result.error).toBe("content is required");
     expect(result.recoverable).toBe(true);
+    expectToolContract(result, "memory_write");
   });
 });

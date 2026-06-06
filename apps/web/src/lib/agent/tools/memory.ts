@@ -3,6 +3,7 @@ import type { Id } from "../../../../convex/_generated/dataModel";
 import { retrieveRelevantMemories, syncAgentMemory } from "@notion/ai/server";
 import type { AgentMemoryRecord, RelevantMemoryResult } from "@notion/ai/server";
 import { invalidateToolResultCache } from "../tool-result-cache";
+import { buildToolErrorResult, withToolResultContract } from "./result-contract";
 import type { ToolContext } from "./types";
 
 type MemoryType = "preference" | "project" | "episodic";
@@ -30,7 +31,10 @@ export async function executeMemorySearch(
   context: ToolContext,
 ): Promise<unknown> {
   if (!context.convex) {
-    return { memories: [], error: "Convex client is not available", recoverable: true };
+    return {
+      memories: [],
+      ...buildToolErrorResult("memory_search", "Convex client is not available", { reason: "unavailable" }),
+    };
   }
 
   const query = typeof args.query === "string" ? args.query : undefined;
@@ -67,27 +71,32 @@ export async function executeMemorySearch(
       unavailable: retrieval.unavailable,
     });
 
-    return {
+    return withToolResultContract("memory_search", {
       query,
       type,
       types: types.length > 0 ? types : undefined,
       memories: normalizedMemories,
+    }, {
+      summary: `Found ${normalizedMemories.length} relevant memory item(s).`,
+      sources: normalizedMemories.map((memory) => ({
+        type: "memory",
+        memoryId: String(memory.id ?? ""),
+        memoryType: typeof memory.type === "string" ? memory.type : undefined,
+      })),
       metadata: {
         count: normalizedMemories.length,
         retrieval: retrieval.retrieval,
         unavailable: retrieval.unavailable,
         error: retrieval.error,
         memoryIds: normalizedMemories.map((memory) => memory.id).filter(Boolean),
-        toolName: "memory_search",
       },
-    };
+    });
   } catch (error) {
     return {
       query,
       type,
       memories: [],
-      error: error instanceof Error ? error.message : String(error),
-      recoverable: true,
+      ...buildToolErrorResult("memory_search", error),
     };
   }
 }
@@ -98,18 +107,25 @@ export async function executeMemoryWrite(
 ): Promise<unknown> {
   const preview = buildWritePreview(args);
   if (!preview.content) {
-    return { error: "content is required", recoverable: true };
+    return buildToolErrorResult("memory_write", "content is required", { reason: "validation_error" });
   }
 
   const dryRun = args.dryRun !== false;
   if (!context.convex) {
-    return {
+    return withToolResultContract("memory_write", {
       dryRun: true,
       confirmationRequired: true,
       action: "memory_propose",
       message: "Convex client is not available. Preview only; no proposal was created.",
       memory: preview,
-    };
+    }, {
+      summary: "Prepared memory proposal preview; Convex client is unavailable.",
+      sources: [],
+      metadata: {
+        unavailable: true,
+        writeContract: "preview_then_confirm",
+      },
+    });
   }
 
   try {
@@ -125,7 +141,7 @@ export async function executeMemoryWrite(
         contentLength: preview.content.length,
       });
 
-      return {
+      return withToolResultContract("memory_write", {
         dryRun: true,
         confirmationRequired: true,
         action: "memory_propose",
@@ -133,7 +149,19 @@ export async function executeMemoryWrite(
         proposalId: proposal.id,
         proposalStatus: proposal.status,
         memory: proposal,
-      };
+      }, {
+        summary: "Memory proposal created in Inbox.",
+        sources: [{
+          type: "memory",
+          memoryId: proposal.id,
+          memoryType: preview.type,
+        }],
+        metadata: {
+          writeContract: "preview_then_confirm",
+          proposalId: proposal.id,
+          proposalStatus: proposal.status,
+        },
+      });
     }
 
     const memory = await context.convex.mutation(api.agentMemories.createAgentMemory, {
@@ -149,19 +177,28 @@ export async function executeMemoryWrite(
       syncWarning,
     });
 
-    return {
+    return withToolResultContract("memory_write", {
       dryRun: false,
       action: "memory_write",
       message: "Memory saved.",
       memory,
       warning: syncWarning,
-    };
+    }, {
+      summary: syncWarning ? `Memory saved with warning: ${syncWarning}` : "Memory saved.",
+      sources: [{
+        type: "memory",
+        memoryId: memory.id,
+        memoryType: preview.type,
+      }],
+      metadata: {
+        syncWarning,
+      },
+    });
   } catch (error) {
     return {
       dryRun: false,
       action: "memory_write",
-      error: error instanceof Error ? error.message : String(error),
-      recoverable: true,
+      ...buildToolErrorResult("memory_write", error),
     };
   }
 }

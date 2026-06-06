@@ -39,12 +39,12 @@
 - M18 ✅ 部分完成并后置 Harness：Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`ci:ai-smoke` 和无 secrets 版 GitHub Actions 已完成；Storybook、Trace Replay、Memory/RAG 真实评估后置。
 - M19 ✅ 已完成：Plan 模式最小闭环，支持展示计划、确认计划、确认后执行和状态可见。
 - M20 ✅ 已完成最小闭环：Web Agent 通过受控 My-Notion MCP adapter 调用白名单文档工具，并继续遵守确认式写入。
-- M21 ✅ 已完成最小闭环：流式安全重试、`tool-result-v1` 契约基建和 Plan 执行状态持久化。
+- M21 ✅ 已完成主要闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources 和 Plan 执行状态持久化。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
 
 ## 下一批候选里程碑
 
-- M22 ⏳ 后置：Harness 回补。Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估。
+- M22 ⏳ 后置：Harness 回补。完整流式续跑实现、Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估。
 - 详细路线见 `docs/ai-chat-refactor-plan.md`。
 
 ## Agent Memory 重构待办
