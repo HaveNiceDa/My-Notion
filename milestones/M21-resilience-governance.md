@@ -28,7 +28,8 @@
 - Phase 2：resume 请求支持 `getAgentRunBacklog`，按 `seq > lastAppliedSeq` replay 已保存 backlog，已完成 run 会补发 `finish`。
 - Phase 3：失败 run 可从最近 checkpoint 保守恢复 ReAct Loop，并通过 `resumeToolResults` 复用已完成 tool result，避免重复执行写入预览工具。
 - Phase 3：前端已提供“继续生成”入口，并在恢复时基于 checkpoint 的 `currentDocument.id` 重建完整当前文档上下文。
-- running run live 接管留给后续 Trace Replay/Resume 深化。
+- running run 支持受控长轮询接管，resume 窗口内可持续续传新增 event；窗口到期仍保留 cursor。
+- resume 完成后支持原地更新已落库 assistant 消息，避免历史消息停留在中断内容。
 
 ### Tool 结果契约
 
@@ -60,11 +61,11 @@
 - `pnpm --filter @notion/web test -- src/lib/agent/__tests__/tools.test.ts src/lib/agent/__tests__/document-read.test.ts`：✅，Tool 契约全量统一补充验证。
 - `pnpm --filter @notion/web test -- src/lib/agent/__tests__/tools.test.ts src/lib/agent/__tests__/document-read.test.ts src/lib/agent/__tests__/stream.test.ts src/components/ai-chat/stream-client.test.ts`：✅，强类型 sources 与流式协议类型补充验证。
 - `pnpm --filter @notion/web test -- src/components/ai-chat/stream-client.test.ts src/lib/agent/__tests__/react-loop.test.ts`：✅，覆盖 resume cursor、resume-unavailable 和 checkpoint tool result 复用；命令实际跑完 Web 全部 Vitest 用例。
+- `pnpm --filter @notion/web test -- src/components/ai-chat/stream-client.test.ts src/components/ai-chat/ai-chat-components.test.ts src/lib/agent/__tests__/react-loop.test.ts`：✅，覆盖无 finish 不误完成、running 接管窗口错误和继续生成入口；命令实际跑完 Web 全部 Vitest 用例。
 
 ## 已知缺口
 
-- 流式续跑已完成 Phase 1/2/3 可用闭环，但 running run 的 live stream 接管尚未实现。
-- 已保存的历史 assistant 消息暂不做原地更新；中断消息如已落库，resume 完成后不会覆盖旧消息。
+- running run 当前采用服务端长轮询窗口接管，尚未升级为真正实时订阅/推送。
 - Plan 仍未支持步骤级执行事件、逐 step 持久化和跨刷新完整恢复。
 - Trace Replay、Storybook、Memory/RAG 真实评估继续留给 M22。
 
@@ -77,6 +78,7 @@
 - `progress/20260606-095037.md`
 - `progress/20260606-100642.md`
 - `progress/20260606-113248.md`
+- `progress/20260606-120002.md`
 - `docs/agent-stream-resume-protocol.md`
 - `apps/web/src/components/ai-chat/stream-client.ts`
 - `apps/web/src/lib/agent/tools/result-contract.ts`

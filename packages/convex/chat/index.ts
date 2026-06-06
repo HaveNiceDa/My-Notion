@@ -2,6 +2,7 @@ export * from "./logic/getConversations";
 export * from "./logic/getMessages";
 export * from "./logic/createConversation";
 export * from "./logic/addMessage";
+export * from "./logic/updateAssistantMessage";
 export * from "./logic/updateConversationTitle";
 export * from "./logic/deleteConversation";
 export * from "./logic/updateToolResult";

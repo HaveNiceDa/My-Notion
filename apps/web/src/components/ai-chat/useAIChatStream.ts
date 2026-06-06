@@ -421,6 +421,15 @@ export function useAIChatStream(
                   ),
                 );
               }
+            } else {
+              await persistence.updateAssistantMessage(
+                assistantMessageId as Id<"aiMessages">,
+                buildAssistantMessagePayload({
+                  content: currentContent,
+                  reasoningContent: state.enableThinking ? currentReasoningContent : undefined,
+                  toolResults: finalToolResults,
+                }),
+              );
             }
 
             activeResumeCursor = null;
@@ -495,4 +504,19 @@ function getAssistantContent(message: ChatMessage): string {
 
 function isTemporaryMessageId(messageId: string): boolean {
   return /^\d+$/.test(messageId);
+}
+
+function buildAssistantMessagePayload(args: {
+  content: string;
+  reasoningContent?: string;
+  toolResults?: ToolCallResult[];
+}): string {
+  const messageData: Record<string, string> = { content: args.content };
+  if (args.reasoningContent) {
+    messageData.reasoningContent = args.reasoningContent;
+  }
+  if (args.toolResults) {
+    messageData.toolResults = JSON.stringify(args.toolResults);
+  }
+  return JSON.stringify(messageData);
 }

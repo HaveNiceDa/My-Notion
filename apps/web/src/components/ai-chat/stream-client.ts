@@ -100,6 +100,7 @@ async function readAgentStreamResponse(
   let buffer = "";
   let streamFailed = false;
   let processedAnyEvent = false;
+  let receivedFinish = false;
   let cursor: AgentStreamResumeCursor | null = initialCursor;
 
   function handleEvent(event: AgentStreamEvent) {
@@ -154,6 +155,7 @@ async function readAgentStreamResponse(
         callbacks.onError(new Error(event.message));
         break;
       case "finish":
+        receivedFinish = true;
         devLog("[Agent] 接收到结束事件");
         break;
     }
@@ -180,7 +182,7 @@ async function readAgentStreamResponse(
       const { done, value } = await reader.read();
       if (done) {
         if (buffer.trim()) processBuffer(true);
-        if (!streamFailed) {
+        if (!streamFailed && receivedFinish) {
           await callbacks.onComplete();
         }
         break;

@@ -312,9 +312,11 @@ idle
 - 写入类工具仍只恢复 dry-run/预览结果，不跳过用户确认链路。
 - 恢复时会基于 checkpoint 中的 `currentDocument.id` 重新查询当前文档，恢复 `document_read/document_update` 等依赖当前文档的工具上下文。
 - 前端已提供“继续生成”入口，读取 `sessionStorage` 中最近 cursor 并发起 resume 请求。
+- 如果原 run 仍为 `running`，resume 响应会在受控窗口内长轮询新增 `agentRunEvents` 并持续续传；窗口到期仍未完成时返回可恢复错误，前端保留 cursor。
+- resume 完成后会更新同一条已落库 assistant 消息，避免历史记录停留在中断内容。
 
 ### Phase 4：Trace Replay
 
 - 将 `agentRunEvents` 与 trace sink 关联。
 - 提供 replay UI，按 seq 重放 text/tool/checkpoint。
-- 补齐 running run 的 live stream 接管和 Trace Replay 可视化。
+- 将 running run 长轮询接管升级为更实时的订阅/推送机制，并补齐 Trace Replay 可视化。

@@ -20,6 +20,9 @@ import {
 } from "@/src/lib/agent/memory-extractor";
 import type { MemoryExtractionMessage } from "@/src/lib/agent/memory-extractor";
 
+const RESUME_LIVE_POLL_INTERVAL_MS = 800;
+const RESUME_LIVE_MAX_WAIT_MS = 25_000;
+
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
   modelId?: string;
@@ -425,11 +428,37 @@ async function buildResumeResponse(options: {
           fromSeq: resume.lastAppliedSeq,
           replayedCount: backlog.events.length,
         });
+        let lastAppliedSeq = resume.lastAppliedSeq;
+        let hasFinishEvent = false;
         for (const event of backlog.events) {
           controller.enqueue(encoder.encode(`${event.eventJson}\n`));
+          lastAppliedSeq = Math.max(lastAppliedSeq, event.seq);
+          hasFinishEvent = hasFinishEvent || eventJsonHasType(event.eventJson, "finish");
         }
 
-        if (backlog.run.status === "failed") {
+        const liveResult = backlog.run.status === "running"
+          ? await streamRunningRunBacklog({
+            convex,
+            controller,
+            encoder,
+            runId: resume.runId,
+            afterSeq: lastAppliedSeq,
+          })
+          : {
+            status: backlog.run.status,
+            lastSeq: backlog.run.lastSeq,
+            hasFinishEvent,
+          };
+
+        if (liveResult.status === "running") {
+          enqueueEvent(controller, encoder, {
+            type: "error",
+            message: "Resume stream is still running. Please continue generation again.",
+          });
+          return;
+        }
+
+        if (liveResult.status === "failed") {
           const checkpoint = await convex.query(api.aiChat.getLatestAgentRunCheckpoint, {
             runId: resume.runId,
           });
@@ -448,11 +477,11 @@ async function buildResumeResponse(options: {
             encoder,
             runId: resume.runId,
             assistantMessageId: resume.assistantMessageId,
-            initialSeq: backlog.run.lastSeq,
+            initialSeq: liveResult.lastSeq,
             checkpointJson: checkpoint.checkpointJson,
             userId,
           });
-        } else if (backlog.run.status === "completed") {
+        } else if (liveResult.status === "completed" && !liveResult.hasFinishEvent) {
           enqueueEvent(controller, encoder, { type: "finish", model: backlog.run.model, usage: null });
         }
       } catch (error) {
@@ -474,6 +503,61 @@ async function buildResumeResponse(options: {
       "Cache-Control": "no-cache",
     },
   });
+}
+
+async function streamRunningRunBacklog(options: {
+  convex: ConvexHttpClient;
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  encoder: TextEncoder;
+  runId: string;
+  afterSeq: number;
+}): Promise<{
+  status: "running" | "completed" | "failed" | "cancelled";
+  lastSeq: number;
+  hasFinishEvent: boolean;
+}> {
+  const startedAt = Date.now();
+  let cursor = options.afterSeq;
+  let status: "running" | "completed" | "failed" | "cancelled" = "running";
+  let lastSeq = options.afterSeq;
+  let hasFinishEvent = false;
+
+  while (Date.now() - startedAt < RESUME_LIVE_MAX_WAIT_MS) {
+    await delay(RESUME_LIVE_POLL_INTERVAL_MS);
+    const backlog = await options.convex.query(api.aiChat.getAgentRunBacklog, {
+      runId: options.runId,
+      afterSeq: cursor,
+      limit: 1000,
+    });
+
+    status = backlog.run.status;
+    lastSeq = backlog.run.lastSeq;
+    for (const event of backlog.events) {
+      options.controller.enqueue(options.encoder.encode(`${event.eventJson}\n`));
+      cursor = Math.max(cursor, event.seq);
+      lastSeq = Math.max(lastSeq, event.seq);
+      hasFinishEvent = hasFinishEvent || eventJsonHasType(event.eventJson, "finish");
+    }
+
+    if (status !== "running") {
+      return { status, lastSeq, hasFinishEvent };
+    }
+  }
+
+  return { status, lastSeq, hasFinishEvent };
+}
+
+function eventJsonHasType(eventJson: string, type: string): boolean {
+  try {
+    const parsed = JSON.parse(eventJson) as { type?: unknown };
+    return parsed.type === type;
+  } catch {
+    return false;
+  }
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function resumeFromCheckpoint(options: {

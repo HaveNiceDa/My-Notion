@@ -258,6 +258,55 @@ describe("runAgentStream", () => {
     expect(callbacks.onComplete).not.toHaveBeenCalled();
   });
 
+  it("流关闭但未收到 finish 时不触发完成回调，保留续跑机会", async () => {
+    const callbacks = createCallbacks();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createStreamResponse([
+      JSON.stringify({ type: "text-delta", runId: "run-1", seq: 2, id: "msg", delta: "部分" }) + "\n",
+    ])));
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: true,
+      currentDocument: null,
+      resume: {
+        runId: "run-1",
+        lastAppliedSeq: 1,
+        assistantMessageId: "msg",
+      },
+      callbacks,
+    });
+
+    expect(callbacks.onChunk).toHaveBeenCalledWith("部分");
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+    expect(callbacks.onError).not.toHaveBeenCalled();
+  });
+
+  it("running run 接管窗口到期的 error 事件不上报完成", async () => {
+    const callbacks = createCallbacks();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createStreamResponse([
+      JSON.stringify({
+        type: "error",
+        message: "Resume stream is still running. Please continue generation again.",
+      }) + "\n",
+    ])));
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: true,
+      currentDocument: null,
+      callbacks,
+    });
+
+    expect(callbacks.onError).toHaveBeenCalledWith(expect.objectContaining({
+      message: "Resume stream is still running. Please continue generation again.",
+    }));
+    expect(callbacks.onComplete).not.toHaveBeenCalled();
+  });
+
   it("429 响应包含 Retry-After 时返回友好限流错误", async () => {
     const callbacks = createCallbacks();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, {

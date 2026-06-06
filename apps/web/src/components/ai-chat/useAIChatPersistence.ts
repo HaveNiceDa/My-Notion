@@ -82,6 +82,19 @@ export function useAIChatPersistence() {
     }
   });
 
+  const updateAssistantMessage = useMemoizedFn(async (
+    messageId: Id<"aiMessages">,
+    content: string,
+  ): Promise<boolean> => {
+    try {
+      await convex.mutation(api.aiChat.updateAssistantMessage, { messageId, content });
+      return true;
+    } catch (err) {
+      console.error("[Chat] Failed to update assistant message:", err);
+      return false;
+    }
+  });
+
   const updateConversationTitle = useMemoizedFn(async (
     conversationId: Id<"aiConversations">,
     title: string,
@@ -116,6 +129,7 @@ export function useAIChatPersistence() {
     loadMessages,
     createConversation,
     saveMessage,
+    updateAssistantMessage,
     updateConversationTitle,
     deleteConversation,
   };

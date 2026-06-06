@@ -22,6 +22,7 @@
 - `20260606-095037.md`：强类型 Sources 与流式续跑协议设计，覆盖 `ToolResultSource` union 和 checkpoint/resume 协议。
 - `20260606-100642.md`：流式续跑 Phase 1/2/3 落地，覆盖 run 控制事件、事件/checkpoint 持久化、backlog replay 和 checkpoint ReAct 恢复。
 - `20260606-113248.md`：流式续跑可用性收口，覆盖“继续生成”入口和 resume 时完整 currentDocument 上下文恢复。
+- `20260606-120002.md`：续跑一致性收口，覆盖 assistant 消息原地更新和 running run 长轮询接管。
 
 ## 阅读规则
 
