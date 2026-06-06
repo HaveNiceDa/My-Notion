@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runReActLoop } from "../react-loop";
 import type { AgentTool } from "../tools/definitions";
-import { clearToolResultCache } from "../tool-result-cache";
+import { clearToolResultCache, getToolSignature } from "../tool-result-cache";
 
 function createMockStream(chunks: object[]) {
   return {
@@ -155,6 +155,65 @@ describe("runReActLoop", () => {
     await runReActLoop(createLoopParams(openai, tool, "user-1"));
 
     expect(execute).toHaveBeenCalledTimes(2);
+  });
+
+  it("续跑时复用 checkpoint 中已完成 tool result，避免重复执行 tool", async () => {
+    const toolCall = createToolCallChunk(
+      "call-resume",
+      "document_write",
+      '{"title":"Plan","contentMarkdown":"hello"}',
+    );
+    const finalText = { choices: [{ delta: { content: "已基于预览继续。" } }] };
+    const create = vi.fn()
+      .mockResolvedValueOnce(createMockStream([toolCall]))
+      .mockResolvedValueOnce(createMockStream([finalText]));
+
+    const openai = {
+      chat: { completions: { create } },
+    } as unknown as import("openai").default;
+    const execute = vi.fn().mockResolvedValue({
+      action: "document_write",
+      dryRun: true,
+      confirmationRequired: true,
+    });
+    const tool: AgentTool = {
+      name: "document_write",
+      description: "write document",
+      parameters: { type: "object", properties: {} },
+      execute,
+    };
+    const { controller, chunks } = createController();
+    const cachedResult = {
+      action: "document_write",
+      dryRun: true,
+      confirmationRequired: true,
+      summary: "已生成写入预览",
+    };
+
+    await runReActLoop({
+      openai,
+      model: "test-model",
+      messages: [{ role: "user", content: "继续生成预览" }],
+      tools: [{ type: "function", function: { name: "document_write", description: "", parameters: {} } }],
+      toolMap: new Map([["document_write", tool]]),
+      toolContext: { userId: "user-1", model: "test-model" },
+      enableThinking: false,
+      controller,
+      encoder: new TextEncoder(),
+      responseId: "assistant-1",
+      resumeToolResults: {
+        [getToolSignature("document_write", { title: "Plan", contentMarkdown: "hello" })]: JSON.stringify(cachedResult),
+      },
+    });
+
+    expect(execute).not.toHaveBeenCalled();
+    expect(create).toHaveBeenCalledTimes(2);
+    const events = chunks.map((chunk) => JSON.parse(new TextDecoder().decode(chunk).trim()));
+    expect(events).toContainEqual(expect.objectContaining({
+      type: "tool-call-result",
+      toolCallId: "call-resume",
+      result: cachedResult,
+    }));
   });
 });
 

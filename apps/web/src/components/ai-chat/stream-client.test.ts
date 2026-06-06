@@ -110,6 +110,105 @@ describe("runAgentStream", () => {
     expect(callbacks.onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it("记录 run-start/checkpoint cursor，并支持从已有 cursor 续跑", async () => {
+    const callbacks = createCallbacks();
+    callbacks.onRunStart = vi.fn();
+    callbacks.onCheckpoint = vi.fn();
+    const fetchMock = vi.fn().mockResolvedValue(createStreamResponse([
+      JSON.stringify({ type: "run-start", runId: "run-1", seq: 1, assistantMessageId: "assistant-1" }) + "\n",
+      JSON.stringify({ type: "text-delta", runId: "run-1", seq: 2, id: "assistant-1", delta: "第一段" }) + "\n",
+      JSON.stringify({ type: "checkpoint", runId: "run-1", seq: 3, checkpointKind: "run_started" }) + "\n",
+      JSON.stringify({ type: "finish", runId: "run-1", seq: 4, model: "deepseek-v4-pro", usage: null }) + "\n",
+    ]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: false,
+      currentDocument: null,
+      callbacks,
+    });
+
+    expect(callbacks.onRunStart).toHaveBeenCalledWith({
+      runId: "run-1",
+      lastAppliedSeq: 1,
+      assistantMessageId: "assistant-1",
+    });
+    expect(callbacks.onCheckpoint).toHaveBeenCalledWith({
+      runId: "run-1",
+      lastAppliedSeq: 3,
+      assistantMessageId: "assistant-1",
+    }, "run_started");
+
+    const resumeCallbacks = createCallbacks();
+    resumeCallbacks.onCheckpoint = vi.fn();
+    fetchMock.mockResolvedValueOnce(createStreamResponse([
+      JSON.stringify({ type: "resume-start", runId: "run-1", fromSeq: 3, replayedCount: 1 }) + "\n",
+      JSON.stringify({ type: "checkpoint", runId: "run-1", seq: 5, checkpointKind: "iteration_completed" }) + "\n",
+      JSON.stringify({ type: "finish", runId: "run-1", seq: 6, model: "deepseek-v4-pro", usage: null }) + "\n",
+    ]));
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: false,
+      currentDocument: null,
+      resume: {
+        runId: "run-1",
+        lastAppliedSeq: 3,
+        assistantMessageId: "assistant-1",
+      },
+      callbacks: resumeCallbacks,
+    });
+
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/agent/stream", expect.objectContaining({
+      body: JSON.stringify({
+        messages: [],
+        modelId: "deepseek-v4-pro",
+        conversationId: "conv-1",
+        enableThinking: false,
+        currentDocument: null,
+        resume: {
+          runId: "run-1",
+          lastAppliedSeq: 3,
+          assistantMessageId: "assistant-1",
+        },
+      }),
+    }));
+    expect(resumeCallbacks.onCheckpoint).toHaveBeenCalledWith({
+      runId: "run-1",
+      lastAppliedSeq: 5,
+      assistantMessageId: "assistant-1",
+    }, "iteration_completed");
+  });
+
+  it("收到 resume-unavailable 时通知调用方", async () => {
+    const callbacks = createCallbacks();
+    callbacks.onResumeUnavailable = vi.fn();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createStreamResponse([
+      JSON.stringify({
+        type: "resume-unavailable",
+        runId: "run-1",
+        reason: "No checkpoint is available",
+        recoverable: false,
+      }) + "\n",
+    ])));
+
+    await runAgentStream({
+      messages: [],
+      model: "deepseek-v4-pro",
+      conversationId: "conv-1",
+      enableThinking: false,
+      currentDocument: null,
+      callbacks,
+    });
+
+    expect(callbacks.onResumeUnavailable).toHaveBeenCalledWith("No checkpoint is available", false);
+  });
+
   it("支持透传 Plan 模式到 Agent stream API", async () => {
     const callbacks = createCallbacks();
     const fetchMock = vi.fn().mockResolvedValue(createStreamResponse([

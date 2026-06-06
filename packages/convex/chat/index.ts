@@ -10,3 +10,4 @@ export * from "./logic/getKnowledgeBaseDocumentsForRAG";
 export * from "./logic/addThinkingStep";
 export * from "./logic/getThinkingSteps";
 export * from "./logic/deleteThinkingSteps";
+export * from "./logic/agentRuns";

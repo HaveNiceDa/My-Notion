@@ -4,8 +4,8 @@
 
 - 状态：已完成主要闭环。
 - 更新时间：2026-06-06。
-- 本阶段交付目标：补齐 Web Agent 的流式重试、Tool 结果契约统一、强类型 sources 和 Plan 状态增强。
-- 本阶段非目标：完整流式续跑实现、Trace Replay、Storybook、Memory/RAG 真实质量评估。
+- 本阶段交付目标：补齐 Web Agent 的流式重试、Tool 结果契约统一、强类型 sources、Plan 状态增强，以及流式续跑 Phase 1/2/3。
+- 本阶段非目标：Trace Replay UI、Storybook、Memory/RAG 真实质量评估、running run 的 live stream 接管。
 
 ## 目标
 
@@ -19,7 +19,15 @@
 - fetch 失败或尚未收到任何 NDJSON 事件时可重试。
 - 已收到文本、推理或 tool 事件后发生中断时不重试，避免重复输出和重复 tool 状态。
 - 408/5xx 作为可重试 HTTP 状态；429 继续使用 `Retry-After` 友好错误。
-- 完整 checkpoint/resume 协议已形成设计文档：`docs/agent-stream-resume-protocol.md`。
+- 完整 checkpoint/resume 协议已形成设计文档，Phase 1/2/3 已落地：`docs/agent-stream-resume-protocol.md`。
+
+### 流式续跑 Phase 1/2/3
+
+- Phase 1：新增 `run-start`、`checkpoint`、`resume-start`、`resume-unavailable` 控制事件，前端记录 `AgentStreamResumeCursor`。
+- Phase 2：新增 `agentRuns`、`agentRunEvents`、`agentRunCheckpoints` Convex 表和函数，`AgentRunRecorder` 统一分配 `seq` 并持久化 event/checkpoint。
+- Phase 2：resume 请求支持 `getAgentRunBacklog`，按 `seq > lastAppliedSeq` replay 已保存 backlog，已完成 run 会补发 `finish`。
+- Phase 3：失败 run 可从最近 checkpoint 保守恢复 ReAct Loop，并通过 `resumeToolResults` 复用已完成 tool result，避免重复执行写入预览工具。
+- 当前恢复仅保存 `currentDocument` 摘要，完整文档上下文重建和 running run live 接管留给后续 Trace Replay/Resume 深化。
 
 ### Tool 结果契约
 
@@ -50,11 +58,12 @@
 - `pnpm --filter @notion/web build`：✅
 - `pnpm --filter @notion/web test -- src/lib/agent/__tests__/tools.test.ts src/lib/agent/__tests__/document-read.test.ts`：✅，Tool 契约全量统一补充验证。
 - `pnpm --filter @notion/web test -- src/lib/agent/__tests__/tools.test.ts src/lib/agent/__tests__/document-read.test.ts src/lib/agent/__tests__/stream.test.ts src/components/ai-chat/stream-client.test.ts`：✅，强类型 sources 与流式协议类型补充验证。
+- `pnpm --filter @notion/web test -- src/components/ai-chat/stream-client.test.ts src/lib/agent/__tests__/react-loop.test.ts`：✅，覆盖 resume cursor、resume-unavailable 和 checkpoint tool result 复用；命令实际跑完 Web 全部 Vitest 用例。
 
 ## 已知缺口
 
-- 不支持已输出内容后的断点续跑。
-- 流式续跑当前完成协议设计和类型入口，尚未实现事件持久化与 backlog replay。
+- 流式续跑已完成 Phase 1/2/3 保守闭环，但 running run 的 live stream 接管尚未实现。
+- checkpoint 恢复时仅重建 `currentDocument` 摘要，不重新拉取完整当前文档上下文。
 - Plan 仍未支持步骤级执行事件、逐 step 持久化和跨刷新完整恢复。
 - Trace Replay、Storybook、Memory/RAG 真实评估继续留给 M22。
 
@@ -65,6 +74,7 @@
 - `progress/20260605-234802.md`
 - `progress/20260606-091356.md`
 - `progress/20260606-095037.md`
+- `progress/20260606-100642.md`
 - `docs/agent-stream-resume-protocol.md`
 - `apps/web/src/components/ai-chat/stream-client.ts`
 - `apps/web/src/lib/agent/tools/result-contract.ts`

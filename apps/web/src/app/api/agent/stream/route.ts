@@ -4,10 +4,13 @@ import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL, getActualModelId } from "@notion/ai/config";
 import { api } from "@/convex/_generated/api";
+import type { Id } from "@/convex/_generated/dataModel";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
 import { runReActLoop } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
+import { AgentRunRecorder } from "@/src/lib/agent/run-recorder";
+import { getToolSignature } from "@/src/lib/agent/tool-result-cache";
 import { compressContext } from "@/src/lib/agent/context-compression";
 import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
 import { AgentTracer, getErrorMessage } from "@/src/lib/agent/trace";
@@ -25,6 +28,11 @@ type AgentRequestBody = {
   currentDocument?: CurrentDocumentContext | null;
   mode?: "chat" | "plan";
   autoExtractMemories?: boolean;
+  resume?: {
+    runId: string;
+    lastAppliedSeq: number;
+    assistantMessageId: string;
+  };
 };
 
 function getOpenAIClient(): OpenAI {
@@ -171,6 +179,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as AgentRequestBody;
+    const convex = await getAuthenticatedConvexClient(getToken);
+    if (body.resume) {
+      return await buildResumeResponse({
+        convex,
+        userId,
+        resume: body.resume,
+      });
+    }
+
     const messages = body.messages;
     if (!Array.isArray(messages)) {
       return NextResponse.json(
@@ -193,7 +210,6 @@ export async function POST(req: NextRequest) {
       },
     });
     const openai = getOpenAIClient();
-    const convex = await getAuthenticatedConvexClient(getToken);
     const latestUserText = extractLatestUserText(messages);
     const instructionMemory = await buildInstructionMemoryContext({ convex, userId });
     if (instructionMemory.injectedMemoryIds.length > 0) {
@@ -205,6 +221,7 @@ export async function POST(req: NextRequest) {
     }
     const encoder = new TextEncoder();
     const responseId = `assistant-${Date.now()}`;
+    const runId = `run_${crypto.randomUUID()}`;
 
     // 构建可用 tool 列表和映射
     // Plan 模式只暴露 task_plan，避免模型在用户确认前直接执行写入类工具。
@@ -233,9 +250,38 @@ export async function POST(req: NextRequest) {
     // 长对话上下文压缩：token 超阈值时摘要旧消息 + 保留最近 N 轮
     const compressedMessages = await compressContext(openai, model, allMessages);
     const runStartedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
+    if (convex && body.conversationId) {
+      await convex.mutation(api.aiChat.createAgentRun, {
+        runId,
+        conversationId: body.conversationId as Id<"aiConversations">,
+        assistantMessageId: responseId,
+        model,
+        mode,
+      });
+    }
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
+        const recorder = new AgentRunRecorder({
+          convex,
+          controller,
+          encoder,
+          runId,
+          assistantMessageId: responseId,
+        });
+        recorder.emitRunStart();
+        recorder.checkpoint({
+          kind: "run_started",
+          resumeState: buildResumeState({
+            messages: compressedMessages,
+            model,
+            enableThinking,
+            mode,
+            currentDocument: body.currentDocument,
+            toolResults: [],
+            assistantDraft: recorder.getDraft(),
+          }),
+        });
         try {
           await runReActLoop({
             openai,
@@ -249,6 +295,24 @@ export async function POST(req: NextRequest) {
             encoder,
             responseId,
             trace: tracer,
+            eventSink: recorder.emit,
+            checkpoint: (payload) => {
+              recorder.checkpoint({
+                kind: payload.kind,
+                resumeState: buildResumeState({
+                  messages: payload.messages,
+                  model,
+                  enableThinking,
+                  mode,
+                  currentDocument: body.currentDocument,
+                  toolResults: payload.completedToolResults,
+                  assistantDraft: recorder.getDraft(),
+                }),
+                metadata: {
+                  iteration: payload.iteration,
+                },
+              });
+            },
           });
           const extraction = extractMemoryCandidates({
             enabled: autoExtractMemories,
@@ -263,7 +327,22 @@ export async function POST(req: NextRequest) {
             extraction,
             trace: tracer,
           });
-          enqueueEvent(controller, encoder, { type: "finish", model, usage: null });
+          recorder.checkpoint({
+            kind: "run_finished",
+            resumeState: buildResumeState({
+              messages: compressedMessages,
+              model,
+              enableThinking,
+              mode,
+              currentDocument: body.currentDocument,
+              toolResults: [],
+              assistantDraft: recorder.getDraft(),
+            }),
+          });
+          recorder.emit({ type: "finish", model, usage: null });
+          if (convex) {
+            await convex.mutation(api.aiChat.finishAgentRun, { runId, status: "completed" });
+          }
           tracer.event("run_end", elapsedSince(runStartedAt), {
             compressedMessageCount: compressedMessages.length,
           });
@@ -272,11 +351,28 @@ export async function POST(req: NextRequest) {
             error: getErrorMessage(error),
             compressedMessageCount: compressedMessages.length,
           });
-          enqueueEvent(controller, encoder, {
+          recorder.checkpoint({
+            kind: "run_failed",
+            resumeState: buildResumeState({
+              messages: compressedMessages,
+              model,
+              enableThinking,
+              mode,
+              currentDocument: body.currentDocument,
+              toolResults: [],
+              assistantDraft: recorder.getDraft(),
+            }),
+            metadata: { error: getErrorMessage(error) },
+          });
+          recorder.emit({
             type: "error",
             message: getErrorMessage(error),
           });
+          if (convex) {
+            await convex.mutation(api.aiChat.finishAgentRun, { runId, status: "failed" });
+          }
         } finally {
+          await recorder.flush();
           controller.close();
         }
       },
@@ -295,6 +391,281 @@ export async function POST(req: NextRequest) {
       { status: 500 },
     );
   }
+}
+
+async function buildResumeResponse(options: {
+  convex: ConvexHttpClient | null;
+  userId: string;
+  resume: NonNullable<AgentRequestBody["resume"]>;
+}) {
+  const { convex, resume, userId } = options;
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      if (!convex) {
+        enqueueEvent(controller, encoder, {
+          type: "resume-unavailable",
+          runId: resume.runId,
+          reason: "Convex client is not available",
+          recoverable: false,
+        });
+        controller.close();
+        return;
+      }
+
+      try {
+        const backlog = await convex.query(api.aiChat.getAgentRunBacklog, {
+          runId: resume.runId,
+          afterSeq: resume.lastAppliedSeq,
+          limit: 1000,
+        });
+        enqueueEvent(controller, encoder, {
+          type: "resume-start",
+          runId: resume.runId,
+          fromSeq: resume.lastAppliedSeq,
+          replayedCount: backlog.events.length,
+        });
+        for (const event of backlog.events) {
+          controller.enqueue(encoder.encode(`${event.eventJson}\n`));
+        }
+
+        if (backlog.run.status === "failed") {
+          const checkpoint = await convex.query(api.aiChat.getLatestAgentRunCheckpoint, {
+            runId: resume.runId,
+          });
+          if (!checkpoint) {
+            enqueueEvent(controller, encoder, {
+              type: "resume-unavailable",
+              runId: resume.runId,
+              reason: "No checkpoint is available for this failed run.",
+              recoverable: false,
+            });
+            return;
+          }
+          await resumeFromCheckpoint({
+            convex,
+            controller,
+            encoder,
+            runId: resume.runId,
+            assistantMessageId: resume.assistantMessageId,
+            initialSeq: backlog.run.lastSeq,
+            checkpointJson: checkpoint.checkpointJson,
+            userId,
+          });
+        } else if (backlog.run.status === "completed") {
+          enqueueEvent(controller, encoder, { type: "finish", model: backlog.run.model, usage: null });
+        }
+      } catch (error) {
+        enqueueEvent(controller, encoder, {
+          type: "resume-unavailable",
+          runId: resume.runId,
+          reason: getErrorMessage(error),
+          recoverable: false,
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new NextResponse(stream, {
+    headers: {
+      "Content-Type": "application/x-ndjson",
+      "Cache-Control": "no-cache",
+    },
+  });
+}
+
+async function resumeFromCheckpoint(options: {
+  convex: ConvexHttpClient;
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  encoder: TextEncoder;
+  runId: string;
+  assistantMessageId: string;
+  initialSeq: number;
+  checkpointJson: string;
+  userId: string;
+}) {
+  const checkpoint = parseCheckpoint(options.checkpointJson);
+  if (!checkpoint) {
+    enqueueEvent(options.controller, options.encoder, {
+      type: "resume-unavailable",
+      runId: options.runId,
+      reason: "Checkpoint payload is invalid.",
+      recoverable: false,
+    });
+    return;
+  }
+
+  const recorder = new AgentRunRecorder({
+    convex: options.convex,
+    controller: options.controller,
+    encoder: options.encoder,
+    runId: options.runId,
+    assistantMessageId: options.assistantMessageId,
+    initialSeq: options.initialSeq,
+  });
+  const mode = checkpoint.resumeState.mode === "plan" ? "plan" : "chat";
+  const model = checkpoint.resumeState.model;
+  const availableTools = buildAvailableTools(null).filter((tool) =>
+    mode === "plan" ? tool.name === "task_plan" : true,
+  );
+  const toolMap = new Map(availableTools.map((t) => [t.name, t]));
+  const openaiTools: OpenAI.ChatCompletionTool[] = availableTools.map((t) => ({
+    type: "function" as const,
+    function: { name: t.name, description: t.description, parameters: t.parameters },
+  }));
+
+  await options.convex.mutation(api.aiChat.finishAgentRun, { runId: options.runId, status: "running" });
+  try {
+    await runReActLoop({
+      openai: getOpenAIClient(),
+      model,
+      messages: checkpoint.resumeState.compressedMessages,
+      tools: openaiTools,
+      toolMap,
+      toolContext: { userId: options.userId, model, convex: options.convex },
+      enableThinking: checkpoint.resumeState.enableThinking,
+      controller: options.controller,
+      encoder: options.encoder,
+      responseId: options.assistantMessageId,
+      eventSink: recorder.emit,
+      resumeToolResults: buildResumeToolCache(checkpoint.resumeState.toolResults),
+      checkpoint: (payload) => {
+        recorder.checkpoint({
+          kind: payload.kind,
+          resumeState: {
+            ...checkpoint.resumeState,
+            compressedMessages: payload.messages,
+            toolResults: payload.completedToolResults,
+            assistantDraft: recorder.getDraft(),
+          },
+          metadata: { resumed: true, iteration: payload.iteration },
+        });
+      },
+    });
+    recorder.checkpoint({
+      kind: "run_finished",
+      resumeState: {
+        ...checkpoint.resumeState,
+        assistantDraft: recorder.getDraft(),
+      },
+      metadata: { resumed: true },
+    });
+    recorder.emit({ type: "finish", model, usage: null });
+    await options.convex.mutation(api.aiChat.finishAgentRun, { runId: options.runId, status: "completed" });
+  } catch (error) {
+    recorder.checkpoint({
+      kind: "run_failed",
+      resumeState: checkpoint.resumeState,
+      metadata: { resumed: true, error: getErrorMessage(error) },
+    });
+    recorder.emit({ type: "error", message: getErrorMessage(error) });
+    await options.convex.mutation(api.aiChat.finishAgentRun, { runId: options.runId, status: "failed" });
+  } finally {
+    await recorder.flush();
+  }
+}
+
+interface ParsedCheckpoint {
+  resumeState: {
+    compressedMessages: OpenAI.ChatCompletionMessageParam[];
+    model: string;
+    enableThinking: boolean;
+    mode: "chat" | "plan";
+    toolResults: Array<{
+      toolName: string;
+      argumentsJson: string;
+      result: unknown;
+    }>;
+    assistantDraft: { text: string; reasoning?: string };
+  };
+}
+
+function parseCheckpoint(value: string): ParsedCheckpoint | null {
+  try {
+    const parsed = JSON.parse(value) as { resumeState?: unknown };
+    const resumeState = parsed.resumeState as ParsedCheckpoint["resumeState"] | undefined;
+    if (!resumeState || !Array.isArray(resumeState.compressedMessages)) return null;
+    if (typeof resumeState.model !== "string") return null;
+    return {
+      resumeState: {
+        compressedMessages: resumeState.compressedMessages,
+        model: resumeState.model,
+        enableThinking: Boolean(resumeState.enableThinking),
+        mode: resumeState.mode === "plan" ? "plan" : "chat",
+        toolResults: Array.isArray(resumeState.toolResults) ? resumeState.toolResults : [],
+        assistantDraft: resumeState.assistantDraft ?? { text: "" },
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+function buildResumeToolCache(toolResults: ParsedCheckpoint["resumeState"]["toolResults"]) {
+  return Object.fromEntries(
+    toolResults.flatMap((toolResult) => {
+      if (typeof toolResult.toolName !== "string" || typeof toolResult.argumentsJson !== "string") {
+        return [];
+      }
+      const args = safeParseRecord(toolResult.argumentsJson);
+      const resultStr = JSON.stringify(toolResult.result);
+      return [[getToolSignature(toolResult.toolName, args), resultStr]];
+    }),
+  );
+}
+
+function safeParseRecord(value: string): Record<string, unknown> {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function buildResumeState(options: {
+  messages: OpenAI.ChatCompletionMessageParam[];
+  model: string;
+  enableThinking: boolean;
+  mode: "chat" | "plan";
+  currentDocument?: CurrentDocumentContext | null;
+  toolResults: Array<{
+    toolCallId: string;
+    toolName: string;
+    argumentsJson: string;
+    result: unknown;
+    resultHash: string;
+    completedAt: number;
+  }>;
+  assistantDraft: { text: string; reasoning?: string };
+}) {
+  return {
+    compressedMessages: options.messages,
+    model: options.model,
+    enableThinking: options.enableThinking,
+    mode: options.mode,
+    currentDocument: options.currentDocument
+      ? {
+        id: options.currentDocument.id,
+        title: options.currentDocument.title,
+        contentHash: hashString(options.currentDocument.content ?? ""),
+      }
+      : null,
+    toolResults: options.toolResults,
+    assistantDraft: options.assistantDraft,
+  };
+}
+
+function hashString(value: string): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return String(hash >>> 0);
 }
 
 function elapsedSince(startedAt: number): number {

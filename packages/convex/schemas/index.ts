@@ -9,6 +9,11 @@ import { cliRateLimitsTable } from "./cliRateLimits";
 import { cliDeviceAuthSessionsTable } from "./cliDeviceAuthSessions";
 import { agentMemoriesTable } from "./agentMemories";
 import { whiteboardsTable } from "./whiteboard";
+import {
+  agentRunCheckpointsTable,
+  agentRunEventsTable,
+  agentRunsTable,
+} from "./agentRuns";
 
 /** 数据库模式 */
 export default defineSchema({
@@ -22,4 +27,7 @@ export default defineSchema({
   cliDeviceAuthSessions: cliDeviceAuthSessionsTable,
   agentMemories: agentMemoriesTable,
   whiteboards: whiteboardsTable,
+  agentRuns: agentRunsTable,
+  agentRunEvents: agentRunEventsTable,
+  agentRunCheckpoints: agentRunCheckpointsTable,
 });

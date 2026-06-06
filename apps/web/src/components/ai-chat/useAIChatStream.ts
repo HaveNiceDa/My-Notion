@@ -4,7 +4,7 @@ import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
-import type { AgentRunMode, ChatMessage, ToolCallResult } from "./types";
+import type { AgentRunMode, AgentStreamResumeCursor, ChatMessage, ToolCallResult } from "./types";
 import { runAgentStream } from "./stream-client";
 import type { useAIChatPersistence } from "./useAIChatPersistence";
 import type { useAIChatState } from "./useAIChatState";
@@ -64,6 +64,7 @@ export function useAIChatStream(
     let pendingRender = false;
     let completedToolResults: ToolCallResult[] = [];
     const toolArgumentsById = new Map<string, string>();
+    let resumeCursor: AgentStreamResumeCursor | null = null;
 
     const flushMessages = () => {
       pendingRender = false;
@@ -186,6 +187,17 @@ export function useAIChatStream(
               };
             }
           },
+          onRunStart: (cursor) => {
+            resumeCursor = cursor;
+            persistResumeCursor(currentConversationId!, cursor);
+          },
+          onCheckpoint: (cursor) => {
+            resumeCursor = cursor;
+            persistResumeCursor(currentConversationId!, cursor);
+          },
+          onResumeUnavailable: (reason) => {
+            console.warn("[Agent] Resume unavailable:", reason);
+          },
           onComplete: async () => {
             pendingRender = false;
             const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
@@ -216,6 +228,12 @@ export function useAIChatStream(
                     : msg,
                 ),
               );
+              if (resumeCursor) {
+                persistResumeCursor(currentConversationId!, {
+                  ...resumeCursor,
+                  assistantMessageId: savedAssistantMessageId,
+                });
+              }
             }
             const title = currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话";
             await persistence.updateConversationTitle(currentConversationId!, title);
@@ -250,4 +268,12 @@ export function useAIChatStream(
     sendMessage,
     handleGetImages,
   };
+}
+
+function persistResumeCursor(conversationId: string, cursor: AgentStreamResumeCursor) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(
+    `mynotion:agent-resume:${conversationId}`,
+    JSON.stringify(cursor),
+  );
 }

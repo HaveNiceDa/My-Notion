@@ -4,6 +4,10 @@ import { getErrorMessage } from "./trace";
 
 // Agent 流式事件协议：前端通过 NDJSON 解析这些事件
 export type AgentStreamEvent =
+  | { type: "run-start"; runId: string; seq: number; assistantMessageId: string }
+  | { type: "checkpoint"; runId: string; seq: number; checkpointKind: AgentCheckpointKind }
+  | { type: "resume-start"; runId: string; fromSeq: number; replayedCount: number }
+  | { type: "resume-unavailable"; runId: string; reason: string; recoverable: boolean }
   | { type: "text-delta"; id: string; delta: string }
   | { type: "reasoning-delta"; id: string; delta: string }
   | { type: "tool-call-start"; toolCallId: string; toolName: string }
@@ -36,11 +40,12 @@ export interface AgentStreamResumeCursor {
   assistantMessageId: string;
 }
 
-export type AgentResumeControlEvent =
-  | { type: "run-start"; runId: string; seq: number; assistantMessageId: string }
-  | { type: "checkpoint"; runId: string; seq: number; checkpointKind: AgentCheckpointKind }
-  | { type: "resume-start"; runId: string; fromSeq: number; replayedCount: number }
-  | { type: "resume-unavailable"; runId: string; reason: string; recoverable: boolean };
+export type AgentResumeControlEvent = Extract<
+  AgentStreamEvent,
+  { type: "run-start" | "checkpoint" | "resume-start" | "resume-unavailable" }
+>;
+
+export type AgentStreamEventSink = (event: AgentStreamEvent) => void;
 
 // 向流中写入一个 NDJSON 事件
 export function enqueueEvent(
@@ -76,6 +81,7 @@ export interface StreamModelOptions {
   trace?: AgentTracer;
   iteration?: number;
   timeoutMs?: number;
+  eventSink?: AgentStreamEventSink;
 }
 
 export async function streamModelResponse(
@@ -91,6 +97,7 @@ export async function streamModelResponse(
     trace,
     iteration,
     timeoutMs = 120_000,
+    eventSink,
   } = options;
   const pendingToolCalls: Record<number, OpenAI.ChatCompletionMessageFunctionToolCall> = {};
   const startedToolCallIds = new Set<string>();
@@ -143,7 +150,7 @@ export async function streamModelResponse(
         : undefined;
       if (reasoning) {
         reasoningDeltaCount += 1;
-        enqueueEvent(controller, encoder, {
+        emitStreamEvent(options, {
           type: "reasoning-delta",
           id: responseId,
           delta: reasoning,
@@ -152,7 +159,7 @@ export async function streamModelResponse(
 
       if (delta.content) {
         textDeltaCount += 1;
-        enqueueEvent(controller, encoder, {
+        emitStreamEvent(options, {
           type: "text-delta",
           id: responseId,
           delta: delta.content,
@@ -178,7 +185,7 @@ export async function streamModelResponse(
         // 首次收到 tool name 时发送 tool-call-start 事件
         if (existing.function.name && !startedToolCallIds.has(existing.id)) {
           startedToolCallIds.add(existing.id);
-          enqueueEvent(controller, encoder, {
+          emitStreamEvent(options, {
             type: "tool-call-start",
             toolCallId: existing.id,
             toolName: existing.function.name,
@@ -186,7 +193,7 @@ export async function streamModelResponse(
         }
 
         if (toolCallDelta.function?.arguments) {
-          enqueueEvent(controller, encoder, {
+          emitStreamEvent(options, {
             type: "tool-call-delta",
             toolCallId: existing.id,
             delta: toolCallDelta.function.arguments,
@@ -212,6 +219,21 @@ export async function streamModelResponse(
   }
 
   return Object.values(pendingToolCalls);
+}
+
+export function emitStreamEvent(
+  options: {
+    controller: ReadableStreamDefaultController<Uint8Array>;
+    encoder: TextEncoder;
+    eventSink?: AgentStreamEventSink;
+  },
+  event: AgentStreamEvent,
+): void {
+  if (options.eventSink) {
+    options.eventSink(event);
+    return;
+  }
+  enqueueEvent(options.controller, options.encoder, event);
 }
 
 function elapsedSince(startedAt: number): number {

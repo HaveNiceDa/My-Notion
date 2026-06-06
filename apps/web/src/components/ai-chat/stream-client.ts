@@ -1,5 +1,5 @@
 import { devLog } from "@notion/business/utils";
-import type { AgentRunMode, AgentStreamEvent } from "./types";
+import type { AgentCheckpointKind, AgentRunMode, AgentStreamEvent, AgentStreamResumeCursor } from "./types";
 import type { AIModelId } from "./models";
 import type { CurrentDocumentContext } from "@/src/lib/store/use-current-document-store";
 
@@ -13,6 +13,9 @@ export interface AgentStreamCallbacks {
   onComplete: () => Promise<void>;
   onError: (error: unknown) => void;
   onRetry?: (attempt: number, error: unknown) => void;
+  onRunStart?: (cursor: AgentStreamResumeCursor) => void;
+  onCheckpoint?: (cursor: AgentStreamResumeCursor, checkpointKind: AgentCheckpointKind) => void;
+  onResumeUnavailable?: (reason: string, recoverable: boolean) => void;
 }
 
 export interface AgentStreamOptions {
@@ -24,6 +27,7 @@ export interface AgentStreamOptions {
   mode?: AgentRunMode;
   callbacks: AgentStreamCallbacks;
   maxRetries?: number;
+  resume?: AgentStreamResumeCursor;
 }
 
 const DEFAULT_STREAM_MAX_RETRIES = 1;
@@ -41,7 +45,7 @@ export async function runAgentStream(options: AgentStreamOptions) {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetchAgentStream(options);
-      await readAgentStreamResponse(response, callbacks);
+      await readAgentStreamResponse(response, callbacks, options.resume ?? null);
       return;
     } catch (error) {
       if (!shouldRetryStream(error, attempt, maxRetries)) {
@@ -65,6 +69,7 @@ async function fetchAgentStream(options: AgentStreamOptions): Promise<Response> 
         enableThinking: options.enableThinking,
         currentDocument: options.currentDocument,
         mode: options.mode,
+        resume: options.resume,
       }),
     });
   } catch (error) {
@@ -75,6 +80,7 @@ async function fetchAgentStream(options: AgentStreamOptions): Promise<Response> 
 async function readAgentStreamResponse(
   response: Response,
   callbacks: AgentStreamCallbacks,
+  initialCursor: AgentStreamResumeCursor | null,
 ): Promise<boolean> {
   if (!response.ok) {
     if (response.status === 429) {
@@ -94,26 +100,53 @@ async function readAgentStreamResponse(
   let buffer = "";
   let streamFailed = false;
   let processedAnyEvent = false;
+  let cursor: AgentStreamResumeCursor | null = initialCursor;
 
   function handleEvent(event: AgentStreamEvent) {
     processedAnyEvent = true;
     switch (event.type) {
+      case "run-start":
+        cursor = {
+          runId: event.runId,
+          lastAppliedSeq: event.seq,
+          assistantMessageId: event.assistantMessageId,
+        };
+        callbacks.onRunStart?.(cursor);
+        break;
+      case "checkpoint":
+        if (cursor?.runId === event.runId) {
+          cursor = { ...cursor, lastAppliedSeq: event.seq };
+          callbacks.onCheckpoint?.(cursor, event.checkpointKind);
+        }
+        break;
+      case "resume-start":
+        devLog(`[Agent] 续跑开始 run=${event.runId} replayed=${event.replayedCount}`);
+        break;
+      case "resume-unavailable":
+        callbacks.onResumeUnavailable?.(event.reason, event.recoverable);
+        break;
       case "text-delta":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onChunk(event.delta);
         break;
       case "reasoning-delta":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onReasoningChunk(event.delta);
         break;
       case "tool-call-start":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onToolCallStart(event.toolCallId, event.toolName);
         break;
       case "tool-call-delta":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onToolCallDelta(event.toolCallId, event.delta);
         break;
       case "tool-result-delta":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onToolResultDelta(event.toolCallId, event.delta);
         break;
       case "tool-call-result":
+        cursor = advanceCursorFromEvent(cursor, event);
         callbacks.onToolCallResult(event.toolCallId, event.result);
         break;
       case "error":
@@ -166,6 +199,21 @@ async function readAgentStreamResponse(
   }
 
   return processedAnyEvent;
+}
+
+function advanceCursorFromEvent(
+  cursor: AgentStreamResumeCursor | null,
+  event: AgentStreamEvent,
+): AgentStreamResumeCursor | null {
+  const maybeSeq = (event as { seq?: unknown }).seq;
+  const maybeRunId = (event as { runId?: unknown }).runId;
+  if (!cursor || typeof maybeSeq !== "number" || typeof maybeRunId !== "string") {
+    return cursor;
+  }
+  if (cursor.runId !== maybeRunId || maybeSeq <= cursor.lastAppliedSeq) {
+    return cursor;
+  }
+  return { ...cursor, lastAppliedSeq: maybeSeq };
 }
 
 function shouldRetryStream(error: unknown, attempt: number, maxRetries: number): boolean {

@@ -4,7 +4,7 @@
 
 当前 Web Agent 已支持“尚未收到任何流式事件前”的安全重试，但一旦前端已经展示文本、推理或 tool 状态，中断后不能自动重试，否则会导致重复 token、重复 tool 调用或重复写入预览。
 
-本协议定义完整流式续跑的 checkpoint/resume 契约，用于后续实现已输出内容后的恢复。
+本协议定义完整流式续跑的 checkpoint/resume 契约。当前已落地 Phase 1/2/3：run 控制事件、事件与 checkpoint 持久化、backlog replay，以及失败 run 的保守 checkpoint 恢复。
 
 ## 目标
 
@@ -36,9 +36,11 @@ interface AgentRunIdentity {
 }
 ```
 
+当前实现由 `/api/agent/stream` 在初始请求时生成 `run_${crypto.randomUUID()}`，并通过 Convex `agentRuns` 记录 run 归属、模型、模式和 `lastSeq`。
+
 ### Event Sequence
 
-每个服务端输出事件都带单调递增的 `seq`。
+每个服务端输出事件都带单调递增的 `seq`。当前实现通过 `AgentRunRecorder` 统一分配 `seq`，并把写入前端的同一份事件异步持久化到 `agentRunEvents`。
 
 ```ts
 interface AgentStreamEnvelope<T> {
@@ -93,7 +95,7 @@ interface AgentRunCheckpoint {
 
 ## Resume State
 
-`resumeState` 是服务端恢复所需的最小状态，不存储不可控大对象。
+`resumeState` 是服务端恢复所需的最小状态，不存储不可控大对象。当前文档上下文只保存 `id/title/contentHash` 摘要，不把文档全文写入 checkpoint。
 
 ```ts
 interface AgentResumeState {
@@ -160,9 +162,9 @@ interface AgentResumeState {
 
 服务端处理规则：
 
-- 如果 `runId` 仍在执行，返回 `seq > lastAppliedSeq` 的 backlog，然后继续接同一条 live stream。
+- 如果 `runId` 仍在执行，返回 `seq > lastAppliedSeq` 的 backlog；同一条 live stream 接管后续进入 Phase 4/Trace Replay 阶段完善。
 - 如果 `runId` 已完成，返回剩余 backlog 和 `finish`。
-- 如果 `runId` 已失败且存在可恢复 checkpoint，从最近 checkpoint 继续生成。
+- 如果 `runId` 已失败且存在可恢复 checkpoint，从最近 checkpoint 保守恢复 ReAct Loop，并复用已完成 tool result。
 - 如果 checkpoint 不可恢复，返回 `resume-unavailable`，前端展示“重新生成”入口。
 
 ## 事件扩展
@@ -188,11 +190,13 @@ type AgentResumeStreamEvent =
 }
 ```
 
+当前落地采用兼容式事件扩展：控制事件直接包含 `runId/seq`，由 recorder 写出的普通 `text/tool/finish/error` 事件也会附带 `runId/seq`，前端据此推进 `AgentStreamResumeCursor`。
+
 ## Tool 恢复规则
 
 ### 只读工具
 
-只读工具可根据 `toolCallId + argumentsHash` 复用结果。
+只读工具可根据 `toolName + normalized arguments` 复用结果。
 
 优先级：
 
@@ -216,6 +220,8 @@ type AgentResumeStreamEvent =
 - 已生成预览且 `confirmationRequired=true`：直接重放 tool result。
 - 用户已确认并落库：重放 applied 状态，不重新执行 mutation。
 - 未完成预览：重新生成 dry-run 预览，但必须保持 `confirmationRequired=true`。
+
+当前 Phase 3 实现会从 checkpoint 中恢复 `toolResults`，按 `getToolSignature(toolName, args)` 注入 `runReActLoop` 的 run-local cache，避免重复执行已经完成的写入预览或只读工具。
 
 ## 存储建议
 
@@ -286,23 +292,28 @@ idle
 
 ### Phase 1：协议与类型
 
-- 增加 `run-start`、`checkpoint`、`resume-unavailable` 类型。
-- 前端记录 `runId` 和 `lastAppliedSeq`。
-- 暂不恢复生成，只能检测可恢复性。
+- 状态：已完成。
+- 增加 `run-start`、`checkpoint`、`resume-start`、`resume-unavailable` 类型。
+- 前端记录 `runId`、`lastAppliedSeq` 和 `assistantMessageId`，并写入 `sessionStorage`。
+- `stream-client` 支持从已有 resume cursor 初始化，恢复时继续推进 checkpoint cursor。
 
 ### Phase 2：事件持久化
 
+- 状态：已完成。
 - 新增 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints`。
-- 每个流式事件写入 event log。
-- 前端中断后可重放已保存 backlog。
+- 每个 recorder 输出的流式事件写入 event log，checkpoint 写入 checkpoint log。
+- resume 请求通过 `getAgentRunBacklog` 重放 `seq > lastAppliedSeq` 的 backlog。
 
 ### Phase 3：真正续跑
 
-- 从最近 checkpoint 恢复 ReAct Loop。
-- 复用已完成 tool results。
-- 只对未完成的 LLM 生成继续请求模型。
+- 状态：已完成保守版本。
+- failed run 可读取最近 checkpoint 并恢复 ReAct Loop。
+- 已完成 tool results 会注入 run-local cache，避免重复执行已经完成的 tool call。
+- 写入类工具仍只恢复 dry-run/预览结果，不跳过用户确认链路。
+- 当前恢复使用 checkpoint 中的压缩消息和 tool result；`currentDocument` 只恢复摘要，完整文档上下文重建后续补齐。
 
 ### Phase 4：Trace Replay
 
 - 将 `agentRunEvents` 与 trace sink 关联。
 - 提供 replay UI，按 seq 重放 text/tool/checkpoint。
+- 补齐 running run 的 live stream 接管、UI “继续生成”入口和 Trace Replay 可视化。

@@ -74,6 +74,10 @@ export interface ToolCall {
 }
 
 export type AgentStreamEvent =
+  | { type: "run-start"; runId: string; seq: number; assistantMessageId: string }
+  | { type: "checkpoint"; runId: string; seq: number; checkpointKind: AgentCheckpointKind }
+  | { type: "resume-start"; runId: string; fromSeq: number; replayedCount: number }
+  | { type: "resume-unavailable"; runId: string; reason: string; recoverable: boolean }
   | { type: "text-delta"; id: string; delta: string }
   | { type: "reasoning-delta"; id: string; delta: string }
   | { type: "tool-call-start"; toolCallId: string; toolName: string }

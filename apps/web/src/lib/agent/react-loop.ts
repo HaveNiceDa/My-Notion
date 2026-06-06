@@ -1,7 +1,12 @@
 import OpenAI from "openai";
 import type { AgentTool } from "./tools/definitions";
 import type { ToolContext } from "./tools/types";
-import { enqueueEvent, streamModelResponse, applyThinkingParams } from "./stream";
+import {
+  emitStreamEvent,
+  streamModelResponse,
+  applyThinkingParams,
+} from "./stream";
+import type { AgentCheckpointKind, AgentStreamEventSink } from "./stream";
 import type { AgentTracer } from "./trace";
 import { getErrorMessage, summarizeForTrace } from "./trace";
 import {
@@ -24,6 +29,21 @@ interface ReActLoopParams {
   encoder: TextEncoder;
   responseId: string;
   trace?: AgentTracer;
+  eventSink?: AgentStreamEventSink;
+  checkpoint?: (payload: {
+    kind: AgentCheckpointKind;
+    iteration?: number;
+    messages: OpenAI.ChatCompletionMessageParam[];
+    completedToolResults: Array<{
+      toolCallId: string;
+      toolName: string;
+      argumentsJson: string;
+      result: unknown;
+      resultHash: string;
+      completedAt: number;
+    }>;
+  }) => void;
+  resumeToolResults?: Record<string, string>;
 }
 
 // ReAct 循环引擎：LLM 自主决策是否调用工具，支持多轮工具调用
@@ -41,9 +61,23 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
     encoder,
     responseId,
     trace,
+    eventSink,
+    checkpoint,
+    resumeToolResults,
   } = params;
   const messages = [...params.messages];
   const toolResultCache = new Map<string, string>();
+  for (const [signature, result] of Object.entries(resumeToolResults ?? {})) {
+    toolResultCache.set(signature, result);
+  }
+  const completedToolResults: Array<{
+    toolCallId: string;
+    toolName: string;
+    argumentsJson: string;
+    result: unknown;
+    resultHash: string;
+    completedAt: number;
+  }> = [];
   let reachedMaxIterationsWithTools = false;
 
   debugLog(
@@ -83,6 +117,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       enableThinking,
       trace,
       iteration: iteration + 1,
+      eventSink,
     });
 
     // LLM 没有调用任何 tool → 直接输出文本，循环结束
@@ -118,7 +153,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           toolCallId: toolCall.id,
           toolName: toolCall.function.name,
         });
-        enqueueEvent(controller, encoder, {
+        emitStreamEvent({ controller, encoder, eventSink }, {
           type: "tool-call-result",
           toolCallId: toolCall.id,
           result: { error: `Unknown tool: ${toolCall.function.name}` },
@@ -127,6 +162,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           role: "tool",
           tool_call_id: toolCall.id,
           content: JSON.stringify({ error: `Unknown tool: ${toolCall.function.name}` }),
+        });
+        checkpoint?.({
+          kind: "tool_call_result_persisted",
+          iteration: iteration + 1,
+          messages,
+          completedToolResults,
         });
         continue;
       }
@@ -159,7 +200,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           cacheScope: "run",
         });
         debugLog(`[ReAct] tool ${toolCall.function.name} 命中本轮缓存`);
-        enqueueEvent(controller, encoder, {
+        emitStreamEvent({ controller, encoder, eventSink }, {
           type: "tool-call-result",
           toolCallId: toolCall.id,
           result: JSON.parse(cachedResult),
@@ -168,6 +209,13 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           role: "tool",
           tool_call_id: toolCall.id,
           content: cachedResult,
+        });
+        completedToolResults.push(buildCompletedToolResult(toolCall, cachedResult));
+        checkpoint?.({
+          kind: "tool_call_result_persisted",
+          iteration: iteration + 1,
+          messages,
+          completedToolResults,
         });
         continue;
       }
@@ -184,7 +232,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           cacheScope: "shared",
         });
         debugLog(`[ReAct] tool ${toolCall.function.name} 命中跨请求缓存`);
-        enqueueEvent(controller, encoder, {
+        emitStreamEvent({ controller, encoder, eventSink }, {
           type: "tool-call-result",
           toolCallId: toolCall.id,
           result: JSON.parse(sharedCachedResult.value),
@@ -193,6 +241,13 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
           role: "tool",
           tool_call_id: toolCall.id,
           content: sharedCachedResult.value,
+        });
+        completedToolResults.push(buildCompletedToolResult(toolCall, sharedCachedResult.value));
+        checkpoint?.({
+          kind: "tool_call_result_persisted",
+          iteration: iteration + 1,
+          messages,
+          completedToolResults,
         });
         continue;
       }
@@ -239,7 +294,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
         `[ReAct] tool ${toolCall.function.name} 执行完成 resultLength=${resultStr.length}`,
       );
 
-      enqueueEvent(controller, encoder, {
+      emitStreamEvent({ controller, encoder, eventSink }, {
         type: "tool-call-result",
         toolCallId: toolCall.id,
         result,
@@ -250,6 +305,13 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
         tool_call_id: toolCall.id,
         content: resultStr,
       });
+      completedToolResults.push(buildCompletedToolResult(toolCall, resultStr));
+      checkpoint?.({
+        kind: "tool_call_result_persisted",
+        iteration: iteration + 1,
+        messages,
+        completedToolResults,
+      });
     }
 
     trace?.event("react_iteration_end", nowMs() - iterationStartedAt, {
@@ -257,6 +319,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       toolCallCount: pendingToolCalls.length,
       stopReason: iteration === MAX_ITERATIONS - 1 ? "max_iterations" : "continue",
       messageCount: messages.length,
+    });
+    checkpoint?.({
+      kind: "iteration_completed",
+      iteration: iteration + 1,
+      messages,
+      completedToolResults,
     });
     if (iteration === MAX_ITERATIONS - 1) {
       reachedMaxIterationsWithTools = true;
@@ -288,8 +356,39 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       enableThinking,
       trace,
       iteration: MAX_ITERATIONS + 1,
+      eventSink,
     });
   }
+}
+
+function buildCompletedToolResult(
+  toolCall: OpenAI.ChatCompletionMessageFunctionToolCall,
+  resultJson: string,
+) {
+  return {
+    toolCallId: toolCall.id,
+    toolName: toolCall.function.name,
+    argumentsJson: toolCall.function.arguments,
+    result: safeParseJson(resultJson),
+    resultHash: hashString(resultJson),
+    completedAt: Date.now(),
+  };
+}
+
+function safeParseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function hashString(value: string): string {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
+  }
+  return String(hash >>> 0);
 }
 
 function nowMs(): number {
