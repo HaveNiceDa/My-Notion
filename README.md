@@ -18,7 +18,7 @@
 ## 当前能力
 
 - **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
-- **Web Agent**：ReAct Loop、RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入和 `task_plan` 基础工具。
+- **Web Agent**：ReAct Loop、RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
 - **Mobile 工作区**：Expo + React Native，支持移动文档树、文档编辑、AI Chat、会话管理、模型选择、深度思考展示和安全代理。
 - **CLI / Skills / MCP**：`@mynotion/cli@beta` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
 - **共享包**：`packages/ai`、`packages/business`、`packages/convex` 收敛 AI、业务状态、i18n、Convex schema 和文档逻辑。
@@ -134,6 +134,7 @@ pnpm exec playwright test
 
 - P0：Plan 模式最小闭环已完成，基于 `task_plan` 支持计划生成、用户确认、确认后执行和状态展示。
 - P0：Web Agent MCP adapter 最小闭环已完成，支持受控 My-Notion MCP 文档工具白名单与确认式写入。
-- P1：M21 韧性与治理已完成主要 Web Agent tools 的 `tool-result-v1` 契约统一，覆盖流式安全重试、强类型 `sources`、`summary/sources/metadata/recoverable` 收敛和 Plan 执行状态持久化。
-- P2：完整流式续跑实现、Memory/RAG 质量评估、Trace Replay、Storybook 和 Mobile AI/RAG 对齐；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
+- P1：M21 韧性与治理已闭环，覆盖流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
+- P1：下一阶段主线转向画板存储迁移。画板因 Convex DB 大字段热路径带宽压力仍保持临时关闭，恢复前先迁移大对象到对象存储（优先 R2）。
+- P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估和 Mobile AI/RAG 对齐继续后置。
 - 发布：[`@mynotion/cli@0.1.0-beta.1`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `beta` 和 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。

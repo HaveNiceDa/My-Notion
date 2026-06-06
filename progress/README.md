@@ -23,6 +23,7 @@
 - `20260606-100642.md`：流式续跑 Phase 1/2/3 落地，覆盖 run 控制事件、事件/checkpoint 持久化、backlog replay 和 checkpoint ReAct 恢复。
 - `20260606-113248.md`：流式续跑可用性收口，覆盖“继续生成”入口和 resume 时完整 currentDocument 上下文恢复。
 - `20260606-120002.md`：续跑一致性收口，覆盖 assistant 消息原地更新和 running run 长轮询接管。
+- `20260606-131432.md`：Web Agent 操作闭环收口，固化续跑/MCP/tool 契约结论，并把下一阶段主线切到画板存储迁移。
 
 ## 阅读规则
 

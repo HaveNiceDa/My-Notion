@@ -1,6 +1,6 @@
 # AI Chat 重构方案：当前基线与下一步
 
-> Phase 1-5 已在 M10-M14 完成；M16 收口 CLI / Skills / MCP Agent 写文档链路；M17 完成 Web Agent 主线、Memory MVP、Hybrid Retrieval、文档写入 dry-run 与前端确认；M18 已补 Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`pnpm ci:ai-smoke` 和无 secrets 版 GitHub Actions。当前策略调整为：Harness 暂缓，先补齐基础 Agent 能力并保证本地验证闭环。
+> Phase 1-5 已在 M10-M14 完成；M16 收口 CLI / Skills / MCP Agent 写文档链路；M17 完成 Web Agent 主线、Memory MVP、Hybrid Retrieval、文档写入 dry-run 与前端确认；M18 已补 Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`pnpm ci:ai-smoke` 和无 secrets 版 GitHub Actions；M20/M21 完成 MCP adapter、tool-result-v1、强类型 sources、Plan 状态持久化和流式续跑可用闭环。当前策略调整为：Harness 继续后置，Web Agent 基础操作闭环，下一阶段主线转向画板存储迁移。
 
 ---
 
@@ -9,12 +9,12 @@
 | 模块 | 已完成 | 当前缺口 |
 |---|---|---|
 | 工程基线 | `@notion/web` 已新增 `typecheck` script；`tsconfig` 不再 include `.next/dev` stale types；`build` 和 `typecheck` 可作为基础验证入口 | 后续每轮能力变更继续跑 `typecheck/build/lint` |
-| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace；Plan 模式最小闭环已完成 | 步骤级执行进度持久化和恢复可后续增强 |
-| Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_read`、`memory_write`、`document_write`、`document_update`、`task_plan` | Web Agent MCP adapter 未做；tool registry 仍主要在 `apps/web` |
+| Agent Loop | ReAct 循环、标准 tool calling、最多 5 轮、达到上限后强制最终回答、本轮缓存与跨请求只读缓存、结构化 trace、Plan 模式最小闭环、流式续跑可用闭环 | 步骤级执行进度持久化和恢复可后续增强 |
+| Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_search`、`memory_write`、`document_write`、`document_update`、`task_plan`、受控 `mcp_my_notion_call` | tool registry 仍主要在 `apps/web`，后续可按跨端/包化再抽象 |
 | Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`；`sources` 已收敛为 `document/web/memory` 强类型 union | 后续可补更细粒度 source 字段和 UI 展示 |
 | Memory | `agentMemories` 数据模型、Memory Review UI、确认式写入、语义检索 + token/recency fallback、写入/编辑/停用后缓存清理与 Qdrant 同步 | embedding 状态可视化、失败重试队列暂缓 |
 | RAG | `retrieveKnowledge(options)` 支持 `fast/balanced/deep`；默认 `balanced`；已有 hybrid recall、RRF、context packing、citation quality、最小 synthetic eval | 真实/脱敏 eval、rerank adapter 暂缓 |
-| Harness | Agent 单测、AI Chat 组件测试、mock E2E 用例、本地 `ci:ai-smoke`、无 secrets 版 AI smoke workflow | Storybook、Memory eval、real retrieval eval、Tool Trace Replay、Agent golden set 暂缓 |
+| Harness | Agent 单测、AI Chat 组件测试、mock E2E 用例、本地 `ci:ai-smoke`、无 secrets 版 AI smoke workflow | Storybook、Memory eval、real retrieval eval、Tool Trace Replay、Agent golden set 继续暂缓 |
 
 ---
 
@@ -42,15 +42,15 @@
 ### P1：产品基础能力
 
 1. **Web Agent MCP adapter**：✅ 已完成最小闭环。复用现有 CLI/MCP 能力扩展工具生态，第一版通过受控 My-Notion MCP 文档工具白名单接入，并继续遵守确认式写入。
-2. **流式重试**：✅ 已完成最小闭环与完整续跑协议设计。网络中断且尚未收到任何事件时支持安全重试；checkpoint/resume 协议见 `docs/agent-stream-resume-protocol.md`。
+2. **流式重试与续跑**：✅ 已完成可用闭环。网络中断且尚未收到任何事件时支持安全重试；已输出后的 checkpoint/resume 支持事件持久化、backlog replay、失败 run checkpoint 恢复、“继续生成”入口、assistant 消息原地更新和 running run 长轮询接管；协议见 `docs/agent-stream-resume-protocol.md`。
 3. **Tool 结果契约细化**：✅ 已完成主要 Web Agent tools 收敛。新增 `tool-result-v1`，主要工具均稳定携带 `summary/sources/metadata/recoverable`，且 `sources` 已强类型化。
 4. **Plan 状态增强**：✅ 已完成最小闭环。确认执行状态可写回并恢复；步骤级事件和完整跨刷新恢复后置。
 
-### P2：治理与体验增强
+### P2：治理与体验增强（后置）
 
 1. **Memory 增强**：embedding 同步状态、失败重试队列、记忆冲突治理增强。
 2. **RAG 质量增强**：真实/脱敏样本 eval、query-aware diversity、rerank adapter 评估。
-3. **Trace Sink**：将 `AgentTracer` 接入持久化事件表或 Sentry span。
+3. **Trace Sink / Replay**：将 `AgentTracer` 接入持久化事件表或 Sentry span，后续再做 Replay UI。
 4. **Storybook**：补 AI Chat 主要组件可视化文档。
 
 ### P3：Harness 后置
@@ -68,13 +68,13 @@
 | M19 | Planning 基础能力 | ✅ 已完成：展示计划、确认计划、执行步骤、状态可见 |
 | M20 | MCP 扩展 | ✅ 已完成最小闭环：Web Agent 能安全调用受控 My-Notion MCP adapter，并继续遵守确认式写入 |
 | M21 | 韧性与治理 | ✅ 已完成：流式安全重试、`tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化 |
-| M22 | Harness 回补 | 完整流式续跑实现、Trace sink、Tool Trace Replay、Storybook、Memory/RAG 真实质量评估 |
+| M22 | 画板存储迁移 | 先完成画板大对象从 Convex DB 热路径迁移到对象存储（优先 R2），再恢复画板入口 |
 
 ---
 
 ## 当前建议下一步
 
-1. 先按真实对话验证 **Web Agent MCP adapter** 和 M21 重试/状态恢复体验。
-2. 实现 **完整流式续跑 Phase 1**：服务端输出 `run-start/checkpoint`，前端记录 `runId/lastAppliedSeq`。
-3. 实现事件日志持久化与 backlog replay。
-4. 最后回补 Harness、Trace Replay 和真实质量评估。
+1. Web Agent 基础操作已闭环，后续只保留真实对话冒烟验证和小修。
+2. 下一步转入 **画板 R2 存储迁移**：先梳理现有 whiteboards schema、CLI/MCP DSL、BlockNote 画板块和静态渲染路径。
+3. 设计 `metadata in DB + scene/blob in object storage` 的迁移方案，确保不恢复 Convex DB 热路径大对象读写。
+4. Harness、Trace Replay、Storybook 和真实质量评估继续后置。
