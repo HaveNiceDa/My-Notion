@@ -31,6 +31,8 @@ export function useAIChat() {
     uploadedImages: state.uploadedImages,
     setUploadedImages: state.setUploadedImages,
     sendMessage: stream.sendMessage,
+    resumeLastRun: stream.resumeLastRun,
+    canResumeLastRun: stream.canResumeLastRun,
     handleGetImages: stream.handleGetImages,
     createNewConversation: state.createNewConversation,
     loadConversation: state.loadConversation,

@@ -507,7 +507,11 @@ async function resumeFromCheckpoint(options: {
   });
   const mode = checkpoint.resumeState.mode === "plan" ? "plan" : "chat";
   const model = checkpoint.resumeState.model;
-  const availableTools = buildAvailableTools(null).filter((tool) =>
+  const restoredCurrentDocument = await restoreCurrentDocumentFromCheckpoint(
+    options.convex,
+    checkpoint.resumeState.currentDocument,
+  );
+  const availableTools = buildAvailableTools(restoredCurrentDocument).filter((tool) =>
     mode === "plan" ? tool.name === "task_plan" : true,
   );
   const toolMap = new Map(availableTools.map((t) => [t.name, t]));
@@ -524,7 +528,12 @@ async function resumeFromCheckpoint(options: {
       messages: checkpoint.resumeState.compressedMessages,
       tools: openaiTools,
       toolMap,
-      toolContext: { userId: options.userId, model, convex: options.convex },
+      toolContext: {
+        userId: options.userId,
+        model,
+        currentDocument: restoredCurrentDocument,
+        convex: options.convex,
+      },
       enableThinking: checkpoint.resumeState.enableThinking,
       controller: options.controller,
       encoder: options.encoder,
@@ -573,6 +582,11 @@ interface ParsedCheckpoint {
     model: string;
     enableThinking: boolean;
     mode: "chat" | "plan";
+    currentDocument?: {
+      id: string;
+      title?: string;
+      contentHash?: string;
+    } | null;
     toolResults: Array<{
       toolName: string;
       argumentsJson: string;
@@ -594,10 +608,52 @@ function parseCheckpoint(value: string): ParsedCheckpoint | null {
         model: resumeState.model,
         enableThinking: Boolean(resumeState.enableThinking),
         mode: resumeState.mode === "plan" ? "plan" : "chat",
+        currentDocument: normalizeCheckpointDocument(resumeState.currentDocument),
         toolResults: Array.isArray(resumeState.toolResults) ? resumeState.toolResults : [],
         assistantDraft: resumeState.assistantDraft ?? { text: "" },
       },
     };
+  } catch {
+    return null;
+  }
+}
+
+async function restoreCurrentDocumentFromCheckpoint(
+  convex: ConvexHttpClient,
+  checkpointDocument: ParsedCheckpoint["resumeState"]["currentDocument"],
+): Promise<CurrentDocumentContext | null> {
+  if (!checkpointDocument?.id) return null;
+  try {
+    const document = await convex.query(api.documents.getById, {
+      documentId: checkpointDocument.id as Id<"documents">,
+    });
+    return {
+      id: checkpointDocument.id,
+      title: typeof document.title === "string" ? document.title : checkpointDocument.title ?? "Untitled",
+      content: normalizeDocumentContent(document.content),
+    };
+  } catch (error) {
+    console.warn("[Agent Resume] Failed to restore current document:", error);
+    return null;
+  }
+}
+
+function normalizeCheckpointDocument(value: unknown): ParsedCheckpoint["resumeState"]["currentDocument"] {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.id !== "string") return null;
+  return {
+    id: record.id,
+    title: typeof record.title === "string" ? record.title : undefined,
+    contentHash: typeof record.contentHash === "string" ? record.contentHash : undefined,
+  };
+}
+
+function normalizeDocumentContent(value: unknown): string | null {
+  if (typeof value === "string") return value;
+  if (value == null) return null;
+  try {
+    return JSON.stringify(value);
   } catch {
     return null;
   }

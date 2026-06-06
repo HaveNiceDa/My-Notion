@@ -46,6 +46,7 @@ vi.mock("next-intl", () => ({
       referencedDocsCount: `${values?.count ?? 0} 篇文档`,
       toolRepeated: `重复 ${values?.count ?? 0} 次`,
       generatingResponse: "正在生成响应...",
+      resumeGeneration: "继续生成",
       deepThinking: "深度思考",
     };
     return translations[key] ?? key;
@@ -192,6 +193,31 @@ describe("AI Chat 组件渲染", () => {
     expect(html).toContain("知识库检索");
     expect(html).toContain("重复 2 次");
     expect(html).toContain("Agent 架构");
+  });
+
+  it("MessageList 在最后一条助手消息上展示继续生成入口", () => {
+    const messages: ChatMessage[] = [
+      {
+        id: "assistant-1",
+        role: "assistant",
+        content: "部分回答",
+        timestamp: new Date("2026-06-06T10:00:00Z"),
+      },
+    ];
+
+    const html = render(
+      React.createElement(MessageList, {
+        messages,
+        isLoading: false,
+        toolCalls: [],
+        messagesEndRef: { current: null },
+        conversationCreatedAt: null,
+        canResumeLastRun: true,
+        onResumeLastRun: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("继续生成");
   });
 
   it("ToolCallCard 对写类工具展示确认预览而不是自动落库状态", () => {

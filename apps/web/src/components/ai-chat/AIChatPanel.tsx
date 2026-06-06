@@ -55,6 +55,8 @@ export function AIChatPanel() {
     agentMode,
     setAgentMode,
     sendMessage,
+    resumeLastRun,
+    canResumeLastRun,
     toolCalls,
     createNewConversation,
     loadConversation,
@@ -219,6 +221,8 @@ export function AIChatPanel() {
           messagesEndRef={messagesEndRef}
           conversationCreatedAt={conversationCreatedAt}
           onExecutePlan={handleExecutePlan}
+          canResumeLastRun={canResumeLastRun}
+          onResumeLastRun={resumeLastRun}
         />
       )}
 

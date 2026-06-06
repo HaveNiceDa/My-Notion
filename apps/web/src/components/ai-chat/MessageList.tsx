@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy, ChevronDown, ChevronUp, Brain } from "lucide-react";
+import { Copy, ChevronDown, ChevronUp, Brain, RotateCcw } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { ChatMessage, ToolCall, ToolCallResult } from "./types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
@@ -14,9 +14,17 @@ interface MessageItemProps {
   message: ChatMessage;
   activeToolCalls?: ToolCall[];
   onExecutePlan?: (prompt: string) => Promise<void>;
+  canResume?: boolean;
+  onResume?: () => Promise<void>;
 }
 
-const MessageItem = React.memo(({ message, activeToolCalls, onExecutePlan }: MessageItemProps) => {
+const MessageItem = React.memo(({
+  message,
+  activeToolCalls,
+  onExecutePlan,
+  canResume,
+  onResume,
+}: MessageItemProps) => {
   const t = useTranslations("AI");
   const [showThinking, setShowThinking] = useState(true);
 
@@ -172,6 +180,16 @@ const MessageItem = React.memo(({ message, activeToolCalls, onExecutePlan }: Mes
           {renderToolResults("before")}
           {renderMessageContent()}
           {renderToolResults("after")}
+          {message.role === "assistant" && canResume && onResume && (
+            <button
+              type="button"
+              onClick={onResume}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <RotateCcw className="h-3 w-3" />
+              {t("resumeGeneration")}
+            </button>
+          )}
         </div>
 
         <div
@@ -266,6 +284,8 @@ interface MessageListProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
   onExecutePlan?: (prompt: string) => Promise<void>;
+  canResumeLastRun?: boolean;
+  onResumeLastRun?: () => Promise<void>;
 }
 
 export const MessageList = React.memo(
@@ -276,6 +296,8 @@ export const MessageList = React.memo(
     messagesEndRef,
     conversationCreatedAt,
     onExecutePlan,
+    canResumeLastRun,
+    onResumeLastRun,
   }: MessageListProps) => {
     const t = useTranslations("AI");
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -328,6 +350,8 @@ export const MessageList = React.memo(
             message={message}
             activeToolCalls={message.role === "assistant" && message.id === lastAssistantId && !message.toolResults?.length ? toolCalls : undefined}
             onExecutePlan={onExecutePlan}
+            canResume={message.role === "assistant" && message.id === lastAssistantId && canResumeLastRun}
+            onResume={onResumeLastRun}
           />
         ))}
 

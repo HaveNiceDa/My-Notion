@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
@@ -21,8 +22,13 @@ export function useAIChatStream(
   const { user } = useUser();
   const t = useTranslations("AI");
   const currentDocument = useCurrentDocumentStore((s) => s.currentDocument);
+  const [storedResumeCursor, setStoredResumeCursor] = useState<AgentStreamResumeCursor | null>(null);
 
   const handleGetImages = useMemoizedFn(() => state.uploadedImages);
+
+  useEffect(() => {
+    setStoredResumeCursor(readResumeCursor(state.conversationId));
+  }, [state.conversationId]);
 
   const sendMessage = useMemoizedFn(async (
     images: string[] = [],
@@ -64,7 +70,7 @@ export function useAIChatStream(
     let pendingRender = false;
     let completedToolResults: ToolCallResult[] = [];
     const toolArgumentsById = new Map<string, string>();
-    let resumeCursor: AgentStreamResumeCursor | null = null;
+    let activeResumeCursor: AgentStreamResumeCursor | null = null;
 
     const flushMessages = () => {
       pendingRender = false;
@@ -188,15 +194,21 @@ export function useAIChatStream(
             }
           },
           onRunStart: (cursor) => {
-            resumeCursor = cursor;
+            activeResumeCursor = cursor;
             persistResumeCursor(currentConversationId!, cursor);
+            setStoredResumeCursor(cursor);
           },
           onCheckpoint: (cursor) => {
-            resumeCursor = cursor;
+            activeResumeCursor = cursor;
             persistResumeCursor(currentConversationId!, cursor);
+            setStoredResumeCursor(cursor);
           },
-          onResumeUnavailable: (reason) => {
+          onResumeUnavailable: (reason, recoverable) => {
             console.warn("[Agent] Resume unavailable:", reason);
+            if (!recoverable) {
+              clearResumeCursor(currentConversationId!);
+              setStoredResumeCursor(null);
+            }
           },
           onComplete: async () => {
             pendingRender = false;
@@ -228,13 +240,9 @@ export function useAIChatStream(
                     : msg,
                 ),
               );
-              if (resumeCursor) {
-                persistResumeCursor(currentConversationId!, {
-                  ...resumeCursor,
-                  assistantMessageId: savedAssistantMessageId,
-                });
-              }
             }
+            clearResumeCursor(currentConversationId!);
+            setStoredResumeCursor(null);
             const title = currentInput.length > 50 ? currentInput.substring(0, 50) + "..." : currentInput || "图片对话";
             await persistence.updateConversationTitle(currentConversationId!, title);
             await state.refreshConversations();
@@ -244,7 +252,11 @@ export function useAIChatStream(
             state.setMessages((prev) =>
               prev.map((msg) =>
                 msg.id === assistantMessageId
-                  ? { ...msg, content: "Sorry, something went wrong. Please try again." }
+                  ? {
+                    ...msg,
+                    content: currentContent || t("resumeInterrupted"),
+                    reasoningContent: currentReasoningContent || msg.reasoningContent,
+                  }
                   : msg,
               ),
             );
@@ -264,8 +276,176 @@ export function useAIChatStream(
     }
   });
 
+  const resumeLastRun = useMemoizedFn(async () => {
+    const currentConversationId = state.conversationId;
+    const cursor = storedResumeCursor ?? readResumeCursor(currentConversationId);
+    if (!currentConversationId || !cursor || state.isLoading || !user) return;
+
+    const assistantMessage = [...state.messages].reverse().find((msg) => msg.role === "assistant");
+    if (!assistantMessage) return;
+
+    state.setIsLoading(true);
+    state.setToolCalls([]);
+
+    const assistantMessageId = assistantMessage.id;
+    let currentContent = getAssistantContent(assistantMessage);
+    let currentReasoningContent = assistantMessage.reasoningContent ?? "";
+    let pendingRender = false;
+    let completedToolResults: ToolCallResult[] = assistantMessage.toolResults ?? [];
+    const toolArgumentsById = new Map<string, string>();
+    let activeResumeCursor: AgentStreamResumeCursor | null = cursor;
+
+    const flushMessages = () => {
+      pendingRender = false;
+      state.setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === assistantMessageId
+            ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined }
+            : msg,
+        ),
+      );
+    };
+
+    const scheduleRender = () => {
+      if (!pendingRender) {
+        pendingRender = true;
+        requestAnimationFrame(flushMessages);
+      }
+    };
+
+    try {
+      await runAgentStream({
+        messages: [],
+        model: state.modelId,
+        conversationId: currentConversationId,
+        enableThinking: state.enableThinking,
+        currentDocument,
+        resume: cursor,
+        callbacks: {
+          onChunk: (chunk) => { currentContent += chunk; scheduleRender(); },
+          onReasoningChunk: (chunk) => { if (state.enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
+          onToolCallStart: (toolCallId, toolName) => {
+            toolArgumentsById.set(toolCallId, "");
+            state.setToolCalls((prev) => [
+              ...prev.filter((tc) => tc.id !== toolCallId),
+              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+            ]);
+            completedToolResults = [
+              ...completedToolResults.filter((result) => result.id !== toolCallId),
+              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+            ];
+          },
+          onToolCallDelta: (toolCallId, delta) => {
+            const nextArguments = `${toolArgumentsById.get(toolCallId) ?? ""}${delta}`;
+            toolArgumentsById.set(toolCallId, nextArguments);
+            state.setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, parameters: { ...tc.parameters, arguments: nextArguments }, status: "executing" }
+                  : tc,
+              ),
+            );
+          },
+          onToolResultDelta: (toolCallId, delta) => {
+            state.setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId
+                  ? { ...tc, streamingResult: `${tc.streamingResult ?? ""}${delta}`, status: "executing" }
+                  : tc,
+              ),
+            );
+          },
+          onToolCallResult: (toolCallId, result) => {
+            state.setToolCalls((prev) =>
+              prev.map((tc) =>
+                tc.id === toolCallId ? { ...tc, result, status: "completed" } : tc,
+              ),
+            );
+            const existingIdx = completedToolResults.findIndex((item) => item.id === toolCallId);
+            const nextResult: ToolCallResult = {
+              id: toolCallId,
+              name: completedToolResults[existingIdx]?.name ?? "unknown",
+              parameters: { arguments: toolArgumentsById.get(toolCallId) ?? "" },
+              status: "completed",
+              result,
+            };
+            completedToolResults = existingIdx >= 0
+              ? completedToolResults.map((item, index) => index === existingIdx ? nextResult : item)
+              : [...completedToolResults, nextResult];
+          },
+          onRunStart: (nextCursor) => {
+            activeResumeCursor = nextCursor;
+            persistResumeCursor(currentConversationId, nextCursor);
+            setStoredResumeCursor(nextCursor);
+          },
+          onCheckpoint: (nextCursor) => {
+            activeResumeCursor = nextCursor;
+            persistResumeCursor(currentConversationId, nextCursor);
+            setStoredResumeCursor(nextCursor);
+          },
+          onResumeUnavailable: (reason, recoverable) => {
+            console.warn("[Agent] Resume unavailable:", reason);
+            if (!recoverable) {
+              clearResumeCursor(currentConversationId);
+              setStoredResumeCursor(null);
+            }
+          },
+          onComplete: async () => {
+            pendingRender = false;
+            const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
+            state.setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === assistantMessageId
+                  ? { ...msg, content: currentContent, reasoningContent: currentReasoningContent || undefined, toolResults: finalToolResults }
+                  : msg,
+              ),
+            );
+
+            if (isTemporaryMessageId(assistantMessageId)) {
+              const messageData: Record<string, string> = { content: currentContent };
+              if (state.enableThinking && currentReasoningContent) {
+                messageData.reasoningContent = currentReasoningContent;
+              }
+              if (finalToolResults) {
+                messageData.toolResults = JSON.stringify(finalToolResults);
+              }
+              const savedAssistantMessageId = await persistence.saveMessage(
+                currentConversationId,
+                JSON.stringify(messageData),
+                "assistant",
+              );
+              if (savedAssistantMessageId) {
+                state.setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === assistantMessageId ? { ...msg, id: savedAssistantMessageId } : msg,
+                  ),
+                );
+              }
+            }
+
+            activeResumeCursor = null;
+            clearResumeCursor(currentConversationId);
+            setStoredResumeCursor(null);
+            await state.refreshConversations();
+          },
+          onError: (error) => {
+            console.error("Error resuming Agent stream:", error);
+            if (activeResumeCursor) {
+              persistResumeCursor(currentConversationId, activeResumeCursor);
+              setStoredResumeCursor(activeResumeCursor);
+            }
+          },
+        },
+      });
+    } finally {
+      state.setIsLoading(false);
+    }
+  });
+
   return {
     sendMessage,
+    resumeLastRun,
+    canResumeLastRun: Boolean(storedResumeCursor && state.conversationId && !state.isLoading),
     handleGetImages,
   };
 }
@@ -276,4 +456,43 @@ function persistResumeCursor(conversationId: string, cursor: AgentStreamResumeCu
     `mynotion:agent-resume:${conversationId}`,
     JSON.stringify(cursor),
   );
+}
+
+function readResumeCursor(conversationId: string | null): AgentStreamResumeCursor | null {
+  if (!conversationId || typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(`mynotion:agent-resume:${conversationId}`);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AgentStreamResumeCursor>;
+    if (
+      typeof parsed.runId === "string" &&
+      typeof parsed.lastAppliedSeq === "number" &&
+      typeof parsed.assistantMessageId === "string"
+    ) {
+      return {
+        runId: parsed.runId,
+        lastAppliedSeq: parsed.lastAppliedSeq,
+        assistantMessageId: parsed.assistantMessageId,
+      };
+    }
+  } catch {}
+  return null;
+}
+
+function clearResumeCursor(conversationId: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(`mynotion:agent-resume:${conversationId}`);
+}
+
+function getAssistantContent(message: ChatMessage): string {
+  try {
+    const parsed = JSON.parse(message.content) as { content?: unknown; text?: unknown };
+    if (typeof parsed.content === "string") return parsed.content;
+    if (typeof parsed.text === "string") return parsed.text;
+  } catch {}
+  return message.content;
+}
+
+function isTemporaryMessageId(messageId: string): boolean {
+  return /^\d+$/.test(messageId);
 }

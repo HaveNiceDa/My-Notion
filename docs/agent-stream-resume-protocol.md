@@ -310,10 +310,11 @@ idle
 - failed run 可读取最近 checkpoint 并恢复 ReAct Loop。
 - 已完成 tool results 会注入 run-local cache，避免重复执行已经完成的 tool call。
 - 写入类工具仍只恢复 dry-run/预览结果，不跳过用户确认链路。
-- 当前恢复使用 checkpoint 中的压缩消息和 tool result；`currentDocument` 只恢复摘要，完整文档上下文重建后续补齐。
+- 恢复时会基于 checkpoint 中的 `currentDocument.id` 重新查询当前文档，恢复 `document_read/document_update` 等依赖当前文档的工具上下文。
+- 前端已提供“继续生成”入口，读取 `sessionStorage` 中最近 cursor 并发起 resume 请求。
 
 ### Phase 4：Trace Replay
 
 - 将 `agentRunEvents` 与 trace sink 关联。
 - 提供 replay UI，按 seq 重放 text/tool/checkpoint。
-- 补齐 running run 的 live stream 接管、UI “继续生成”入口和 Trace Replay 可视化。
+- 补齐 running run 的 live stream 接管和 Trace Replay 可视化。

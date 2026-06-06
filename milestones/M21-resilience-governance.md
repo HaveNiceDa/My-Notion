@@ -27,7 +27,8 @@
 - Phase 2：新增 `agentRuns`、`agentRunEvents`、`agentRunCheckpoints` Convex 表和函数，`AgentRunRecorder` 统一分配 `seq` 并持久化 event/checkpoint。
 - Phase 2：resume 请求支持 `getAgentRunBacklog`，按 `seq > lastAppliedSeq` replay 已保存 backlog，已完成 run 会补发 `finish`。
 - Phase 3：失败 run 可从最近 checkpoint 保守恢复 ReAct Loop，并通过 `resumeToolResults` 复用已完成 tool result，避免重复执行写入预览工具。
-- 当前恢复仅保存 `currentDocument` 摘要，完整文档上下文重建和 running run live 接管留给后续 Trace Replay/Resume 深化。
+- Phase 3：前端已提供“继续生成”入口，并在恢复时基于 checkpoint 的 `currentDocument.id` 重建完整当前文档上下文。
+- running run live 接管留给后续 Trace Replay/Resume 深化。
 
 ### Tool 结果契约
 
@@ -62,8 +63,8 @@
 
 ## 已知缺口
 
-- 流式续跑已完成 Phase 1/2/3 保守闭环，但 running run 的 live stream 接管尚未实现。
-- checkpoint 恢复时仅重建 `currentDocument` 摘要，不重新拉取完整当前文档上下文。
+- 流式续跑已完成 Phase 1/2/3 可用闭环，但 running run 的 live stream 接管尚未实现。
+- 已保存的历史 assistant 消息暂不做原地更新；中断消息如已落库，resume 完成后不会覆盖旧消息。
 - Plan 仍未支持步骤级执行事件、逐 step 持久化和跨刷新完整恢复。
 - Trace Replay、Storybook、Memory/RAG 真实评估继续留给 M22。
 
@@ -75,6 +76,7 @@
 - `progress/20260606-091356.md`
 - `progress/20260606-095037.md`
 - `progress/20260606-100642.md`
+- `progress/20260606-113248.md`
 - `docs/agent-stream-resume-protocol.md`
 - `apps/web/src/components/ai-chat/stream-client.ts`
 - `apps/web/src/lib/agent/tools/result-contract.ts`
