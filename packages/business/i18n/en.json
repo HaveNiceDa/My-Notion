@@ -286,8 +286,6 @@
     "summarizeCurrentDocumentPrompt": "Please read the current document, summarize the key points, and suggest actionable next steps.",
     "searchMyDocuments": "Search my documents",
     "searchMyDocumentsPrompt": "Please search my documents and find content related to this question:",
-    "summarizeMyDocuments": "Summarize my documents",
-    "summarizeMyDocumentsPrompt": "Please search and summarize my My-Notion documents, including main themes, recent focus areas, reusable materials, and recommended next steps.",
     "draftNewDocument": "Draft new document",
     "draftNewDocumentPrompt": "Please draft a new My-Notion document with a title and Markdown content preview, then wait for my confirmation before creating it.",
     "rememberPreference": "Save long-term memory",

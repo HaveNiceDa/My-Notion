@@ -289,8 +289,6 @@
     "summarizeCurrentDocumentPrompt": "请读取当前文档并总结重点内容，最后给出可执行的下一步。",
     "searchMyDocuments": "搜索我的文档",
     "searchMyDocumentsPrompt": "请搜索我的文档，帮我找到和这个问题相关的内容：",
-    "summarizeMyDocuments": "总结下我的文档信息",
-    "summarizeMyDocumentsPrompt": "请搜索并汇总我的 My-Notion 文档信息，概括主要主题、近期重点、可复用资料和建议关注的下一步。",
     "draftNewDocument": "起草新文档",
     "draftNewDocumentPrompt": "请帮我起草一篇新的 My-Notion 文档，先给出标题和 Markdown 内容预览，等待我确认后再创建。",
     "rememberPreference": "记录长期记忆",

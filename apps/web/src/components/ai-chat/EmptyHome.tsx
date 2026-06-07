@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { Brain, FilePlus2, FileText, Library, Search } from "lucide-react";
+import { Brain, FilePlus2, FileText, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
 
@@ -27,11 +27,6 @@ export const EmptyHome = React.memo(({ onPromptSelect }: EmptyHomeProps) => {
           icon: Search,
           label: t("searchMyDocuments"),
           prompt: t("searchMyDocumentsPrompt"),
-        },
-        {
-          icon: Library,
-          label: t("summarizeMyDocuments"),
-          prompt: t("summarizeMyDocumentsPrompt"),
         },
         {
           icon: FilePlus2,

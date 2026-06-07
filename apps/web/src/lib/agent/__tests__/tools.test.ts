@@ -236,6 +236,24 @@ describe("My-Notion MCP adapter", () => {
     expect(result.metadata.contractVersion).toBe("tool-result-v1");
   });
 
+  it("docs fetch 收到非 documents id 时返回可恢复错误", async () => {
+    const query = vi.fn().mockRejectedValue(new Error("Found ID from table `agentMemories`, expected `documents`"));
+    const result = await executeMyNotionMcpAdapter(
+      { toolName: "my_notion_docs_fetch", input: { id: "j57-memory-id" } },
+      { ...baseCtx, convex: { query } as any },
+    ) as any;
+
+    expect(result).toMatchObject({
+      adapter: "my-notion-mcp",
+      recoverable: true,
+      error: expect.stringContaining("must be a document id"),
+      metadata: {
+        toolName: "mcp_my_notion_call",
+        reason: "validation_error",
+      },
+    });
+  });
+
   it("docs create 强制返回 document_write dry-run 预览", async () => {
     const result = await executeMyNotionMcpAdapter(
       {

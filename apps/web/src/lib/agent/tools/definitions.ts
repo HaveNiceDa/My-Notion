@@ -333,7 +333,7 @@ export const taskPlanTool: AgentTool = {
 export const myNotionMcpTool: AgentTool = {
   name: "mcp_my_notion_call",
   description:
-    "通过受控 My-Notion MCP adapter 调用内置 MCP 工具。仅支持白名单：my_notion_docs_search、my_notion_docs_fetch、my_notion_docs_create、my_notion_docs_update。写入类工具会被强制 dryRun=true，只返回预览，真实写入必须由用户在 UI 中确认。",
+    "通过受控 My-Notion MCP adapter 调用内置 MCP 工具。仅支持白名单：my_notion_docs_search、my_notion_docs_fetch、my_notion_docs_create、my_notion_docs_update。my_notion_docs_fetch.id 必须来自 my_notion_docs_search 返回的文档 id/documentId，严禁传入 memoryId、proposalId 或 agentMemories 表 ID。写入类工具会被强制 dryRun=true，只返回预览，真实写入必须由用户在 UI 中确认。",
   parameters: {
     type: "object",
     properties: {
@@ -350,7 +350,7 @@ export const myNotionMcpTool: AgentTool = {
       input: {
         type: "object",
         description:
-          "MCP 工具入参。search: { query?, limit? }；fetch: { id }；create: { title, contentMarkdown }；update: { id, title?, contentMarkdown?, mode? }。",
+          "MCP 工具入参。search: { query?, limit? }；fetch: { id }，其中 id 必须是 search 返回的 documents id/documentId；create: { title, contentMarkdown }；update: { id, title?, contentMarkdown?, mode? }。",
       },
     },
     required: ["toolName"],

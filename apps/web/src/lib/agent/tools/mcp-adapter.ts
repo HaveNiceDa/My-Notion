@@ -112,9 +112,17 @@ async function executeDocsFetch(
     return buildMcpError(toolName, "id is required.");
   }
 
-  const document = await context.convex.query(api.documents.getById, {
-    documentId: id as Id<"documents">,
-  }) as DocumentRecord;
+  let document: DocumentRecord;
+  try {
+    document = await context.convex.query(api.documents.getById, {
+      documentId: id as Id<"documents">,
+    }) as DocumentRecord;
+  } catch (error) {
+    return buildMcpError(
+      toolName,
+      `Document fetch failed. my_notion_docs_fetch.id must be a document id returned by my_notion_docs_search; do not pass memoryId, proposalId, or ids from agentMemories. ${getErrorMessage(error)}`,
+    );
+  }
   const markdown = blockNoteJsonToMarkdown(document.content);
 
   return withToolResultContract("mcp_my_notion_call", {
@@ -232,6 +240,10 @@ function buildMcpError(toolName: string, message: string) {
       },
     }),
   };
+}
+
+function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function blockNoteJsonToMarkdown(content?: string): string {

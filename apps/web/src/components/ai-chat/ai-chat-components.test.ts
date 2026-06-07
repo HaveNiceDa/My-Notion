@@ -24,8 +24,6 @@ vi.mock("next-intl", () => ({
       summarizeCurrentDocumentPrompt: "请读取当前文档",
       searchMyDocuments: "搜索我的文档",
       searchMyDocumentsPrompt: "请搜索我的文档",
-      summarizeMyDocuments: "总结下我的文档信息",
-      summarizeMyDocumentsPrompt: "请搜索并汇总我的文档",
       draftNewDocument: "起草新文档",
       draftNewDocumentPrompt: "请起草新文档",
       rememberPreference: "记录长期记忆",
@@ -344,7 +342,6 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("总结当前文档");
     expect(html).toContain("搜索我的文档");
-    expect(html).toContain("总结下我的文档信息");
     expect(html).toContain("起草新文档");
     expect(html).toContain("记录长期记忆");
     expect(html).not.toContain("创建任务跟踪器");
