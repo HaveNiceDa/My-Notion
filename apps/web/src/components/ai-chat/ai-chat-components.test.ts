@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MessageInput } from "./MessageInput";
 import { MessageList } from "./MessageList";
 import { ToolCallCard } from "./ToolCallCard";
+import { EmptyHome } from "./EmptyHome";
 import { MemoryInbox } from "./memory/MemoryInbox";
 import type { ChatMessage, ToolCallResult } from "./types";
 import type { AgentMemoryItem } from "./memory/types";
@@ -18,6 +19,17 @@ vi.mock("next-intl", () => ({
       documentWriteTool: "文档写入",
       documentWritePreview: "文档写入预览",
       documentConfirmationRequired: "需要确认后写入",
+      toolActionAvailableAfterResponse: "回复结束后可操作",
+      summarizeCurrentDocument: "总结当前文档",
+      summarizeCurrentDocumentPrompt: "请读取当前文档",
+      searchMyDocuments: "搜索我的文档",
+      searchMyDocumentsPrompt: "请搜索我的文档",
+      summarizeMyDocuments: "总结下我的文档信息",
+      summarizeMyDocumentsPrompt: "请搜索并汇总我的文档",
+      draftNewDocument: "起草新文档",
+      draftNewDocumentPrompt: "请起草新文档",
+      rememberPreference: "记录长期记忆",
+      rememberPreferencePrompt: "请整理成长期记忆",
       taskPlanTool: "任务计划",
       taskPlanPending: "待处理",
       taskPlanInProgress: "进行中",
@@ -67,6 +79,11 @@ vi.mock("convex/react", () => ({
 
 vi.mock("@/src/lib/agent/memory-sync-client", () => ({
   syncMemoryIndex: vi.fn(),
+}));
+
+vi.mock("@/src/lib/store/use-current-document-store", () => ({
+  useCurrentDocumentStore: (selector: (state: { currentDocument: { id: string; title: string } }) => unknown) =>
+    selector({ currentDocument: { id: "doc-1", title: "当前文档" } }),
 }));
 
 function render(element: React.ReactElement) {
@@ -294,6 +311,43 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("确认执行");
     expect(html).toContain("确认后会按计划继续执行");
+  });
+
+  it("ToolCallCard 在生成中禁用确认型操作", () => {
+    const html = render(
+      React.createElement(ToolCallCard, {
+        toolResult: {
+          id: "write-2",
+          name: "document_write",
+          status: "completed",
+          result: {
+            dryRun: true,
+            confirmationRequired: true,
+            action: "document_write",
+            document: { title: "空白文档", contentMarkdown: "" },
+          },
+        },
+        isStreaming: true,
+      }),
+    );
+
+    expect(html).toContain("回复结束后可操作");
+    expect(html).toContain("disabled");
+  });
+
+  it("EmptyHome 只展示当前支持的快捷操作", () => {
+    const html = render(
+      React.createElement(EmptyHome, {
+        onPromptSelect: vi.fn(),
+      }),
+    );
+
+    expect(html).toContain("总结当前文档");
+    expect(html).toContain("搜索我的文档");
+    expect(html).toContain("总结下我的文档信息");
+    expect(html).toContain("起草新文档");
+    expect(html).toContain("记录长期记忆");
+    expect(html).not.toContain("创建任务跟踪器");
   });
 
   it("ToolCallCard 可从已持久化状态恢复 task_plan 已执行状态", () => {

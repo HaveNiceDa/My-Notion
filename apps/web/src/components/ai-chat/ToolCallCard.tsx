@@ -18,6 +18,7 @@ import type {
 interface ToolCallCardProps {
   toolResult: ToolCallResult;
   messageId?: Id<"aiMessages">;
+  isStreaming?: boolean;
   onExecutePlan?: (prompt: string) => Promise<void>;
 }
 
@@ -318,11 +319,13 @@ function TaskPlanResult({
   result,
   toolCallId,
   messageId,
+  isStreaming,
   onExecutePlan,
 }: {
   result: TaskPlanToolResult;
   toolCallId: string;
   messageId?: Id<"aiMessages">;
+  isStreaming?: boolean;
   onExecutePlan?: (prompt: string) => Promise<void>;
 }) {
   const t = useTranslations("AI");
@@ -336,7 +339,7 @@ function TaskPlanResult({
   }
 
   async function handleExecutePlan() {
-    if (!onExecutePlan || steps.length === 0) return;
+    if (isStreaming || !onExecutePlan || steps.length === 0) return;
     setExecutionStatus("starting");
     if (messageId) {
       await updateToolResultState({ messageId, toolCallId, status: "started" });
@@ -375,7 +378,7 @@ function TaskPlanResult({
           <button
             type="button"
             onClick={handleExecutePlan}
-            disabled={executionStatus !== "idle"}
+            disabled={isStreaming || executionStatus !== "idle"}
             className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
           >
             {executionStatus === "starting"
@@ -385,7 +388,11 @@ function TaskPlanResult({
                 : t("executePlan")}
           </button>
           <span className="text-[11px] text-muted-foreground">
-            {executionStatus === "idle" ? t("planConfirmationRequired") : t("planExecutionVisible")}
+            {isStreaming
+              ? t("toolActionAvailableAfterResponse")
+              : executionStatus === "idle"
+                ? t("planConfirmationRequired")
+                : t("planExecutionVisible")}
           </span>
         </div>
       )}
@@ -593,10 +600,12 @@ function MemoryWriteResult({
   result,
   toolCallId,
   messageId,
+  isStreaming,
 }: {
   result: MemoryWriteToolResult;
   toolCallId: string;
   messageId?: Id<"aiMessages">;
+  isStreaming?: boolean;
 }) {
   const t = useTranslations("AI");
   const commitMemory = useMutation(api.agentMemories.commitAgentMemory);
@@ -709,7 +718,9 @@ function MemoryWriteResult({
             : t("memoryWritePreview")}
       </div>
       {result.confirmationRequired && status === "idle" && (
-        <div className="text-muted-foreground">{t("memoryConfirmationRequired")}</div>
+        <div className="text-muted-foreground">
+          {isStreaming ? t("toolActionAvailableAfterResponse") : t("memoryConfirmationRequired")}
+        </div>
       )}
       {memory?.content && (
         <div className="text-muted-foreground">{memory.content}</div>
@@ -722,7 +733,7 @@ function MemoryWriteResult({
           <button
             type="button"
             onClick={handleSaveMemory}
-            disabled={status === "saving"}
+            disabled={isStreaming || status === "saving"}
             className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
           >
             {status === "saving" ? t("memorySaving") : t("saveMemory")}
@@ -730,7 +741,7 @@ function MemoryWriteResult({
           <button
             type="button"
             onClick={handleKeepInInbox}
-            disabled={status === "saving"}
+            disabled={isStreaming || status === "saving"}
             className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
           >
             {t("sendMemoryToInbox")}
@@ -738,7 +749,7 @@ function MemoryWriteResult({
           <button
             type="button"
             onClick={handleCancelMemory}
-            disabled={status === "saving"}
+            disabled={isStreaming || status === "saving"}
             className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
           >
             {t("cancelMemory")}
@@ -768,10 +779,12 @@ function DocumentWriteResult({
   result,
   toolCallId,
   messageId,
+  isStreaming,
 }: {
   result: DocumentWriteToolResult;
   toolCallId: string;
   messageId?: Id<"aiMessages">;
+  isStreaming?: boolean;
 }) {
   const t = useTranslations("AI");
   const createDocument = useMutation(api.documents.createFromMarkdown);
@@ -855,7 +868,9 @@ function DocumentWriteResult({
               : t("documentWritePreview")}
       </div>
       {result.confirmationRequired && status === "idle" && (
-        <div className="text-muted-foreground">{t("documentConfirmationRequired")}</div>
+        <div className="text-muted-foreground">
+          {isStreaming ? t("toolActionAvailableAfterResponse") : t("documentConfirmationRequired")}
+        </div>
       )}
       <div className="rounded-md border border-border bg-muted/30 p-2">
         <div className="font-medium text-foreground">{title}</div>
@@ -888,7 +903,7 @@ function DocumentWriteResult({
           <button
             type="button"
             onClick={handleApplyDocumentWrite}
-            disabled={status === "saving"}
+            disabled={isStreaming || status === "saving"}
             className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
           >
             {status === "saving" ? t("documentWriting") : t("applyDocumentWrite")}
@@ -896,7 +911,7 @@ function DocumentWriteResult({
           <button
             type="button"
             onClick={handleCancelDocumentWrite}
-            disabled={status === "saving"}
+            disabled={isStreaming || status === "saving"}
             className="rounded-md border border-border px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground disabled:opacity-60"
           >
             {t("cancelDocumentWrite")}
@@ -907,7 +922,7 @@ function DocumentWriteResult({
   );
 }
 
-export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallCardProps) {
+export function ToolCallCard({ toolResult, messageId, isStreaming, onExecutePlan }: ToolCallCardProps) {
   const t = useTranslations("AI");
   const isCompleted = toolResult.status === "completed";
   const isRunning = toolResult.status === "calling" || toolResult.status === "executing";
@@ -976,6 +991,7 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
           result={typedResult}
           toolCallId={toolResult.id}
           messageId={messageId}
+          isStreaming={isStreaming}
         />
       );
       resultSummary = typedResult.documentWriteStatus === "cancelled"
@@ -1010,6 +1026,7 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
           result={typedResult}
           toolCallId={toolResult.id}
           messageId={messageId}
+          isStreaming={isStreaming}
         />
       );
       resultSummary = typedResult.memoryWriteStatus === "cancelled"
@@ -1024,6 +1041,7 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
           result={typedResult}
           toolCallId={toolResult.id}
           messageId={messageId}
+          isStreaming={isStreaming}
           onExecutePlan={onExecutePlan}
         />
       );
@@ -1036,6 +1054,7 @@ export function ToolCallCard({ toolResult, messageId, onExecutePlan }: ToolCallC
             result={typedResult as DocumentWriteToolResult}
             toolCallId={toolResult.id}
             messageId={messageId}
+            isStreaming={isStreaming}
           />
         );
       } else {

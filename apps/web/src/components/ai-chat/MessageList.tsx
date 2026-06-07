@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@notion/business/utils";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Copy, ChevronDown, ChevronUp, Brain, RotateCcw } from "lucide-react";
+import { Copy, ChevronDown, ChevronUp, Brain, RotateCcw, ArrowDown } from "lucide-react";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { ChatMessage, ToolCall, ToolCallResult } from "./types";
 import { MarkdownRenderer } from "./MarkdownRenderer";
@@ -13,6 +13,7 @@ import { ToolCallCard } from "./ToolCallCard";
 interface MessageItemProps {
   message: ChatMessage;
   activeToolCalls?: ToolCall[];
+  isStreaming?: boolean;
   onExecutePlan?: (prompt: string) => Promise<void>;
   canResume?: boolean;
   onResume?: () => Promise<void>;
@@ -21,6 +22,7 @@ interface MessageItemProps {
 const MessageItem = React.memo(({
   message,
   activeToolCalls,
+  isStreaming,
   onExecutePlan,
   canResume,
   onResume,
@@ -124,6 +126,7 @@ const MessageItem = React.memo(({
             key={`${toolResult.id}-${toolResult.name}-${index}`}
             toolResult={toolResult}
             messageId={persistedMessageId}
+            isStreaming={isStreaming}
             onExecutePlan={toolResult.name === "task_plan" ? onExecutePlan : undefined}
           />
         ))}
@@ -302,6 +305,7 @@ export const MessageList = React.memo(
     const t = useTranslations("AI");
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
     const shouldAutoScrollRef = useRef(true);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
 
     const formatDate = useMemo(() => {
       if (!conversationCreatedAt) return null;
@@ -314,62 +318,91 @@ export const MessageList = React.memo(
     }, [conversationCreatedAt]);
 
     const lastAssistantId = [...messages].reverse().find((m) => m.role === "assistant")?.id;
+    const lastMessageRole = messages.at(-1)?.role;
 
     const handleScroll = () => {
       const element = scrollContainerRef.current;
       if (!element) return;
       const distanceToBottom = element.scrollHeight - element.scrollTop - element.clientHeight;
-      shouldAutoScrollRef.current = distanceToBottom < 40;
+      const isNearBottom = distanceToBottom < 48;
+      shouldAutoScrollRef.current = isNearBottom;
+      setShowScrollToBottom(!isNearBottom);
     };
+
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+      shouldAutoScrollRef.current = true;
+      setShowScrollToBottom(false);
+      messagesEndRef.current?.scrollIntoView({ behavior });
+    }, [messagesEndRef]);
 
     useEffect(() => {
       if (!shouldAutoScrollRef.current) return;
       const timer = window.setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        scrollToBottom("auto");
       }, 0);
       return () => window.clearTimeout(timer);
-    }, [messages, toolCalls, isLoading, messagesEndRef]);
+    }, [messages, toolCalls, isLoading, messagesEndRef, scrollToBottom]);
+
+    useEffect(() => {
+      if (lastMessageRole !== "user") return;
+      const timer = window.setTimeout(() => scrollToBottom("smooth"), 0);
+      return () => window.clearTimeout(timer);
+    }, [lastMessageRole, messages.length, scrollToBottom]);
 
     return (
-      <div
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-4 py-2"
-      >
-        {conversationCreatedAt && (
-          <div className="mb-4 text-center">
-            <div className="inline-block text-muted-foreground px-3 py-0.5 rounded-full text-xs">
-              {formatDate} · Notion AI
+      <div className="relative flex-1 min-h-0">
+        <div
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="h-full overflow-y-auto px-4 py-2"
+        >
+          {conversationCreatedAt && (
+            <div className="mb-4 text-center">
+              <div className="inline-block text-muted-foreground px-3 py-0.5 rounded-full text-xs">
+                {formatDate} · Notion AI
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {messages.map((message) => (
-          <MessageItem
-            key={message.id}
-            message={message}
-            activeToolCalls={message.role === "assistant" && message.id === lastAssistantId && !message.toolResults?.length ? toolCalls : undefined}
-            onExecutePlan={onExecutePlan}
-            canResume={message.role === "assistant" && message.id === lastAssistantId && canResumeLastRun}
-            onResume={onResumeLastRun}
-          />
-        ))}
+          {messages.map((message) => (
+            <MessageItem
+              key={message.id}
+              message={message}
+              isStreaming={isLoading}
+              activeToolCalls={message.role === "assistant" && message.id === lastAssistantId && !message.toolResults?.length ? toolCalls : undefined}
+              onExecutePlan={onExecutePlan}
+              canResume={message.role === "assistant" && message.id === lastAssistantId && canResumeLastRun}
+              onResume={onResumeLastRun}
+            />
+          ))}
 
-        {isLoading && !messages.some((m) => m.role === "assistant" && m.id === lastAssistantId && m.toolResults?.length) && (
-          <div className="flex justify-start mb-4">
-            <div className="max-w-[90%]">
-              <div className="p-3 break-words bg-background text-foreground pb-1">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="text-xs text-muted-foreground">
-                    {t("generatingResponse") || "正在生成响应..."}
-                  </span>
+          {isLoading && !messages.some((m) => m.role === "assistant" && m.id === lastAssistantId && m.toolResults?.length) && (
+            <div className="flex justify-start mb-4">
+              <div className="max-w-[90%]">
+                <div className="p-3 break-words bg-background text-foreground pb-1">
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                    <span className="text-xs text-muted-foreground">
+                      {t("generatingResponse") || "正在生成响应..."}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+        {showScrollToBottom && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom("smooth")}
+            className="absolute bottom-3 right-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background/95 text-muted-foreground shadow-md transition-colors hover:text-foreground"
+            aria-label={t("scrollToBottom")}
+            title={t("scrollToBottom")}
+          >
+            <ArrowDown className="h-4 w-4" />
+          </button>
         )}
-        <div ref={messagesEndRef} />
       </div>
     );
   },
