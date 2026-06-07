@@ -30,6 +30,7 @@
 - `20260607-ai-tool-interaction-hardening.md`：AI 工具交互加固，覆盖 document_write 空白文档、Memory 保存反馈、Inbox 文案、Plan 重复 key 和 recorder rejection 收敛。
 - `20260607-ai-chat-ui-interaction-polish.md`：AI 对话 UI 交互优化，覆盖生成中禁用确认型 tool、回到底部按钮和空白页快捷操作收口。
 - `20260607-ai-summary-prompt-mcp-guard.md`：文档汇总快捷入口收敛与 MCP 防护，覆盖 prompt 限制和 agentMemories ID 误入 docs_fetch 的可恢复错误。
+- `20260607-agent-governance-deploy-summary.md`：2026-06-07 Agent 治理与 Convex 部署总结，覆盖画板止血、AI 交互加固、MCP 防护和 prod Convex deploy 结果。
 
 ## 阅读规则
 
