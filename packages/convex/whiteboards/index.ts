@@ -72,19 +72,31 @@ function now() {
   return Date.now();
 }
 
-function toResult(whiteboard: {
+type WhiteboardRecord = {
   _id: Id<"whiteboards">;
   title: string;
   documentId?: Id<"documents">;
   engine: "excalidraw";
   sceneJson: string;
   thumbnailDataUrl?: string;
+  sceneObjectKey?: string;
+  sceneObjectUrl?: string;
+  sceneHash?: string;
+  sceneBytes?: number;
+  thumbnailObjectKey?: string;
+  thumbnailUrl?: string;
+  thumbnailHash?: string;
+  thumbnailBytes?: number;
+  assetVersion?: number;
+  assetMigratedAt?: number;
   sourceDsl?: string;
   sourceDslVersion?: "mwb-dsl-v1";
   isArchived: boolean;
   createdAt: number;
   updatedAt: number;
-}) {
+};
+
+function toResult(whiteboard: WhiteboardRecord) {
   return {
     id: whiteboard._id,
     title: whiteboard.title,
@@ -92,11 +104,49 @@ function toResult(whiteboard: {
     engine: whiteboard.engine,
     sceneJson: whiteboard.sceneJson,
     thumbnailDataUrl: whiteboard.thumbnailDataUrl,
+    sceneObjectKey: whiteboard.sceneObjectKey,
+    sceneObjectUrl: whiteboard.sceneObjectUrl,
+    sceneHash: whiteboard.sceneHash,
+    sceneBytes: whiteboard.sceneBytes,
+    thumbnailObjectKey: whiteboard.thumbnailObjectKey,
+    thumbnailUrl: whiteboard.thumbnailUrl,
+    thumbnailHash: whiteboard.thumbnailHash,
+    thumbnailBytes: whiteboard.thumbnailBytes,
+    assetVersion: whiteboard.assetVersion,
+    assetMigratedAt: whiteboard.assetMigratedAt,
     sourceDsl: whiteboard.sourceDsl,
     sourceDslVersion: whiteboard.sourceDslVersion,
     isArchived: whiteboard.isArchived,
     createdAt: whiteboard.createdAt,
     updatedAt: whiteboard.updatedAt,
+  };
+}
+
+function toPreviewResult(whiteboard: WhiteboardRecord) {
+  return {
+    id: whiteboard._id,
+    title: whiteboard.title,
+    documentId: whiteboard.documentId,
+    engine: whiteboard.engine,
+    thumbnailUrl: whiteboard.thumbnailUrl,
+    updatedAt: whiteboard.updatedAt,
+    assetVersion: whiteboard.assetVersion,
+  };
+}
+
+function toSceneResult(whiteboard: WhiteboardRecord) {
+  return {
+    id: whiteboard._id,
+    title: whiteboard.title,
+    documentId: whiteboard.documentId,
+    engine: whiteboard.engine,
+    sceneJson: whiteboard.sceneJson,
+    sceneObjectKey: whiteboard.sceneObjectKey,
+    sceneObjectUrl: whiteboard.sceneObjectUrl,
+    sceneHash: whiteboard.sceneHash,
+    sceneBytes: whiteboard.sceneBytes,
+    updatedAt: whiteboard.updatedAt,
+    assetVersion: whiteboard.assetVersion,
   };
 }
 
@@ -146,6 +196,7 @@ export const create = mutation({
       engine: "excalidraw",
       sceneJson,
       thumbnailDataUrl: args.thumbnailDataUrl,
+      assetVersion: 1,
       sourceDsl: args.dsl ? JSON.stringify(args.dsl, null, 2) : undefined,
       sourceDslVersion: args.dsl?.version,
       isArchived: false,
@@ -169,6 +220,28 @@ export const getById = query({
   },
 });
 
+export const getPreviewById = query({
+  args: { whiteboardId: v.id("whiteboards") },
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (!whiteboard || whiteboard.isArchived) throw new Error("Whiteboard not found");
+    if (whiteboard.userId !== userId) throw new Error("Unauthorized");
+    return toPreviewResult(whiteboard);
+  },
+});
+
+export const getSceneById = query({
+  args: { whiteboardId: v.id("whiteboards") },
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+    const whiteboard = await ctx.db.get(args.whiteboardId);
+    if (!whiteboard || whiteboard.isArchived) throw new Error("Whiteboard not found");
+    if (whiteboard.userId !== userId) throw new Error("Unauthorized");
+    return toSceneResult(whiteboard);
+  },
+});
+
 export const listByDocument = query({
   args: {
     documentId: v.id("documents"),
@@ -185,6 +258,25 @@ export const listByDocument = query({
     return rows
       .filter((whiteboard) => !whiteboard.isArchived && whiteboard.userId === userId)
       .map(toResult);
+  },
+});
+
+export const listPreviewByDocument = query({
+  args: {
+    documentId: v.id("documents"),
+    limit: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const userId = await requireUserId(ctx);
+    await assertDocumentOwner(ctx, args.documentId, userId);
+    const limit = Math.min(Math.max(args.limit ?? 20, 1), 50);
+    const rows = await ctx.db
+      .query("whiteboards")
+      .withIndex("by_document", (q) => q.eq("documentId", args.documentId))
+      .take(limit);
+    return rows
+      .filter((whiteboard) => !whiteboard.isArchived && whiteboard.userId === userId)
+      .map(toPreviewResult);
   },
 });
 

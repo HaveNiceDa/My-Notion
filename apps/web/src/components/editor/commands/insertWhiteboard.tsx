@@ -15,7 +15,7 @@ interface InsertWhiteboardItemOptions {
   createWhiteboard: (input: {
     title: string;
     documentId: Id<"documents">;
-  }) => Promise<{ id: string; title: string; thumbnailDataUrl?: string }>;
+  }) => Promise<{ id: string; title: string; thumbnailUrl?: string; thumbnailDataUrl?: string }>;
 }
 
 export function createInsertWhiteboardItem({
@@ -39,7 +39,7 @@ export function createInsertWhiteboardItem({
         props: {
           whiteboardId: whiteboard.id,
           title: whiteboard.title,
-          thumbnailUrl: whiteboard.thumbnailDataUrl ?? "",
+          thumbnailUrl: whiteboard.thumbnailUrl ?? whiteboard.thumbnailDataUrl ?? "",
           engine: "excalidraw",
         },
       });
