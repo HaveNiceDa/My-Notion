@@ -147,7 +147,10 @@ export function useAIChatStream(
               ...prev.filter((tc) => tc.id !== toolCallId),
               { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
             ]);
-            completedToolResults.push({ id: toolCallId, name: toolName, parameters: {}, status: "calling" });
+            completedToolResults = [
+              ...completedToolResults.filter((result) => result.id !== toolCallId),
+              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+            ];
           },
           onToolCallDelta: (toolCallId: string, delta: string) => {
             const nextArguments = `${toolArgumentsById.get(toolCallId) ?? ""}${delta}`;
@@ -212,6 +215,7 @@ export function useAIChatStream(
           },
           onComplete: async () => {
             pendingRender = false;
+            state.setIsLoading(false);
             const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
             state.setMessages((prev) =>
               prev.map((msg) =>
@@ -392,6 +396,7 @@ export function useAIChatStream(
           },
           onComplete: async () => {
             pendingRender = false;
+            state.setIsLoading(false);
             const finalToolResults = completedToolResults.length > 0 ? completedToolResults : undefined;
             state.setMessages((prev) =>
               prev.map((msg) =>

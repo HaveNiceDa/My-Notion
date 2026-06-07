@@ -27,13 +27,12 @@ export async function executeDocumentWrite(
   if (!preview.title) {
     return buildToolErrorResult("document_write", "title is required", { reason: "validation_error" });
   }
-  if (!preview.contentMarkdown) {
-    return buildToolErrorResult("document_write", "contentMarkdown is required", { reason: "validation_error" });
-  }
 
   return buildDryRunResult("document_write", {
     document: preview,
-    summary: `Create document "${preview.title}" from Markdown.`,
+    summary: preview.contentMarkdown
+      ? `Create document "${preview.title}" from Markdown.`
+      : `Create blank document "${preview.title}".`,
   });
 }
 
@@ -88,6 +87,7 @@ function buildDryRunResult(
       writeContract: "preview_then_confirm",
       inputFormat: "markdown",
       targetFormat: "blocknote-json",
+      blankDocument: action === "document_write" && !payload.document.contentMarkdown,
     },
   });
 }

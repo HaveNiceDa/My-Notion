@@ -49,6 +49,7 @@ export async function executeTaskPlan(
 
 function normalizeSteps(value: unknown): TaskPlanStep[] {
   if (!Array.isArray(value)) return [];
+  const usedIds = new Set<string>();
 
   return value
     .map((rawStep, index): TaskPlanStep | null => {
@@ -58,7 +59,11 @@ function normalizeSteps(value: unknown): TaskPlanStep[] {
       if (!title) return null;
 
       const normalized: TaskPlanStep = {
-        id: typeof step.id === "string" && step.id.trim() ? step.id.trim() : `step-${index + 1}`,
+        id: normalizeStepId(
+          typeof step.id === "string" && step.id.trim() ? step.id.trim() : `step-${index + 1}`,
+          index,
+          usedIds,
+        ),
         title,
         status: parseStatus(step.status),
       };
@@ -68,6 +73,17 @@ function normalizeSteps(value: unknown): TaskPlanStep[] {
       return normalized;
     })
     .filter((step): step is TaskPlanStep => Boolean(step));
+}
+
+function normalizeStepId(rawId: string, index: number, usedIds: Set<string>): string {
+  const baseId = rawId || `step-${index + 1}`;
+  if (!usedIds.has(baseId)) {
+    usedIds.add(baseId);
+    return baseId;
+  }
+  const fallbackId = `${baseId}-${index + 1}`;
+  usedIds.add(fallbackId);
+  return fallbackId;
 }
 
 function parseStatus(value: unknown): TaskPlanStatus {

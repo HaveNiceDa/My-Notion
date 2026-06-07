@@ -150,7 +150,7 @@ describe("AgentTool 定义", () => {
 
   it("document_write 和 document_update 使用 dry-run 写入契约", () => {
     expect(documentWriteTool.name).toBe("document_write");
-    expect(documentWriteTool.parameters.required).toEqual(["title", "contentMarkdown"]);
+    expect(documentWriteTool.parameters.required).toEqual(["title"]);
     expect(documentUpdateTool.name).toBe("document_update");
     expect(documentUpdateTool.parameters).toHaveProperty("properties");
   });
@@ -373,11 +373,15 @@ describe("Document write tools", () => {
     expectToolContract(result, "document_write");
   });
 
-  it("document_write 空标题或内容返回可恢复错误", async () => {
+  it("document_write 空标题返回可恢复错误，空内容创建空白文档预览", async () => {
     await expect(executeDocumentWrite({ title: "", contentMarkdown: "x" }, baseCtx))
       .resolves.toMatchObject({ error: "title is required", recoverable: true });
     await expect(executeDocumentWrite({ title: "x", contentMarkdown: "" }, baseCtx))
-      .resolves.toMatchObject({ error: "contentMarkdown is required", recoverable: true });
+      .resolves.toMatchObject({
+        dryRun: true,
+        document: { title: "x", contentMarkdown: "" },
+        metadata: { blankDocument: true },
+      });
   });
 
   it("document_update 可从当前文档上下文补 documentId", async () => {
@@ -399,6 +403,21 @@ describe("Document write tools", () => {
       .resolves.toMatchObject({ error: "documentId is required", recoverable: true });
     await expect(executeDocumentUpdate({ documentId: "doc-1" }, baseCtx))
       .resolves.toMatchObject({ error: "title or contentMarkdown is required", recoverable: true });
+  });
+});
+
+describe("Task plan tool", () => {
+  it("task_plan 会去重模型返回的重复 step id", async () => {
+    const result = await executeTaskPlan({
+      objective: "修复计划",
+      steps: [
+        { id: "same", title: "第一步" },
+        { id: "same", title: "第二步" },
+      ],
+    }, { userId: "user-1", model: "test-model" }) as any;
+
+    expect(result.steps.map((step: { id: string }) => step.id)).toEqual(["same", "same-2"]);
+    expect(result.metadata.currentStepId).toBe("same");
   });
 });
 

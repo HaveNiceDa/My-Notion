@@ -79,7 +79,7 @@ export const documentWriteTool: AgentTool = {
       },
       contentMarkdown: {
         type: "string",
-        description: "新文档 Markdown 内容。Agent 只生成 Markdown，不生成 BlockNote JSON。",
+        description: "可选的新文档 Markdown 内容。用户只要求创建空白文档时可以省略或传空字符串。",
       },
       parentDocument: {
         type: "string",
@@ -90,7 +90,7 @@ export const documentWriteTool: AgentTool = {
         description: "必须保持 true 或省略；真实写入由用户在前端确认后执行。",
       },
     },
-    required: ["title", "contentMarkdown"],
+    required: ["title"],
   },
   execute: withToolFallback({
     name: "document_write",

@@ -26,6 +26,8 @@
 - `20260606-131432.md`：Web Agent 操作闭环收口，固化续跑/MCP/tool 契约结论，并把下一阶段主线切到画板存储迁移。
 - `20260607-110858.md`：M22.1/M22.2 画板元数据模型与 Web 读取链路，覆盖 schema 扩展、preview/scene 查询拆分和缩略图轻量读取。
 - `20260607-whiteboard-web-entry-disable.md`：画板 Web 入口再止血，覆盖前端 preview 订阅、缩略图图片加载、全屏编辑器和插入命令暂停。
+- `20260607-agent-stream-convex-resilience.md`：Agent Stream Convex 韧性修复，覆盖 Clerk/Convex token 降级、finish 事件优先、Memory 后台提取和 loading 提前收口。
+- `20260607-ai-tool-interaction-hardening.md`：AI 工具交互加固，覆盖 document_write 空白文档、Memory 保存反馈、Inbox 文案、Plan 重复 key 和 recorder rejection 收敛。
 
 ## 阅读规则
 

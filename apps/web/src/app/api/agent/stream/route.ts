@@ -22,6 +22,7 @@ import type { MemoryExtractionMessage } from "@/src/lib/agent/memory-extractor";
 
 const RESUME_LIVE_POLL_INTERVAL_MS = 800;
 const RESUME_LIVE_MAX_WAIT_MS = 25_000;
+const RECORDER_FLUSH_TIMEOUT_MS = 1_500;
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -54,7 +55,13 @@ async function getAuthenticatedConvexClient(
     return null;
   }
 
-  const convexAuthToken = await getToken({ template: "convex" });
+  let convexAuthToken: string | null = null;
+  try {
+    convexAuthToken = await getToken({ template: "convex" });
+  } catch (error) {
+    console.warn("[Agent Stream] Failed to get Convex auth token; continuing without Convex run recording:", error);
+    return null;
+  }
   if (!convexAuthToken) {
     return null;
   }
@@ -182,7 +189,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = (await req.json()) as AgentRequestBody;
-    const convex = await getAuthenticatedConvexClient(getToken);
+    let convex = await getAuthenticatedConvexClient(getToken);
     if (body.resume) {
       return await buildResumeResponse({
         convex,
@@ -254,13 +261,18 @@ export async function POST(req: NextRequest) {
     const compressedMessages = await compressContext(openai, model, allMessages);
     const runStartedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
     if (convex && body.conversationId) {
-      await convex.mutation(api.aiChat.createAgentRun, {
-        runId,
-        conversationId: body.conversationId as Id<"aiConversations">,
-        assistantMessageId: responseId,
-        model,
-        mode,
-      });
+      try {
+        await convex.mutation(api.aiChat.createAgentRun, {
+          runId,
+          conversationId: body.conversationId as Id<"aiConversations">,
+          assistantMessageId: responseId,
+          model,
+          mode,
+        });
+      } catch (error) {
+        console.warn("[Agent Stream] Failed to create Agent run; disabling run recording for this response:", error);
+        convex = null;
+      }
     }
 
     const stream = new ReadableStream<Uint8Array>({
@@ -317,19 +329,6 @@ export async function POST(req: NextRequest) {
               });
             },
           });
-          const extraction = extractMemoryCandidates({
-            enabled: autoExtractMemories,
-            userId,
-            conversationId: body.conversationId,
-            messages: toMemoryExtractionMessages(messages),
-          });
-          await proposeExtractedMemories({
-            convex,
-            userId,
-            conversationId: body.conversationId,
-            extraction,
-            trace: tracer,
-          });
           recorder.checkpoint({
             kind: "run_finished",
             resumeState: buildResumeState({
@@ -343,8 +342,19 @@ export async function POST(req: NextRequest) {
             }),
           });
           recorder.emit({ type: "finish", model, usage: null });
+          scheduleMemoryExtraction({
+            convex,
+            userId,
+            conversationId: body.conversationId,
+            messages,
+            enabled: autoExtractMemories,
+            trace: tracer,
+          });
           if (convex) {
-            await convex.mutation(api.aiChat.finishAgentRun, { runId, status: "completed" });
+            void convex.mutation(api.aiChat.finishAgentRun, { runId, status: "completed" })
+              .catch((error) => {
+                console.warn("[Agent Stream] Failed to mark Agent run completed:", error);
+              });
           }
           tracer.event("run_end", elapsedSince(runStartedAt), {
             compressedMessageCount: compressedMessages.length,
@@ -372,10 +382,13 @@ export async function POST(req: NextRequest) {
             message: getErrorMessage(error),
           });
           if (convex) {
-            await convex.mutation(api.aiChat.finishAgentRun, { runId, status: "failed" });
+            void convex.mutation(api.aiChat.finishAgentRun, { runId, status: "failed" })
+              .catch((finishError) => {
+                console.warn("[Agent Stream] Failed to mark Agent run failed:", finishError);
+              });
           }
         } finally {
-          await recorder.flush();
+          await flushRecorderWithTimeout(recorder, "Agent stream");
           controller.close();
         }
       },
@@ -393,6 +406,46 @@ export async function POST(req: NextRequest) {
       { success: false, error: error instanceof Error ? error.message : "Internal server error" },
       { status: 500 },
     );
+  }
+}
+
+function scheduleMemoryExtraction(options: {
+  convex: ConvexHttpClient | null;
+  userId: string;
+  conversationId?: string;
+  messages: OpenAI.ChatCompletionMessageParam[];
+  enabled: boolean;
+  trace: AgentTracer;
+}) {
+  void (async () => {
+    const extraction = extractMemoryCandidates({
+      enabled: options.enabled,
+      userId: options.userId,
+      conversationId: options.conversationId,
+      messages: toMemoryExtractionMessages(options.messages),
+    });
+    await proposeExtractedMemories({
+      convex: options.convex,
+      userId: options.userId,
+      conversationId: options.conversationId,
+      extraction,
+      trace: options.trace,
+    });
+  })().catch((error) => {
+    console.warn("[Agent Memory] Failed to propose extracted memories after stream finish:", error);
+  });
+}
+
+async function flushRecorderWithTimeout(recorder: AgentRunRecorder, label: string) {
+  let timedOut = false;
+  await Promise.race([
+    recorder.flush(),
+    delay(RECORDER_FLUSH_TIMEOUT_MS).then(() => {
+      timedOut = true;
+    }),
+  ]);
+  if (timedOut) {
+    console.warn(`[${label}] Recorder flush timed out; closing client stream without waiting for Convex persistence.`);
   }
 }
 

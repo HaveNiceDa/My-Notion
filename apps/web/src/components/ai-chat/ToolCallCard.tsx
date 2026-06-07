@@ -24,6 +24,14 @@ interface ToolCallCardProps {
 type RetrievalStrategy = "fast" | "balanced" | "deep";
 type MemoryType = "preference" | "project" | "episodic";
 type MemorySource = "user_explicit" | "agent_proposed" | "manual" | "auto_extracted" | "system";
+type ProposeMemoryMutation = (args: {
+  type: MemoryType;
+  content: string;
+  source: MemorySource;
+  reason?: string;
+  confidence?: number;
+  evidenceText?: string;
+}) => Promise<{ id: Id<"agentMemories"> }>;
 
 interface KnowledgeSearchMetadata {
   semanticCount?: number;
@@ -345,7 +353,7 @@ function TaskPlanResult({
         </div>
       )}
       {steps.map((step, index) => (
-        <div key={step.id ?? index} className="flex gap-2 rounded-md px-2 py-1 text-xs">
+        <div key={`${step.id ?? "step"}-${index}`} className="flex gap-2 rounded-md px-2 py-1 text-xs">
           <span className="mt-0.5 text-muted-foreground">{index + 1}.</span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
@@ -592,6 +600,7 @@ function MemoryWriteResult({
 }) {
   const t = useTranslations("AI");
   const commitMemory = useMutation(api.agentMemories.commitAgentMemory);
+  const proposeMemory = useMutation(api.agentMemories.proposeAgentMemory);
   const rejectMemory = useMutation(api.agentMemories.rejectAgentMemory);
   const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
   const initialStatus = result.memoryWriteStatus === "saved"
@@ -613,18 +622,21 @@ function MemoryWriteResult({
   const proposalId = result.proposalId ?? memory?.id;
 
   async function handleSaveMemory() {
-    if (!proposalId) return;
     setStatus("saving");
     setErrorMessage(null);
 
     try {
-      const savedMemory = await commitMemory({ memoryId: proposalId as Id<"agentMemories"> });
+      if (!memory?.content) {
+        throw new Error(t("memoryContentMissing"));
+      }
+      const activeProposalId = proposalId ?? await createMissingMemoryProposal(proposeMemory, memory);
+      const savedMemory = await commitMemory({ memoryId: activeProposalId as Id<"agentMemories"> });
       if (messageId) {
         await updateToolResultState({
           messageId,
           toolCallId,
           status: "saved",
-          proposalId: proposalId as Id<"agentMemories">,
+          proposalId: activeProposalId as Id<"agentMemories">,
           savedMemoryId: savedMemory.id,
         });
       }
@@ -666,16 +678,19 @@ function MemoryWriteResult({
   }
 
   async function handleKeepInInbox() {
-    setStatus("inbox");
-    if (!messageId) return;
-
     try {
-      await updateToolResultState({
-        messageId,
-        toolCallId,
-        status: "inbox",
-        proposalId: proposalId ? proposalId as Id<"agentMemories"> : undefined,
-      });
+      if (!proposalId) {
+        throw new Error(t("memoryInboxUnavailable"));
+      }
+      setStatus("inbox");
+      if (messageId) {
+        await updateToolResultState({
+          messageId,
+          toolCallId,
+          status: "inbox",
+          proposalId: proposalId as Id<"agentMemories">,
+        });
+      }
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : String(error));
@@ -732,6 +747,21 @@ function MemoryWriteResult({
       )}
     </div>
   );
+}
+
+async function createMissingMemoryProposal(
+  proposeMemory: ProposeMemoryMutation,
+  memory: MemoryItem,
+): Promise<string> {
+  const created = await proposeMemory({
+    type: memory.type ?? "preference",
+    content: memory.content ?? "",
+    source: memory.source ?? "agent_proposed",
+    reason: memory.reason,
+    confidence: memory.confidence,
+    evidenceText: memory.content,
+  });
+  return String(created.id);
 }
 
 function DocumentWriteResult({

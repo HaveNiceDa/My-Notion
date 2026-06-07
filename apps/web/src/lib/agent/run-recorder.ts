@@ -92,6 +92,8 @@ export class AgentRunRecorder {
         seq,
         eventType: event.type,
         eventJson: JSON.stringify(event),
+      }).catch((error) => {
+        console.warn("[AgentRunRecorder] Failed to persist stream event:", error);
       }),
     );
   }
@@ -112,6 +114,8 @@ export class AgentRunRecorder {
           metadata: payload.metadata ?? {},
           createdAt: Date.now(),
         }),
+      }).catch((error) => {
+        console.warn("[AgentRunRecorder] Failed to persist checkpoint:", error);
       }),
     );
   }

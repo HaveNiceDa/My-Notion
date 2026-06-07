@@ -119,9 +119,9 @@ const MessageItem = React.memo(({
 
     return (
       <div className={cn("space-y-1.5", placement === "before" ? "mb-2" : "mt-2")}>
-        {filteredResults.map((toolResult) => (
+        {filteredResults.map((toolResult, index) => (
           <ToolCallCard
-            key={toolResult.id}
+            key={`${toolResult.id}-${toolResult.name}-${index}`}
             toolResult={toolResult}
             messageId={persistedMessageId}
             onExecutePlan={toolResult.name === "task_plan" ? onExecutePlan : undefined}

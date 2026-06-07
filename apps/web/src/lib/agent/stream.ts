@@ -78,8 +78,8 @@ export interface StreamModelOptions {
   encoder: TextEncoder;
   responseId: string;
   enableThinking: boolean;
-  trace?: AgentTracer;
   iteration?: number;
+  trace?: AgentTracer;
   timeoutMs?: number;
   eventSink?: AgentStreamEventSink;
 }
@@ -170,7 +170,7 @@ export async function streamModelResponse(
       for (const toolCallDelta of delta.tool_calls ?? []) {
         const index = toolCallDelta.index ?? 0;
         const existing = pendingToolCalls[index] ?? {
-          id: toolCallDelta.id ?? `tool-${index}`,
+          id: toolCallDelta.id ?? `tool-${options.iteration ?? 0}-${index}`,
           type: "function" as const,
           function: { name: "", arguments: "" },
         };
