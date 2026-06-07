@@ -22,7 +22,6 @@ export const WhiteboardBlock = createReactBlockSpec(
       <WhiteboardThumbnail
         whiteboardId={block.props.whiteboardId}
         title={block.props.title}
-        thumbnailUrl={block.props.thumbnailUrl || undefined}
       />
     ),
   },

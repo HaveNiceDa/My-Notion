@@ -1,5 +1,4 @@
 import { Shapes } from "lucide-react";
-import { insertOrUpdateBlockForSlashMenu } from "@blocknote/core/extensions";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { MyNotionBlockNoteEditor } from "../blocks/schema";
 
@@ -19,30 +18,13 @@ interface InsertWhiteboardItemOptions {
 }
 
 export function createInsertWhiteboardItem({
-  editor,
-  documentId,
   copy,
-  createWhiteboard,
 }: InsertWhiteboardItemOptions) {
   return {
     title: copy.title,
     aliases: copy.aliases,
     group: copy.group,
     icon: <Shapes className="h-4 w-4" />,
-    onItemClick: async () => {
-      const whiteboard = await createWhiteboard({
-        title: copy.untitled,
-        documentId,
-      });
-      insertOrUpdateBlockForSlashMenu(editor, {
-        type: "whiteboard",
-        props: {
-          whiteboardId: whiteboard.id,
-          title: whiteboard.title,
-          thumbnailUrl: whiteboard.thumbnailUrl ?? whiteboard.thumbnailDataUrl ?? "",
-          engine: "excalidraw",
-        },
-      });
-    },
+    onItemClick: () => undefined,
   };
 }

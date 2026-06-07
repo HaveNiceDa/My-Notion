@@ -1,16 +1,11 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "convex/react";
 import { Shapes } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { api } from "@/convex/_generated/api";
-import type { Id } from "@/convex/_generated/dataModel";
 
 interface WhiteboardThumbnailProps {
   whiteboardId: string;
   title: string;
-  thumbnailUrl?: string;
 }
 
 function EmptyWhiteboardPreview() {
@@ -33,16 +28,9 @@ function EmptyWhiteboardPreview() {
 export function WhiteboardThumbnail({
   whiteboardId,
   title,
-  thumbnailUrl,
 }: WhiteboardThumbnailProps) {
   const t = useTranslations("Whiteboard");
-  const { isSignedIn } = useUser();
-  const preview = useQuery(
-    api.whiteboards.getPreviewById,
-    isSignedIn && whiteboardId ? { whiteboardId: whiteboardId as Id<"whiteboards"> } : "skip",
-  );
-  const displayTitle = preview?.title ?? (title || t("untitled"));
-  const displayThumbnailUrl = preview?.thumbnailUrl ?? thumbnailUrl;
+  const displayTitle = title || t("untitled");
 
   return (
     <div
@@ -53,12 +41,7 @@ export function WhiteboardThumbnail({
     >
       <div className="pointer-events-none">
         <div className="relative aspect-[16/9] min-h-[280px] w-full bg-white">
-          {displayThumbnailUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={displayThumbnailUrl} alt={displayTitle} className="h-full w-full object-contain" />
-          ) : (
-            <EmptyWhiteboardPreview />
-          )}
+          <EmptyWhiteboardPreview />
         </div>
       </div>
     </div>
