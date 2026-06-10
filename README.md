@@ -132,9 +132,9 @@ pnpm exec playwright test
 
 ## 当前主线
 
-- P0：Plan 模式最小闭环已完成，基于 `task_plan` 支持计划生成、用户确认、确认后执行和状态展示。
-- P0：Web Agent MCP adapter 最小闭环已完成，支持受控 My-Notion MCP 文档工具白名单与确认式写入。
-- P1：M21 韧性与治理已闭环，覆盖流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
-- P1：下一阶段主线转向画板存储迁移。画板因 Convex DB 大字段热路径带宽压力仍保持临时关闭，恢复前先迁移大对象到对象存储（优先 R2）。
+- P0：Web Agent 基础操作闭环已完成，覆盖 ReAct、RAG、Memory、文档读写 dry-run、确认式写入、Plan 模式、受控 MCP adapter、`tool-result-v1`、强类型 `sources` 和流式续跑；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
+- P0：Agent 交互治理已收口，包含生成中禁用确认型 tool 操作、发送后滚动收口、Memory 保存反馈、`document_write` 空白文档预览、MCP `docs_fetch` ID 防护，以及 Convex/Clerk 短时不可用时的主链路降级。
+- P0：画板入口继续保持关闭。M22.1/M22.2 已完成 schema/preview/scene 查询拆分，但 Web 前端不再触发 whiteboards 查询、缩略图加载或全屏编辑器挂载；恢复前必须先把 scene/blob 迁移到对象存储（优先 R2）。
+- P1：Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 相关索引；后续需观察线上 run recording 稳定性。
 - P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估和 Mobile AI/RAG 对齐继续后置。
 - 发布：[`@mynotion/cli@0.1.0-beta.1`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `beta` 和 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。

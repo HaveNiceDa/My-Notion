@@ -101,8 +101,10 @@ pnpm exec playwright test
 
 ## 当前主线
 
-截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0-beta.1` 已发布到 `beta` 和 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory MVP、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环、受控 My-Notion MCP adapter、流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环。
+截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0-beta.1` 已发布到 `beta` 和 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环、受控 My-Notion MCP adapter、流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环。
 
 - Web Agent 续跑当前支持 `run-start/checkpoint`、事件/checkpoint 持久化、backlog replay、失败 run checkpoint 恢复、“继续生成”入口、完整 `currentDocument` 恢复、assistant 消息原地更新，以及 running run 长轮询接管；协议见 `docs/agent-stream-resume-protocol.md`。
+- Agent 交互治理已收口：确认型 tool 在生成中禁用，`document_write` 支持空白文档预览，Memory 保存有明确反馈，MCP `docs_fetch` 会把非 documents ID 转成可恢复工具错误。
+- Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 索引；线上需继续观察 run recording 稳定性。
 - Harness、Trace Replay、Storybook、Memory/RAG 真实评估继续后置，不作为当前主线。
 - 下一阶段主线转向画板存储迁移：因 DB 带宽压力，画板入口仍保持临时关闭；恢复前必须先完成大对象从 Convex DB 热路径迁移到对象存储（优先 R2）的方案和落地。

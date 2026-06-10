@@ -26,11 +26,7 @@
 - `20260606-131432.md`：Web Agent 操作闭环收口，固化续跑/MCP/tool 契约结论，并把下一阶段主线切到画板存储迁移。
 - `20260607-110858.md`：M22.1/M22.2 画板元数据模型与 Web 读取链路，覆盖 schema 扩展、preview/scene 查询拆分和缩略图轻量读取。
 - `20260607-whiteboard-web-entry-disable.md`：画板 Web 入口再止血，覆盖前端 preview 订阅、缩略图图片加载、全屏编辑器和插入命令暂停。
-- `20260607-agent-stream-convex-resilience.md`：Agent Stream Convex 韧性修复，覆盖 Clerk/Convex token 降级、finish 事件优先、Memory 后台提取和 loading 提前收口。
-- `20260607-ai-tool-interaction-hardening.md`：AI 工具交互加固，覆盖 document_write 空白文档、Memory 保存反馈、Inbox 文案、Plan 重复 key 和 recorder rejection 收敛。
-- `20260607-ai-chat-ui-interaction-polish.md`：AI 对话 UI 交互优化，覆盖生成中禁用确认型 tool、回到底部按钮和空白页快捷操作收口。
-- `20260607-ai-summary-prompt-mcp-guard.md`：文档汇总快捷入口收敛与 MCP 防护，覆盖 prompt 限制和 agentMemories ID 误入 docs_fetch 的可恢复错误。
-- `20260607-agent-governance-deploy-summary.md`：2026-06-07 Agent 治理与 Convex 部署总结，覆盖画板止血、AI 交互加固、MCP 防护和 prod Convex deploy 结果。
+- `20260607-agent-governance-deploy-summary.md`：2026-06-07 Agent 治理与 Convex 部署压缩总结，覆盖画板止血、AI 交互加固、MCP 防护、快捷入口收口和 prod Convex deploy 结果；替代当天更细的 AI/Agent 临时过程记录。
 
 ## 阅读规则
 

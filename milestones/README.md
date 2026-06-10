@@ -39,12 +39,12 @@
 - M18 ✅ 部分完成并后置 Harness：Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`ci:ai-smoke` 和无 secrets 版 GitHub Actions 已完成；Storybook、Trace Replay、Memory/RAG 真实评估后置。
 - M19 ✅ 已完成：Plan 模式最小闭环，支持展示计划、确认计划、确认后执行和状态可见。
 - M20 ✅ 已完成最小闭环：Web Agent 通过受控 My-Notion MCP adapter 调用白名单文档工具，并继续遵守确认式写入。
-- M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化，以及流式续跑可用闭环。
+- M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化、流式续跑可用闭环，以及 2026-06-07 的 AI 工具交互治理与 MCP ID 防护。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
 
 ## 下一批候选里程碑
 
-- M22 ⏳ 下一阶段：画板存储迁移。先把画板 scene/blob 从 Convex DB 热路径迁移到对象存储（优先 R2），再恢复画板入口。
+- M22 ⏳ 当前主线：画板存储迁移。M22.1/M22.2 已完成 schema 与读取契约拆分，但 Web 入口继续关闭；下一步先把 scene/blob 从 Convex DB 热路径迁移到对象存储（优先 R2），再恢复画板入口。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
 - 详细路线见 `docs/ai-chat-refactor-plan.md`。
 
@@ -55,7 +55,7 @@ M23-M27 是基于 `docs/agent-memory-redesign-report.md` 拆出的独立 Memory 
 1. M23 ✅：扩展 `agentMemories` schema 与兼容层，让后续所有阶段有稳定字段基础。
 2. M24 ✅：在 schema 基础上重构纯读检索和运行时注入，避免读路径 upsert 与 system prompt 污染。
 3. M25 ✅：引入 pending review 与 Inbox，让 Agent 写入从单点确认升级为可治理的确认链路。
-4. M26 ✅：重构 `/memories` 为 Memory Center，让用户能查看证据、同步状态、冲突和设置。
+4. M26 ✅：重构 `/memories` 为 Memory Center，让用户能查看和确认待处理记忆、已生效记忆与规则设置。
 5. M27 ✅：补 Memory eval、trace 观测和受控自动提取，默认进入 Inbox，不直接写 active memory。
 
 ## 关键验证命令

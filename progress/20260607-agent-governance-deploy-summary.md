@@ -13,6 +13,7 @@
 - AI 对话 UI 优化：生成中禁用确认型工具操作，避免多次点击；发送后自动滚动到底部；用户离开底部时提供手动回到底部按钮。
 - AI 空白页快捷操作收口：保留当前真实支持能力，移除会触发过多工具调用的“总结下我的文档信息”入口。
 - MCP adapter 防护：`my_notion_docs_fetch` 捕获非 documents ID 的 Convex 校验错误，返回可恢复工具错误，避免 Server Error 暴露到工具卡片。
+- 进展记录清理：删除 2026-06-04 Memory 精简/迁移碎片记录和 2026-06-07 AI/Agent 小修过程记录，统一以本总结作为当前阶段入口。
 
 ## 线上部署
 
@@ -43,6 +44,7 @@
 - 本地到 Clerk/Convex 仍可能偶发 `fetch failed` / `ETIMEDOUT`，目前策略是优先保证 AI 主回答链路可用，牺牲部分 run recording、Memory 注入或 checkpoint 持久化。
 - MCP prompt 约束只能降低模型误用概率，真正的防线应继续放在 adapter / tool executor 层。
 - 画板入口仍应保持关闭；恢复前必须完成大对象从 Convex DB 热路径迁移到对象存储。
+- `progress/` 已清理短期碎片，若需要追溯更细过程，应优先看 git 历史而不是恢复旧流水账。
 
 ## 下一步建议
 
