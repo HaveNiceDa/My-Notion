@@ -210,7 +210,6 @@ my-notion docs archive --id <documentId> --format json
 ```
 
 推荐顺序：先 `search/list` 确认是否已有文档，再 `create/import`；修改已有文档时优先 `append`。
-画板 CLI 能力已下线；历史画板数据不再通过 CLI/MCP 暴露。
 
 ### 4. Tokens
 

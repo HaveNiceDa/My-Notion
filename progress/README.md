@@ -13,9 +13,6 @@
 - `20260603-181537.md`：M25 Agent Memory Inbox Confirmation，覆盖 pending proposal、Inbox、commit/reject 和确认式写入链路。
 - `20260603-183215.md`：M26 Agent Memory Center UI，覆盖 `/memories` Memory Center、Overview、Inbox、Active、Conflicts、Settings 和 Detail Drawer。
 - `20260603-195302.md`：M27 Agent Memory Eval And Auto Extraction，覆盖 Memory Eval、trace lifecycle、受控自动提取和 shadcn Select 统一。
-- `20260603-whiteboard-excalidraw.md`：Excalidraw 画板能力基础建设，覆盖 whiteboards 资源模型、BlockNote 自定义画板块、全屏编辑器和 CLI/MCP DSL 写入链路。
-- `20260604-cli-whiteboard-contract-hardening.md`：CLI 与画板契约加固，覆盖默认 append、DSL layout、package 导出、whiteboards scope 和 scene 迁移层。
-- `20260605-whiteboard-bandwidth-temporary-disable.md`：画板带宽问题临时止血，覆盖 Convex DB 大字段热路径问题、新建入口暂停和已有画板静态渲染。
 - `20260605-233018.md`：M20 Web Agent MCP Adapter 最小闭环，覆盖受控 MCP 文档工具白名单、dry-run 强制保护和前端确认复用。
 - `20260605-234802.md`：M21 韧性与治理最小闭环，覆盖流式安全重试、`tool-result-v1` 契约基建和 Plan 执行状态持久化。
 - `20260606-091356.md`：Tool 结果契约全量统一，覆盖主要 Web Agent tools 的 `summary/sources/metadata/recoverable` 收敛。
@@ -23,11 +20,6 @@
 - `20260606-100642.md`：流式续跑 Phase 1/2/3 落地，覆盖 run 控制事件、事件/checkpoint 持久化、backlog replay 和 checkpoint ReAct 恢复。
 - `20260606-113248.md`：流式续跑可用性收口，覆盖“继续生成”入口和 resume 时完整 currentDocument 上下文恢复。
 - `20260606-120002.md`：续跑一致性收口，覆盖 assistant 消息原地更新和 running run 长轮询接管。
-- `20260606-131432.md`：Web Agent 操作闭环收口，固化续跑/MCP/tool 契约结论，并把下一阶段主线切到画板存储迁移。
-- `20260607-110858.md`：M22.1/M22.2 画板元数据模型与 Web 读取链路，覆盖 schema 扩展、preview/scene 查询拆分和缩略图轻量读取。
-- `20260607-whiteboard-web-entry-disable.md`：画板 Web 入口再止血，覆盖前端 preview 订阅、缩略图图片加载、全屏编辑器和插入命令暂停。
-- `20260607-agent-governance-deploy-summary.md`：2026-06-07 Agent 治理与 Convex 部署压缩总结，覆盖画板止血、AI 交互加固、MCP 防护、快捷入口收口和 prod Convex deploy 结果；替代当天更细的 AI/Agent 临时过程记录。
-- `20260611-p0-risk-fixes.md`：P0 风险止血，覆盖文档密钥脱敏、本地 npm 发布 token 文件移除、Mobile AI 兼容 API 鉴权补齐，以及画板 Web/CLI/MCP 入口下线和 Machine API 410 收口。
 
 ## 阅读规则
 

@@ -211,7 +211,6 @@ Machine API errors use stable HTTP status and `error.code` pairs:
 | `401` | `TOKEN_REVOKED` | CLI token was revoked on the server | Stop retrying and ask the user to authorize again. |
 | `401` | `TOKEN_EXPIRED` | CLI token `expiresAt` is in the past | Stop retrying and ask the user to authorize again. |
 | `403` | `INSUFFICIENT_SCOPE` | Token lacks the required scope, such as `docs:write` | Do not retry; ask for a token with the required scope. |
-| `410` | `GONE` | The requested feature, such as legacy whiteboard APIs, is no longer supported | Do not retry; explain that the feature has been retired. |
 | `404` | `NOT_FOUND` | Document or CLI endpoint does not exist, or the document is archived / not owned by the token user | Re-check the document id or search again before retrying. |
 | `422` | `VALIDATION_ERROR` | Request body or path parameter is invalid, such as an empty title | Fix the command arguments or request payload before retrying. |
 | `429` | `RATE_LIMITED` | Token exceeded the fixed-window quota | Respect `Retry-After`; the CLI does not retry structured rate-limit errors. |

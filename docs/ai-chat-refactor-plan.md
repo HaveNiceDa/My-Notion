@@ -1,6 +1,5 @@
 # AI Chat 重构方案：当前基线与下一步
 
-> Phase 1-5 已在 M10-M14 完成；M16 收口 CLI / Skills / MCP Agent 写文档链路；M17 完成 Web Agent 主线、Memory MVP、Hybrid Retrieval、文档写入 dry-run 与前端确认；M18 已补 Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`pnpm ci:ai-smoke` 和无 secrets 版 GitHub Actions；M20/M21 完成 MCP adapter、tool-result-v1、强类型 sources、Plan 状态持久化、流式续跑可用闭环和 AI 工具交互治理。当前策略调整为：Harness 继续后置，Web Agent 基础操作闭环，下一阶段主线转向画板存储迁移。
 
 ---
 
@@ -68,13 +67,11 @@
 | M19 | Planning 基础能力 | ✅ 已完成：展示计划、确认计划、执行步骤、状态可见 |
 | M20 | MCP 扩展 | ✅ 已完成最小闭环：Web Agent 能安全调用受控 My-Notion MCP adapter，并继续遵守确认式写入 |
 | M21 | 韧性与治理 | ✅ 已完成：流式安全重试、`tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化 |
-| M22 | 画板存储迁移 | M22.1/M22.2 已完成 schema 与读取契约拆分；下一步先完成画板大对象从 Convex DB 热路径迁移到对象存储（优先 R2），再恢复画板入口 |
 
 ---
 
 ## 当前建议下一步
 
 1. Web Agent 基础操作已闭环，后续只保留真实对话冒烟验证和小修。
-2. 下一步转入 **画板 R2 存储迁移**：先梳理现有 whiteboards schema、CLI/MCP DSL、BlockNote 画板块和静态渲染路径。
 3. 设计 `metadata in DB + scene/blob in object storage` 的迁移方案，确保不恢复 Convex DB 热路径大对象读写。
 4. Harness、Trace Replay、Storybook 和真实质量评估继续后置。

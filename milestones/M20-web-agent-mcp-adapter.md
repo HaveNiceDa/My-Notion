@@ -5,7 +5,6 @@
 - 状态：已完成最小闭环。
 - 更新时间：2026-06-05。
 - 本阶段交付目标：让 Web Agent 通过受控 My-Notion MCP adapter 调用 MCP 工具能力，并继续遵守确认式写入。
-- 本阶段非目标：任意外部 MCP server 连接、HTTP MCP/OAuth 2.1、画板 MCP 工具恢复、Trace Replay。
 
 ## 目标
 
@@ -45,7 +44,6 @@
 
 - 第一版只做受控 My-Notion MCP adapter，不做通用 MCP client，降低 token、权限和任意工具执行风险。
 - Web Agent 继续复用当前 ReAct Loop、tool fallback、ToolCallCard 和确认式写入链路。
-- 画板 MCP 工具暂不接入 Web Agent，因为画板仍处于 Convex 带宽止血阶段。
 - `docs_fetch` 的 Markdown 转换在 Web runtime 内部轻量实现，避免把 Convex server 模块导入 Next API route。
 
 ## 验证

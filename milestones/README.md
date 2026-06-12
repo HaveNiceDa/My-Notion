@@ -44,7 +44,6 @@
 
 ## 下一批候选里程碑
 
-- M22 ✅ 已收口：画板功能从“存储迁移后恢复”调整为下线。Web 前端仅保留历史 `whiteboard` block 废弃占位；CLI/MCP 入口禁用，Machine API whiteboard routes 返回 `410 Gone`；后续仅在确认无历史依赖后再清理 schema/DSL 残留。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
 - 详细路线见 `docs/ai-chat-refactor-plan.md`。
 

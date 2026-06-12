@@ -107,4 +107,3 @@ pnpm exec playwright test
 - Agent 交互治理已收口：确认型 tool 在生成中禁用，`document_write` 支持空白文档预览，Memory 保存有明确反馈，MCP `docs_fetch` 会把非 documents ID 转成可恢复工具错误。
 - Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 索引；线上需继续观察 run recording 稳定性。
 - Harness、Trace Replay、Storybook、Memory/RAG 真实评估继续后置，不作为当前主线。
-- 下一阶段主线转向画板存储迁移：因 DB 带宽压力，画板入口仍保持临时关闭；恢复前必须先完成大对象从 Convex DB 热路径迁移到对象存储（优先 R2）的方案和落地。
