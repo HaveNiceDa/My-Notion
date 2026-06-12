@@ -2,8 +2,6 @@ import type {
   ApiResponse,
   ApiTokenResult,
   DocumentResult,
-  WhiteboardExportResult,
-  WhiteboardResult,
 } from "../types.js";
 import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 
@@ -119,71 +117,6 @@ export class MyNotionClient {
 
     return this.request<{ documents: DocumentResult[] }>(
       `/cli/v1/documents${queryString ? `?${queryString}` : ""}`,
-    );
-  }
-
-  createWhiteboard(input: {
-    title: string;
-    documentId?: string;
-    dsl?: unknown;
-  }) {
-    return this.request<WhiteboardResult>("/cli/v1/whiteboards", {
-      method: "POST",
-      body: input,
-    });
-  }
-
-  listWhiteboards(input: { documentId?: string; limit?: number }) {
-    const params = new URLSearchParams();
-    if (input.documentId) params.set("documentId", input.documentId);
-    if (input.limit) params.set("limit", String(input.limit));
-    const queryString = params.toString();
-    return this.request<{ whiteboards: WhiteboardResult[] }>(
-      `/cli/v1/whiteboards${queryString ? `?${queryString}` : ""}`,
-    );
-  }
-
-  fetchWhiteboard(whiteboardId: string) {
-    return this.request<WhiteboardResult>(
-      `/cli/v1/whiteboards/${encodeURIComponent(whiteboardId)}`,
-    );
-  }
-
-  updateWhiteboard(input: {
-    id: string;
-    title?: string;
-    dsl?: unknown;
-    sceneJson?: string;
-  }) {
-    return this.request<WhiteboardResult>(
-      `/cli/v1/whiteboards/${encodeURIComponent(input.id)}`,
-      {
-        method: "PATCH",
-        body: {
-          title: input.title,
-          dsl: input.dsl,
-          sceneJson: input.sceneJson,
-        },
-      },
-    );
-  }
-
-  exportWhiteboard(input: { id: string; format: "json" | "svg" | "package" }) {
-    return this.request<WhiteboardExportResult>(
-      `/cli/v1/whiteboards/${encodeURIComponent(input.id)}/export`,
-      {
-        method: "POST",
-        body: { format: input.format },
-      },
-    );
-  }
-
-  archiveWhiteboard(whiteboardId: string) {
-    return this.request<WhiteboardResult>(
-      `/cli/v1/whiteboards/${encodeURIComponent(whiteboardId)}`,
-      {
-        method: "DELETE",
-      },
     );
   }
 

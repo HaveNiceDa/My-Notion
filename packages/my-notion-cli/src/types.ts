@@ -71,27 +71,6 @@ export type DocumentResult = {
   lastEditedTime: number | null;
 };
 
-export type WhiteboardResult = {
-  id: string;
-  title: string;
-  documentId?: string;
-  engine: "excalidraw";
-  sceneJson: string;
-  thumbnailDataUrl?: string;
-  sourceDsl?: string;
-  sourceDslVersion?: "mwb-dsl-v1";
-  isArchived: boolean;
-  createdAt: number;
-  updatedAt: number;
-};
-
-export type WhiteboardExportResult = {
-  id: string;
-  title: string;
-  format: "json" | "svg" | "package";
-  content: string;
-};
-
 export type ApiTokenResult = {
   id: string;
   name: string;

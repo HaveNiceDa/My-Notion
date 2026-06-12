@@ -44,7 +44,7 @@
 
 ## 下一批候选里程碑
 
-- M22 ⏳ 当前主线：画板存储迁移。M22.1/M22.2 已完成 schema 与读取契约拆分，但 Web 入口继续关闭；下一步先把 scene/blob 从 Convex DB 热路径迁移到对象存储（优先 R2），再恢复画板入口。
+- M22 ✅ 已收口：画板功能从“存储迁移后恢复”调整为下线。Web 前端仅保留历史 `whiteboard` block 废弃占位；CLI/MCP 入口禁用，Machine API whiteboard routes 返回 `410 Gone`；后续仅在确认无历史依赖后再清理 schema/DSL 残留。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
 - 详细路线见 `docs/ai-chat-refactor-plan.md`。
 

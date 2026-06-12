@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
       userCodeDisplay: userCode,
       scopes: body.scopes?.length
         ? body.scopes
-        : ["docs:read", "docs:write", "whiteboards:read", "whiteboards:write"],
+        : ["docs:read", "docs:write"],
       profile: body.profile,
       apiUrl: body.apiUrl,
       webUrl,

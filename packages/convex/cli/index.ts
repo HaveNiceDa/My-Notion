@@ -19,8 +19,6 @@ import { whiteboardDslValidator } from "../whiteboards";
 const DEFAULT_CLI_SCOPES = [
   "docs:read",
   "docs:write",
-  "whiteboards:read",
-  "whiteboards:write",
 ] as const;
 const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
 const DEVICE_FLOW_TOKEN_NAME = "CLI Browser Login";

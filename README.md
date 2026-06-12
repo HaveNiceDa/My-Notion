@@ -134,7 +134,7 @@ pnpm exec playwright test
 
 - P0：Web Agent 基础操作闭环已完成，覆盖 ReAct、RAG、Memory、文档读写 dry-run、确认式写入、Plan 模式、受控 MCP adapter、`tool-result-v1`、强类型 `sources` 和流式续跑；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
 - P0：Agent 交互治理已收口，包含生成中禁用确认型 tool 操作、发送后滚动收口、Memory 保存反馈、`document_write` 空白文档预览、MCP `docs_fetch` ID 防护，以及 Convex/Clerk 短时不可用时的主链路降级。
-- P0：画板入口继续保持关闭。M22.1/M22.2 已完成 schema/preview/scene 查询拆分，但 Web 前端不再触发 whiteboards 查询、缩略图加载或全屏编辑器挂载；恢复前必须先把 scene/blob 迁移到对象存储（优先 R2）。
+- P0：画板功能已转为下线收口。Web 前端仅保留历史 `whiteboard` block 只读废弃占位，不再触发 whiteboards 查询、缩略图加载、全屏编辑器或写入；CLI/MCP 画板入口已禁用，Machine API `/cli/v1/whiteboards*` 返回 `410 Gone`。
 - P1：Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 相关索引；后续需观察线上 run recording 稳定性。
 - P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估和 Mobile AI/RAG 对齐继续后置。
 - 发布：[`@mynotion/cli@0.1.0-beta.1`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `beta` 和 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
