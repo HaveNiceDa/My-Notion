@@ -1,5 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useUser } from "@clerk/expo";
+import { useAuth, useUser } from "@clerk/expo";
 import { useMutation, useQuery } from "convex/react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { TextStyle } from "react-native";
@@ -49,6 +49,7 @@ type Props = {
 export function ChatModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
   const { user } = useUser();
+  const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
   const { theme: appTheme } = useAppTheme();
   const theme = useTheme();
@@ -167,6 +168,7 @@ export function ChatModal({ visible, onClose }: Props) {
 
       let fullContent = "";
       let fullReasoning = "";
+      const authToken = await getToken();
 
       const callbacks = {
         onContent: (text: string) => {
@@ -222,6 +224,7 @@ export function ChatModal({ visible, onClose }: Props) {
             knowledgeBaseEnabled: true,
           },
           callbacks,
+          { authToken },
         );
       } else {
         const chatMessages = buildMessages(userMessage, history);
@@ -230,6 +233,7 @@ export function ChatModal({ visible, onClose }: Props) {
           selectedModel,
           enableThinking,
           callbacks,
+          { authToken },
         );
       }
     } catch (error) {
@@ -239,7 +243,7 @@ export function ChatModal({ visible, onClose }: Props) {
       setReasoningContent("");
       setLastFailedInput(userMessage);
     }
-  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled]);
+  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled, getToken]);
 
   const handleNewConversation = () => {
     isCreatingNewRef.current = true;

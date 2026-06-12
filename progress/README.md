@@ -27,6 +27,7 @@
 - `20260607-110858.md`：M22.1/M22.2 画板元数据模型与 Web 读取链路，覆盖 schema 扩展、preview/scene 查询拆分和缩略图轻量读取。
 - `20260607-whiteboard-web-entry-disable.md`：画板 Web 入口再止血，覆盖前端 preview 订阅、缩略图图片加载、全屏编辑器和插入命令暂停。
 - `20260607-agent-governance-deploy-summary.md`：2026-06-07 Agent 治理与 Convex 部署压缩总结，覆盖画板止血、AI 交互加固、MCP 防护、快捷入口收口和 prod Convex deploy 结果；替代当天更细的 AI/Agent 临时过程记录。
+- `20260611-p0-risk-fixes.md`：P0 风险止血，覆盖文档密钥脱敏、本地 npm 发布 token 文件移除、Mobile AI 兼容 API 鉴权补齐、画板 legacy 大对象写入上限和 Web 前端画板入口下线。
 
 ## 阅读规则
 

@@ -26,9 +26,20 @@ const DEFAULT_CLI_TOKEN_NAME = "Default CLI Token";
 const DEVICE_FLOW_TOKEN_NAME = "CLI Browser Login";
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const DEVICE_AUTH_DECISION_WINDOW_MS = 5_000;
+const MAX_LEGACY_WHITEBOARD_SCENE_JSON_BYTES = 128 * 1024;
 
 function now() {
   return Date.now();
+}
+
+function byteLength(value: string) {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function assertLegacyWhiteboardSceneBudget(sceneJson: string) {
+  if (byteLength(sceneJson) > MAX_LEGACY_WHITEBOARD_SCENE_JSON_BYTES) {
+    throw new Error("Whiteboard scene is too large for legacy DB storage. Upload scene assets to object storage first.");
+  }
 }
 
 function latestFirst<T extends { createdAt: number }>(left: T, right: T) {
@@ -732,6 +743,7 @@ export const createCliWhiteboard = internalMutation({
     const sceneJson = dsl
       ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
       : stringifyWhiteboardScene(createEmptyExcalidrawScene());
+    assertLegacyWhiteboardSceneBudget(sceneJson);
     const whiteboardId = await ctx.db.insert("whiteboards", {
       title: args.title,
       userId: args.userId,
@@ -802,13 +814,15 @@ export const updateCliWhiteboard = internalMutation({
       return null;
     }
     const dsl = args.dsl ? parseWhiteboardDsl(args.dsl as WhiteboardDslDocument) : undefined;
+    const sceneJson = dsl
+      ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
+      : args.sceneJson
+        ? stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson)))
+        : whiteboard.sceneJson;
+    assertLegacyWhiteboardSceneBudget(sceneJson);
     await ctx.db.patch(args.whiteboardId, {
       title: args.title ?? dsl?.title ?? whiteboard.title,
-      sceneJson: dsl
-        ? stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl))
-        : args.sceneJson
-          ? stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson)))
-          : whiteboard.sceneJson,
+      sceneJson,
       sourceDsl: args.dsl ? JSON.stringify(args.dsl, null, 2) : whiteboard.sourceDsl,
       sourceDslVersion: args.dsl?.version ?? whiteboard.sourceDslVersion,
       updatedAt: now(),

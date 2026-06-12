@@ -23,11 +23,22 @@ export type StreamCallbacks = {
 
 const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
 
+type StreamRequestOptions = {
+  authToken?: string | null;
+};
+
 function getAIServiceUrl(): string {
   if (!AI_SERVICE_URL) {
     throw new Error("EXPO_PUBLIC_AI_SERVICE_URL is not configured");
   }
   return AI_SERVICE_URL;
+}
+
+function buildJsonHeaders(authToken?: string | null): Record<string, string> {
+  return {
+    "Content-Type": "application/json",
+    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+  };
 }
 
 function processSSEBuffer(buffer: string, callbacks: StreamCallbacks): string {
@@ -127,6 +138,7 @@ export async function streamChat(
   model: AIModel = DEFAULT_MODEL,
   enableThinking: boolean = false,
   callbacks: StreamCallbacks,
+  options: StreamRequestOptions = {},
 ): Promise<void> {
   const serviceUrl = getAIServiceUrl();
   const actualModelId = getActualModelId(model);
@@ -134,7 +146,7 @@ export async function streamChat(
   try {
     const response = await fetch(`${serviceUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildJsonHeaders(options.authToken),
       body: JSON.stringify({
         messages,
         model: actualModelId,
@@ -166,6 +178,7 @@ export type RAGStreamParams = {
 export async function streamRAG(
   params: RAGStreamParams,
   callbacks: StreamCallbacks,
+  options: StreamRequestOptions = {},
 ): Promise<void> {
   const serviceUrl = getAIServiceUrl();
   const actualModelId = getActualModelId(params.model);
@@ -173,7 +186,7 @@ export async function streamRAG(
   try {
     const response = await fetch(`${serviceUrl}/api/rag`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: buildJsonHeaders(options.authToken),
       body: JSON.stringify({
         userId: params.userId,
         query: params.query,

@@ -72,6 +72,30 @@ function now() {
   return Date.now();
 }
 
+const MAX_LEGACY_SCENE_JSON_BYTES = 128 * 1024;
+const MAX_LEGACY_THUMBNAIL_DATA_URL_BYTES = 128 * 1024;
+
+function byteLength(value: string) {
+  return new TextEncoder().encode(value).byteLength;
+}
+
+function assertLegacyAssetBudget(input: {
+  sceneJson: string;
+  thumbnailDataUrl?: string;
+}) {
+  const sceneBytes = byteLength(input.sceneJson);
+  if (sceneBytes > MAX_LEGACY_SCENE_JSON_BYTES) {
+    throw new Error("Whiteboard scene is too large for legacy DB storage. Upload scene assets to object storage first.");
+  }
+
+  if (input.thumbnailDataUrl) {
+    const thumbnailBytes = byteLength(input.thumbnailDataUrl);
+    if (thumbnailBytes > MAX_LEGACY_THUMBNAIL_DATA_URL_BYTES) {
+      throw new Error("Whiteboard thumbnail is too large for legacy DB storage. Upload thumbnail assets to object storage first.");
+    }
+  }
+}
+
 type WhiteboardRecord = {
   _id: Id<"whiteboards">;
   title: string;
@@ -189,6 +213,7 @@ export const create = mutation({
     await assertDocumentOwner(ctx, args.documentId, userId);
     const timestamp = now();
     const sceneJson = sceneFromInput(args);
+    assertLegacyAssetBudget({ sceneJson, thumbnailDataUrl: args.thumbnailDataUrl });
     const whiteboardId = await ctx.db.insert("whiteboards", {
       title: args.title.trim() || "Untitled whiteboard",
       userId,
@@ -292,6 +317,8 @@ export const updateScene = mutation({
     const whiteboard = await ctx.db.get(args.whiteboardId);
     if (!whiteboard || whiteboard.isArchived) throw new Error("Whiteboard not found");
     if (whiteboard.userId !== userId) throw new Error("Unauthorized");
+    const sceneJson = stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson)));
+    assertLegacyAssetBudget({ sceneJson, thumbnailDataUrl: args.thumbnailDataUrl });
     const patch: {
       title: string;
       sceneJson: string;
@@ -299,7 +326,7 @@ export const updateScene = mutation({
       updatedAt: number;
     } = {
       title: args.title ?? whiteboard.title,
-      sceneJson: stringifyWhiteboardScene(migrateExcalidrawScene(JSON.parse(args.sceneJson))),
+      sceneJson,
       updatedAt: now(),
     };
     if (args.thumbnailDataUrl !== undefined) {
@@ -324,9 +351,11 @@ export const updateFromDsl = mutation({
     if (!whiteboard || whiteboard.isArchived) throw new Error("Whiteboard not found");
     if (whiteboard.userId !== userId) throw new Error("Unauthorized");
     const dsl = parseWhiteboardDsl(args.dsl);
+    const sceneJson = stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl));
+    assertLegacyAssetBudget({ sceneJson });
     await ctx.db.patch(args.whiteboardId, {
       title: args.title ?? dsl.title ?? whiteboard.title,
-      sceneJson: stringifyWhiteboardScene(whiteboardDslToExcalidrawScene(dsl)),
+      sceneJson,
       sourceDsl: JSON.stringify(args.dsl, null, 2),
       sourceDslVersion: args.dsl.version,
       updatedAt: now(),
