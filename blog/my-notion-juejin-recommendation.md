@@ -464,7 +464,7 @@ Web 端负责主要产品体验：
 安装方式：
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion config init
 my-notion auth login
@@ -548,7 +548,7 @@ pnpm dev:local
 ### 5. 安装 CLI
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion config init
 my-notion auth login
@@ -664,7 +664,7 @@ pnpm test
 pnpm exec playwright test
 ```
 
-目前 `@mynotion/cli@0.1.0-beta.1` 已发布到 npm，并通过了 CLI 单测、typecheck、build、CLI E2E、MCP E2E、真实 SDK Client E2E、Skills 同步校验和 npm pack 验证。
+目前 `@mynotion/cli@0.1.0` 已发布到 npm `latest`，并通过了 CLI 单测、typecheck、build、CLI E2E、MCP E2E、真实 SDK Client E2E、Skills 同步校验和 npm pack 验证。
 
 ---
 
@@ -748,7 +748,7 @@ RAG 需要向量检索能力，Qdrant 是比较成熟的向量数据库。
 - Web Agent 主线、Memory MVP、Hybrid Retrieval、确认式写入
 - Agent 单测、AI Smoke、最小 retrieval eval
 - Plan 模式最小闭环
-- `@mynotion/cli@0.1.0-beta.1` 发布
+- `@mynotion/cli@0.1.0` 发布到 npm `latest`
 
 下一阶段重点：
 
@@ -790,4 +790,3 @@ RAG 需要向量检索能力，Qdrant 是比较成熟的向量数据库。
 对我来说，它更像是一个面向 AI 时代的个人知识工作台实验：既保留文档工具的稳定性，又让 Agent 能安全地读取、搜索、规划和写入。
 
 如果你正在做 AI 知识库、文档协作、RAG、Agent 工具调用或 MCP 相关项目，`My-Notion` 值得拆开看看。
-

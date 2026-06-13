@@ -99,7 +99,7 @@ https://<deployment>.convex.site
 
 ## 2. 安装或运行 CLI
 
-推荐使用 npm beta 包：
+推荐使用 npm latest 稳定包：
 
 ```bash
 npm install -g @mynotion/cli@latest

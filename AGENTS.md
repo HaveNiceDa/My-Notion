@@ -44,7 +44,7 @@ My-Notion 是一个定制化个人版 Notion，核心目标是把文档编辑、
 - `apps/web/AGENTS.md`：Web Convex 开发规则；修改 `apps/web/convex` 前必须阅读 `apps/web/convex/_generated/ai/guidelines.md`。
 - `apps/mobile/README.md`：移动端能力、Expo 架构、环境变量、目录结构。
 - `apps/mobile/AGENTS.md`：Mobile Convex 开发规则；修改 `apps/mobile/convex` 前必须阅读 `apps/mobile/convex/_generated/ai/guidelines.md`。
-- `packages/my-notion-cli/README.md`：`@mynotion/cli` 命令、Device Flow、MCP server、npm beta 发布状态。
+- `packages/my-notion-cli/README.md`：`@mynotion/cli` 命令、Device Flow、MCP server、npm latest 发布状态。
 - `packages/my-notion-skills/README.md`：Agent Skills 列表、同步规则、安全输出约束。
 - `milestones/README.md`：阶段性里程碑索引，适合快速理解已完成能力和下一步路线。
 - `progress/README.md`：压缩后的历史过程记录入口。

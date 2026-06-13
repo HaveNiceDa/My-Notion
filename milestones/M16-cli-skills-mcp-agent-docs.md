@@ -24,7 +24,7 @@
 - 已加固 Node 网络稳定性：设置 `autoSelectFamilyAttemptTimeout`，降低 Convex/Cloudflare `fetch failed` 抖动。
 - 已增加包级 Vitest 入口和核心单测。
 - 已设置默认 Machine API URL 兜底为 `https://moonlit-ptarmigan-478.convex.site`。
-- 已发布 npm beta：`@mynotion/cli@0.1.0-beta.0`，bin 保持 `my-notion`。
+- 已发布 npm latest：`@mynotion/cli@0.1.0`，bin 保持 `my-notion`。
 - 已补 `my-notion config init` 初始化入口，覆盖 Node/配置/登录态/Skills/MCP 状态检查和下一步命令推荐；命令只写入非敏感 profile 元信息，不输出完整 Token。
 
 ### Skills

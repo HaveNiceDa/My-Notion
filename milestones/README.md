@@ -23,7 +23,7 @@
 13. `M25-agent-memory-inbox-confirmation.md`：Memory proposal、pending review、Inbox 和确认式提交链路。
 14. `M26-agent-memory-center-ui.md`：`/memories` 从 CRUD 列表升级为 Memory Center。
 15. `M27-agent-memory-eval-auto-extraction.md`：Memory eval、trace 观测和受控自动提取。
-16. `progress/20260527-20260531-consolidated.md`：近期 Web Agent、CLI/Skills/MCP、Device Flow 与 npm beta 发布的压缩过程记录。
+16. `progress/20260527-20260531-consolidated.md`：近期 Web Agent、CLI/Skills/MCP、Device Flow 与 npm 发布的压缩过程记录。
 17. `progress/20260602-173825.md`：M19 Plan 模式最小闭环的过程记录。
 
 ## 当前总状态

@@ -10,7 +10,7 @@ Installed or linked binary:
 my-notion <command>
 ```
 
-npm beta package:
+npm latest package:
 
 ```bash
 npm install -g @mynotion/cli@latest

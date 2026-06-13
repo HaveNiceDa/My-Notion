@@ -83,7 +83,7 @@ docker compose -f my-notion-go/docker-compose.yml up -d qdrant
 
 ## CLI / MCP Quick Start
 
-CLI 已发布到 npm beta：[`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)。
+CLI 已发布到 npm latest：[`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)。
 
 ```bash
 npm install -g @mynotion/cli@latest
