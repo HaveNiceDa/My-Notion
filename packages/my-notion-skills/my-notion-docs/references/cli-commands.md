@@ -13,7 +13,7 @@ my-notion <command>
 npm beta package:
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init --check --format json
@@ -145,14 +145,14 @@ Typical output includes:
 
 ```json
 {
-  "currentVersion": "0.1.0-beta.0",
-  "targetTag": "beta",
-  "latestVersion": "0.1.0-beta.1",
-  "updateAvailable": true,
+  "currentVersion": "0.1.0",
+  "targetTag": "latest",
+  "latestVersion": "0.1.0",
+  "updateAvailable": false,
   "autoUpdated": false,
   "requiresUserConfirmation": true,
   "commands": {
-    "updateCli": "npm install -g @mynotion/cli@beta",
+    "updateCli": "npm install -g @mynotion/cli@latest",
     "updateSkills": "npx skills add @mynotion/cli -y -g",
     "verifyCli": "my-notion update --check --format json",
     "verifyConfig": "my-notion config init --check --format json"

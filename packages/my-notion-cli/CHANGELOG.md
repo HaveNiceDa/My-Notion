@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.0
+
+- Promote the CLI package to the stable `latest` channel.
+- Keep document CLI, bundled Skills, and MCP STDIO document tools as the supported Agent-facing surface.
+- Remove retired capability references from packaged documentation.
+
 ## 0.1.0-beta.1
 
 - Add `my-notion update` guidance for checking the installed CLI version and upgrade command.

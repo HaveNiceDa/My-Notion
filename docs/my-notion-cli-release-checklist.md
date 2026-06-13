@@ -99,15 +99,15 @@ pnpm sync:skills:check
 - skill 文档仍要求长内容使用临时 Markdown 文件。
 - skill 文档仍禁止在聊天或日志中输出完整 PAT。
 
-## npm beta 发布检查
+## npm latest 发布检查
 
 npm 包信息：
 
 ```text
 package: @mynotion/cli
 bin:     my-notion
-tag:     beta
-current beta: 0.1.0-beta.1
+tag:     latest
+current latest: 0.1.0
 ```
 
 发布前必须确认：
@@ -126,8 +126,8 @@ current beta: 0.1.0-beta.1
 cd packages/my-notion-cli
 npm publish --tag beta --access public
 # 如使用本地 token 文件：npm publish --tag beta --access public --userconfig ./.npmrc.publish
-npm view @mynotion/cli@beta version bin dist-tags
-npx @mynotion/cli@beta --help
+npm view @mynotion/cli@latest version bin dist-tags
+npx @mynotion/cli@latest --help
 ```
 
 稳定版发布后再切 latest：

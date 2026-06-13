@@ -8,11 +8,12 @@
 ## 已完成
 
 - 将 `docs/fly-io-deployment-guide.md` 中的 LLM、Qdrant、SerpAPI 示例敏感值替换为占位符，避免继续在已跟踪文档中保留真实密钥样例。
-- 删除本地忽略文件 `packages/my-notion-cli/.npmrc.publish`，降低 npm 发布 token 明文留存风险。
+- 删除旧的本地忽略文件 `packages/my-notion-cli/.npmrc.publish`；稳定版发布时仅从已忽略的 `.env.local` 临时同步 token 到该文件，避免 token 进入 Git。
 - 新增 Web 兼容路由 `/api/chat` 与 `/api/rag`，复用 `@notion/ai/server` 流式能力并接入 Clerk 鉴权、基础限流、SSE 输出和 CORS header。
 - Mobile AI Client 请求 `/api/chat`、`/api/rag` 时携带 Clerk Bearer token，避免兼容路由成为未鉴权 LLM 入口。
 - 废弃绘图能力的 Web、CLI、MCP 和 Machine API 入口已完成收口；生产 Convex 已部署。
-- 已生成新的 CLI npm tarball：`packages/my-notion-cli/mynotion-cli-0.1.0-beta.1.tgz`。
+- 已生成新的 CLI npm tarball：`packages/my-notion-cli/mynotion-cli-0.1.0.tgz`。
+- 已发布 `@mynotion/cli@0.1.0` 到 npm `latest`，`beta` 仍保留在 `0.1.0-beta.1`。
 - Markdown 文档已清理旧能力字段和过期专项记录。
 
 ## 已知限制
@@ -26,6 +27,10 @@
 - `pnpm --filter @notion/web typecheck`：通过。
 - `pnpm --filter @mynotion/cli typecheck`：通过。
 - `pnpm --filter @mynotion/cli test`：通过，9 个测试文件、35 个用例通过。
+- `pnpm --filter @mynotion/cli build`：通过。
 - `pnpm sync:skills`、`pnpm sync:skills:package`、`pnpm sync:skills:check`：通过。
 - `pnpm --filter @notion/web exec convex deploy --yes`：通过，已部署到 `moonlit-ptarmigan-478`。
 - Markdown 内容和文件名复查：目标关键词无命中。
+- `npm publish --tag latest --access public`：通过，发布 `@mynotion/cli@0.1.0`。
+- `npm view @mynotion/cli dist-tags --json`：通过，`latest` 指向 `0.1.0`，`beta` 指向 `0.1.0-beta.1`。
+- `npx @mynotion/cli@latest --help`：通过。

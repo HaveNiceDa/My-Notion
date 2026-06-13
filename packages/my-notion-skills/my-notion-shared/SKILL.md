@@ -11,13 +11,13 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 
 - Human users install or run `my-notion`, run `config init`, then use `auth login` once and operate documents directly.
 - AI Agents should start with `config init --check --format json`, use `auth login --no-open` only when auth is missing, send a clickable authorization link to the user, then retry the original operation.
-- npm package distribution target: package `@mynotion/cli`, binary `my-notion`, beta tag `@beta`.
+- npm package distribution target: package `@mynotion/cli`, binary `my-notion`, latest tag `@latest`.
 
 ## Prerequisites
 
 - The CLI package is `@mynotion/cli`.
 - The binary name is `my-notion` after installation, linking, or `npx`.
-- After npm release, users can run `npx @mynotion/cli@beta <command>` or install it globally with `npm install -g @mynotion/cli@beta`.
+- After npm release, users can run `npx @mynotion/cli@latest <command>` or install it globally with `npm install -g @mynotion/cli@latest`.
 - Install bundled Agent Skills with `npx skills add @mynotion/cli -y -g`. If the skills tool does not support npm package sources, use the repository URL or `my-notion install --skills` fallback.
 - Check first-run state with:
 
@@ -150,7 +150,7 @@ The CLI does not auto-update itself. Use this command to obtain machine-readable
 my-notion update --check --format json
 ```
 
-Agents should execute `npm install -g @mynotion/cli@beta` and `npx skills add @mynotion/cli -y -g` only after user confirmation.
+Agents should execute `npm install -g @mynotion/cli@latest` and `npx skills add @mynotion/cli -y -g` only after user confirmation.
 
 ## Output Formats
 

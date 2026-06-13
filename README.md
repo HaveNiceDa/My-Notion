@@ -20,7 +20,7 @@
 - **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
 - **Web Agent**：ReAct Loop、RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
 - **Mobile 工作区**：Expo + React Native，支持移动文档树、文档编辑、AI Chat、会话管理、模型选择、深度思考展示和安全代理。
-- **CLI / Skills / MCP**：`@mynotion/cli@beta` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
+- **CLI / Skills / MCP**：`@mynotion/cli@latest` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
 - **共享包**：`packages/ai`、`packages/business`、`packages/convex` 收敛 AI、业务状态、i18n、Convex schema 和文档逻辑。
 - **验证链路**：覆盖 Web typecheck/build/lint、Agent 单测、AI smoke、CLI E2E、MCP E2E、Skills 漂移检查和 npm pack/publish 验证。
 
@@ -86,7 +86,7 @@ docker compose -f my-notion-go/docker-compose.yml up -d qdrant
 CLI 已发布到 npm beta：[`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)。
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init
@@ -136,4 +136,4 @@ pnpm exec playwright test
 - P0：Agent 交互治理已收口，包含生成中禁用确认型 tool 操作、发送后滚动收口、Memory 保存反馈、`document_write` 空白文档预览、MCP `docs_fetch` ID 防护，以及 Convex/Clerk 短时不可用时的主链路降级。
 - P1：Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 相关索引；后续需观察线上 run recording 稳定性。
 - P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估和 Mobile AI/RAG 对齐继续后置。
-- 发布：[`@mynotion/cli@0.1.0-beta.1`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `beta` 和 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
+- 发布：[`@mynotion/cli@0.1.0`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。

@@ -6,7 +6,7 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
-const BETA_TAG = "beta";
+const DEFAULT_TAG = "latest";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 
 type PackageInfo = {
@@ -42,16 +42,16 @@ function buildInstallSummary() {
     skillsPath,
     skillsBundled: existsSync(skillsPath),
     commands: {
-      installCli: `npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
+      installCli: `npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
       installSkills: SKILLS_INSTALL_COMMAND,
-      runWithNpx: `npx ${PACKAGE_NAME}@${BETA_TAG} --help`,
-      updateCli: `npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
+      runWithNpx: `npx ${PACKAGE_NAME}@${DEFAULT_TAG} --help`,
+      updateCli: `npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
       checkUpdate: `${BINARY_NAME} update --check --format json`,
       login: `${BINARY_NAME} auth login`,
       agentLogin: `${BINARY_NAME} auth login --no-open`,
     },
     nextSteps: [
-      `Install the CLI: npm install -g ${PACKAGE_NAME}@${BETA_TAG}`,
+      `Install the CLI: npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
       `Install Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
       `Check updates: ${BINARY_NAME} update --check --format json`,
       `Login with browser auth: ${BINARY_NAME} auth login`,

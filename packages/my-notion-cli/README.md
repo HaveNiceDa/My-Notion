@@ -38,7 +38,7 @@
 
 ```bash
 # 1. 安装 CLI 和 Agent Skills
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 
 # 2. 初始化并登录

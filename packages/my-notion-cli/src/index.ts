@@ -72,7 +72,7 @@ Auth setup:
   approve access in the browser, and the CLI saves online auth at ~/.local/share/my-notion/config.json.
   For local debugging, use --local --web-url http://localhost:3000 --api-url <convex-site-url>.
   Local auth is stored separately at ~/.local/share/my-notion/config.local.json.
-  For npm beta setup, run npm install -g @mynotion/cli@beta and npx skills add @mynotion/cli -y -g.
+  For npm setup, run npm install -g @mynotion/cli@latest and npx skills add @mynotion/cli -y -g.
 `);
 }
 

@@ -35,11 +35,11 @@ describe("runUpdateCommand", () => {
       expect.objectContaining({
         packageName: "@mynotion/cli",
         binary: "my-notion",
-        targetTag: "beta",
+        targetTag: "latest",
         autoUpdated: false,
         requiresUserConfirmation: true,
         commands: expect.objectContaining({
-          updateCli: "npm install -g @mynotion/cli@beta",
+          updateCli: "npm install -g @mynotion/cli@latest",
           updateSkills: "npx skills add @mynotion/cli -y -g",
           verifyCli: "my-notion update --check --format json",
           verifyConfig: "my-notion config init --check --format json",
@@ -62,7 +62,7 @@ describe("runUpdateCommand", () => {
     await runUpdateCommand(args({ check: true, format: "json" }));
 
     expect(fetch).toHaveBeenCalledWith(
-      "https://registry.npmjs.org/@mynotion%2Fcli/beta",
+      "https://registry.npmjs.org/@mynotion%2Fcli/latest",
       expect.objectContaining({
         headers: {
           accept: "application/json",

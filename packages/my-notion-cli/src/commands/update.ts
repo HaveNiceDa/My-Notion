@@ -6,7 +6,7 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
-const DEFAULT_TAG = "beta";
+const DEFAULT_TAG = "latest";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 const NPM_REGISTRY_URL = "https://registry.npmjs.org";
 const UPDATE_CHECK_TIMEOUT_MS = 5_000;

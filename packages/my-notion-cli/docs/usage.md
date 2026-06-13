@@ -102,7 +102,7 @@ https://<deployment>.convex.site
 推荐使用 npm beta 包：
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init --check --format json
@@ -425,7 +425,7 @@ my-notion update --check --format json
 如果输出中的 `updateAvailable` 为 `true`，或用户明确要求更新，按输出中的命令执行：
 
 ```bash
-npm install -g @mynotion/cli@beta
+npm install -g @mynotion/cli@latest
 npx skills add @mynotion/cli -y -g
 my-notion update --check --format json
 my-notion config init --check --format json

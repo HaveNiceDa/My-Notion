@@ -31,7 +31,7 @@ describe("runInstallCommand", () => {
         packageName: "@mynotion/cli",
         binary: "my-notion",
         commands: expect.objectContaining({
-          installCli: "npm install -g @mynotion/cli@beta",
+          installCli: "npm install -g @mynotion/cli@latest",
           installSkills: "npx skills add @mynotion/cli -y -g",
           checkUpdate: "my-notion update --check --format json",
           agentLogin: "my-notion auth login --no-open",
