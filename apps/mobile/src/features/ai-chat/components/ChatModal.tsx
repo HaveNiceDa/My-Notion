@@ -19,8 +19,7 @@ import {
   useTheme,
   Sheet
 } from "tamagui";
-import tw from "twrnc";
-import { useAppTheme } from "@/theme/AppThemeProvider";
+import twBase from "twrnc";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -33,17 +32,22 @@ import {
   DEFAULT_MODEL,
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
-import {
-  useAIModelStore,
-  useKnowledgeBaseStore,
-  useDeepThinkingStore,
-  useThinkingProcessStore,
-  useToolCallStore,
-} from "@notion/business/hooks";
+import { streamAgent } from "@/lib/ai/agent-stream";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
+};
+
+const MOBILE_AGENT_STREAM_ENABLED =
+  process.env.EXPO_PUBLIC_MOBILE_AGENT_STREAM !== "0";
+
+const tw = twBase as any;
+
+type ThinkingStep = {
+  type: string;
+  content: string;
+  details?: string;
 };
 
 export function ChatModal({ visible, onClose }: Props) {
@@ -51,7 +55,6 @@ export function ChatModal({ visible, onClose }: Props) {
   const { user } = useUser();
   const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
-  const { theme: appTheme } = useAppTheme();
   const theme = useTheme();
 
   const [input, setInput] = useState("");
@@ -61,11 +64,11 @@ export function ChatModal({ visible, onClose }: Props) {
   const [completedReasoning, setCompletedReasoning] = useState("");
   const [reasoningExpanded, setReasoningExpanded] = useState(false);
   const [activeConversationId, setActiveConversationId] = useState<Id<"aiConversations"> | null>(null);
-  const { model: selectedModel, setModel: setSelectedModel } = useAIModelStore();
-  const { enabled: enableThinking, toggle: toggleDeepThinking } = useDeepThinkingStore();
-  const { enabled: knowledgeBaseEnabled, toggle: toggleKnowledgeBase } = useKnowledgeBaseStore();
-  const { steps: thinkingSteps, addStep: addThinkingStep, clearSteps: clearThinkingSteps, isExpanded: stepsExpanded, toggleExpanded: toggleStepsExpanded } = useThinkingProcessStore();
-  const { clearToolCalls } = useToolCallStore();
+  const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL);
+  const [enableThinking, setEnableThinking] = useState(false);
+  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(true);
+  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [stepsExpanded, setStepsExpanded] = useState(true);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<"aiConversations"> | null>(null);
@@ -78,6 +81,17 @@ export function ChatModal({ visible, onClose }: Props) {
   const addMessage = useMutation(api.aiChat.addMessage);
   const deleteConversation = useMutation(api.aiChat.deleteConversation);
   const updateConversationTitle = useMutation(api.aiChat.updateConversationTitle);
+
+  const addThinkingStep = useCallback(
+    (type: string, content: string, details?: string) => {
+      setThinkingSteps((steps) => [...steps, { type, content, details }]);
+    },
+    [],
+  );
+
+  const clearThinkingSteps = useCallback(() => {
+    setThinkingSteps([]);
+  }, []);
 
   const conversations = useQuery(api.aiChat.getConversations, user ? {} : "skip");
 
@@ -212,7 +226,40 @@ export function ChatModal({ visible, onClose }: Props) {
         },
       };
 
-      if (knowledgeBaseEnabled) {
+      if (MOBILE_AGENT_STREAM_ENABLED) {
+        await streamAgent(
+          {
+            messages: [
+              ...history,
+              { role: "user", content: userMessage },
+            ],
+            modelId: selectedModel,
+            conversationId: conversationId ?? undefined,
+            enableThinking,
+            currentDocument: null,
+            authToken,
+          },
+          {
+            onRunStart: (cursor) => {
+              console.log("[Mobile Agent Stream] run started", cursor.runId);
+            },
+            onCheckpoint: (cursor, checkpointKind) => {
+              console.log(
+                "[Mobile Agent Stream] checkpoint",
+                checkpointKind,
+                cursor.lastAppliedSeq,
+              );
+            },
+            onTextDelta: callbacks.onContent,
+            onReasoningDelta: callbacks.onReasoning,
+            onToolEvent: (event) => {
+              console.log("[Mobile Agent Stream] tool/control event", event);
+            },
+            onError: callbacks.onError,
+            onComplete: callbacks.onComplete,
+          },
+        );
+      } else if (knowledgeBaseEnabled) {
         await streamRAG(
           {
             userId: user.id,
@@ -243,7 +290,7 @@ export function ChatModal({ visible, onClose }: Props) {
       setReasoningContent("");
       setLastFailedInput(userMessage);
     }
-  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled, getToken]);
+  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled, getToken, addThinkingStep, clearThinkingSteps]);
 
   const handleNewConversation = () => {
     isCreatingNewRef.current = true;
@@ -503,7 +550,7 @@ export function ChatModal({ visible, onClose }: Props) {
           }}
         >
           <Pressable
-            onPress={() => toggleStepsExpanded()}
+            onPress={() => setStepsExpanded((expanded) => !expanded)}
             style={tw`flex-row items-center gap-1.5 px-3.5 pt-2.5 pb-1`}
           >
             <Ionicons name="search-outline" size={14} color="#3b82f6" />
@@ -748,7 +795,7 @@ export function ChatModal({ visible, onClose }: Props) {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => toggleKnowledgeBase()}>
+          <Pressable onPress={() => setKnowledgeBaseEnabled((enabled) => !enabled)}>
             <View
               style={[
                 tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
@@ -769,7 +816,7 @@ export function ChatModal({ visible, onClose }: Props) {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => toggleDeepThinking()}>
+          <Pressable onPress={() => setEnableThinking((enabled) => !enabled)}>
             <View
               style={[
                 tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,

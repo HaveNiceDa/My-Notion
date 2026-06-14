@@ -5,7 +5,10 @@
     "paths": {
       "@/*": ["./src/*"],
       "@tamagui/config": ["./tamagui.config.ts"],
+      "convex/*": ["../../packages/convex/node_modules/convex/*"],
       "@convex/*": ["./convex/*"],
+      "@convex/server": ["./convex/_generated/server"],
+      "@convex/dataModel": ["./convex/_generated/dataModel"],
       "@notion-i18n/*": ["../../packages/business/i18n/*"]
     }
   },
