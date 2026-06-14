@@ -44,8 +44,10 @@
 
 ## 下一批候选里程碑
 
+- M28 候选：Mobile AI Native Client，围绕 Expo / React Native 客户端学习与建设，接入 Web Agent Stream、checkpoint/resume、AI Chat 状态机、本地缓存和弱网恢复。
+- M29 候选：Mobile Editor Deepening，补齐正文图片插入/上传、复杂 block 移动端降级、键盘/选区/工具栏和长文编辑体验。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
-- 详细路线见 `docs/ai-chat-refactor-plan.md`。
+- 详细路线见 `docs/web-mobile-gap-analysis.md` 与 `docs/ai-chat-refactor-plan.md`。
 
 ## Agent Memory 重构待办
 

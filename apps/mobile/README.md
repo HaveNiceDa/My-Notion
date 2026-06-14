@@ -118,8 +118,20 @@ apps/mobile/
 ## 当前重点
 
 - 移动端基础文档与 AI Chat 能力已跑通，并已接入跨端共享业务状态、Convex 数据层和服务端安全代理。
-- 2026-05-31 当前 CLI/Skills/MCP 已发布 beta，项目主线转向 Web Agent 的 Plan/MCP adapter 产品化；Mobile 近期保持能力基线，后续重点对齐 Web 端 RAG、Tool、正文图片上传和文档树性能。
-- 后续重点包括 Mobile AI 架构统一、知识库 RAG、Tool/Web Search 能力边界、正文图片上传、文档树查询优化、TestFlight/应用商店发布、离线缓存和推送通知。
+- 2026-06-12 当前 CLI/Skills/MCP 已发布到 `latest`，Web Agent 已具备流式续跑、tool-result-v1、Memory/RAG 和确认式写入能力；Mobile 下一阶段主线转向“偏客户端学习与建设”，用真实移动端能力补齐 AI Native 客户端架构。
+- 后续重点包括 Mobile Agent Stream 接入、checkpoint/resume、AI Chat 状态机、正文图片上传、移动端编辑器深水区、离线缓存、弱网恢复、文档树查询优化、TestFlight/应用商店发布和推送通知。
+
+## 下一阶段客户端学习主线
+
+目标不是单独学习移动端教程，而是在 My-Notion Mobile 中完成一条真实客户端工程路线：
+
+1. **Agent Stream MVP**：接入 Web `/api/agent/stream`，解析 NDJSON 事件，先跑通 `run-start -> text-delta -> checkpoint -> finish/error`。
+2. **AI Chat 状态机**：支持停止生成、失败重试、继续生成、生成中禁用关键操作，并为 tool call / write preview 预留状态结构。
+3. **Resume 与本地缓存**：保存 `runId`、`lastAppliedSeq`、`assistantMessageId`、输入草稿和最近会话，支持网络恢复后的续跑。
+4. **移动编辑器深水区**：补正文图片插入/上传，梳理复杂 block 的可编辑/只读降级策略，优化键盘避让、选区和长文编辑。
+5. **客户端质量收口**：补真机验证、弱网验证、错误边界、日志与性能检查。
+
+详细计划见 [`../../docs/web-mobile-gap-analysis.md`](../../docs/web-mobile-gap-analysis.md)。
 
 ## 关联文档
 
