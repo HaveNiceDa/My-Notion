@@ -40,3 +40,11 @@ export type AgentChatSessionState = AgentChatDraftState &
     activeConversationId: Id<"aiConversations"> | null;
     resumeCursor: MobileAgentStreamCursor | null;
   };
+
+export type AgentChatResumeSnapshot = {
+  cursor: MobileAgentStreamCursor;
+  conversationId: Id<"aiConversations">;
+  content: string;
+  reasoning: string;
+  updatedAt: number;
+};

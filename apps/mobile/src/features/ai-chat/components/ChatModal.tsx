@@ -45,6 +45,7 @@ export function ChatModal({ visible, onClose }: Props) {
     convexMessages,
     input,
     setInput,
+    status,
     isSending,
     streamingContent,
     reasoningContent,
@@ -62,7 +63,9 @@ export function ChatModal({ visible, onClose }: Props) {
     stepsExpanded,
     setStepsExpanded,
     lastFailedInput,
+    resumeCursor,
     handleSend,
+    handleResume,
     handleStop,
     handleNewConversation,
     handleSelectConversation,
@@ -513,7 +516,7 @@ export function ChatModal({ visible, onClose }: Props) {
           </View>
         )}
 
-        {lastFailedInput && !isSending && (
+        {(lastFailedInput || resumeCursor) && !isSending && (
           <View style={tw`flex-row justify-start`}>
             <View
               style={{
@@ -527,10 +530,20 @@ export function ChatModal({ visible, onClose }: Props) {
               }}
             >
               <Text fontSize={13} color="$placeholderColor">
-                {t("AI.sendFailed")}
+                {status === "resumable"
+                  ? t("AI.resumeInterrupted")
+                  : t("AI.sendFailed")}
               </Text>
               <Pressable
-                onPress={() => handleSend(lastFailedInput)}
+                onPress={() => {
+                  if (status === "resumable" && resumeCursor) {
+                    handleResume();
+                    return;
+                  }
+                  if (lastFailedInput) {
+                    handleSend(lastFailedInput);
+                  }
+                }}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -542,9 +555,15 @@ export function ChatModal({ visible, onClose }: Props) {
                   alignSelf: "flex-start",
                 }}
               >
-                <Ionicons name="refresh-outline" size={14} color={theme.primary.val} />
+                <Ionicons
+                  name={status === "resumable" ? "play-outline" : "refresh-outline"}
+                  size={14}
+                  color={theme.primary.val}
+                />
                 <Text fontSize={13} fontWeight="bold" color="$primary">
-                  {t("AI.retry")}
+                  {status === "resumable"
+                    ? t("AI.resumeGeneration")
+                    : t("AI.retry")}
                 </Text>
               </Pressable>
             </View>

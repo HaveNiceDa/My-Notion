@@ -1,7 +1,12 @@
 import { useAuth, useUser } from "@clerk/expo";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
-import { streamAgent } from "@/lib/ai/agent-stream";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import {
+  resumeAgentStream,
+  streamAgent,
+  type MobileAgentStreamCursor,
+} from "@/lib/ai/agent-stream";
 import {
   buildMessages,
   DEFAULT_MODEL,
@@ -13,12 +18,34 @@ import {
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
+  AgentChatResumeSnapshot,
   AgentChatStatus,
   ThinkingStep,
 } from "../types";
 
 const MOBILE_AGENT_STREAM_ENABLED =
   process.env.EXPO_PUBLIC_MOBILE_AGENT_STREAM !== "0";
+const RESUME_STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function getResumeStorageKey(userId: string) {
+  return `@mynotion/mobile-agent-resume:${userId}`;
+}
+
+function isResumeSnapshot(value: unknown): value is AgentChatResumeSnapshot {
+  if (!value || typeof value !== "object") return false;
+
+  const snapshot = value as Partial<AgentChatResumeSnapshot>;
+  return (
+    typeof snapshot.conversationId === "string" &&
+    typeof snapshot.content === "string" &&
+    typeof snapshot.reasoning === "string" &&
+    typeof snapshot.updatedAt === "number" &&
+    !!snapshot.cursor &&
+    typeof snapshot.cursor.runId === "string" &&
+    typeof snapshot.cursor.assistantMessageId === "string" &&
+    typeof snapshot.cursor.lastAppliedSeq === "number"
+  );
+}
 
 export function useAgentChatSession(visible: boolean) {
   const { user } = useUser();
@@ -38,15 +65,14 @@ export function useAgentChatSession(visible: boolean) {
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [stepsExpanded, setStepsExpanded] = useState(true);
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
-  const [resumeCursor, setResumeCursor] = useState<{
-    runId: string;
-    lastAppliedSeq: number;
-    assistantMessageId: string;
-  } | null>(null);
+  const [resumeCursor, setResumeCursor] =
+    useState<MobileAgentStreamCursor | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const isCreatingNewRef = useRef(false);
   const activeInputRef = useRef<string | null>(null);
+  const resumeCursorRef = useRef<MobileAgentStreamCursor | null>(null);
+  const resumeSnapshotRef = useRef<AgentChatResumeSnapshot | null>(null);
 
   const createConversation = useMutation(api.aiChat.createConversation);
   const addMessage = useMutation(api.aiChat.addMessage);
@@ -61,6 +87,43 @@ export function useAgentChatSession(visible: boolean) {
   );
 
   const isSending = status === "preparing" || status === "streaming";
+
+  useEffect(() => {
+    resumeCursorRef.current = resumeCursor;
+  }, [resumeCursor]);
+
+  const clearResumeSnapshot = useCallback(async () => {
+    if (!user) return;
+
+    resumeCursorRef.current = null;
+    resumeSnapshotRef.current = null;
+    setResumeCursor(null);
+
+    try {
+      await AsyncStorage.removeItem(getResumeStorageKey(user.id));
+    } catch (error) {
+      console.error("Failed to clear mobile agent resume cursor:", error);
+    }
+  }, [user]);
+
+  const persistResumeSnapshot = useCallback(async (
+    snapshot: AgentChatResumeSnapshot,
+  ) => {
+    if (!user) return;
+
+    resumeCursorRef.current = snapshot.cursor;
+    resumeSnapshotRef.current = snapshot;
+    setResumeCursor(snapshot.cursor);
+
+    try {
+      await AsyncStorage.setItem(
+        getResumeStorageKey(user.id),
+        JSON.stringify(snapshot),
+      );
+    } catch (error) {
+      console.error("Failed to persist mobile agent resume cursor:", error);
+    }
+  }, [user]);
 
   const addThinkingStep = useCallback(
     (type: string, content: string, details?: string) => {
@@ -97,12 +160,45 @@ export function useAgentChatSession(visible: boolean) {
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (!visible || !user || isSending || resumeSnapshotRef.current) return;
+
+    const loadResumeSnapshot = async () => {
+      try {
+        const raw = await AsyncStorage.getItem(getResumeStorageKey(user.id));
+        if (!raw) return;
+
+        const parsed: unknown = JSON.parse(raw);
+        if (
+          !isResumeSnapshot(parsed) ||
+          Date.now() - parsed.updatedAt > RESUME_STORAGE_TTL_MS
+        ) {
+          await AsyncStorage.removeItem(getResumeStorageKey(user.id));
+          return;
+        }
+
+        resumeSnapshotRef.current = parsed;
+        resumeCursorRef.current = parsed.cursor;
+        setResumeCursor(parsed.cursor);
+        setActiveConversationId(parsed.conversationId);
+        setStreamingContent(parsed.content);
+        setCompletedReasoning(parsed.reasoning);
+        setReasoningContent("");
+        setStatus("resumable");
+      } catch (error) {
+        console.error("Failed to load mobile agent resume cursor:", error);
+      }
+    };
+
+    void loadResumeSnapshot();
+  }, [isSending, user, visible]);
+
   const handleStop = useCallback(() => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
-    setStatus(resumeCursor ? "resumable" : "failed");
+    setStatus(resumeCursorRef.current ? "resumable" : "failed");
     setLastFailedInput(activeInputRef.current);
-  }, [resumeCursor]);
+  }, []);
 
   const handleSend = useCallback(async (retryInput?: string) => {
     const messageText = retryInput ?? input.trim();
@@ -114,7 +210,7 @@ export function useAgentChatSession(visible: boolean) {
 
     setStatus("preparing");
     setLastFailedInput(null);
-    setResumeCursor(null);
+    await clearResumeSnapshot();
     isCreatingNewRef.current = false;
     if (!retryInput) setInput("");
     resetDraft();
@@ -125,7 +221,7 @@ export function useAgentChatSession(visible: boolean) {
 
     const fail = (error: Error) => {
       if (abortController.signal.aborted) {
-        setStatus(resumeCursor ? "resumable" : "failed");
+        setStatus(resumeCursorRef.current ? "resumable" : "failed");
         setLastFailedInput(messageText);
         return;
       }
@@ -172,15 +268,33 @@ export function useAgentChatSession(visible: boolean) {
       const authToken = await getToken();
       setStatus("streaming");
 
+      const saveResumeSnapshot = (cursor: MobileAgentStreamCursor) => {
+        if (!conversationId) return;
+
+        void persistResumeSnapshot({
+          cursor,
+          conversationId,
+          content: fullContent,
+          reasoning: fullReasoning,
+          updatedAt: Date.now(),
+        });
+      };
+
       const callbacks = {
         onContent: (text: string) => {
           fullContent += text;
           setStreamingContent(fullContent);
+          if (resumeCursorRef.current) {
+            saveResumeSnapshot(resumeCursorRef.current);
+          }
         },
         onReasoning: (text: string) => {
           fullReasoning += text;
           setReasoningContent(fullReasoning);
           setReasoningExpanded(true);
+          if (resumeCursorRef.current) {
+            saveResumeSnapshot(resumeCursorRef.current);
+          }
         },
         onThinkingStep: (step: { type: string; content: string; details?: string }) => {
           addThinkingStep(step.type, step.content, step.details);
@@ -209,6 +323,7 @@ export function useAgentChatSession(visible: boolean) {
           setStatus("done");
           abortControllerRef.current = null;
           activeInputRef.current = null;
+          await clearResumeSnapshot();
         },
       };
 
@@ -228,11 +343,11 @@ export function useAgentChatSession(visible: boolean) {
           },
           {
             onRunStart: (cursor) => {
-              setResumeCursor(cursor);
+              saveResumeSnapshot(cursor);
               console.log("[Mobile Agent Stream] run started", cursor.runId);
             },
             onCheckpoint: (cursor, checkpointKind) => {
-              setResumeCursor(cursor);
+              saveResumeSnapshot(cursor);
               console.log(
                 "[Mobile Agent Stream] checkpoint",
                 checkpointKind,
@@ -280,17 +395,127 @@ export function useAgentChatSession(visible: boolean) {
     user,
     isSending,
     resetDraft,
+    clearResumeSnapshot,
     activeConversationId,
     createConversation,
     addMessage,
     updateConversationTitle,
     convexMessages,
     getToken,
-    resumeCursor,
+    persistResumeSnapshot,
     addThinkingStep,
     selectedModel,
     enableThinking,
     knowledgeBaseEnabled,
+  ]);
+
+  const handleResume = useCallback(async () => {
+    const snapshot = resumeSnapshotRef.current;
+    if (!snapshot || !user || isSending) return;
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    activeInputRef.current = null;
+
+    let fullContent = snapshot.content;
+    let fullReasoning = snapshot.reasoning;
+
+    setStatus("streaming");
+    setLastFailedInput(null);
+    setActiveConversationId(snapshot.conversationId);
+    setStreamingContent(fullContent);
+    setCompletedReasoning(fullReasoning);
+    setReasoningContent("");
+
+    const saveResumeSnapshot = (cursor: MobileAgentStreamCursor) => {
+      void persistResumeSnapshot({
+        cursor,
+        conversationId: snapshot.conversationId,
+        content: fullContent,
+        reasoning: fullReasoning,
+        updatedAt: Date.now(),
+      });
+    };
+
+    const fail = (error: Error) => {
+      if (abortController.signal.aborted) {
+        setStatus(resumeCursorRef.current ? "resumable" : "failed");
+        return;
+      }
+
+      console.error("AI resume stream error:", error);
+      setStatus("resumable");
+    };
+
+    try {
+      const authToken = await getToken();
+
+      await resumeAgentStream(
+        {
+          cursor: snapshot.cursor,
+          authToken,
+          signal: abortController.signal,
+        },
+        {
+          onCheckpoint: (cursor) => {
+            saveResumeSnapshot(cursor);
+          },
+          onTextDelta: (delta) => {
+            fullContent += delta;
+            setStreamingContent(fullContent);
+            if (resumeCursorRef.current) {
+              saveResumeSnapshot(resumeCursorRef.current);
+            }
+          },
+          onReasoningDelta: (delta) => {
+            fullReasoning += delta;
+            setReasoningContent(fullReasoning);
+            setReasoningExpanded(true);
+            if (resumeCursorRef.current) {
+              saveResumeSnapshot(resumeCursorRef.current);
+            }
+          },
+          onToolEvent: (event) => {
+            console.log("[Mobile Agent Stream] resume tool/control event", event);
+          },
+          onError: fail,
+          onComplete: async () => {
+            if (abortController.signal.aborted) return;
+
+            if (fullReasoning) {
+              setCompletedReasoning(fullReasoning);
+              setReasoningContent("");
+              setReasoningExpanded(false);
+            }
+            if (fullContent) {
+              try {
+                await addMessage({
+                  conversationId: snapshot.conversationId,
+                  content: fullContent,
+                  role: "assistant",
+                });
+              } catch (error) {
+                console.error("Failed to save resumed assistant message:", error);
+              }
+            }
+            setStreamingContent("");
+            setStatus("done");
+            abortControllerRef.current = null;
+            activeInputRef.current = null;
+            await clearResumeSnapshot();
+          },
+        },
+      );
+    } catch (error) {
+      fail(error instanceof Error ? error : new Error(String(error)));
+    }
+  }, [
+    addMessage,
+    clearResumeSnapshot,
+    getToken,
+    isSending,
+    persistResumeSnapshot,
+    user,
   ]);
 
   const handleNewConversation = useCallback(() => {
@@ -300,10 +525,10 @@ export function useAgentChatSession(visible: boolean) {
     isCreatingNewRef.current = true;
     setActiveConversationId(null);
     setStatus("idle");
-    setResumeCursor(null);
+    void clearResumeSnapshot();
     setLastFailedInput(null);
     resetDraft();
-  }, [resetDraft]);
+  }, [clearResumeSnapshot, resetDraft]);
 
   const handleSelectConversation = useCallback((id: Id<"aiConversations">) => {
     abortControllerRef.current?.abort();
@@ -312,10 +537,10 @@ export function useAgentChatSession(visible: boolean) {
     isCreatingNewRef.current = false;
     setActiveConversationId(id);
     setStatus("idle");
-    setResumeCursor(null);
+    void clearResumeSnapshot();
     setLastFailedInput(null);
     resetDraft();
-  }, [resetDraft]);
+  }, [clearResumeSnapshot, resetDraft]);
 
   const handleDeleteConversation = useCallback(async (id: Id<"aiConversations">) => {
     if (!user) return;
@@ -325,14 +550,14 @@ export function useAgentChatSession(visible: boolean) {
       if (activeConversationId === id) {
         setActiveConversationId(null);
         setStatus("idle");
-        setResumeCursor(null);
+        void clearResumeSnapshot();
         setLastFailedInput(null);
         resetDraft();
       }
     } catch (error) {
       console.error("Failed to delete conversation:", error);
     }
-  }, [activeConversationId, deleteConversation, resetDraft, user]);
+  }, [activeConversationId, clearResumeSnapshot, deleteConversation, resetDraft, user]);
 
   return {
     user,
@@ -360,6 +585,7 @@ export function useAgentChatSession(visible: boolean) {
     lastFailedInput,
     resumeCursor,
     handleSend,
+    handleResume,
     handleStop,
     handleNewConversation,
     handleSelectConversation,
