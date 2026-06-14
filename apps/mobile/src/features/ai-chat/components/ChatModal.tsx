@@ -1,7 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth, useUser } from "@clerk/expo";
-import { useMutation, useQuery } from "convex/react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { TextStyle } from "react-native";
 import { useTranslation } from "react-i18next";
 import {
@@ -21,101 +19,55 @@ import {
 } from "tamagui";
 import twBase from "twrnc";
 
-import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import {
-  streamChat,
-  streamRAG,
-  buildMessages,
-  type ChatMessage,
-  type AIModel,
-  DEFAULT_MODEL,
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
-import { streamAgent } from "@/lib/ai/agent-stream";
+import { useAgentChatSession } from "../hooks/use-agent-chat-session";
 
 type Props = {
   visible: boolean;
   onClose: () => void;
 };
 
-const MOBILE_AGENT_STREAM_ENABLED =
-  process.env.EXPO_PUBLIC_MOBILE_AGENT_STREAM !== "0";
-
 const tw = twBase as any;
-
-type ThinkingStep = {
-  type: string;
-  content: string;
-  details?: string;
-};
 
 export function ChatModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
-  const { user } = useUser();
-  const { getToken } = useAuth();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
-
-  const [input, setInput] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [streamingContent, setStreamingContent] = useState("");
-  const [reasoningContent, setReasoningContent] = useState("");
-  const [completedReasoning, setCompletedReasoning] = useState("");
-  const [reasoningExpanded, setReasoningExpanded] = useState(false);
-  const [activeConversationId, setActiveConversationId] = useState<Id<"aiConversations"> | null>(null);
-  const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL);
-  const [enableThinking, setEnableThinking] = useState(false);
-  const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(true);
-  const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
-  const [stepsExpanded, setStepsExpanded] = useState(true);
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<"aiConversations"> | null>(null);
-  const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
-
-  const isCreatingNewRef = useRef(false);
   const scrollViewRef = useRef<ScrollView>(null);
-
-  const createConversation = useMutation(api.aiChat.createConversation);
-  const addMessage = useMutation(api.aiChat.addMessage);
-  const deleteConversation = useMutation(api.aiChat.deleteConversation);
-  const updateConversationTitle = useMutation(api.aiChat.updateConversationTitle);
-
-  const addThinkingStep = useCallback(
-    (type: string, content: string, details?: string) => {
-      setThinkingSteps((steps) => [...steps, { type, content, details }]);
-    },
-    [],
-  );
-
-  const clearThinkingSteps = useCallback(() => {
-    setThinkingSteps([]);
-  }, []);
-
-  const conversations = useQuery(api.aiChat.getConversations, user ? {} : "skip");
-
-  const convexMessages = useQuery(
-    api.aiChat.getMessages,
-    activeConversationId ? { conversationId: activeConversationId } : "skip",
-  );
-
-  useEffect(() => {
-    if (
-      conversations &&
-      conversations.length > 0 &&
-      !activeConversationId &&
-      !isCreatingNewRef.current
-    ) {
-      setActiveConversationId(conversations[0]._id);
-    }
-  }, [conversations, activeConversationId]);
-
-  useEffect(() => {
-    if (visible) {
-      isCreatingNewRef.current = false;
-    }
-  }, [visible]);
+  const {
+    conversations,
+    convexMessages,
+    input,
+    setInput,
+    isSending,
+    streamingContent,
+    reasoningContent,
+    completedReasoning,
+    reasoningExpanded,
+    setReasoningExpanded,
+    activeConversationId,
+    selectedModel,
+    setSelectedModel,
+    enableThinking,
+    setEnableThinking,
+    knowledgeBaseEnabled,
+    setKnowledgeBaseEnabled,
+    thinkingSteps,
+    stepsExpanded,
+    setStepsExpanded,
+    lastFailedInput,
+    handleSend,
+    handleStop,
+    handleNewConversation,
+    handleSelectConversation,
+    handleDeleteConversation,
+  } = useAgentChatSession(visible);
 
   useEffect(() => {
     if (convexMessages && convexMessages.length > 0) {
@@ -133,201 +85,14 @@ export function ChatModal({ visible, onClose }: Props) {
     }
   }, [streamingContent, reasoningContent]);
 
-  const handleSend = useCallback(async (retryInput?: string) => {
-    const messageText = retryInput ?? input.trim();
-    if (!messageText || !user || isSending) return;
-
-    setIsSending(true);
-    setLastFailedInput(null);
-    isCreatingNewRef.current = false;
-    const userMessage = messageText;
-    if (!retryInput) setInput("");
-    setStreamingContent("");
-    setReasoningContent("");
-    setCompletedReasoning("");
-    clearThinkingSteps();
-
-    try {
-      let conversationId = activeConversationId;
-      const isNewConversation = !conversationId;
-
-      if (!conversationId) {
-        conversationId = await createConversation({
-          title: userMessage.slice(0, 30),
-        });
-        setActiveConversationId(conversationId);
-      }
-
-      await addMessage({
-        conversationId,
-        content: userMessage,
-        role: "user",
-      });
-
-      if (isNewConversation) {
-        try {
-          await updateConversationTitle({
-            conversationId,
-            title: userMessage.slice(0, 30),
-          });
-        } catch {}
-      }
-
-      const history: ChatMessage[] = (convexMessages ?? [])
-        .filter((msg: any) => msg.role === "user" || msg.role === "assistant")
-        .map((msg: any) => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.content,
-        }));
-
-      let fullContent = "";
-      let fullReasoning = "";
-      const authToken = await getToken();
-
-      const callbacks = {
-        onContent: (text: string) => {
-          fullContent += text;
-          setStreamingContent(fullContent);
-        },
-        onReasoning: (text: string) => {
-          fullReasoning += text;
-          setReasoningContent(fullReasoning);
-          setReasoningExpanded(true);
-        },
-        onThinkingStep: (step: { type: string; content: string; details?: string }) => {
-          addThinkingStep(step.type, step.content, step.details);
-        },
-        onError: (error: Error) => {
-          console.error("AI stream error:", error);
-          setIsSending(false);
-          setStreamingContent("");
-          setReasoningContent("");
-          setLastFailedInput(userMessage);
-        },
-        onComplete: async () => {
-          if (fullReasoning) {
-            setCompletedReasoning(fullReasoning);
-            setReasoningContent("");
-            setReasoningExpanded(false);
-          }
-          if (conversationId && fullContent) {
-            try {
-              await addMessage({
-                conversationId,
-                content: fullContent,
-                role: "assistant",
-              });
-            } catch (err) {
-              console.error("Failed to save assistant message:", err);
-            }
-          }
-          setStreamingContent("");
-          setIsSending(false);
-        },
-      };
-
-      if (MOBILE_AGENT_STREAM_ENABLED) {
-        await streamAgent(
-          {
-            messages: [
-              ...history,
-              { role: "user", content: userMessage },
-            ],
-            modelId: selectedModel,
-            conversationId: conversationId ?? undefined,
-            enableThinking,
-            currentDocument: null,
-            authToken,
-          },
-          {
-            onRunStart: (cursor) => {
-              console.log("[Mobile Agent Stream] run started", cursor.runId);
-            },
-            onCheckpoint: (cursor, checkpointKind) => {
-              console.log(
-                "[Mobile Agent Stream] checkpoint",
-                checkpointKind,
-                cursor.lastAppliedSeq,
-              );
-            },
-            onTextDelta: callbacks.onContent,
-            onReasoningDelta: callbacks.onReasoning,
-            onToolEvent: (event) => {
-              console.log("[Mobile Agent Stream] tool/control event", event);
-            },
-            onError: callbacks.onError,
-            onComplete: callbacks.onComplete,
-          },
-        );
-      } else if (knowledgeBaseEnabled) {
-        await streamRAG(
-          {
-            userId: user.id,
-            query: userMessage,
-            model: selectedModel,
-            conversationHistory: history,
-            conversationId: conversationId ?? undefined,
-            enableThinking,
-            knowledgeBaseEnabled: true,
-          },
-          callbacks,
-          { authToken },
-        );
-      } else {
-        const chatMessages = buildMessages(userMessage, history);
-        await streamChat(
-          chatMessages,
-          selectedModel,
-          enableThinking,
-          callbacks,
-          { authToken },
-        );
-      }
-    } catch (error) {
-      console.error("Failed to send message:", error);
-      setIsSending(false);
-      setStreamingContent("");
-      setReasoningContent("");
-      setLastFailedInput(userMessage);
-    }
-  }, [input, user, isSending, activeConversationId, createConversation, addMessage, updateConversationTitle, convexMessages, selectedModel, enableThinking, knowledgeBaseEnabled, getToken, addThinkingStep, clearThinkingSteps]);
-
-  const handleNewConversation = () => {
-    isCreatingNewRef.current = true;
-    setActiveConversationId(null);
-    setStreamingContent("");
-    setReasoningContent("");
-    setCompletedReasoning("");
-    clearThinkingSteps();
+  const selectConversation = (id: Id<"aiConversations">) => {
+    handleSelectConversation(id);
     setShowHistory(false);
   };
 
-  const handleSelectConversation = (id: Id<"aiConversations">) => {
-    isCreatingNewRef.current = false;
-    setActiveConversationId(id);
-    setStreamingContent("");
-    setReasoningContent("");
-    setCompletedReasoning("");
-    clearThinkingSteps();
-    setShowHistory(false);
-  };
-
-  const handleDeleteConversation = async (id: Id<"aiConversations">) => {
-    if (!user) return;
-    try {
-      await deleteConversation({ conversationId: id });
-      if (activeConversationId === id) {
-        setActiveConversationId(null);
-        setStreamingContent("");
-        setReasoningContent("");
-        setCompletedReasoning("");
-        clearThinkingSteps();
-      }
-    } catch (error) {
-      console.error("Failed to delete conversation:", error);
-    } finally {
-      setDeleteConfirmId(null);
-    }
+  const deleteConversation = async (id: Id<"aiConversations">) => {
+    await handleDeleteConversation(id);
+    setDeleteConfirmId(null);
   };
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
@@ -359,7 +124,7 @@ export function ChatModal({ visible, onClose }: Props) {
           conversations.map((conv: any) => (
             <Pressable
               key={conv._id}
-              onPress={() => handleSelectConversation(conv._id)}
+              onPress={() => selectConversation(conv._id)}
               style={({ pressed }) => [
                 tw`flex-row items-center px-4 py-3 gap-3`,
                 {
@@ -426,7 +191,7 @@ export function ChatModal({ visible, onClose }: Props) {
                 <Text fontSize={14} color="$color">{t("Error.ok")}</Text>
               </Pressable>
               <Pressable
-                onPress={() => handleDeleteConversation(deleteConfirmId)}
+                onPress={() => deleteConversation(deleteConfirmId)}
                 style={{
                   paddingHorizontal: 16,
                   paddingVertical: 8,
@@ -642,7 +407,13 @@ export function ChatModal({ visible, onClose }: Props) {
           </Text>
         </View>
         <View style={tw`flex-row items-center gap-2`}>
-          <Pressable onPress={handleNewConversation} hitSlop={4}>
+          <Pressable
+            onPress={() => {
+              handleNewConversation();
+              setShowHistory(false);
+            }}
+            hitSlop={4}
+          >
             <View style={[tw`items-center justify-center`, { width: 32, height: 32, borderRadius: 16, backgroundColor: theme.backgroundHover.val }]}>
               <Ionicons name="add" size={20} color={theme.placeholderColor.val} />
             </View>
@@ -881,8 +652,8 @@ export function ChatModal({ visible, onClose }: Props) {
             maxLength={500}
           />
           <Pressable
-            onPress={() => handleSend()}
-            disabled={!input.trim() || isSending}
+            onPress={isSending ? handleStop : () => handleSend()}
+            disabled={!isSending && !input.trim()}
             style={({ pressed }) => ({
               width: 32,
               height: 32,
@@ -890,13 +661,19 @@ export function ChatModal({ visible, onClose }: Props) {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor:
-                input.trim() && !isSending
+                isSending
+                  ? "#ef4444"
+                  : input.trim()
                   ? theme.primary.val
                   : theme.backgroundPress.val,
               opacity: pressed ? 0.8 : 1,
             })}
           >
-            <Ionicons name="arrow-up" size={20} color={theme.primaryForeground.val} />
+            <Ionicons
+              name={isSending ? "stop" : "arrow-up"}
+              size={isSending ? 16 : 20}
+              color={theme.primaryForeground.val}
+            />
           </Pressable>
         </View>
       </View>

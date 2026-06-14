@@ -25,6 +25,7 @@ const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
 
 type StreamRequestOptions = {
   authToken?: string | null;
+  signal?: AbortSignal;
 };
 
 function getAIServiceUrl(): string {
@@ -152,6 +153,7 @@ export async function streamChat(
         model: actualModelId,
         enableThinking,
       }),
+      signal: options.signal,
     });
 
     if (!response.ok) {
@@ -196,6 +198,7 @@ export async function streamRAG(
         enableThinking: params.enableThinking,
         knowledgeBaseEnabled: params.knowledgeBaseEnabled ?? true,
       }),
+      signal: options.signal,
     });
 
     if (!response.ok) {

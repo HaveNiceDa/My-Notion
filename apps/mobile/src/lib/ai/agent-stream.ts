@@ -44,7 +44,7 @@ export type ResumeAgentStreamParams = {
   signal?: AbortSignal;
 };
 
-type MobileAgentStreamEvent =
+export type MobileAgentStreamEvent =
   | {
     type: "run-start";
     runId: string;
