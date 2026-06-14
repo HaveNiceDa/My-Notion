@@ -1,6 +1,9 @@
 import type { Id } from "@convex/_generated/dataModel";
 import type { AIModel } from "@/lib/ai/chat";
-import type { MobileAgentStreamCursor } from "@/lib/ai/agent-stream";
+import type {
+  MobileAgentStreamCursor,
+  MobileAgentStreamEvent,
+} from "@/lib/ai/agent-stream";
 
 export type AgentChatStatus =
   | "idle"
@@ -16,6 +19,21 @@ export type ThinkingStep = {
   details?: string;
 };
 
+export type AgentToolEventStatus = "running" | "completed" | "failed";
+
+export type AgentToolEventItem = {
+  id: string;
+  name: string;
+  status: AgentToolEventStatus;
+  detail: string;
+  updatedAt: number;
+};
+
+export type AgentToolStreamEvent = Extract<
+  MobileAgentStreamEvent,
+  { toolCallId: string }
+>;
+
 export type AgentChatSettings = {
   selectedModel: AIModel;
   enableThinking: boolean;
@@ -29,6 +47,7 @@ export type AgentChatDraftState = {
   completedReasoning: string;
   reasoningExpanded: boolean;
   thinkingSteps: ThinkingStep[];
+  toolEvents: AgentToolEventItem[];
   stepsExpanded: boolean;
   lastFailedInput: string | null;
 };

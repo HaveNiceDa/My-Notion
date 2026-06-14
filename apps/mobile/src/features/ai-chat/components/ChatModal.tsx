@@ -24,6 +24,7 @@ import {
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
 import { useAgentChatSession } from "../hooks/use-agent-chat-session";
+import type { AgentToolEventItem } from "../types";
 
 type Props = {
   visible: boolean;
@@ -60,6 +61,7 @@ export function ChatModal({ visible, onClose }: Props) {
     knowledgeBaseEnabled,
     setKnowledgeBaseEnabled,
     thinkingSteps,
+    toolEvents,
     stepsExpanded,
     setStepsExpanded,
     lastFailedInput,
@@ -100,6 +102,97 @@ export function ChatModal({ visible, onClose }: Props) {
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
   const displayReasoning = reasoningContent || completedReasoning;
+
+  const getToolDisplayName = (name: string) => {
+    if (name.includes("knowledge") || name.includes("rag")) {
+      return t("AI.knowledgeSearchTool");
+    }
+    if (name.includes("document_read") || name.includes("docs_fetch")) {
+      return t("AI.documentReadTool");
+    }
+    if (name.includes("document_search") || name.includes("docs_search")) {
+      return t("AI.documentSearchTool");
+    }
+    if (name.includes("web_search")) {
+      return t("AI.webSearchTool");
+    }
+    if (name.includes("web_extract")) {
+      return t("AI.webExtractTool");
+    }
+    if (name.includes("memory_search")) {
+      return t("AI.memorySearchTool");
+    }
+    if (name.includes("memory_write")) {
+      return t("AI.memoryWriteTool");
+    }
+    if (name.includes("plan")) {
+      return t("AI.taskPlanTool");
+    }
+    if (name.includes("mcp")) {
+      return t("AI.mcpMyNotionTool");
+    }
+    return name;
+  };
+
+  const renderToolEvents = () => {
+    if (toolEvents.length === 0) return null;
+
+    const statusLabel = (status: AgentToolEventItem["status"]) => {
+      if (status === "completed") return t("AI.toolCompleted");
+      if (status === "failed") return t("AI.taskPlanBlocked");
+      return t("AI.toolRunning");
+    };
+
+    return (
+      <View style={tw`flex-row justify-start`}>
+        <View
+          flex={1}
+          style={{
+            maxWidth: "85%",
+            borderRadius: 20,
+            borderLeftWidth: 3,
+            borderLeftColor: "#8b5cf6",
+            borderTopLeftRadius: 0,
+            backgroundColor: theme.backgroundHover.val,
+            paddingHorizontal: 14,
+            paddingVertical: 10,
+            gap: 8,
+          }}
+        >
+          {toolEvents.map((event) => (
+            <View key={event.id} style={tw`gap-1`}>
+              <View style={tw`flex-row items-center gap-2`}>
+                {event.status === "running" ? (
+                  <ActivityIndicator size="small" color="#8b5cf6" />
+                ) : (
+                  <Ionicons
+                    name={
+                      event.status === "completed"
+                        ? "checkmark-circle-outline"
+                        : "alert-circle-outline"
+                    }
+                    size={14}
+                    color={event.status === "completed" ? "#22c55e" : "#ef4444"}
+                  />
+                )}
+                <Text flex={1} fontSize={12} fontWeight="bold" color="$color">
+                  {getToolDisplayName(event.name)}
+                </Text>
+                <Text fontSize={10} color="$placeholderColor">
+                  {statusLabel(event.status)}
+                </Text>
+              </View>
+              {event.detail.length > 0 && (
+                <Text fontSize={11} lineHeight={16} color="$placeholderColor">
+                  {event.detail}
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
+      </View>
+    );
+  };
 
   const renderHistory = () => (
     <View flex={1}>
@@ -485,6 +578,8 @@ export function ChatModal({ visible, onClose }: Props) {
         ))}
 
         {thinkingSteps.length > 0 && renderThinkingSteps()}
+
+        {toolEvents.length > 0 && renderToolEvents()}
 
         {displayReasoning.length > 0 && renderReasoningBubble()}
 

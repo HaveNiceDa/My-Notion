@@ -20,6 +20,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   AgentChatResumeSnapshot,
   AgentChatStatus,
+  AgentToolEventItem,
+  AgentToolStreamEvent,
   ThinkingStep,
 } from "../types";
 
@@ -47,6 +49,17 @@ function isResumeSnapshot(value: unknown): value is AgentChatResumeSnapshot {
   );
 }
 
+function compactToolDetail(value: unknown): string {
+  if (typeof value === "string") return value.slice(0, 160);
+  if (!value) return "";
+
+  try {
+    return JSON.stringify(value).slice(0, 160);
+  } catch {
+    return String(value).slice(0, 160);
+  }
+}
+
 export function useAgentChatSession(visible: boolean) {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -63,6 +76,7 @@ export function useAgentChatSession(visible: boolean) {
   const [enableThinking, setEnableThinking] = useState(false);
   const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(true);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
+  const [toolEvents, setToolEvents] = useState<AgentToolEventItem[]>([]);
   const [stepsExpanded, setStepsExpanded] = useState(true);
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
   const [resumeCursor, setResumeCursor] =
@@ -136,12 +150,45 @@ export function useAgentChatSession(visible: boolean) {
     setThinkingSteps([]);
   }, []);
 
+  const clearToolEvents = useCallback(() => {
+    setToolEvents([]);
+  }, []);
+
+  const recordToolEvent = useCallback((event: AgentToolStreamEvent) => {
+    setToolEvents((items) => {
+      const nextStatus: AgentToolEventItem["status"] =
+        event.type === "tool-call-result" ? "completed" : "running";
+      const detail =
+        "result" in event
+          ? compactToolDetail(event.result)
+          : compactToolDetail(event.delta);
+      const current = items.find((item) => item.id === event.toolCallId);
+      const toolName = "toolName" in event ? event.toolName : undefined;
+      const nextItem: AgentToolEventItem = {
+        id: event.toolCallId,
+        name: toolName || current?.name || "tool",
+        status: nextStatus,
+        detail: detail || current?.detail || "",
+        updatedAt: Date.now(),
+      };
+
+      if (!current) {
+        return [...items, nextItem];
+      }
+
+      return items.map((item) =>
+        item.id === event.toolCallId ? nextItem : item,
+      );
+    });
+  }, []);
+
   const resetDraft = useCallback(() => {
     setStreamingContent("");
     setReasoningContent("");
     setCompletedReasoning("");
     clearThinkingSteps();
-  }, [clearThinkingSteps]);
+    clearToolEvents();
+  }, [clearThinkingSteps, clearToolEvents]);
 
   useEffect(() => {
     if (
@@ -357,6 +404,9 @@ export function useAgentChatSession(visible: boolean) {
             onTextDelta: callbacks.onContent,
             onReasoningDelta: callbacks.onReasoning,
             onToolEvent: (event) => {
+              if ("toolCallId" in event) {
+                recordToolEvent(event);
+              }
               console.log("[Mobile Agent Stream] tool/control event", event);
             },
             onError: callbacks.onError,
@@ -404,6 +454,7 @@ export function useAgentChatSession(visible: boolean) {
     getToken,
     persistResumeSnapshot,
     addThinkingStep,
+    recordToolEvent,
     selectedModel,
     enableThinking,
     knowledgeBaseEnabled,
@@ -476,6 +527,9 @@ export function useAgentChatSession(visible: boolean) {
             }
           },
           onToolEvent: (event) => {
+            if ("toolCallId" in event) {
+              recordToolEvent(event);
+            }
             console.log("[Mobile Agent Stream] resume tool/control event", event);
           },
           onError: fail,
@@ -515,6 +569,7 @@ export function useAgentChatSession(visible: boolean) {
     getToken,
     isSending,
     persistResumeSnapshot,
+    recordToolEvent,
     user,
   ]);
 
@@ -580,6 +635,7 @@ export function useAgentChatSession(visible: boolean) {
     knowledgeBaseEnabled,
     setKnowledgeBaseEnabled,
     thinkingSteps,
+    toolEvents,
     stepsExpanded,
     setStepsExpanded,
     lastFailedInput,
