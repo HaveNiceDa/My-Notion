@@ -3,12 +3,13 @@ import { useQuery, useMutation } from "convex/react";
 import { useRouter, type Href } from "expo-router";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Dialog, Button, ScrollView, Spinner, Text, View } from "tamagui";
+import { Dialog, Button, ScrollView, Text, View } from "tamagui";
 import tw, { style as twStyle } from "twrnc";
 
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useSearch, useNavigation } from "@notion/business/hooks";
+import { AppLoadingScreen } from "@/components/app-loading-screen";
 
 import { CollapsibleSection } from "./collapsible-section";
 import { HomeBottomBar } from "./home-bottom-bar";
@@ -120,9 +121,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
       />
 
       {isInitialLoading ? (
-        <View flex={1} style={tw`items-center justify-center`}>
-          <Spinner size="large" />
-        </View>
+        <AppLoadingScreen message={t("AppLoading.home")} />
       ) : (
         <ScrollView
           style={tw`flex-1`}

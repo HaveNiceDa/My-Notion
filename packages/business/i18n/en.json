@@ -78,6 +78,11 @@
     "editedBy": "Edited by {user} on {time}",
     "linkCopiedToClipboard": "Link copied to clipboard"
   },
+  "AppLoading": {
+    "auth": "Loading sign-in status...",
+    "home": "Loading home...",
+    "workspace": "Loading workspace..."
+  },
   "TrashBox": {
     "filterByPageTitle": "Filter by page title...",
     "noDocumentsFound": "No documents found",

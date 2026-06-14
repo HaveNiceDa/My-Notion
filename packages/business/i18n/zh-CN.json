@@ -78,6 +78,11 @@
     "editedBy": "{user}于{time}修改",
     "linkCopiedToClipboard": "链接已复制到剪贴板"
   },
+  "AppLoading": {
+    "auth": "正在加载登录状态...",
+    "home": "正在加载首页...",
+    "workspace": "正在加载工作区..."
+  },
   "TrashBox": {
     "filterByPageTitle": "按页面标题过滤...",
     "noDocumentsFound": "未找到文档",
