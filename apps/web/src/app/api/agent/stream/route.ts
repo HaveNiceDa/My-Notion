@@ -28,6 +28,7 @@ type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
   modelId?: string;
   enableThinking?: boolean;
+  knowledgeBaseEnabled?: boolean;
   conversationId?: string;
   currentDocument?: CurrentDocumentContext | null;
   mode?: "chat" | "plan";
@@ -208,6 +209,7 @@ export async function POST(req: NextRequest) {
 
     const model = getActualModelId(body.modelId || "deepseek-v4-pro");
     const enableThinking = Boolean(body.enableThinking);
+    const knowledgeBaseEnabled = body.knowledgeBaseEnabled !== false;
     const mode = body.mode === "plan" ? "plan" : "chat";
     const autoExtractMemories = mode === "chat"
       && (body.autoExtractMemories === true || process.env.AGENT_MEMORY_AUTO_EXTRACT === "1");
@@ -217,6 +219,7 @@ export async function POST(req: NextRequest) {
         conversationId: body.conversationId,
         model,
         enableThinking,
+        knowledgeBaseEnabled,
       },
     });
     const openai = getOpenAIClient();
@@ -235,9 +238,9 @@ export async function POST(req: NextRequest) {
 
     // 构建可用 tool 列表和映射
     // Plan 模式只暴露 task_plan，避免模型在用户确认前直接执行写入类工具。
-    const availableTools = buildAvailableTools(body.currentDocument).filter((tool) =>
-      mode === "plan" ? tool.name === "task_plan" : true,
-    );
+    const availableTools = buildAvailableTools(body.currentDocument, {
+      knowledgeBaseEnabled,
+    }).filter((tool) => mode === "plan" ? tool.name === "task_plan" : true);
     const toolMap = new Map(availableTools.map((t) => [t.name, t]));
     const openaiTools: OpenAI.ChatCompletionTool[] = availableTools.map((t) => ({
       type: "function" as const,
@@ -249,6 +252,7 @@ export async function POST(req: NextRequest) {
       memoryInjected: Boolean(instructionMemory.text),
       injectedMemoryIds: instructionMemory.injectedMemoryIds,
       toolNames: availableTools.map((tool) => tool.name),
+      knowledgeBaseEnabled,
       latestUserTextLength: latestUserText.length,
     });
 
@@ -291,6 +295,7 @@ export async function POST(req: NextRequest) {
             messages: compressedMessages,
             model,
             enableThinking,
+            knowledgeBaseEnabled,
             mode,
             currentDocument: body.currentDocument,
             toolResults: [],
@@ -318,6 +323,7 @@ export async function POST(req: NextRequest) {
                   messages: payload.messages,
                   model,
                   enableThinking,
+                  knowledgeBaseEnabled,
                   mode,
                   currentDocument: body.currentDocument,
                   toolResults: payload.completedToolResults,
@@ -335,6 +341,7 @@ export async function POST(req: NextRequest) {
               messages: compressedMessages,
               model,
               enableThinking,
+              knowledgeBaseEnabled,
               mode,
               currentDocument: body.currentDocument,
               toolResults: [],
@@ -370,6 +377,7 @@ export async function POST(req: NextRequest) {
               messages: compressedMessages,
               model,
               enableThinking,
+              knowledgeBaseEnabled,
               mode,
               currentDocument: body.currentDocument,
               toolResults: [],
@@ -648,9 +656,9 @@ async function resumeFromCheckpoint(options: {
     options.convex,
     checkpoint.resumeState.currentDocument,
   );
-  const availableTools = buildAvailableTools(restoredCurrentDocument).filter((tool) =>
-    mode === "plan" ? tool.name === "task_plan" : true,
-  );
+  const availableTools = buildAvailableTools(restoredCurrentDocument, {
+    knowledgeBaseEnabled: checkpoint.resumeState.knowledgeBaseEnabled,
+  }).filter((tool) => mode === "plan" ? tool.name === "task_plan" : true);
   const toolMap = new Map(availableTools.map((t) => [t.name, t]));
   const openaiTools: OpenAI.ChatCompletionTool[] = availableTools.map((t) => ({
     type: "function" as const,
@@ -718,6 +726,7 @@ interface ParsedCheckpoint {
     compressedMessages: OpenAI.ChatCompletionMessageParam[];
     model: string;
     enableThinking: boolean;
+    knowledgeBaseEnabled: boolean;
     mode: "chat" | "plan";
     currentDocument?: {
       id: string;
@@ -744,6 +753,7 @@ function parseCheckpoint(value: string): ParsedCheckpoint | null {
         compressedMessages: resumeState.compressedMessages,
         model: resumeState.model,
         enableThinking: Boolean(resumeState.enableThinking),
+        knowledgeBaseEnabled: resumeState.knowledgeBaseEnabled !== false,
         mode: resumeState.mode === "plan" ? "plan" : "chat",
         currentDocument: normalizeCheckpointDocument(resumeState.currentDocument),
         toolResults: Array.isArray(resumeState.toolResults) ? resumeState.toolResults : [],
@@ -824,6 +834,7 @@ function buildResumeState(options: {
   messages: OpenAI.ChatCompletionMessageParam[];
   model: string;
   enableThinking: boolean;
+  knowledgeBaseEnabled: boolean;
   mode: "chat" | "plan";
   currentDocument?: CurrentDocumentContext | null;
   toolResults: Array<{
@@ -840,6 +851,7 @@ function buildResumeState(options: {
     compressedMessages: options.messages,
     model: options.model,
     enableThinking: options.enableThinking,
+    knowledgeBaseEnabled: options.knowledgeBaseEnabled,
     mode: options.mode,
     currentDocument: options.currentDocument
       ? {

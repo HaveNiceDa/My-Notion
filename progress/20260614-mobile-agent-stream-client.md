@@ -6,6 +6,7 @@
 - 将 `ChatModal` 中的发送、流式输出、错误、重试、停止生成和 `resumeCursor` 续跑状态收敛到 `useAgentChatSession`。
 - 新增 Agent Stream tool event 只读 UI 卡片，按工具调用 ID 归并执行中、完成状态和结果摘要。
 - 统一 Mobile 加载态为纯白背景、灰色 spinner 和 i18n 文案，覆盖路由鉴权加载与首页数据加载。
+- 闭环 `knowledgeBaseEnabled` 在 `/api/agent/stream` 链路下的语义：Mobile 传参，Web 按开关过滤 `knowledge_search`，checkpoint/resume 保持一致。
 - 保留 `EXPO_PUBLIC_MOBILE_AGENT_STREAM=0` fallback，可临时切回旧 `/api/chat`、`/api/rag` 兼容层。
 - 清理移动端 AI Chat 旧共享 hooks 依赖，改成本地状态，避免 `@notion/business/hooks` 不存在导出导致编译失败。
 - 补齐 `twrnc` 类型声明与 Mobile Convex 类型解析，确保移动端 typecheck 可通过。
@@ -22,8 +23,9 @@
 - 优点：停止生成已具备基础能力，`resumeCursor`、会话 ID 和已流式输出内容会落到 AsyncStorage，用于中断后的继续生成。
 - 优点：tool event 已有基础可视化，先只读展示工具名、运行状态和短结果，暂不引入确认式写入交互。
 - 优点：加载态从深色/蓝色 spinner 收敛为更贴近 Notion 的极简浅色体验，并复用国际化文案。
+- 优点：知识库开关现在能真实影响 Agent 可用工具，关闭时不再暴露 `knowledge_search`；`document_search` 和 `memory_search` 仍保留为独立上下文能力。
 - 局限：续跑状态仍是客户端本地快照，暂未做多设备同步；tool UI 暂未展示结构化引用、确认按钮或可展开详情。
-- 局限：知识库开关在 Agent Stream 默认链路下暂未映射为明确 Agent 策略，后续需要统一产品语义。
+- 局限：深度思考开关依赖模型实际能力，部分模型可能忽略 `enable_thinking` / `thinking_budget`。
 
 ## 验证
 
@@ -31,6 +33,7 @@
 pnpm --filter @notion/mobile exec tsc --noEmit --pretty false
 pnpm --filter @notion/mobile exec eslint src/features/ai-chat/components/ChatModal.tsx src/features/ai-chat/hooks/use-agent-chat-session.ts src/features/ai-chat/types.ts src/lib/ai/agent-stream.ts src/lib/ai/chat.ts
 pnpm --filter @notion/mobile lint
+pnpm --filter @notion/web typecheck
 ```
 
 验证结果：
@@ -38,9 +41,10 @@ pnpm --filter @notion/mobile lint
 - Mobile typecheck 通过。
 - 相关文件 ESLint 通过。
 - Mobile lint 通过，保留既有 `app/(auth)/sign-in.tsx` 中 `Array<T>` 风格 warning。
+- Web typecheck 通过。
 
 ## 下一步
 
-- 梳理知识库/深度思考开关在 Agent Stream 链路下的语义，避免 UI 与实际 Agent 策略不一致。
+- 梳理深度思考开关的模型兼容提示，避免用户误以为所有模型都一定输出 reasoning。
 - 增强 tool event UI，支持结构化 sources、长结果展开和可恢复错误提示。
 - 补充 AppState/网络状态感知，让切后台和弱网中断的提示更明确。

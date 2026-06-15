@@ -76,6 +76,14 @@ describe("buildAvailableTools", () => {
     expect(names).not.toContain("document_update");
   });
 
+  it("knowledgeBaseEnabled=false 时不包含 knowledge_search", () => {
+    const tools = buildAvailableTools(null, { knowledgeBaseEnabled: false });
+    const names = tools.map((t) => t.name);
+    expect(names).not.toContain("knowledge_search");
+    expect(names).toContain("document_search");
+    expect(names).toContain("memory_search");
+  });
+
   it("有当前文档时包含 document_read 和 document_update", () => {
     const tools = buildAvailableTools({ id: "doc-1", title: "Test" });
     const names = tools.map((t) => t.name);

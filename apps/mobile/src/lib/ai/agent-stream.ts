@@ -33,6 +33,7 @@ export type StreamAgentParams = {
   modelId: string;
   conversationId?: string;
   enableThinking?: boolean;
+  knowledgeBaseEnabled?: boolean;
   currentDocument?: MobileCurrentDocument;
   authToken?: string | null;
   signal?: AbortSignal;
@@ -314,6 +315,7 @@ export async function streamAgent(
         modelId: params.modelId,
         conversationId: params.conversationId,
         enableThinking: params.enableThinking,
+        knowledgeBaseEnabled: params.knowledgeBaseEnabled ?? true,
         currentDocument: params.currentDocument ?? null,
         mode: "chat",
       },

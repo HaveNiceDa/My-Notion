@@ -384,6 +384,7 @@ export function useAgentChatSession(visible: boolean) {
             modelId: selectedModel,
             conversationId: conversationId ?? undefined,
             enableThinking,
+            knowledgeBaseEnabled,
             currentDocument: null,
             authToken,
             signal: abortController.signal,
