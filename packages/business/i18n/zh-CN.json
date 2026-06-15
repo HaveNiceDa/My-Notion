@@ -322,6 +322,7 @@
     "deepThinkingEnabled": "深度思考已开启",
     "deepThinkingDisabled": "深度思考已关闭",
     "deepThinkingTooltip": "深度思考",
+    "deepThinkingCompatibilityHint": "深度思考取决于当前模型能力，部分模型可能不会返回思考过程。",
     "modelSelect": "模型选择",
     "deleteConversation": "删除对话",
     "deleteConversationConfirm": "确定要删除这个对话吗？删除后无法恢复。",

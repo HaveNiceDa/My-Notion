@@ -723,6 +723,17 @@ export function ChatModal({ visible, onClose }: Props) {
           </Pressable>
         </View>
 
+        {enableThinking && (
+          <Text
+            fontSize={11}
+            lineHeight={16}
+            color="$placeholderColor"
+            style={tw`mb-2 px-1`}
+          >
+            {t("AI.deepThinkingCompatibilityHint")}
+          </Text>
+        )}
+
         <View
           style={[
             tw`flex-row items-center rounded-2xl`,
