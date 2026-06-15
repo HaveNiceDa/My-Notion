@@ -24,7 +24,7 @@ import {
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
 import { useAgentChatSession } from "../hooks/use-agent-chat-session";
-import type { AgentToolEventItem } from "../types";
+import type { AgentToolEventItem, AgentToolEventSource } from "../types";
 
 type Props = {
   visible: boolean;
@@ -40,6 +40,7 @@ export function ChatModal({ visible, onClose }: Props) {
   const [showModelPicker, setShowModelPicker] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<Id<"aiConversations"> | null>(null);
+  const [expandedToolIds, setExpandedToolIds] = useState<Set<string>>(new Set());
   const scrollViewRef = useRef<ScrollView>(null);
   const {
     conversations,
@@ -134,6 +135,23 @@ export function ChatModal({ visible, onClose }: Props) {
     return name;
   };
 
+  const toggleToolExpanded = (id: string) => {
+    setExpandedToolIds((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const getSourceLabel = (source: AgentToolEventSource) => {
+    if (source.title) return source.title;
+    if (source.type === "web" && source.url) return source.url;
+    if (source.type === "document") return t("AI.untitledDocument");
+    if (source.type === "memory") return t("AI.memorySource");
+    return source.type;
+  };
+
   const renderToolEvents = () => {
     if (toolEvents.length === 0) return null;
 
@@ -159,36 +177,99 @@ export function ChatModal({ visible, onClose }: Props) {
             gap: 8,
           }}
         >
-          {toolEvents.map((event) => (
-            <View key={event.id} style={tw`gap-1`}>
-              <View style={tw`flex-row items-center gap-2`}>
-                {event.status === "running" ? (
-                  <ActivityIndicator size="small" color="#8b5cf6" />
-                ) : (
-                  <Ionicons
-                    name={
-                      event.status === "completed"
-                        ? "checkmark-circle-outline"
-                        : "alert-circle-outline"
-                    }
-                    size={14}
-                    color={event.status === "completed" ? "#22c55e" : "#ef4444"}
-                  />
+          {toolEvents.map((event) => {
+            const isExpanded = expandedToolIds.has(event.id);
+            const isLongDetail = event.detail.length > 120;
+            const detail = !isLongDetail || isExpanded
+              ? event.detail
+              : `${event.detail.slice(0, 120)}...`;
+
+            return (
+              <View key={event.id} style={tw`gap-1.5`}>
+                <View style={tw`flex-row items-center gap-2`}>
+                  {event.status === "running" ? (
+                    <ActivityIndicator size="small" color="#8b5cf6" />
+                  ) : (
+                    <Ionicons
+                      name={
+                        event.status === "completed"
+                          ? "checkmark-circle-outline"
+                          : "alert-circle-outline"
+                      }
+                      size={14}
+                      color={event.status === "completed" ? "#22c55e" : "#ef4444"}
+                    />
+                  )}
+                  <Text flex={1} fontSize={12} fontWeight="bold" color="$color">
+                    {getToolDisplayName(event.name)}
+                  </Text>
+                  <Text fontSize={10} color="$placeholderColor">
+                    {statusLabel(event.status)}
+                  </Text>
+                </View>
+
+                {detail.length > 0 && (
+                  <Text fontSize={11} lineHeight={16} color="$placeholderColor">
+                    {detail}
+                  </Text>
                 )}
-                <Text flex={1} fontSize={12} fontWeight="bold" color="$color">
-                  {getToolDisplayName(event.name)}
-                </Text>
-                <Text fontSize={10} color="$placeholderColor">
-                  {statusLabel(event.status)}
-                </Text>
+
+                {isLongDetail && (
+                  <Pressable
+                    onPress={() => toggleToolExpanded(event.id)}
+                    hitSlop={6}
+                    style={tw`self-start`}
+                  >
+                    <Text fontSize={11} color="$primary">
+                      {isExpanded ? t("AI.collapseToolResult") : t("AI.expandToolResult")}
+                    </Text>
+                  </Pressable>
+                )}
+
+                {event.sources.length > 0 && (
+                  <View style={tw`gap-1`}>
+                    {event.sources.slice(0, 3).map((source, index) => (
+                      <View
+                        key={`${event.id}-${source.type}-${index}`}
+                        style={tw`flex-row items-center gap-1.5`}
+                      >
+                        <Ionicons
+                          name={
+                            source.type === "web"
+                              ? "globe-outline"
+                              : source.type === "memory"
+                                ? "bookmark-outline"
+                                : "document-text-outline"
+                          }
+                          size={11}
+                          color={theme.placeholderColor.val}
+                        />
+                        <Text
+                          flex={1}
+                          fontSize={10}
+                          color="$placeholderColor"
+                          numberOfLines={1}
+                        >
+                          {getSourceLabel(source)}
+                        </Text>
+                      </View>
+                    ))}
+                    {event.sources.length > 3 && (
+                      <Text fontSize={10} color="$placeholderColor">
+                        {t("AI.moreSources", { count: event.sources.length - 3 })}
+                      </Text>
+                    )}
+                  </View>
+                )}
+
+                {event.status === "failed" && event.recoverable && (
+                  <Text fontSize={10} lineHeight={14} color="#ef4444">
+                    {t("AI.recoverableToolError")}
+                  </Text>
+                )}
               </View>
-              {event.detail.length > 0 && (
-                <Text fontSize={11} lineHeight={16} color="$placeholderColor">
-                  {event.detail}
-                </Text>
-              )}
-            </View>
-          ))}
+            );
+          })}
         </View>
       </View>
     );

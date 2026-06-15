@@ -21,11 +21,22 @@ export type ThinkingStep = {
 
 export type AgentToolEventStatus = "running" | "completed" | "failed";
 
+export type AgentToolEventSource = {
+  type: "document" | "web" | "memory";
+  title?: string;
+  url?: string;
+  documentId?: string;
+  memoryId?: string;
+  score?: number;
+};
+
 export type AgentToolEventItem = {
   id: string;
   name: string;
   status: AgentToolEventStatus;
   detail: string;
+  sources: AgentToolEventSource[];
+  recoverable: boolean;
   updatedAt: number;
 };
 

@@ -21,6 +21,7 @@ import type {
   AgentChatResumeSnapshot,
   AgentChatStatus,
   AgentToolEventItem,
+  AgentToolEventSource,
   AgentToolStreamEvent,
   ThinkingStep,
 } from "../types";
@@ -49,15 +50,67 @@ function isResumeSnapshot(value: unknown): value is AgentChatResumeSnapshot {
   );
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function compactToolDetail(value: unknown): string {
-  if (typeof value === "string") return value.slice(0, 160);
+  if (typeof value === "string") return value;
   if (!value) return "";
 
   try {
-    return JSON.stringify(value).slice(0, 160);
+    return JSON.stringify(value);
   } catch {
-    return String(value).slice(0, 160);
+    return String(value);
   }
+}
+
+function normalizeToolSources(value: unknown): AgentToolEventSource[] {
+  if (!Array.isArray(value)) return [];
+
+  return value.flatMap((source) => {
+    if (!isRecord(source)) return [];
+    if (
+      source.type !== "document" &&
+      source.type !== "web" &&
+      source.type !== "memory"
+    ) {
+      return [];
+    }
+
+    return [{
+      type: source.type,
+      title: typeof source.title === "string" ? source.title : undefined,
+      url: typeof source.url === "string" ? source.url : undefined,
+      documentId: typeof source.documentId === "string" ? source.documentId : undefined,
+      memoryId: typeof source.memoryId === "string" ? source.memoryId : undefined,
+      score: typeof source.score === "number" ? source.score : undefined,
+    }];
+  });
+}
+
+function getToolResultState(result: unknown) {
+  if (!isRecord(result)) {
+    return {
+      detail: compactToolDetail(result),
+      sources: [] as AgentToolEventSource[],
+      recoverable: true,
+      hasError: false,
+    };
+  }
+
+  const detail = typeof result.summary === "string"
+    ? result.summary
+    : typeof result.error === "string"
+      ? result.error
+      : compactToolDetail(result);
+
+  return {
+    detail,
+    sources: normalizeToolSources(result.sources),
+    recoverable: result.recoverable !== false,
+    hasError: typeof result.error === "string",
+  };
 }
 
 export function useAgentChatSession(visible: boolean) {
@@ -156,19 +209,27 @@ export function useAgentChatSession(visible: boolean) {
 
   const recordToolEvent = useCallback((event: AgentToolStreamEvent) => {
     setToolEvents((items) => {
-      const nextStatus: AgentToolEventItem["status"] =
-        event.type === "tool-call-result" ? "completed" : "running";
-      const detail =
-        "result" in event
-          ? compactToolDetail(event.result)
-          : compactToolDetail(event.delta);
       const current = items.find((item) => item.id === event.toolCallId);
+      const resultState = "result" in event
+        ? getToolResultState(event.result)
+        : null;
+      const nextStatus: AgentToolEventItem["status"] =
+        event.type === "tool-call-result"
+          ? resultState?.hasError
+            ? "failed"
+            : "completed"
+          : "running";
+      const detail = resultState
+        ? resultState.detail
+        : compactToolDetail("delta" in event ? event.delta : undefined);
       const toolName = "toolName" in event ? event.toolName : undefined;
       const nextItem: AgentToolEventItem = {
         id: event.toolCallId,
         name: toolName || current?.name || "tool",
         status: nextStatus,
         detail: detail || current?.detail || "",
+        sources: resultState?.sources ?? current?.sources ?? [],
+        recoverable: resultState?.recoverable ?? current?.recoverable ?? true,
         updatedAt: Date.now(),
       };
 
