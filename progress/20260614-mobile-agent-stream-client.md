@@ -5,6 +5,7 @@
 - 新增 Mobile Agent Stream 客户端，移动端可携带 Clerk token 请求 Web `/api/agent/stream`。
 - 将 `ChatModal` 中的发送、流式输出、错误、重试、停止生成和 `resumeCursor` 续跑状态收敛到 `useAgentChatSession`。
 - 新增 Agent Stream tool event 只读 UI 卡片，按工具调用 ID 归并执行中、完成状态和结果摘要。
+- 统一 Mobile 加载态为纯白背景、灰色 spinner 和 i18n 文案，覆盖路由鉴权加载与首页数据加载。
 - 保留 `EXPO_PUBLIC_MOBILE_AGENT_STREAM=0` fallback，可临时切回旧 `/api/chat`、`/api/rag` 兼容层。
 - 清理移动端 AI Chat 旧共享 hooks 依赖，改成本地状态，避免 `@notion/business/hooks` 不存在导出导致编译失败。
 - 补齐 `twrnc` 类型声明与 Mobile Convex 类型解析，确保移动端 typecheck 可通过。
@@ -20,6 +21,7 @@
 - 优点：`ChatModal` 明显变薄，网络协议和客户端状态边界更清晰；旧兼容层仍可回退，风险可控。
 - 优点：停止生成已具备基础能力，`resumeCursor`、会话 ID 和已流式输出内容会落到 AsyncStorage，用于中断后的继续生成。
 - 优点：tool event 已有基础可视化，先只读展示工具名、运行状态和短结果，暂不引入确认式写入交互。
+- 优点：加载态从深色/蓝色 spinner 收敛为更贴近 Notion 的极简浅色体验，并复用国际化文案。
 - 局限：续跑状态仍是客户端本地快照，暂未做多设备同步；tool UI 暂未展示结构化引用、确认按钮或可展开详情。
 - 局限：知识库开关在 Agent Stream 默认链路下暂未映射为明确 Agent 策略，后续需要统一产品语义。
 
