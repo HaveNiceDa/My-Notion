@@ -17,7 +17,9 @@ import {
 } from "@/lib/ai/chat";
 import { useMutation, useQuery } from "convex/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, type AppStateStatus } from "react-native";
 import type {
+  AgentChatInterruptionReason,
   AgentChatResumeSnapshot,
   AgentChatStatus,
   AgentToolEventItem,
@@ -113,6 +115,21 @@ function getToolResultState(result: unknown) {
   };
 }
 
+function classifyStreamError(error: Error): AgentChatInterruptionReason {
+  const message = error.message.toLowerCase();
+  if (
+    message.includes("network") ||
+    message.includes("fetch") ||
+    message.includes("timeout") ||
+    message.includes("offline") ||
+    message.includes("internet")
+  ) {
+    return "network";
+  }
+
+  return "unknown";
+}
+
 export function useAgentChatSession(visible: boolean) {
   const { user } = useUser();
   const { getToken } = useAuth();
@@ -132,6 +149,8 @@ export function useAgentChatSession(visible: boolean) {
   const [toolEvents, setToolEvents] = useState<AgentToolEventItem[]>([]);
   const [stepsExpanded, setStepsExpanded] = useState(true);
   const [lastFailedInput, setLastFailedInput] = useState<string | null>(null);
+  const [interruptionReason, setInterruptionReason] =
+    useState<AgentChatInterruptionReason>(null);
   const [resumeCursor, setResumeCursor] =
     useState<MobileAgentStreamCursor | null>(null);
 
@@ -140,6 +159,8 @@ export function useAgentChatSession(visible: boolean) {
   const activeInputRef = useRef<string | null>(null);
   const resumeCursorRef = useRef<MobileAgentStreamCursor | null>(null);
   const resumeSnapshotRef = useRef<AgentChatResumeSnapshot | null>(null);
+  const statusRef = useRef<AgentChatStatus>("idle");
+  const appStateRef = useRef<AppStateStatus>(AppState.currentState);
 
   const createConversation = useMutation(api.aiChat.createConversation);
   const addMessage = useMutation(api.aiChat.addMessage);
@@ -156,8 +177,31 @@ export function useAgentChatSession(visible: boolean) {
   const isSending = status === "preparing" || status === "streaming";
 
   useEffect(() => {
+    statusRef.current = status;
+  }, [status]);
+
+  useEffect(() => {
     resumeCursorRef.current = resumeCursor;
   }, [resumeCursor]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      const wasActive = appStateRef.current === "active";
+      appStateRef.current = nextState;
+
+      if (
+        wasActive &&
+        nextState !== "active" &&
+        (statusRef.current === "preparing" || statusRef.current === "streaming")
+      ) {
+        setInterruptionReason("background");
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
+      }
+    });
+
+    return () => subscription.remove();
+  }, []);
 
   const clearResumeSnapshot = useCallback(async () => {
     if (!user) return;
@@ -292,6 +336,7 @@ export function useAgentChatSession(visible: boolean) {
         setStreamingContent(parsed.content);
         setCompletedReasoning(parsed.reasoning);
         setReasoningContent("");
+        setInterruptionReason("background");
         setStatus("resumable");
       } catch (error) {
         console.error("Failed to load mobile agent resume cursor:", error);
@@ -302,6 +347,7 @@ export function useAgentChatSession(visible: boolean) {
   }, [isSending, user, visible]);
 
   const handleStop = useCallback(() => {
+    setInterruptionReason("user");
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
     setStatus(resumeCursorRef.current ? "resumable" : "failed");
@@ -318,6 +364,7 @@ export function useAgentChatSession(visible: boolean) {
 
     setStatus("preparing");
     setLastFailedInput(null);
+    setInterruptionReason(null);
     await clearResumeSnapshot();
     isCreatingNewRef.current = false;
     if (!retryInput) setInput("");
@@ -335,6 +382,7 @@ export function useAgentChatSession(visible: boolean) {
       }
 
       console.error("AI stream error:", error);
+      setInterruptionReason(classifyStreamError(error));
       setStatus("failed");
       setStreamingContent("");
       setReasoningContent("");
@@ -429,6 +477,7 @@ export function useAgentChatSession(visible: boolean) {
           }
           setStreamingContent("");
           setStatus("done");
+          setInterruptionReason(null);
           abortControllerRef.current = null;
           activeInputRef.current = null;
           await clearResumeSnapshot();
@@ -535,6 +584,7 @@ export function useAgentChatSession(visible: boolean) {
 
     setStatus("streaming");
     setLastFailedInput(null);
+    setInterruptionReason(null);
     setActiveConversationId(snapshot.conversationId);
     setStreamingContent(fullContent);
     setCompletedReasoning(fullReasoning);
@@ -557,6 +607,7 @@ export function useAgentChatSession(visible: boolean) {
       }
 
       console.error("AI resume stream error:", error);
+      setInterruptionReason(classifyStreamError(error));
       setStatus("resumable");
     };
 
@@ -616,6 +667,7 @@ export function useAgentChatSession(visible: boolean) {
             }
             setStreamingContent("");
             setStatus("done");
+            setInterruptionReason(null);
             abortControllerRef.current = null;
             activeInputRef.current = null;
             await clearResumeSnapshot();
@@ -642,6 +694,7 @@ export function useAgentChatSession(visible: boolean) {
     isCreatingNewRef.current = true;
     setActiveConversationId(null);
     setStatus("idle");
+    setInterruptionReason(null);
     void clearResumeSnapshot();
     setLastFailedInput(null);
     resetDraft();
@@ -654,6 +707,7 @@ export function useAgentChatSession(visible: boolean) {
     isCreatingNewRef.current = false;
     setActiveConversationId(id);
     setStatus("idle");
+    setInterruptionReason(null);
     void clearResumeSnapshot();
     setLastFailedInput(null);
     resetDraft();
@@ -667,6 +721,7 @@ export function useAgentChatSession(visible: boolean) {
       if (activeConversationId === id) {
         setActiveConversationId(null);
         setStatus("idle");
+        setInterruptionReason(null);
         void clearResumeSnapshot();
         setLastFailedInput(null);
         resetDraft();
@@ -701,6 +756,7 @@ export function useAgentChatSession(visible: boolean) {
     stepsExpanded,
     setStepsExpanded,
     lastFailedInput,
+    interruptionReason,
     resumeCursor,
     handleSend,
     handleResume,

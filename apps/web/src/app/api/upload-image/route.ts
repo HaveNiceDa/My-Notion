@@ -27,7 +27,7 @@ function getCorsHeaders(request: NextRequest): Record<string, string> {
 }
 
 export async function OPTIONS(request: NextRequest) {
-  return NextResponse.json(null, { status: 204, headers: getCorsHeaders(request) });
+  return new NextResponse(null, { status: 204, headers: getCorsHeaders(request) });
 }
 
 export async function POST(request: NextRequest) {

@@ -69,7 +69,7 @@ AI 服务地址由运行模式决定：
 | 场景 | AI 地址 |
 |---|---|
 | `pnpm dev` | 默认线上 AI 服务 |
-| `pnpm dev:local` | `http://localhost:3001` |
+| `pnpm dev:local` | `http://localhost:3000` |
 | EAS preview / production | 线上 AI 服务 |
 
 真机调试本地 AI 时，需要将 `localhost` 替换为局域网 IP。

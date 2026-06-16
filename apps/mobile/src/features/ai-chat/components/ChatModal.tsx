@@ -66,6 +66,7 @@ export function ChatModal({ visible, onClose }: Props) {
     stepsExpanded,
     setStepsExpanded,
     lastFailedInput,
+    interruptionReason,
     resumeCursor,
     handleSend,
     handleResume,
@@ -103,6 +104,27 @@ export function ChatModal({ visible, onClose }: Props) {
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
   const displayReasoning = reasoningContent || completedReasoning;
+
+  const getInterruptionMessage = () => {
+    if (status === "resumable") {
+      if (interruptionReason === "background") {
+        return t("AI.resumeInterruptedByBackground");
+      }
+      if (interruptionReason === "network") {
+        return t("AI.resumeInterruptedByNetwork");
+      }
+      if (interruptionReason === "user") {
+        return t("AI.resumeStoppedByUser");
+      }
+      return t("AI.resumeInterrupted");
+    }
+
+    if (interruptionReason === "network") {
+      return t("AI.networkSendFailed");
+    }
+
+    return t("AI.sendFailed");
+  };
 
   const getToolDisplayName = (name: string) => {
     if (name.includes("knowledge") || name.includes("rag")) {
@@ -706,9 +728,7 @@ export function ChatModal({ visible, onClose }: Props) {
               }}
             >
               <Text fontSize={13} color="$placeholderColor">
-                {status === "resumable"
-                  ? t("AI.resumeInterrupted")
-                  : t("AI.sendFailed")}
+                {getInterruptionMessage()}
               </Text>
               <Pressable
                 onPress={() => {

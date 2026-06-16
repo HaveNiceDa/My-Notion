@@ -23,6 +23,14 @@ import type { MemoryExtractionMessage } from "@/src/lib/agent/memory-extractor";
 const RESUME_LIVE_POLL_INTERVAL_MS = 800;
 const RESUME_LIVE_MAX_WAIT_MS = 25_000;
 const RECORDER_FLUSH_TIMEOUT_MS = 1_500;
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:8081",
+  "http://localhost:19000",
+  "http://localhost:19006",
+  "https://notion-j9zj.vercel.app",
+];
 
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
@@ -39,6 +47,23 @@ type AgentRequestBody = {
     assistantMessageId: string;
   };
 };
+
+function getCorsHeaders(request: NextRequest): Record<string, string> {
+  const origin = request.headers.get("origin") || "";
+  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : "";
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  };
+}
+
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(request),
+  });
+}
 
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.LLM_API_KEY;
@@ -167,10 +192,15 @@ async function buildInstructionMemoryContext(options: {
 }
 
 export async function POST(req: NextRequest) {
+  const corsHeaders = getCorsHeaders(req);
+
   try {
     const { userId, getToken } = await auth();
     if (!userId) {
-      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: "Unauthorized" },
+        { status: 401, headers: corsHeaders },
+      );
     }
 
     const rateLimitResult = await checkRateLimit(userId);
@@ -180,6 +210,7 @@ export async function POST(req: NextRequest) {
         {
           status: 429,
           headers: {
+            ...corsHeaders,
             "X-RateLimit-Limit": String(rateLimitResult.limit),
             "X-RateLimit-Remaining": String(rateLimitResult.remaining),
             "X-RateLimit-Reset": String(rateLimitResult.reset),
@@ -194,6 +225,7 @@ export async function POST(req: NextRequest) {
     if (body.resume) {
       return await buildResumeResponse({
         convex,
+        corsHeaders,
         userId,
         resume: body.resume,
       });
@@ -203,7 +235,7 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(messages)) {
       return NextResponse.json(
         { success: false, error: "messages must be an array" },
-        { status: 400 },
+        { status: 400, headers: corsHeaders },
       );
     }
 
@@ -404,6 +436,7 @@ export async function POST(req: NextRequest) {
 
     return new NextResponse(stream, {
       headers: {
+        ...corsHeaders,
         "Content-Type": "application/x-ndjson",
         "Cache-Control": "no-cache",
       },
@@ -412,7 +445,7 @@ export async function POST(req: NextRequest) {
     console.error("[Agent Stream] Error:", error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 },
+      { status: 500, headers: corsHeaders },
     );
   }
 }
@@ -459,10 +492,11 @@ async function flushRecorderWithTimeout(recorder: AgentRunRecorder, label: strin
 
 async function buildResumeResponse(options: {
   convex: ConvexHttpClient | null;
+  corsHeaders: Record<string, string>;
   userId: string;
   resume: NonNullable<AgentRequestBody["resume"]>;
 }) {
-  const { convex, resume, userId } = options;
+  const { convex, corsHeaders, resume, userId } = options;
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -560,6 +594,7 @@ async function buildResumeResponse(options: {
 
   return new NextResponse(stream, {
     headers: {
+      ...corsHeaders,
       "Content-Type": "application/x-ndjson",
       "Cache-Control": "no-cache",
     },

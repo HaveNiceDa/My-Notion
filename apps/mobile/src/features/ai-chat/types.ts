@@ -13,6 +13,13 @@ export type AgentChatStatus =
   | "resumable"
   | "done";
 
+export type AgentChatInterruptionReason =
+  | "background"
+  | "network"
+  | "user"
+  | "unknown"
+  | null;
+
 export type ThinkingStep = {
   type: string;
   content: string;
@@ -61,6 +68,7 @@ export type AgentChatDraftState = {
   toolEvents: AgentToolEventItem[];
   stepsExpanded: boolean;
   lastFailedInput: string | null;
+  interruptionReason: AgentChatInterruptionReason;
 };
 
 export type AgentChatSessionState = AgentChatDraftState &
