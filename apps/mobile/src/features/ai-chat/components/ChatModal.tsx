@@ -57,8 +57,6 @@ export function ChatModal({ visible, onClose }: Props) {
     activeConversationId,
     selectedModel,
     setSelectedModel,
-    enableThinking,
-    setEnableThinking,
     knowledgeBaseEnabled,
     setKnowledgeBaseEnabled,
     thinkingSteps,
@@ -802,38 +800,7 @@ export function ChatModal({ visible, onClose }: Props) {
             </View>
           </Pressable>
 
-          <Pressable onPress={() => setEnableThinking((enabled) => !enabled)}>
-            <View
-              style={[
-                tw`flex-row items-center gap-1 px-2 py-1 rounded-full`,
-                { backgroundColor: enableThinking ? theme.primary.val : theme.backgroundHover.val },
-              ]}
-            >
-              <Ionicons
-                name="bulb-outline"
-                size={13}
-                color={enableThinking ? theme.primaryForeground.val : theme.placeholderColor.val}
-              />
-              <Text
-                fontSize={11}
-                color={enableThinking ? "$primaryForeground" : "$placeholderColor"}
-              >
-                {t("AI.deepThinking")}
-              </Text>
-            </View>
-          </Pressable>
         </View>
-
-        {enableThinking && (
-          <Text
-            fontSize={11}
-            lineHeight={16}
-            color="$placeholderColor"
-            style={tw`mb-2 px-1`}
-          >
-            {t("AI.deepThinkingCompatibilityHint")}
-          </Text>
-        )}
 
         <View
           style={[

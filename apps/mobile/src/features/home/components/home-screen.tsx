@@ -39,8 +39,11 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
   const { rootNodes: knowledgeRootNodes } = useDocumentTree(allDocuments, "knowledge");
 
   const create = useMutation(api.documents.create);
+  const update = useMutation(api.documents.update);
 
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
+  const [creatingSection, setCreatingSection] =
+    useState<"knowledge" | "starred" | "private" | null>(null);
 
   const { onOpen: openSearch } = useSearch();
   const { isAiChatOpen, closeAiChat, isInboxOpen, closeInbox } = useNavigation();
@@ -79,14 +82,30 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
     [router],
   );
 
-  const handleCreateNew = async () => {
+  const handleCreateNew = async (
+    section: "knowledge" | "starred" | "private" = "private",
+  ) => {
+    if (creatingSection) return;
+    setCreatingSection(section);
+
     try {
       const documentId = await create({
         title: t("Documents.untitled"),
       });
+
+      if (section === "starred") {
+        await update({ id: documentId, isStarred: true });
+      }
+
+      if (section === "private") {
+        await update({ id: documentId, isInKnowledgeBase: false });
+      }
+
       router.push(`/(home)/document/${documentId}` as Href);
     } catch {
       setErrorDialogOpen(true);
+    } finally {
+      setCreatingSection(null);
     }
   };
 
@@ -142,6 +161,9 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.knowledgeBase")}
                 expanded={sections.knowledgeBase}
                 onToggle={() => toggleSection("knowledgeBase")}
+                actionLabel={t("Navigation.addAPage")}
+                actionDisabled={creatingSection !== null}
+                onPressAction={() => handleCreateNew("knowledge")}
               >
                 <SidebarDocumentTree
                   variant="knowledge"
@@ -158,6 +180,9 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.favorites")}
                 expanded={sections.favorites}
                 onToggle={() => toggleSection("favorites")}
+                actionLabel={t("Navigation.addAPage")}
+                actionDisabled={creatingSection !== null}
+                onPressAction={() => handleCreateNew("starred")}
               >
                 <SidebarDocumentTree
                   variant="starred"
@@ -174,6 +199,9 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.private")}
                 expanded={sections.private}
                 onToggle={() => toggleSection("private")}
+                actionLabel={t("Navigation.addAPage")}
+                actionDisabled={creatingSection !== null}
+                onPressAction={() => handleCreateNew("private")}
               >
                 <SidebarDocumentTree
                   variant="private"
@@ -192,7 +220,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
       <HomeBottomBar
         onPressSearch={openSearch}
         onPressAi={() => useNavigation.getState().openAiChat()}
-        onPressNewPage={handleCreateNew}
+        onPressNewPage={() => handleCreateNew("private")}
       />
 
       <ChatModal

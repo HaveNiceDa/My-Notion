@@ -143,7 +143,7 @@ export function useAgentChatSession(visible: boolean) {
   const [activeConversationId, setActiveConversationId] =
     useState<Id<"aiConversations"> | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel>(DEFAULT_MODEL);
-  const [enableThinking, setEnableThinking] = useState(false);
+  const [enableThinking, setEnableThinking] = useState(true);
   const [knowledgeBaseEnabled, setKnowledgeBaseEnabled] = useState(true);
   const [thinkingSteps, setThinkingSteps] = useState<ThinkingStep[]>([]);
   const [toolEvents, setToolEvents] = useState<AgentToolEventItem[]>([]);
