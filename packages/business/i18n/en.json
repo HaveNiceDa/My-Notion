@@ -259,7 +259,12 @@
   "Toolbar": {
     "addIcon": "Add icon",
     "addCover": "Add cover",
-    "insertImage": "Insert image"
+    "insertImage": "Insert image",
+    "imageInserted": "Image inserted. Saving...",
+    "imagePermissionDenied": "Photo access is disabled. Enable photo permission in system settings.",
+    "imageUploadFailed": "Image upload failed. Check your connection and retry.",
+    "imageTooLarge": "Images must be smaller than 5 MB.",
+    "unsupportedImageType": "Only JPEG, PNG, GIF, and WebP images are supported."
   },
   "Common": {
     "saved": "Saved successfully!",

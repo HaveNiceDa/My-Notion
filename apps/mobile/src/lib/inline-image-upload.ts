@@ -1,6 +1,21 @@
 import * as ImagePicker from "expo-image-picker";
 import Constants from "expo-constants";
 
+export type InlineImageUploadErrorCode =
+  | "permission_denied"
+  | "upload_failed"
+  | "invalid_response";
+
+export class InlineImageUploadError extends Error {
+  code: InlineImageUploadErrorCode;
+
+  constructor(code: InlineImageUploadErrorCode, message: string) {
+    super(message);
+    this.name = "InlineImageUploadError";
+    this.code = code;
+  }
+}
+
 function getWebOrigin(): string {
   return Constants.expoConfig?.extra?.webUrl ?? "https://notion-j9zj.vercel.app";
 }
@@ -26,18 +41,32 @@ export async function uploadFileToEdgeStore(
   formData.append("name", fileName);
 
   const uploadUrl = `${getWebOrigin()}/api/upload-image`;
-  const response = await fetch(uploadUrl, {
-    method: "POST",
-    body: formData,
-  });
+  let response: Response;
+  try {
+    response = await fetch(uploadUrl, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    throw new InlineImageUploadError(
+      "upload_failed",
+      error instanceof Error ? error.message : "Upload request failed",
+    );
+  }
 
   if (!response.ok) {
-    throw new Error(`Upload failed: ${response.status}`);
+    throw new InlineImageUploadError(
+      "upload_failed",
+      `Upload failed: ${response.status}`,
+    );
   }
 
   const { url } = await response.json();
   if (!url) {
-    throw new Error("Missing url in upload response");
+    throw new InlineImageUploadError(
+      "invalid_response",
+      "Missing url in upload response",
+    );
   }
 
   return { url };
@@ -53,7 +82,10 @@ export async function pickInlineImage(): Promise<{
     await ImagePicker.requestMediaLibraryPermissionsAsync();
 
   if (!permissionResult.granted) {
-    return null;
+    throw new InlineImageUploadError(
+      "permission_denied",
+      "Media library permission denied",
+    );
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({

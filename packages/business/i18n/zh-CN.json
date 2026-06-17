@@ -262,7 +262,12 @@
   "Toolbar": {
     "addIcon": "添加图标",
     "addCover": "添加封面",
-    "insertImage": "插入图片"
+    "insertImage": "插入图片",
+    "imageInserted": "图片已插入，正在保存",
+    "imagePermissionDenied": "无法访问相册，请在系统设置中开启照片权限。",
+    "imageUploadFailed": "图片上传失败，请检查网络后重试。",
+    "imageTooLarge": "图片不能超过 5MB。",
+    "unsupportedImageType": "只支持 JPEG、PNG、GIF 和 WebP 格式的图片。"
   },
   "Common": {
     "saved": "保存成功！",

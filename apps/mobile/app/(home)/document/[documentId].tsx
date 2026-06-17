@@ -26,6 +26,7 @@ import {
   getEditorContentFromStoredContent,
   serializeHtmlToBlockNote,
 } from "@notion/business/content-compat";
+import { validateCoverImage } from "@notion/business/validation";
 import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
@@ -33,6 +34,7 @@ import { useToast } from "@/features/home/components/toast-provider";
 import { IconPicker } from "@/features/home/components/icon-picker";
 import { DocumentBreadcrumb } from "@/features/home/components/document-breadcrumb";
 import {
+  InlineImageUploadError,
   pickInlineImage,
   uploadFileToEdgeStore,
 } from "@/lib/inline-image-upload";
@@ -74,6 +76,7 @@ export default function DocumentDetailRoute() {
   const titleLoadedForIdRef = useRef<string | null>(null);
   const contentLoadedForIdRef = useRef<string | null>(null);
   const loadedHtmlRef = useRef<string>("");
+  const pendingEditorHtmlRef = useRef<string | null>(null);
 
   const initialContent = useMemo(
     () => getEditorContentFromStoredContent(doc?.content),
@@ -89,13 +92,6 @@ export default function DocumentDetailRoute() {
     type: "html",
     debounceInterval: 300,
   });
-
-  useEffect(() => {
-    return () => {
-      if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
-      if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
-    };
-  }, []);
 
   useEffect(() => {
     if (!doc) return;
@@ -115,30 +111,60 @@ export default function DocumentDetailRoute() {
     }
   }, [doc, editor]);
 
-  useEffect(() => {
-    if (!doc || editorHtml === undefined) return;
-    if (editorHtml === loadedHtmlRef.current) return;
-
-    if (contentTimerRef.current) {
-      clearTimeout(contentTimerRef.current);
-    }
-
-    contentTimerRef.current = setTimeout(async () => {
-      const nextContent = serializeHtmlToBlockNote(editorHtml);
+  const saveEditorHtml = useCallback(
+    async (editorHtmlToSave: string) => {
+      const nextContent = serializeHtmlToBlockNote(editorHtmlToSave);
       if (nextContent === lastSavedContentRef.current) return;
 
       setSaveState("saving");
       try {
         await update({ id, content: nextContent });
         lastSavedContentRef.current = nextContent;
-        loadedHtmlRef.current = editorHtml;
+        loadedHtmlRef.current = editorHtmlToSave;
         setSaveState("saved");
       } catch (error) {
         setSaveState("idle");
         console.error("Failed to save content:", error);
       }
+    },
+    [id, update],
+  );
+
+  const flushPendingContentSave = useCallback(async () => {
+    const pendingEditorHtml = pendingEditorHtmlRef.current;
+    if (!pendingEditorHtml) return;
+
+    if (contentTimerRef.current) {
+      clearTimeout(contentTimerRef.current);
+      contentTimerRef.current = null;
+    }
+
+    await saveEditorHtml(pendingEditorHtml);
+    pendingEditorHtmlRef.current = null;
+  }, [saveEditorHtml]);
+
+  useEffect(() => {
+    return () => {
+      if (titleTimerRef.current) clearTimeout(titleTimerRef.current);
+      if (contentTimerRef.current) clearTimeout(contentTimerRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!doc || editorHtml === undefined) return;
+    if (editorHtml === loadedHtmlRef.current) return;
+
+    pendingEditorHtmlRef.current = editorHtml;
+
+    if (contentTimerRef.current) {
+      clearTimeout(contentTimerRef.current);
+    }
+
+    contentTimerRef.current = setTimeout(async () => {
+      await saveEditorHtml(editorHtml);
+      pendingEditorHtmlRef.current = null;
     }, SAVE_DELAY_MS);
-  }, [doc, editorHtml, id, update]);
+  }, [doc, editorHtml, saveEditorHtml]);
 
   const scheduleTitleSave = useCallback(
     (nextTitle: string) => {
@@ -192,6 +218,11 @@ export default function DocumentDetailRoute() {
     }
   };
 
+  const handleBack = async () => {
+    await flushPendingContentSave();
+    router.back();
+  };
+
   const handleSetIcon = async (icon: string) => {
     try {
       await update({ id, icon });
@@ -227,11 +258,10 @@ export default function DocumentDetailRoute() {
       const params = await pickCoverImage();
       if (!params) return;
 
-      const { validateCoverImage } = await import("@notion/business/validation");
       const validation = validateCoverImage(
         params,
-        t("Error.somethingWentWrong"),
-        t("Error.somethingWentWrong"),
+        t("Toolbar.unsupportedImageType"),
+        t("Toolbar.imageTooLarge"),
       );
       if (!validation.valid) {
         toast.showError(validation.error!);
@@ -269,15 +299,38 @@ export default function DocumentDetailRoute() {
       const params = await pickInlineImage();
       if (!params) return;
 
+      const validation = validateCoverImage(
+        {
+          type: params.mimeType,
+          name: params.name,
+          size: params.size,
+        },
+        t("Toolbar.unsupportedImageType"),
+        t("Toolbar.imageTooLarge"),
+      );
+      if (!validation.valid) {
+        toast.showError(validation.error!);
+        return;
+      }
+
       const result = await uploadFileToEdgeStore(
         params.uri,
         params.mimeType,
         params.name,
       );
       editor.setImage(result.url);
+      toast.showSuccess(t("Toolbar.imageInserted"));
     } catch (error) {
       console.error("Failed to insert image:", error);
-      toast.showError(t("Error.somethingWentWrong"));
+      if (error instanceof InlineImageUploadError) {
+        if (error.code === "permission_denied") {
+          toast.showError(t("Toolbar.imagePermissionDenied"));
+          return;
+        }
+        toast.showError(t("Toolbar.imageUploadFailed"));
+        return;
+      }
+      toast.showError(t("Toolbar.imageUploadFailed"));
     } finally {
       setImageUploading(false);
     }
@@ -360,7 +413,7 @@ export default function DocumentDetailRoute() {
         >
           <View style={tw`flex-row items-center justify-between`}>
             <Pressable
-              onPress={() => router.back()}
+              onPress={handleBack}
               hitSlop={10}
               style={({ pressed }) => [
                 tw`w-10 h-10 rounded-full items-center justify-center`,

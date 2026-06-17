@@ -56,6 +56,22 @@
 - 生成中如果检测到网络断开，会主动 abort 当前请求并进入 network interruption 状态，复用已有 `resumeCursor` 恢复链路。
 - `ChatModal` 增加离线提示，断网时禁用发送、重试和继续生成按钮，避免用户在无网络状态下重复触发失败请求。
 
+## 2026-06-16 正文图片上传补强
+
+- `inline-image-upload` 新增可识别错误类型，区分相册权限拒绝、上传失败和服务端响应缺失 URL。
+- 文档页正文图片插入前复用图片类型与 5MB 大小校验，权限拒绝、格式不支持、文件过大、上传失败分别展示明确 toast。
+- 用户取消选择仍保持安静返回，不弹错误，避免把主动取消误判为失败。
+- 图片插入成功后提示正在保存，并在顶部返回按钮触发前 flush 待保存正文 HTML，降低插入图片后立刻返回导致内容未落库的风险。
+- 当前保存与重开渲染仍走既有 `editor.setImage(url) -> useEditorContent(html) -> serializeHtmlToBlockNote -> getEditorContentFromStoredContent` 兼容链路，未引入新的内容格式。
+
+## 2026-06-16 正文图片上传补强
+
+- `inline-image-upload` 新增可识别错误类型，区分相册权限拒绝、上传失败和服务端响应缺失 URL。
+- 文档页正文图片插入前复用图片类型与 5MB 大小校验，权限拒绝、格式不支持、文件过大、上传失败分别展示明确 toast。
+- 用户取消选择仍保持安静返回，不弹错误，避免把主动取消误判为失败。
+- 图片插入成功后提示正在保存，并在顶部返回按钮触发前 flush 待保存正文 HTML，降低插入图片后立刻返回导致内容未落库的风险。
+- 当前保存与重开渲染仍走既有 `editor.setImage(url) -> useEditorContent(html) -> serializeHtmlToBlockNote -> getEditorContentFromStoredContent` 兼容链路，未引入新的内容格式。
+
 ## 验证
 
 ```bash
@@ -76,7 +92,13 @@ pnpm --filter @notion/mobile exec eslint src/features/ai-chat/components/ChatMod
 - 2026-06-16 追加验证：Mobile `tsc --noEmit` 通过，Mobile 相关变更文件 ESLint 通过，VS Code diagnostics 无报错。
 - 2026-06-16 P0 原子化创建：Mobile `tsc --noEmit` 通过，首页相关 ESLint 通过，Web typecheck 通过，VS Code diagnostics 无报错。
 - 2026-06-16 NetInfo 离线判断：`pnpm@10.28.1 install --frozen-lockfile` 通过，Mobile `tsc --noEmit` 通过，AI Chat 相关文件 ESLint 通过，VS Code diagnostics 无报错。
+- 2026-06-16 正文图片上传补强：Mobile `tsc --noEmit` 通过，文档页与 `inline-image-upload` ESLint 通过，Mobile lint 通过且仅保留既有 `sign-in.tsx` array-type warning，VS Code diagnostics 无报错。
+- 2026-06-16 正文图片上传补强：Mobile `tsc --noEmit` 通过，文档页与 `inline-image-upload` ESLint 通过，VS Code diagnostics 无报错。
+
+## 2026-06-16 正文图片上传补强
+
+- 正文图片上传错误恢复已补强，覆盖权限拒绝、格式/大小校验、上传失败提示，以及插入后返回前 flush 待保存正文。
 
 ## 下一步
 
-- 下一步优先做正文图片上传真机验证与错误恢复补强，或继续推进 Agent tool 来源跳转与确认式写入交互。
+- 下一步优先做正文图片上传真机实测，覆盖权限拒绝、用户取消、弱网失败、上传成功后立即返回、重开文档图片渲染一致性；或继续推进 Agent tool 来源跳转与确认式写入交互。
