@@ -373,6 +373,7 @@
     "collapseToolResult": "收起结果",
     "recoverableToolError": "该工具调用可恢复，可稍后重试或继续生成。",
     "moreSources": "还有 {count} 个来源",
+    "sourceOpenFailed": "打开来源失败，请稍后重试。",
     "memorySource": "长期记忆",
     "noDocumentsFound": "未找到相关文档",
     "untitledDocument": "无标题文档",

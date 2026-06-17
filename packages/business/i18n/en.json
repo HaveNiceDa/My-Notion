@@ -370,6 +370,7 @@
     "collapseToolResult": "Collapse result",
     "recoverableToolError": "This tool call is recoverable. Retry later or continue generation.",
     "moreSources": "{count} more sources",
+    "sourceOpenFailed": "Failed to open source. Please try again.",
     "memorySource": "Long-term memory",
     "noDocumentsFound": "No documents found",
     "untitledDocument": "Untitled",

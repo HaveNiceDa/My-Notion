@@ -5,11 +5,13 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   TextInput,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter, type Href } from "expo-router";
 import {
   ScrollView,
   Text,
@@ -23,6 +25,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import {
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
+import { useToast } from "@/features/home/components/toast-provider";
 import { useAgentChatSession } from "../hooks/use-agent-chat-session";
 import type { AgentToolEventItem, AgentToolEventSource } from "../types";
 
@@ -35,6 +38,8 @@ const tw = twBase as any;
 
 export function ChatModal({ visible, onClose }: Props) {
   const { t } = useTranslation();
+  const router = useRouter();
+  const toast = useToast();
   const insets = useSafeAreaInsets();
   const theme = useTheme();
   const [showModelPicker, setShowModelPicker] = useState(false);
@@ -174,6 +179,30 @@ export function ChatModal({ visible, onClose }: Props) {
     return source.type;
   };
 
+  const canOpenSource = (source: AgentToolEventSource) => {
+    return (
+      (source.type === "document" && !!source.documentId) ||
+      (source.type === "web" && !!source.url)
+    );
+  };
+
+  const openSource = async (source: AgentToolEventSource) => {
+    try {
+      if (source.type === "document" && source.documentId) {
+        onClose();
+        router.push(`/(home)/document/${source.documentId}` as Href);
+        return;
+      }
+
+      if (source.type === "web" && source.url) {
+        await Linking.openURL(source.url);
+      }
+    } catch (error) {
+      console.error("Failed to open AI source:", error);
+      toast.showError(t("AI.sourceOpenFailed"));
+    }
+  };
+
   const renderToolEvents = () => {
     if (toolEvents.length === 0) return null;
 
@@ -250,32 +279,49 @@ export function ChatModal({ visible, onClose }: Props) {
 
                 {event.sources.length > 0 && (
                   <View style={tw`gap-1`}>
-                    {event.sources.slice(0, 3).map((source, index) => (
-                      <View
-                        key={`${event.id}-${source.type}-${index}`}
-                        style={tw`flex-row items-center gap-1.5`}
-                      >
-                        <Ionicons
-                          name={
-                            source.type === "web"
-                              ? "globe-outline"
-                              : source.type === "memory"
-                                ? "bookmark-outline"
-                                : "document-text-outline"
-                          }
-                          size={11}
-                          color={theme.placeholderColor.val}
-                        />
-                        <Text
-                          flex={1}
-                          fontSize={10}
-                          color="$placeholderColor"
-                          numberOfLines={1}
+                    {event.sources.slice(0, 3).map((source, index) => {
+                      const sourcePressable = canOpenSource(source);
+                      return (
+                        <Pressable
+                          key={`${event.id}-${source.type}-${index}`}
+                          disabled={!sourcePressable}
+                          onPress={() => openSource(source)}
+                          style={({ pressed }) => [
+                            tw`flex-row items-center gap-1.5 px-1 py-0.5 rounded-lg`,
+                            sourcePressable && pressed
+                              ? { backgroundColor: theme.backgroundPress.val }
+                              : null,
+                          ]}
                         >
-                          {getSourceLabel(source)}
-                        </Text>
-                      </View>
-                    ))}
+                          <Ionicons
+                            name={
+                              source.type === "web"
+                                ? "globe-outline"
+                                : source.type === "memory"
+                                  ? "bookmark-outline"
+                                  : "document-text-outline"
+                            }
+                            size={11}
+                            color={sourcePressable ? theme.primary.val : theme.placeholderColor.val}
+                          />
+                          <Text
+                            flex={1}
+                            fontSize={10}
+                            color={sourcePressable ? "$primary" : "$placeholderColor"}
+                            numberOfLines={1}
+                          >
+                            {getSourceLabel(source)}
+                          </Text>
+                          {sourcePressable && (
+                            <Ionicons
+                              name="open-outline"
+                              size={10}
+                              color={theme.primary.val}
+                            />
+                          )}
+                        </Pressable>
+                      );
+                    })}
                     {event.sources.length > 3 && (
                       <Text fontSize={10} color="$placeholderColor">
                         {t("AI.moreSources", { count: event.sources.length - 3 })}

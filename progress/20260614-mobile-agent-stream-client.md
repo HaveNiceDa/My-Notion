@@ -99,6 +99,13 @@ pnpm --filter @notion/mobile exec eslint src/features/ai-chat/components/ChatMod
 
 - 正文图片上传错误恢复已补强，覆盖权限拒绝、格式/大小校验、上传失败提示，以及插入后返回前 flush 待保存正文。
 
+## 2026-06-16 Mobile Tool Sources 跳转
+
+- AI Chat tool result sources 从只读展示升级为可追溯入口：document source 可跳转到对应移动端文档页，web source 可调用系统链接打开。
+- Memory source 暂保持只读展示，避免在 Memory Center 移动端入口未成型前引入无效跳转。
+- 打开来源失败时展示 i18n toast，避免用户点击后无反馈。
+- 验证：Mobile `tsc --noEmit` 通过，`ChatModal.tsx` ESLint 通过。
+
 ## 下一步
 
-- 下一步优先做正文图片上传真机实测，覆盖权限拒绝、用户取消、弱网失败、上传成功后立即返回、重开文档图片渲染一致性；或继续推进 Agent tool 来源跳转与确认式写入交互。
+- 下一步优先继续做 Mobile Agent currentDocument 上下文接入，或做正文图片上传真机实测。
