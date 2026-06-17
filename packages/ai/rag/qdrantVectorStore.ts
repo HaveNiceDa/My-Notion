@@ -1,9 +1,9 @@
 import { Embeddings } from "@langchain/core/embeddings";
 import { Document } from "@langchain/core/documents";
 import { QdrantClient } from "@qdrant/js-client-rest";
-import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 import { extractTextFromDocument } from "../utils";
+import { splitDocumentForRag } from "./utils";
 
 interface SemanticSearchFilters {
   includeDocumentIds?: string[];
@@ -330,35 +330,33 @@ export class QdrantVectorStoreWrapper {
 
     await this.deleteDocumentChunks(documentId);
 
-    const plainTextContent = extractTextFromDocument(content);
-    if (!plainTextContent) {
+    const splitChunks = await splitDocumentForRag(content);
+    if (splitChunks.length === 0) {
       return;
     }
 
-    const textSplitter = new RecursiveCharacterTextSplitter({
-      chunkSize: 250,
-      chunkOverlap: 40,
-      separators: ["\n\n", "\n", "。", "！", "？", "；", "，", " ", ""],
-    });
-
-    const splits = await textSplitter.splitText(plainTextContent);
-
+    const splits = splitChunks.map((chunk) => chunk.pageContent);
+    const plainTextContent = extractTextFromDocument(content) || splits.join("\n\n");
     const embeddingResults = await this.embeddings.embedDocuments(splits);
-    const headingMetadata = extractHeadingMetadata(content);
+    const fallbackHeadingMetadata = extractHeadingMetadata(content);
     const tags = mergeTags(indexMetadata?.tags, extractInlineTags(`${title}\n${plainTextContent}`));
     const updatedAt = indexMetadata?.updatedAt ?? Date.now();
 
-    const chunks = splits.map((split, index) => ({
+    const chunks = splitChunks.map((split, index) => ({
       chunkIndex: index,
-      pageContent: split,
+      pageContent: split.pageContent,
       metadata: {
         documentId,
         title,
         updatedAt,
         tags,
         documentPath: indexMetadata?.documentPath ?? [],
-        headingPath: headingMetadata.headingPath,
-        headings: headingMetadata.headings,
+        headingPath: split.metadata.headingPath || fallbackHeadingMetadata.headingPath,
+        headings: split.metadata.headings.length > 0
+          ? split.metadata.headings
+          : fallbackHeadingMetadata.headings,
+        chunkStrategy: split.metadata.chunkStrategy,
+        blockTypes: split.metadata.blockTypes,
         neighborSummary: buildNeighborSummary(splits, index),
       },
       embedding: embeddingResults[index],
