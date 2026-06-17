@@ -12,7 +12,7 @@
 | Tools | 已有 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`memory_search`、`memory_write`、`document_write`、`document_update`、`task_plan`、受控 `mcp_my_notion_call` | tool registry 仍主要在 `apps/web`，后续可按跨端/包化再抽象 |
 | Tool 容错 | 所有 tool execute 已接入统一 fallback 边界，异常时返回 `{ error, summary, recoverable, sources, metadata }`；`sources` 已收敛为 `document/web/memory` 强类型 union；MCP `docs_fetch` 已防护非 documents ID | 后续可补更细粒度 source 字段和 UI 展示 |
 | Memory | `agentMemories` 数据模型、Inbox 确认式写入、已生效记忆列表、规则设置、语义检索 + token/recency fallback、写入/编辑/停用后缓存清理与 Qdrant 同步 | embedding 状态可视化、失败重试队列暂缓 |
-| RAG | `retrieveKnowledge(options)` 支持 `fast/balanced/deep`；默认 `balanced`；已有 hybrid recall、RRF、context packing、citation quality、最小 synthetic eval | 真实/脱敏 eval、rerank adapter 暂缓 |
+| RAG | `retrieveKnowledge(options)` 支持 `fast/balanced/deep`；默认 `balanced`；已有 BlockNote 结构感知 chunking、hybrid recall、RRF、context packing、citation quality、最小 synthetic eval | 真实/脱敏 eval、rerank adapter、代码 AST 级切分暂缓 |
 | Harness | Agent 单测、AI Chat 组件测试、mock E2E 用例、本地 `ci:ai-smoke`、无 secrets 版 AI smoke workflow | Storybook、Memory eval、real retrieval eval、Tool Trace Replay、Agent golden set 继续暂缓 |
 
 ---
@@ -48,7 +48,7 @@
 ### P2：治理与体验增强（后置）
 
 1. **Memory 增强**：embedding 同步状态、失败重试队列和更清晰的 Inbox 审核体验。
-2. **RAG 质量增强**：真实/脱敏样本 eval、query-aware diversity、rerank adapter 评估。
+2. **RAG 质量增强**：真实/脱敏样本 eval、query-aware diversity、rerank adapter 评估；当前切分已从固定大小升级为“标题层级 + 语义边界 + 固定兜底”的自适应策略。
 3. **Trace Sink / Replay**：将 `AgentTracer` 接入持久化事件表或 Sentry span，后续再做 Replay UI。
 4. **Storybook**：补 AI Chat 主要组件可视化文档。
 

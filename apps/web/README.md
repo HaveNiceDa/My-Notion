@@ -57,6 +57,7 @@
 - **ReAct Loop**：LLM 根据 tool description 自主决策工具调用，不依赖硬编码关键词路由。
 - **工具调用**：内置 `knowledge_search`、`web_search`、`web_extract`、`document_search`、`document_read`、`document_write`、`document_update`、`memory_read`、`memory_write`、`task_plan`，支持多工具并行和多轮推理。
 - **确认式写入**：文档写入、更新和记忆写入遵循预览/确认流程，写类工具默认 dry-run 或 `confirmationRequired`，避免 Agent 直接落库。
+- **RAG 知识库**：基于 Qdrant + DashScope Embedding，支持 BlockNote 结构感知 chunking、标题层级 metadata、hybrid recall、RRF 融合、context packing 和 citation quality。
 - **流式协议**：通过 NDJSON 事件流输出 text delta、tool call、tool result、thinking、finish 等状态。
 - **稳定性**：包含环境变量启动校验、限流、工具结果缓存、长上下文压缩、统一 tool fallback、Qdrant 离线降级。
 - **Plan 模式**：已基于 `task_plan` 完成最小闭环，支持生成计划、用户确认、确认后执行和状态展示；后续可按需增强步骤级状态持久化。

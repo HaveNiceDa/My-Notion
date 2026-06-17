@@ -18,7 +18,7 @@
 ## 当前能力
 
 - **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
-- **Web Agent**：ReAct Loop、RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
+- **Web Agent**：ReAct Loop、结构感知 RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
 - **Mobile 工作区**：Expo + React Native，支持移动文档树、文档编辑、AI Chat、会话管理、模型选择、深度思考展示和安全代理。
 - **CLI / Skills / MCP**：`@mynotion/cli@latest` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
 - **共享包**：`packages/ai`、`packages/business`、`packages/convex` 收敛 AI、业务状态、i18n、Convex schema 和文档逻辑。
