@@ -2,6 +2,7 @@ import { useAuth, useUser } from "@clerk/expo";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo, { type NetInfoState } from "@react-native-community/netinfo";
 import {
   resumeAgentStream,
   streamAgent,
@@ -31,6 +32,10 @@ import type {
 const MOBILE_AGENT_STREAM_ENABLED =
   process.env.EXPO_PUBLIC_MOBILE_AGENT_STREAM !== "0";
 const RESUME_STORAGE_TTL_MS = 24 * 60 * 60 * 1000;
+
+function isNetworkStateOnline(state: NetInfoState) {
+  return state.isConnected !== false && state.isInternetReachable !== false;
+}
 
 function getResumeStorageKey(userId: string) {
   return `@mynotion/mobile-agent-resume:${userId}`;
@@ -153,6 +158,7 @@ export function useAgentChatSession(visible: boolean) {
     useState<AgentChatInterruptionReason>(null);
   const [resumeCursor, setResumeCursor] =
     useState<MobileAgentStreamCursor | null>(null);
+  const [isNetworkOnline, setIsNetworkOnline] = useState(true);
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const isCreatingNewRef = useRef(false);
@@ -201,6 +207,30 @@ export function useAgentChatSession(visible: boolean) {
     });
 
     return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    const handleNetworkState = (state: NetInfoState) => {
+      const nextOnline = isNetworkStateOnline(state);
+      setIsNetworkOnline(nextOnline);
+
+      if (
+        !nextOnline &&
+        (statusRef.current === "preparing" || statusRef.current === "streaming")
+      ) {
+        // 网络明确不可用时主动中断，避免继续等待 fetch 超时才进入可恢复状态。
+        setInterruptionReason("network");
+        abortControllerRef.current?.abort();
+        abortControllerRef.current = null;
+      }
+    };
+
+    const unsubscribe = NetInfo.addEventListener(handleNetworkState);
+    void NetInfo.fetch().then(handleNetworkState).catch((error) => {
+      console.error("Failed to read network state:", error);
+    });
+
+    return unsubscribe;
   }, []);
 
   const clearResumeSnapshot = useCallback(async () => {
@@ -357,6 +387,13 @@ export function useAgentChatSession(visible: boolean) {
   const handleSend = useCallback(async (retryInput?: string) => {
     const messageText = retryInput ?? input.trim();
     if (!messageText || !user || isSending) return;
+
+    if (!isNetworkOnline) {
+      setInterruptionReason("network");
+      setStatus("failed");
+      setLastFailedInput(messageText);
+      return;
+    }
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -555,6 +592,7 @@ export function useAgentChatSession(visible: boolean) {
     input,
     user,
     isSending,
+    isNetworkOnline,
     resetDraft,
     clearResumeSnapshot,
     activeConversationId,
@@ -574,6 +612,12 @@ export function useAgentChatSession(visible: boolean) {
   const handleResume = useCallback(async () => {
     const snapshot = resumeSnapshotRef.current;
     if (!snapshot || !user || isSending) return;
+
+    if (!isNetworkOnline) {
+      setInterruptionReason("network");
+      setStatus("resumable");
+      return;
+    }
 
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
@@ -681,6 +725,7 @@ export function useAgentChatSession(visible: boolean) {
     addMessage,
     clearResumeSnapshot,
     getToken,
+    isNetworkOnline,
     isSending,
     persistResumeSnapshot,
     recordToolEvent,
@@ -739,6 +784,7 @@ export function useAgentChatSession(visible: boolean) {
     setInput,
     status,
     isSending,
+    isNetworkOnline,
     streamingContent,
     reasoningContent,
     completedReasoning,

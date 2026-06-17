@@ -331,6 +331,7 @@
     "resumeInterruptedByNetwork": "Generation was interrupted by a network issue. Continue generation to resume.",
     "resumeStoppedByUser": "Generation was stopped. Continue generation to resume.",
     "networkSendFailed": "Network issue. Failed to send. Check your connection and retry.",
+    "offlineHint": "You are offline. Reconnect before sending or continuing generation.",
     "generatingResponse": "Generating response...",
     "scrollToBottom": "Scroll to bottom",
     "knowledgeSearchTool": "Knowledge search",

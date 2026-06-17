@@ -75,6 +75,7 @@ export type AgentChatSessionState = AgentChatDraftState &
   AgentChatSettings & {
     status: AgentChatStatus;
     isSending: boolean;
+    isNetworkOnline: boolean;
     activeConversationId: Id<"aiConversations"> | null;
     resumeCursor: MobileAgentStreamCursor | null;
   };

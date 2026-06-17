@@ -49,6 +49,7 @@ export function ChatModal({ visible, onClose }: Props) {
     setInput,
     status,
     isSending,
+    isNetworkOnline,
     streamingContent,
     reasoningContent,
     completedReasoning,
@@ -102,6 +103,7 @@ export function ChatModal({ visible, onClose }: Props) {
 
   const currentModelConfig = MODELS_CONFIG.find((m) => m.id === selectedModel);
   const displayReasoning = reasoningContent || completedReasoning;
+  const isRetryActionDisabled = !isNetworkOnline;
 
   const getInterruptionMessage = () => {
     if (status === "resumable") {
@@ -729,7 +731,9 @@ export function ChatModal({ visible, onClose }: Props) {
                 {getInterruptionMessage()}
               </Text>
               <Pressable
+                disabled={isRetryActionDisabled}
                 onPress={() => {
+                  if (isRetryActionDisabled) return;
                   if (status === "resumable" && resumeCursor) {
                     handleResume();
                     return;
@@ -747,14 +751,19 @@ export function ChatModal({ visible, onClose }: Props) {
                   paddingVertical: 6,
                   borderRadius: 12,
                   alignSelf: "flex-start",
+                  opacity: isRetryActionDisabled ? 0.45 : 1,
                 }}
               >
                 <Ionicons
                   name={status === "resumable" ? "play-outline" : "refresh-outline"}
                   size={14}
-                  color={theme.primary.val}
+                  color={isRetryActionDisabled ? theme.placeholderColor.val : theme.primary.val}
                 />
-                <Text fontSize={13} fontWeight="bold" color="$primary">
+                <Text
+                  fontSize={13}
+                  fontWeight="bold"
+                  color={isRetryActionDisabled ? "$placeholderColor" : "$primary"}
+                >
                   {status === "resumable"
                     ? t("AI.resumeGeneration")
                     : t("AI.retry")}
@@ -802,6 +811,21 @@ export function ChatModal({ visible, onClose }: Props) {
 
         </View>
 
+        {!isNetworkOnline && (
+          <View
+            style={tw`flex-row items-center gap-1.5 mb-2 px-2`}
+          >
+            <Ionicons
+              name="cloud-offline-outline"
+              size={13}
+              color={theme.placeholderColor.val}
+            />
+            <Text fontSize={11} color="$placeholderColor" flex={1}>
+              {t("AI.offlineHint")}
+            </Text>
+          </View>
+        )}
+
         <View
           style={[
             tw`flex-row items-center rounded-2xl`,
@@ -846,7 +870,7 @@ export function ChatModal({ visible, onClose }: Props) {
           />
           <Pressable
             onPress={isSending ? handleStop : () => handleSend()}
-            disabled={!isSending && !input.trim()}
+            disabled={!isSending && (!input.trim() || !isNetworkOnline)}
             style={({ pressed }) => ({
               width: 32,
               height: 32,
@@ -856,7 +880,7 @@ export function ChatModal({ visible, onClose }: Props) {
               backgroundColor:
                 isSending
                   ? "#ef4444"
-                  : input.trim()
+                  : input.trim() && isNetworkOnline
                   ? theme.primary.val
                   : theme.backgroundPress.val,
               opacity: pressed ? 0.8 : 1,

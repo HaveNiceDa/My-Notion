@@ -39,7 +39,6 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
   const { rootNodes: knowledgeRootNodes } = useDocumentTree(allDocuments, "knowledge");
 
   const create = useMutation(api.documents.create);
-  const update = useMutation(api.documents.update);
 
   const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [creatingSection, setCreatingSection] =
@@ -91,15 +90,9 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
     try {
       const documentId = await create({
         title: t("Documents.untitled"),
+        isStarred: section === "starred",
+        isInKnowledgeBase: section !== "private",
       });
-
-      if (section === "starred") {
-        await update({ id: documentId, isStarred: true });
-      }
-
-      if (section === "private") {
-        await update({ id: documentId, isInKnowledgeBase: false });
-      }
 
       router.push(`/(home)/document/${documentId}` as Href);
     } catch {

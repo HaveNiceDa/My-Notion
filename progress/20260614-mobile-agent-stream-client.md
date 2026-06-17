@@ -39,7 +39,22 @@
 - Mobile AI 深度思考最终策略：`useAgentChatSession` 默认 `enableThinking=true`，`ChatModal` 移除深度思考按钮和兼容提示，仅保留模型选择与知识库开关。
 - Mobile 首页新增文档入口调整：撤掉独立“新建文章”卡片，改为 `知识库 / 收藏夹 / 个人` 每个分区标题右侧展示 `+`，更接近 Web/Notion Mobile 的信息架构。
 - 分区创建语义：知识库分区创建默认知识库文档；收藏夹分区创建后标记 `isStarred=true`；个人分区创建后标记 `isInKnowledgeBase=false`；底部 `+` 默认创建个人文档。
-- 当前实现仍有一个可优化点：分区创建暂时是 `create -> update` 两段式，后续建议扩展 `documents.create` 入参支持 `isStarred` / `isInKnowledgeBase`，减少一次 Convex mutation 并避免瞬时状态抖动。
+- 该阶段遗留的分区创建两段式问题已在后续 P0 原子化创建收口中解决。
+
+## 2026-06-16 P0 原子化创建收口
+
+- 扩展共享 Convex `documents.create` mutation，新增可选入参 `isStarred?: boolean` 和 `isInKnowledgeBase?: boolean`。
+- 保持旧默认行为不变：未显式传参时仍创建非收藏、加入知识库的文档。
+- Mobile 首页分区新建改为单次 `create` 完成状态初始化，替换收藏夹/个人分区原先的 `create -> update` 两段式调用。
+- 这样可以避免新建后列表短暂落入默认知识库状态，减少一次 Convex mutation，也降低重复点击或弱网下的状态抖动概率。
+
+## 2026-06-16 NetInfo 离线判断收口
+
+- 按 Expo SDK 54 兼容版本新增 `@react-native-community/netinfo@11.4.1`。
+- `useAgentChatSession` 接入网络状态监听，只有明确 `isConnected=false` 或 `isInternetReachable=false` 时判定离线，未知状态默认不拦截。
+- 发送和继续生成前增加离线前置拦截，离线时不创建会话、不写入用户消息、不发起 Agent Stream 请求。
+- 生成中如果检测到网络断开，会主动 abort 当前请求并进入 network interruption 状态，复用已有 `resumeCursor` 恢复链路。
+- `ChatModal` 增加离线提示，断网时禁用发送、重试和继续生成按钮，避免用户在无网络状态下重复触发失败请求。
 
 ## 验证
 
@@ -59,8 +74,9 @@ pnpm --filter @notion/mobile exec eslint src/features/ai-chat/components/ChatMod
 - Mobile lint 通过，保留既有 `app/(auth)/sign-in.tsx` 中 `Array<T>` 风格 warning。
 - Web typecheck 通过。
 - 2026-06-16 追加验证：Mobile `tsc --noEmit` 通过，Mobile 相关变更文件 ESLint 通过，VS Code diagnostics 无报错。
+- 2026-06-16 P0 原子化创建：Mobile `tsc --noEmit` 通过，首页相关 ESLint 通过，Web typecheck 通过，VS Code diagnostics 无报错。
+- 2026-06-16 NetInfo 离线判断：`pnpm@10.28.1 install --frozen-lockfile` 通过，Mobile `tsc --noEmit` 通过，AI Chat 相关文件 ESLint 通过，VS Code diagnostics 无报错。
 
 ## 下一步
 
-- 后续如需精确离线判断，可引入 NetInfo 并在断网前置禁用发送/恢复按钮。
-- 优先优化 `documents.create` mutation，支持一次性传 `isStarred?: boolean` 和 `isInKnowledgeBase?: boolean`，替换 Mobile 当前分区创建的两段式 `create -> update`。
+- 下一步优先做正文图片上传真机验证与错误恢复补强，或继续推进 Agent tool 来源跳转与确认式写入交互。
