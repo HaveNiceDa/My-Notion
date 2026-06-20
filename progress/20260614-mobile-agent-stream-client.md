@@ -64,14 +64,6 @@
 - 图片插入成功后提示正在保存，并在顶部返回按钮触发前 flush 待保存正文 HTML，降低插入图片后立刻返回导致内容未落库的风险。
 - 当前保存与重开渲染仍走既有 `editor.setImage(url) -> useEditorContent(html) -> serializeHtmlToBlockNote -> getEditorContentFromStoredContent` 兼容链路，未引入新的内容格式。
 
-## 2026-06-16 正文图片上传补强
-
-- `inline-image-upload` 新增可识别错误类型，区分相册权限拒绝、上传失败和服务端响应缺失 URL。
-- 文档页正文图片插入前复用图片类型与 5MB 大小校验，权限拒绝、格式不支持、文件过大、上传失败分别展示明确 toast。
-- 用户取消选择仍保持安静返回，不弹错误，避免把主动取消误判为失败。
-- 图片插入成功后提示正在保存，并在顶部返回按钮触发前 flush 待保存正文 HTML，降低插入图片后立刻返回导致内容未落库的风险。
-- 当前保存与重开渲染仍走既有 `editor.setImage(url) -> useEditorContent(html) -> serializeHtmlToBlockNote -> getEditorContentFromStoredContent` 兼容链路，未引入新的内容格式。
-
 ## 验证
 
 ```bash
@@ -93,18 +85,13 @@ pnpm --filter @notion/mobile exec eslint src/features/ai-chat/components/ChatMod
 - 2026-06-16 P0 原子化创建：Mobile `tsc --noEmit` 通过，首页相关 ESLint 通过，Web typecheck 通过，VS Code diagnostics 无报错。
 - 2026-06-16 NetInfo 离线判断：`pnpm@10.28.1 install --frozen-lockfile` 通过，Mobile `tsc --noEmit` 通过，AI Chat 相关文件 ESLint 通过，VS Code diagnostics 无报错。
 - 2026-06-16 正文图片上传补强：Mobile `tsc --noEmit` 通过，文档页与 `inline-image-upload` ESLint 通过，Mobile lint 通过且仅保留既有 `sign-in.tsx` array-type warning，VS Code diagnostics 无报错。
-- 2026-06-16 正文图片上传补强：Mobile `tsc --noEmit` 通过，文档页与 `inline-image-upload` ESLint 通过，VS Code diagnostics 无报错。
-
-## 2026-06-16 正文图片上传补强
-
-- 正文图片上传错误恢复已补强，覆盖权限拒绝、格式/大小校验、上传失败提示，以及插入后返回前 flush 待保存正文。
+- 2026-06-16 Mobile Tool Sources 跳转：Mobile `tsc --noEmit` 通过，`ChatModal.tsx` ESLint 通过。
 
 ## 2026-06-16 Mobile Tool Sources 跳转
 
 - AI Chat tool result sources 从只读展示升级为可追溯入口：document source 可跳转到对应移动端文档页，web source 可调用系统链接打开。
 - Memory source 暂保持只读展示，避免在 Memory Center 移动端入口未成型前引入无效跳转。
 - 打开来源失败时展示 i18n toast，避免用户点击后无反馈。
-- 验证：Mobile `tsc --noEmit` 通过，`ChatModal.tsx` ESLint 通过。
 
 ## 下一步
 
