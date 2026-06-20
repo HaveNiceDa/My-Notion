@@ -54,7 +54,7 @@ jobs:
       - name: Install Playwright Browsers
         if: steps.e2e_secrets.outputs.mode == 'full'
         timeout-minutes: 10
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install chromium
 
       - name: Start Web dev server
         run: |
