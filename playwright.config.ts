@@ -16,7 +16,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(isCI ? { channel: "chrome" } : {}),
+      },
       testDir: "./tests/web",
       testIgnore: /auth-setup\.spec\.ts|api-auth\.spec\.ts/,
     },

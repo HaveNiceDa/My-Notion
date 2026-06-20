@@ -51,11 +51,6 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright Browsers
-        if: steps.e2e_secrets.outputs.mode == 'full'
-        timeout-minutes: 10
-        run: pnpm exec playwright install chromium
-
       - name: Start Web dev server
         run: |
           export NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-pk_test_ZHVtbXkuY2xlcmsuYWNjb3VudHMuZGV2JA}"
