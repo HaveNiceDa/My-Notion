@@ -41,7 +41,10 @@ jobs:
             fi
           done
 
-          if [ ${#missing[@]} -gt 0 ]; then
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            echo "mode=smoke" >> "$GITHUB_OUTPUT"
+            echo "::notice::Running CI-safe public API smoke tests on ${{ github.event_name }}. Use workflow_dispatch for full browser E2E."
+          elif [ ${#missing[@]} -gt 0 ]; then
             echo "mode=smoke" >> "$GITHUB_OUTPUT"
             echo "::notice::Required E2E secrets are missing: ${missing[*]}. Running public API smoke tests with CI-safe placeholder env."
           else
