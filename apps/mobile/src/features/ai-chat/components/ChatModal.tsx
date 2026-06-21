@@ -29,6 +29,7 @@ import type { MobileCurrentDocument } from "@/lib/ai/agent-stream";
 import { useToast } from "@/features/home/components/toast-provider";
 import { useAgentChatSession } from "../hooks/use-agent-chat-session";
 import type { AgentToolEventItem, AgentToolEventSource } from "../types";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 
 type Props = {
   visible: boolean;
@@ -534,9 +535,7 @@ export function ChatModal({ visible, onClose, currentDocument = null }: Props) {
         {reasoningExpanded && (
           <View style={[tw`px-3.5 pb-2.5`, { maxHeight: 120 }]}>
             <ScrollView nestedScrollEnabled showsVerticalScrollIndicator={false}>
-              <Text fontSize={12} lineHeight={18} color="$placeholderColor">
-                {displayReasoning}
-              </Text>
+              <MarkdownRenderer content={displayReasoning} compact />
             </ScrollView>
           </View>
         )}
@@ -721,9 +720,7 @@ export function ChatModal({ visible, onClose, currentDocument = null }: Props) {
             style={tw`flex-row ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
             <View style={bubbleStyle(msg.role)}>
-              <Text fontSize={15} lineHeight={22} color="$color">
-                {msg.content}
-              </Text>
+              <MarkdownRenderer content={msg.content} />
             </View>
           </View>
         ))}
@@ -747,9 +744,7 @@ export function ChatModal({ visible, onClose, currentDocument = null }: Props) {
                 },
               ]}
             >
-              <Text fontSize={15} lineHeight={22} color="$color">
-                {streamingContent}
-              </Text>
+              <MarkdownRenderer content={streamingContent} />
             </View>
           </View>
         )}
