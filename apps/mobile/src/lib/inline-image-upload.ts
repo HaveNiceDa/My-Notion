@@ -20,7 +20,11 @@ export class InlineImageUploadError extends Error {
 }
 
 function getWebOrigin(): string {
-  return Constants.expoConfig?.extra?.webUrl ?? "https://notion-j9zj.vercel.app";
+  return (
+    process.env.EXPO_PUBLIC_WEB_URL ||
+    Constants.expoConfig?.extra?.webUrl ||
+    "https://notion-j9zj.vercel.app"
+  );
 }
 
 const UPLOAD_TIMEOUT_MS = 30_000;
@@ -47,6 +51,7 @@ export async function uploadFileToEdgeStore(
   uri: string,
   mimeType: string,
   fileName: string,
+  authToken?: string | null,
 ): Promise<UploadResult> {
   await assertNetworkAvailable();
 
@@ -68,6 +73,7 @@ export async function uploadFileToEdgeStore(
   try {
     response = await fetch(uploadUrl, {
       method: "POST",
+      headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined,
       body: formData,
       signal: controller.signal,
     });

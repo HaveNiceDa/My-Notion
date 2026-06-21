@@ -155,9 +155,6 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.knowledgeBase")}
                 expanded={sections.knowledgeBase}
                 onToggle={() => toggleSection("knowledgeBase")}
-                actionLabel={t("Navigation.addAPage")}
-                actionDisabled={creatingSection !== null}
-                onPressAction={() => handleCreateNew("knowledge")}
               >
                 <SidebarDocumentTree
                   variant="knowledge"
@@ -174,9 +171,6 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.favorites")}
                 expanded={sections.favorites}
                 onToggle={() => toggleSection("favorites")}
-                actionLabel={t("Navigation.addAPage")}
-                actionDisabled={creatingSection !== null}
-                onPressAction={() => handleCreateNew("starred")}
               >
                 <SidebarDocumentTree
                   variant="starred"
@@ -193,9 +187,6 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
                 title={t("Navigation.private")}
                 expanded={sections.private}
                 onToggle={() => toggleSection("private")}
-                actionLabel={t("Navigation.addAPage")}
-                actionDisabled={creatingSection !== null}
-                onPressAction={() => handleCreateNew("private")}
               >
                 <SidebarDocumentTree
                   variant="private"

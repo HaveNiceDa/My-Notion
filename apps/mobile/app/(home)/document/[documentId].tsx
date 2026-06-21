@@ -1,4 +1,5 @@
 import { Ionicons } from "@expo/vector-icons";
+import { useAuth } from "@clerk/expo";
 import { useMutation, useQuery } from "convex/react";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,7 +46,11 @@ const SAVE_DELAY_MS = 700;
 const EDITOR_COMMAND_SETTLE_MS = 120;
 
 function getWebOrigin(): string {
-  return Constants.expoConfig?.extra?.webUrl ?? "https://notion-j9zj.vercel.app";
+  return (
+    process.env.EXPO_PUBLIC_WEB_URL ||
+    Constants.expoConfig?.extra?.webUrl ||
+    "https://notion-j9zj.vercel.app"
+  );
 }
 
 export default function DocumentDetailRoute() {
@@ -54,6 +59,7 @@ export default function DocumentDetailRoute() {
   const theme = useTheme();
   const { t } = useTranslation();
   const toast = useToast();
+  const { getToken } = useAuth();
 
   const id = documentId as Id<"documents">;
   const doc = useQuery(api.documents.getById, { documentId: id });
@@ -291,6 +297,7 @@ export default function DocumentDetailRoute() {
         params.uri,
         params.type,
         params.name,
+        await getToken(),
       );
       await update({ id, coverImage: result.url });
     } catch (error) {
@@ -336,6 +343,7 @@ export default function DocumentDetailRoute() {
         params.uri,
         params.mimeType,
         params.name,
+        await getToken(),
       );
       editor.setImage(result.url);
       await new Promise((resolve) => setTimeout(resolve, EDITOR_COMMAND_SETTLE_MS));
