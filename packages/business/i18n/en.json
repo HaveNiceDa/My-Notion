@@ -145,6 +145,9 @@
     "noteCreated": "New note created",
     "failedToCreateNote": "Failed to create a new note",
     "untitled": "New Note",
+    "statusEditing": "Editing",
+    "statusSaving": "Saving...",
+    "statusSaved": "Saved",
     "noStarredPages": "Go star your favorite articles!",
     "noKnowledgeBasePages": "No knowledge base pages yet"
   },

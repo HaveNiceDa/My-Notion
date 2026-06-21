@@ -31,6 +31,7 @@ import { useTranslation } from "react-i18next";
 
 import { ConfirmDialog } from "@/features/home/components/confirm-dialog";
 import { useToast } from "@/features/home/components/toast-provider";
+import { ChatModal } from "@/features/ai-chat/components/ChatModal";
 import { IconPicker } from "@/features/home/components/icon-picker";
 import { DocumentBreadcrumb } from "@/features/home/components/document-breadcrumb";
 import {
@@ -38,6 +39,7 @@ import {
   pickInlineImage,
   uploadFileToEdgeStore,
 } from "@/lib/inline-image-upload";
+import type { MobileCurrentDocument } from "@/lib/ai/agent-stream";
 
 const SAVE_DELAY_MS = 700;
 
@@ -68,6 +70,7 @@ export default function DocumentDetailRoute() {
   const [coverUploading, setCoverUploading] = useState(false);
   const [iconPickerOpen, setIconPickerOpen] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   const titleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -175,7 +178,7 @@ export default function DocumentDetailRoute() {
       }
 
       titleTimerRef.current = setTimeout(async () => {
-        const trimmed = nextTitle.trim() || "Untitled";
+        const trimmed = nextTitle.trim() || t("Documents.untitled");
         if (trimmed === lastSavedTitleRef.current) return;
 
         setSaveState("saving");
@@ -189,7 +192,7 @@ export default function DocumentDetailRoute() {
         }
       }, SAVE_DELAY_MS);
     },
-    [doc, id, update],
+    [doc, id, t, update],
   );
 
   const handleToggleStar = async () => {
@@ -336,6 +339,19 @@ export default function DocumentDetailRoute() {
     }
   };
 
+  const currentDocument = useMemo<MobileCurrentDocument>(() => {
+    if (!doc) return null;
+
+    return {
+      id: doc._id,
+      title: title.trim() || t("Documents.untitled"),
+      // 优先传入编辑器里的最新内容，让“读取当前文档”不依赖防抖保存是否已完成。
+      content: editorHtml === undefined
+        ? doc.content ?? null
+        : serializeHtmlToBlockNote(editorHtml),
+    };
+  }, [doc, editorHtml, title, t]);
+
   if (doc === undefined) {
     return (
       <View flex={1} bg="$background" items="center" justify="center">
@@ -346,15 +362,15 @@ export default function DocumentDetailRoute() {
 
   const saveLabel =
     saveState === "saving"
-      ? "Saving..."
+      ? t("Documents.statusSaving")
       : saveState === "saved"
-        ? "Saved"
-        : "Editing";
+        ? t("Documents.statusSaved")
+        : t("Documents.statusEditing");
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.background.val }}>
       <Stack.Screen
-        options={{ headerShown: false, title: doc.title || "Untitled" }}
+        options={{ headerShown: false, title: doc.title || t("Documents.untitled") }}
       />
 
       <View flex={1} bg="$background">
@@ -429,6 +445,18 @@ export default function DocumentDetailRoute() {
 
             <View style={tw`flex-row items-center`}>
               <Pressable
+                onPress={() => setAiChatOpen(true)}
+                hitSlop={10}
+                accessibilityLabel={t("AI.openAIChat")}
+                style={({ pressed }) => [
+                  tw`w-10 h-10 rounded-full items-center justify-center`,
+                  pressed ? { backgroundColor: theme.backgroundPress.val } : null,
+                ]}
+              >
+                <Ionicons name="sparkles-outline" size={20} color={theme.color.val} />
+              </Pressable>
+
+              <Pressable
                 onPress={handleCopyLink}
                 hitSlop={10}
                 style={({ pressed }) => [
@@ -495,7 +523,7 @@ export default function DocumentDetailRoute() {
                 setTitle(nextTitle);
                 scheduleTitleSave(nextTitle);
               }}
-              placeholder="Untitled"
+              placeholder={t("Documents.untitled")}
               placeholderTextColor={theme.placeholderColor.val}
               style={{
                 color: theme.color.val,
@@ -582,6 +610,12 @@ export default function DocumentDetailRoute() {
         currentIcon={doc.icon}
         onSelectIcon={handleSetIcon}
         onRemoveIcon={doc.icon ? handleRemoveIcon : undefined}
+      />
+
+      <ChatModal
+        visible={aiChatOpen}
+        onClose={() => setAiChatOpen(false)}
+        currentDocument={currentDocument}
       />
     </SafeAreaView>
   );

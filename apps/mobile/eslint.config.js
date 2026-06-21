@@ -8,6 +8,6 @@ module.exports = defineConfig([
     ignores: ["dist/*", "convex/_generated/*"],
   },
   {
-    files: ["app/**/*.{ts,tsx}", "app/src/**/*.{ts,tsx}"],
+    files: ["app/**/*.{ts,tsx}", "src/**/*.{ts,tsx}"],
   },
 ]);

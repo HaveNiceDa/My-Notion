@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useState } from "react";
-import { Animated, Pressable } from "react-native";
+import { Pressable } from "react-native";
 import { Text, View, useTheme } from "tamagui";
-import tw from "twrnc";
 
 type ToastItem = {
   id: number;

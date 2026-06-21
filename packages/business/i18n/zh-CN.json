@@ -145,6 +145,9 @@
     "noteCreated": "新笔记已创建",
     "failedToCreateNote": "创建新笔记失败",
     "untitled": "新笔记",
+    "statusEditing": "编辑中",
+    "statusSaving": "保存中...",
+    "statusSaved": "已保存",
     "noStarredPages": "快去收藏你喜好的文章吧～",
     "noKnowledgeBasePages": "暂无知识库文档"
   },

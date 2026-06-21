@@ -12,7 +12,7 @@ export type MobileAgentStreamCursor = {
 export type MobileCurrentDocument = {
   id: string;
   title?: string;
-  content?: string;
+  content?: string | null;
 } | null;
 
 export type MobileAgentStreamCallbacks = {

@@ -6,6 +6,7 @@ import NetInfo, { type NetInfoState } from "@react-native-community/netinfo";
 import {
   resumeAgentStream,
   streamAgent,
+  type MobileCurrentDocument,
   type MobileAgentStreamCursor,
 } from "@/lib/ai/agent-stream";
 import {
@@ -135,7 +136,10 @@ function classifyStreamError(error: Error): AgentChatInterruptionReason {
   return "unknown";
 }
 
-export function useAgentChatSession(visible: boolean) {
+export function useAgentChatSession(
+  visible: boolean,
+  currentDocument: MobileCurrentDocument = null,
+) {
   const { user } = useUser();
   const { getToken } = useAuth();
 
@@ -532,7 +536,7 @@ export function useAgentChatSession(visible: boolean) {
             conversationId: conversationId ?? undefined,
             enableThinking,
             knowledgeBaseEnabled,
-            currentDocument: null,
+            currentDocument,
             authToken,
             signal: abortController.signal,
           },
@@ -607,6 +611,7 @@ export function useAgentChatSession(visible: boolean) {
     selectedModel,
     enableThinking,
     knowledgeBaseEnabled,
+    currentDocument,
   ]);
 
   const handleResume = useCallback(async () => {

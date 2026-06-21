@@ -25,6 +25,7 @@ import type { Id } from "@convex/_generated/dataModel";
 import {
   MODELS_CONFIG,
 } from "@/lib/ai/chat";
+import type { MobileCurrentDocument } from "@/lib/ai/agent-stream";
 import { useToast } from "@/features/home/components/toast-provider";
 import { useAgentChatSession } from "../hooks/use-agent-chat-session";
 import type { AgentToolEventItem, AgentToolEventSource } from "../types";
@@ -32,11 +33,12 @@ import type { AgentToolEventItem, AgentToolEventSource } from "../types";
 type Props = {
   visible: boolean;
   onClose: () => void;
+  currentDocument?: MobileCurrentDocument;
 };
 
 const tw = twBase as any;
 
-export function ChatModal({ visible, onClose }: Props) {
+export function ChatModal({ visible, onClose, currentDocument = null }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const toast = useToast();
@@ -78,7 +80,7 @@ export function ChatModal({ visible, onClose }: Props) {
     handleNewConversation,
     handleSelectConversation,
     handleDeleteConversation,
-  } = useAgentChatSession(visible);
+  } = useAgentChatSession(visible, currentDocument);
 
   useEffect(() => {
     if (convexMessages && convexMessages.length > 0) {

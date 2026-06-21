@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Modal, Pressable, TextInput, FlatList } from "react-native";
 import { useTranslation } from "react-i18next";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { Spinner, Text, View, useTheme, TamaguiProvider, Theme } from "tamagui";
 import tw from "twrnc";

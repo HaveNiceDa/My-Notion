@@ -7,7 +7,7 @@ import { Ionicons } from "@expo/vector-icons";
 import tw from "twrnc";
 
 import { api } from "@convex/_generated/api";
-import type { Doc, Id } from "@convex/_generated/dataModel";
+import type { Doc } from "@convex/_generated/dataModel";
 
 import { RenameDialog } from "./rename-dialog";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -77,8 +77,6 @@ export function DocumentActionSheet({
       console.error("Failed to toggle knowledge base:", error);
     }
   };
-
-  const handleClose = () => onOpenChange(false);
 
   return (
     <>

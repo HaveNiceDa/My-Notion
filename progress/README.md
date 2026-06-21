@@ -22,6 +22,7 @@
 - `20260606-120002.md`：续跑一致性收口，覆盖 assistant 消息原地更新和 running run 长轮询接管。
 - `20260614-mobile-agent-stream-client.md`：Mobile Agent Stream 客户端阶段收口，覆盖 `/api/agent/stream` 接入、AI Chat 状态机 hook、停止生成和移动端 typecheck 修复。
 - `20260616-rag-adaptive-chunking.md`：RAG 自适应切分收口，覆盖 BlockNote 标题层级切分、语义边界合并、固定兜底和 Qdrant chunk metadata 扩展。
+- `20260621-mobile-current-document-context.md`：Mobile currentDocument 上下文收口，覆盖文档详情页 AI 入口、Agent Stream 当前文档透传和移动端验证脚本补齐。
 
 ## 阅读规则
 
