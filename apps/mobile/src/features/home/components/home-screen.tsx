@@ -117,8 +117,9 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
     }
   };
 
+  const visibleRecentItems = recentItems ?? [];
   const isInitialLoading =
-    recentItems === undefined ||
+    recentItems === undefined &&
     allDocuments === undefined;
 
   return (
@@ -145,7 +146,7 @@ export function HomeScreen({ signOut }: HomeScreenProps) {
           <View>
             <RecentSection
               title={t("Home.recent")}
-              items={recentItems}
+              items={visibleRecentItems}
               onPressCard={(item) => goDocument(item.id as Id<"documents">)}
             />
 

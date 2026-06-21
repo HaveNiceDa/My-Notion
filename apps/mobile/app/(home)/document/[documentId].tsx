@@ -42,6 +42,7 @@ import {
 import type { MobileCurrentDocument } from "@/lib/ai/agent-stream";
 
 const SAVE_DELAY_MS = 700;
+const EDITOR_COMMAND_SETTLE_MS = 120;
 
 function getWebOrigin(): string {
   return Constants.expoConfig?.extra?.webUrl ?? "https://notion-j9zj.vercel.app";
@@ -117,7 +118,7 @@ export default function DocumentDetailRoute() {
   const saveEditorHtml = useCallback(
     async (editorHtmlToSave: string) => {
       const nextContent = serializeHtmlToBlockNote(editorHtmlToSave);
-      if (nextContent === lastSavedContentRef.current) return;
+      if (nextContent === lastSavedContentRef.current) return true;
 
       setSaveState("saving");
       try {
@@ -125,9 +126,11 @@ export default function DocumentDetailRoute() {
         lastSavedContentRef.current = nextContent;
         loadedHtmlRef.current = editorHtmlToSave;
         setSaveState("saved");
+        return true;
       } catch (error) {
         setSaveState("idle");
         console.error("Failed to save content:", error);
+        return false;
       }
     },
     [id, update],
@@ -145,6 +148,19 @@ export default function DocumentDetailRoute() {
     await saveEditorHtml(pendingEditorHtml);
     pendingEditorHtmlRef.current = null;
   }, [saveEditorHtml]);
+
+  const flushEditorContentSave = useCallback(async () => {
+    if (contentTimerRef.current) {
+      clearTimeout(contentTimerRef.current);
+      contentTimerRef.current = null;
+    }
+
+    const latestEditorHtml = await editor.getHTML();
+    pendingEditorHtmlRef.current = latestEditorHtml;
+    const saved = await saveEditorHtml(latestEditorHtml);
+    pendingEditorHtmlRef.current = null;
+    return saved;
+  }, [editor, saveEditorHtml]);
 
   useEffect(() => {
     return () => {
@@ -322,6 +338,12 @@ export default function DocumentDetailRoute() {
         params.name,
       );
       editor.setImage(result.url);
+      await new Promise((resolve) => setTimeout(resolve, EDITOR_COMMAND_SETTLE_MS));
+      const saved = await flushEditorContentSave();
+      if (!saved) {
+        toast.showError(t("Error.somethingWentWrong"));
+        return;
+      }
       toast.showSuccess(t("Toolbar.imageInserted"));
     } catch (error) {
       console.error("Failed to insert image:", error);
