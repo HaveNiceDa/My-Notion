@@ -1,0 +1,3524 @@
+packages/my-notion-agent-tools/src/docs/manifest.ts
+  s_52ac168976c9df::t_0ab5bcf3eef267 1-83 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba436fd7d128007cf67ea","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,83]}]}]}
+packages/my-notion-mcp-server/__tests__/server.test.ts
+  s_52ac168976c9df::t_ef8cb25232b7f0 1-10 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba531fd7d128007cf69e9","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,10]}]}]}
+package.json
+  s_52ac168976c9df::t_3d6b4b57a72fa0 24-25 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba661fd7d128007cf6bc2","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[24,25]}]}]}
+packages/my-notion-cli/src/client/http-client.ts
+  s_52ac168976c9df::t_a3f4af909064cd 1 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ced31168cd7594c10e1b9","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":1}]}]}
+packages/my-notion-cli/__tests__/update-command.test.ts
+  s_52ac168976c9df::t_06d6a38cff9b0f 43,45 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba688fd7d128007cf6c1b","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":43},{"Single":45}]}]}
+milestones/README.md
+  s_52ac168976c9df::t_3fa545f0a02fc4 26,74 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba764fd7d128007cf6d7d","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":26},{"Single":74}]}]}
+  s_52ac168976c9df::t_957c9f0e081180 45 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec76168cd7594c10e09b","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":45}]}]}
+scripts/e2e-my-notion-mcp.mjs
+  s_52ac168976c9df::t_d5f94e986e1304 404 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba93afd7d128007cf6f01","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":404}]}]}
+  s_52ac168976c9df::t_cd33961e8e84b8 12,159,164-165,291,346,351-356,475 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba64bfd7d128007cf6b86","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":12},{"Single":159},{"Range":[164,165]},{"Single":291},{"Single":346},{"Range":[351,356]},{"Single":475}]}]}
+packages/my-notion-mcp-server/vitest.config.ts
+  s_52ac168976c9df::t_5449d6f70a15e4 1-7 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4c0fd7d128007cf68e9","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,7]}]}]}
+packages/my-notion-agent-tools/__tests__/docs-tools.test.ts
+  s_52ac168976c9df::t_da53b1e1be794f 1-91 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba479fd7d128007cf6876","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,91]}]}]}
+packages/my-notion-agent-tools/src/docs/tools.ts
+  s_52ac168976c9df::t_96144957c53cb8 1-187 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba443fd7d128007cf6807","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,187]}]}]}
+scripts/e2e-my-notion-mcp-sdk-client.mjs
+  s_52ac168976c9df::t_6f07e925ee1dbf 8-9,13,161,209,272,277-281 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba655fd7d128007cf6ba3","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[8,9]},{"Single":13},{"Single":161},{"Single":209},{"Single":272},{"Range":[277,281]}]}]}
+packages/my-notion-agent-tools/README.md
+  s_52ac168976c9df::t_d6f2c03131e9da 1-5 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba46ffd7d128007cf685b","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,5]}]}]}
+packages/my-notion-mcp-server/src/result-adapter.ts
+  s_52ac168976c9df::t_db557fb721e596 1-5,7 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ced8d168cd7594c10e232","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,5]},{"Single":7}]}]}
+  s_52ac168976c9df::t_a99a6e1adce201 6,8-13 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4cafd7d128007cf6906","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":6},{"Range":[8,13]}]}]}
+packages/my-notion-cli/src/commands/config.ts
+  s_52ac168976c9df::t_68a37aa18d74df 21-22,24,146-149,156-158,166-167 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba5f4fd7d128007cf6b23","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[21,22]},{"Single":24},{"Range":[146,149]},{"Range":[156,158]},{"Range":[166,167]}]}]}
+packages/my-notion-skills/my-notion-docs/references/cli-commands.md
+  s_52ac168976c9df::t_cf197a8e99a2b4 399,405-411,416 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba6c6fd7d128007cf6c81","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":399},{"Range":[405,411]},{"Single":416}]}]}
+milestones/M28-independent-mcp-server.md
+  s_52ac168976c9df::t_51d2f0451e5b80 11 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec6d168cd7594c10e07f","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":11}]}]}
+  s_52ac168976c9df::t_b5acf584a6ae42 1-10,12-31 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba759fd7d128007cf6d61","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,10]},{"Range":[12,31]}]}]}
+packages/my-notion-agent-tools/src/results/tool-result.ts
+  s_52ac168976c9df::t_7728f0026e1c78 1-52 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba42cfd7d128007cf67cd","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,52]}]}]}
+packages/my-notion-mcp-server/src/register-tools.ts
+  s_52ac168976c9df::t_5f595542de6097 9,29-40,74-77,93-96,118-121,145-148 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba522fd7d128007cf69cc","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":9},{"Range":[29,40]},{"Range":[74,77]},{"Range":[93,96]},{"Range":[118,121]},{"Range":[145,148]}]}]}
+  s_52ac168976c9df::t_8340c83682e605 1-8,10-28,41-73,78-92,97-117,122-144,149-151 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4d4fd7d128007cf6924","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,8]},{"Range":[10,28]},{"Range":[41,73]},{"Range":[78,92]},{"Range":[97,117]},{"Range":[122,144]},{"Range":[149,151]}]}]}
+packages/my-notion-mcp-server/LICENSE
+  s_52ac168976c9df::t_da3cdd63e82c60 1 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba518fd7d128007cf69b2","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":1}]}]}
+packages/my-notion-cli/src/commands/install.ts
+  s_52ac168976c9df::t_63dccfbe944978 9-10,48,51,59,76,82 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba602fd7d128007cf6b3f","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[9,10]},{"Single":48},{"Single":51},{"Single":59},{"Single":76},{"Single":82}]}]}
+packages/my-notion-cli/src/commands/update.ts
+  s_52ac168976c9df::t_c329ce630749e9 9-10,95,98,105,131 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba60dfd7d128007cf6b5b","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[9,10]},{"Single":95},{"Single":98},{"Single":105},{"Single":131}]}]}
+README.md
+  s_52ac168976c9df::t_90577a6411b94b 42,63 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cecaa168cd7594c10e103","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":42},{"Single":63}]}]}
+  s_52ac168976c9df::t_76cd764dc6a3e1 95,108 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baabefd7d128007cf708a","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":95},{"Single":108}]}]}
+  s_52ac168976c9df::t_acb6f4fe0df136 11-12,24,35-36,41,65 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba72dfd7d128007cf6d19","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[11,12]},{"Single":24},{"Range":[35,36]},{"Single":41},{"Single":65}]}]}
+packages/my-notion-mcp-server/src/index.ts
+  s_52ac168976c9df::t_c7de532037652c 1-65 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4effd7d128007cf695d","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,65]}]}]}
+packages/my-notion-skills/my-notion-shared/SKILL.md
+  s_52ac168976c9df::t_0e0738493cf85f 21,154 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba6a9fd7d128007cf6c5d","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":21},{"Single":154}]}]}
+packages/my-notion-mcp-server/tsconfig.json
+  s_52ac168976c9df::t_5cd2c0afcc93c8 1-16 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4b3fd7d128007cf68cc","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,16]}]}]}
+packages/my-notion-mcp-server/README.md
+  s_52ac168976c9df::t_2781f2ddfbaee6 1-2,4-57 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba500fd7d128007cf6979","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,2]},{"Range":[4,57]}]}]}
+  s_52ac168976c9df::t_db2ce06d577f05 3 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec84168cd7594c10e0b3","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":3}]}]}
+packages/my-notion-cli/README.md
+  s_52ac168976c9df::t_5ca4c1849dd4d5 240-247,257,278,287-288 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba6ecfd7d128007cf6cc2","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[240,247]},{"Single":257},{"Single":278},{"Range":[287,288]}]}]}
+  s_52ac168976c9df::t_82d6270a0340ba 355-359 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba6f9fd7d128007cf6cdc","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[355,359]}]}]}
+  s_52ac168976c9df::t_4ba70993dcb95d 3,13,24,42,98 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba6dffd7d128007cf6ca8","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":3},{"Single":13},{"Single":24},{"Single":42},{"Single":98}]}]}
+docs/README.md
+  s_52ac168976c9df::t_cf8925f63ee0fd 14 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba74efd7d128007cf6d4b","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":14}]}]}
+packages/my-notion-skills/README.md
+  s_52ac168976c9df::t_e8f456ef4dab52 3,13 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba7b3fd7d128007cf6dea","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":3},{"Single":13}]}]}
+packages/my-notion-mcp-server/CHANGELOG.md
+  s_52ac168976c9df::t_49a2bc80bcc5d5 1-7 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba50efd7d128007cf6995","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,7]}]}]}
+progress/README.md
+  s_52ac168976c9df::t_8ed924bb144b84 26 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec99168cd7594c10e0cf","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":26}]}]}
+progress/20260624-independent-mcp-server.md
+  s_52ac168976c9df::t_196866c8a203b5 1-8,10-22 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba76efd7d128007cf6d95","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,8]},{"Range":[10,22]}]}]}
+  s_52ac168976c9df::t_9cb43407ec548f 9 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ceca1168cd7594c10e0e6","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":9}]}]}
+packages/my-notion-agent-tools/tsconfig.json
+  s_52ac168976c9df::t_ec0f33464f08d0 1-16 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba3e1fd7d128007cf6740","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,16]}]}]}
+packages/my-notion-agent-tools/src/types.ts
+  s_52ac168976c9df::t_fc36e815a8daab 1-76 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba3f3fd7d128007cf6778","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,76]}]}]}
+packages/my-notion-cli/package.json
+  s_52ac168976c9df::t_4b97c518738d93 27 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ced22168cd7594c10e193","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":27}]}]}
+  s_52ac168976c9df::t_84d3ddba11dedc 59 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba9e6fd7d128007cf6f6a","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":59}]}]}
+  s_52ac168976c9df::t_3a14d0e90e4ef8 29-30 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa1afd7d128007cf6fd3","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[29,30]}]}]}
+  s_52ac168976c9df::t_bdfec01caad70c 26 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa56fd7d128007cf7027","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":26}]}]}
+packages/my-notion-cli/src/mcp/server.ts
+  s_52ac168976c9df::t_d8bc96e25f965f 1-2,5-7 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba5b1fd7d128007cf6aca","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,2]},{"Range":[5,7]}]}]}
+packages/my-notion-cli/__tests__/install-command.test.ts
+  s_52ac168976c9df::t_bd0e6405909a03 35,37 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba682fd7d128007cf6bfd","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":35},{"Single":37}]}]}
+docs/my-notion-mcp-server-release-checklist.md
+  s_52ac168976c9df::t_75d2b082f41838 22 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa9bfd7d128007cf7067","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":22}]}]}
+  s_52ac168976c9df::t_86e1614c7b928a 1-8,10-21,23-48,50-52 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba73efd7d128007cf6d2e","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,8]},{"Range":[10,21]},{"Range":[23,48]},{"Range":[50,52]}]}]}
+  s_52ac168976c9df::t_cd5fdceeb2e5ad 9,49 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cedc9168cd7594c10e295","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":9},{"Single":49}]}]}
+packages/my-notion-skills/my-notion-mcp/SKILL.md
+  s_52ac168976c9df::t_7379e7701d0d4d 3,12-13,31,37-38,43-48,66,79-80,98-112 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba69cfd7d128007cf6c3c","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":3},{"Range":[12,13]},{"Single":31},{"Range":[37,38]},{"Range":[43,48]},{"Single":66},{"Range":[79,80]},{"Range":[98,112]}]}]}
+packages/my-notion-agent-tools/vitest.config.ts
+  s_52ac168976c9df::t_d323c7e9884651 1-7 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba3e9fd7d128007cf675c","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,7]}]}]}
+packages/my-notion-agent-tools/src/client/http-client.ts
+  s_52ac168976c9df::t_7154ae7bc723fd 1-235 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba3fffd7d128007cf6793","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,235]}]}]}
+docs/my-notion-cli-release-checklist.md
+  s_52ac168976c9df::t_3119620bb30c2f 3,9-10,13,20-24 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba795fd7d128007cf6dcc","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":3},{"Range":[9,10]},{"Single":13},{"Range":[20,24]}]}]}
+  s_52ac168976c9df::t_72b1985a14359d 36 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa81fd7d128007cf7046","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":36}]}]}
+  s_52ac168976c9df::t_4264ee957ca34c 126 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cedd1168cd7594c10e2be","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":126}]}]}
+  s_52ac168976c9df::t_fe75dbdae2d3d5 134-135 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baacefd7d128007cf709f","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[134,135]}]}]}
+  s_52ac168976c9df::t_0f7b908cfe51d0 187 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baafbfd7d128007cf70bd","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":187}]}]}
+packages/my-notion-agent-tools/LICENSE
+  s_52ac168976c9df::t_d2d131f2de9146 1 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba489fd7d128007cf6895","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":1}]}]}
+packages/my-notion-mcp-server/src/server.ts
+  s_52ac168976c9df::t_512374f99ad1d5 1-28 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4e7fd7d128007cf6941","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,28]}]}]}
+packages/my-notion-agent-tools/package.json
+  s_52ac168976c9df::t_cfe83e7afdb174 1-4,6-45 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba3d6fd7d128007cf6726","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,4]},{"Range":[6,45]}]}]}
+  s_52ac168976c9df::t_722b8ed3ca3887 5 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec1e168cd7594c10dfe5","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":5}]}]}
+packages/my-notion-agent-tools/src/docs/readme.ts
+  s_52ac168976c9df::t_8ea7a1eb14f9f1 1-75 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba454fd7d128007cf6823","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,75]}]}]}
+packages/my-notion-cli/src/commands/mcp.ts
+  s_52ac168976c9df::t_54357947537c91 2,18-21 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba570fd7d128007cf6a3d","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":2},{"Range":[18,21]}]}]}
+packages/my-notion-cli/__tests__/config-command.test.ts
+  s_52ac168976c9df::t_f17b4ade2b5621 67-69 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba671fd7d128007cf6bd9","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[67,69]}]}]}
+packages/my-notion-mcp-server/package.json
+  s_52ac168976c9df::t_7f4e5c91fd3ddc 24 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa4dfd7d128007cf700c","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":24}]}]}
+  s_52ac168976c9df::t_fdcb388fc61199 26-27 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3baa0ffd7d128007cf6fb8","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[26,27]}]}]}
+  s_52ac168976c9df::t_097edd1a6c4f91 25 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba5dcfd7d128007cf6aff","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":25}]}]}
+  s_52ac168976c9df::t_adf15107aee9d5 21,47,49 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ced00168cd7594c10e155","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":21},{"Single":47},{"Single":49}]}]}
+  s_52ac168976c9df::t_847b2ab5faf184 16 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3cec3c168cd7594c10e01f","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Single":16}]}]}
+  s_52ac168976c9df::t_47ee48f3381b9e 1-15,17-20,22-23,28-46,48,50-55 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba4a2fd7d128007cf68b1","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,15]},{"Range":[17,20]},{"Range":[22,23]},{"Range":[28,46]},{"Single":48},{"Range":[50,55]}]}]}
+packages/my-notion-agent-tools/src/index.ts
+  s_52ac168976c9df::t_00529e89e43b67 1-54 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba465fd7d128007cf6840","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,54]}]}]}
+packages/my-notion-agent-tools/src/config/resolve.ts
+  s_52ac168976c9df::t_d08b994c6a0e89 1-106 gitai:{"mixed_line_ranges":[],"operations":[{"operation_id":"6a3ba414fd7d128007cf67b0","tool_type":"agent","tool_id":"apply_patch","line_ranges":[{"Range":[1,106]}]}]}
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.2",
+  "base_commit_sha": "3212b84dc000ad54b94b0624d268bf9c9c34766a",
+  "prompts": {},
+  "sessions": {
+    "s_52ac168976c9df": {
+      "agent_id": {
+        "tool": "trae",
+        "id": "6a3b9087fd7d128007cf6141",
+        "model": "gpt-5.5__max"
+      },
+      "human_author": "lishijie.36 <lishijie.36@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {
+    "README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_90577a6411b94b",
+        "line_ranges": [
+          {
+            "Single": 42
+          },
+          {
+            "Single": 63
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cecaa168cd7594c10e103",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 42
+              },
+              {
+                "Single": 63
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_76cd764dc6a3e1",
+        "line_ranges": [
+          {
+            "Single": 95
+          },
+          {
+            "Single": 108
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baabefd7d128007cf708a",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 95
+              },
+              {
+                "Single": 108
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_acb6f4fe0df136",
+        "line_ranges": [
+          {
+            "Range": [
+              11,
+              12
+            ]
+          },
+          {
+            "Single": 24
+          },
+          {
+            "Range": [
+              35,
+              36
+            ]
+          },
+          {
+            "Single": 41
+          },
+          {
+            "Single": 65
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba72dfd7d128007cf6d19",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  11,
+                  12
+                ]
+              },
+              {
+                "Single": 24
+              },
+              {
+                "Range": [
+                  35,
+                  36
+                ]
+              },
+              {
+                "Single": 41
+              },
+              {
+                "Single": 65
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "docs/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_cf8925f63ee0fd",
+        "line_ranges": [
+          {
+            "Single": 14
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba74efd7d128007cf6d4b",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 14
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "docs/my-notion-cli-release-checklist.md": [
+      {
+        "hash": "s_52ac168976c9df::t_3119620bb30c2f",
+        "line_ranges": [
+          {
+            "Single": 3
+          },
+          {
+            "Range": [
+              9,
+              10
+            ]
+          },
+          {
+            "Single": 13
+          },
+          {
+            "Range": [
+              20,
+              24
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba795fd7d128007cf6dcc",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 3
+              },
+              {
+                "Range": [
+                  9,
+                  10
+                ]
+              },
+              {
+                "Single": 13
+              },
+              {
+                "Range": [
+                  20,
+                  24
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_72b1985a14359d",
+        "line_ranges": [
+          {
+            "Single": 36
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa81fd7d128007cf7046",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 36
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_4264ee957ca34c",
+        "line_ranges": [
+          {
+            "Single": 126
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cedd1168cd7594c10e2be",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 126
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_fe75dbdae2d3d5",
+        "line_ranges": [
+          {
+            "Range": [
+              134,
+              135
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baacefd7d128007cf709f",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  134,
+                  135
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_0f7b908cfe51d0",
+        "line_ranges": [
+          {
+            "Single": 187
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baafbfd7d128007cf70bd",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 187
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "docs/my-notion-mcp-server-release-checklist.md": [
+      {
+        "hash": "s_52ac168976c9df::t_75d2b082f41838",
+        "line_ranges": [
+          {
+            "Single": 22
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa9bfd7d128007cf7067",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 22
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_86e1614c7b928a",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              8
+            ]
+          },
+          {
+            "Range": [
+              10,
+              21
+            ]
+          },
+          {
+            "Range": [
+              23,
+              48
+            ]
+          },
+          {
+            "Range": [
+              50,
+              52
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba73efd7d128007cf6d2e",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  8
+                ]
+              },
+              {
+                "Range": [
+                  10,
+                  21
+                ]
+              },
+              {
+                "Range": [
+                  23,
+                  48
+                ]
+              },
+              {
+                "Range": [
+                  50,
+                  52
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_cd5fdceeb2e5ad",
+        "line_ranges": [
+          {
+            "Single": 9
+          },
+          {
+            "Single": 49
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cedc9168cd7594c10e295",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 9
+              },
+              {
+                "Single": 49
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "milestones/M28-independent-mcp-server.md": [
+      {
+        "hash": "s_52ac168976c9df::t_51d2f0451e5b80",
+        "line_ranges": [
+          {
+            "Single": 11
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec6d168cd7594c10e07f",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 11
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_b5acf584a6ae42",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              10
+            ]
+          },
+          {
+            "Range": [
+              12,
+              31
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba759fd7d128007cf6d61",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  10
+                ]
+              },
+              {
+                "Range": [
+                  12,
+                  31
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "milestones/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_3fa545f0a02fc4",
+        "line_ranges": [
+          {
+            "Single": 26
+          },
+          {
+            "Single": 74
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba764fd7d128007cf6d7d",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 26
+              },
+              {
+                "Single": 74
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_957c9f0e081180",
+        "line_ranges": [
+          {
+            "Single": 45
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec76168cd7594c10e09b",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 45
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "package.json": [
+      {
+        "hash": "s_52ac168976c9df::t_3d6b4b57a72fa0",
+        "line_ranges": [
+          {
+            "Range": [
+              24,
+              25
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba661fd7d128007cf6bc2",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  24,
+                  25
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/LICENSE": [
+      {
+        "hash": "s_52ac168976c9df::t_d2d131f2de9146",
+        "line_ranges": [
+          {
+            "Single": 1
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba489fd7d128007cf6895",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_d6f2c03131e9da",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              5
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba46ffd7d128007cf685b",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  5
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/__tests__/docs-tools.test.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_da53b1e1be794f",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              91
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba479fd7d128007cf6876",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  91
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/package.json": [
+      {
+        "hash": "s_52ac168976c9df::t_cfe83e7afdb174",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              4
+            ]
+          },
+          {
+            "Range": [
+              6,
+              45
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba3d6fd7d128007cf6726",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  4
+                ]
+              },
+              {
+                "Range": [
+                  6,
+                  45
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_722b8ed3ca3887",
+        "line_ranges": [
+          {
+            "Single": 5
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec1e168cd7594c10dfe5",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 5
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/client/http-client.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_7154ae7bc723fd",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              235
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba3fffd7d128007cf6793",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  235
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/config/resolve.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_d08b994c6a0e89",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              106
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba414fd7d128007cf67b0",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  106
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/docs/manifest.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_0ab5bcf3eef267",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              83
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba436fd7d128007cf67ea",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  83
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/docs/readme.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_8ea7a1eb14f9f1",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              75
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba454fd7d128007cf6823",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  75
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/docs/tools.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_96144957c53cb8",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              187
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba443fd7d128007cf6807",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  187
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/index.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_00529e89e43b67",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              54
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba465fd7d128007cf6840",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  54
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/results/tool-result.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_7728f0026e1c78",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              52
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba42cfd7d128007cf67cd",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  52
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/src/types.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_fc36e815a8daab",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              76
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba3f3fd7d128007cf6778",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  76
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/tsconfig.json": [
+      {
+        "hash": "s_52ac168976c9df::t_ec0f33464f08d0",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              16
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba3e1fd7d128007cf6740",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  16
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-agent-tools/vitest.config.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_d323c7e9884651",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              7
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba3e9fd7d128007cf675c",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  7
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_5ca4c1849dd4d5",
+        "line_ranges": [
+          {
+            "Range": [
+              240,
+              247
+            ]
+          },
+          {
+            "Single": 257
+          },
+          {
+            "Single": 278
+          },
+          {
+            "Range": [
+              287,
+              288
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba6ecfd7d128007cf6cc2",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  240,
+                  247
+                ]
+              },
+              {
+                "Single": 257
+              },
+              {
+                "Single": 278
+              },
+              {
+                "Range": [
+                  287,
+                  288
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_82d6270a0340ba",
+        "line_ranges": [
+          {
+            "Range": [
+              355,
+              359
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba6f9fd7d128007cf6cdc",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  355,
+                  359
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_4ba70993dcb95d",
+        "line_ranges": [
+          {
+            "Single": 3
+          },
+          {
+            "Single": 13
+          },
+          {
+            "Single": 24
+          },
+          {
+            "Single": 42
+          },
+          {
+            "Single": 98
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba6dffd7d128007cf6ca8",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 3
+              },
+              {
+                "Single": 13
+              },
+              {
+                "Single": 24
+              },
+              {
+                "Single": 42
+              },
+              {
+                "Single": 98
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/__tests__/config-command.test.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_f17b4ade2b5621",
+        "line_ranges": [
+          {
+            "Range": [
+              67,
+              69
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba671fd7d128007cf6bd9",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  67,
+                  69
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/__tests__/install-command.test.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_bd0e6405909a03",
+        "line_ranges": [
+          {
+            "Single": 35
+          },
+          {
+            "Single": 37
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba682fd7d128007cf6bfd",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 35
+              },
+              {
+                "Single": 37
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/__tests__/update-command.test.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_06d6a38cff9b0f",
+        "line_ranges": [
+          {
+            "Single": 43
+          },
+          {
+            "Single": 45
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba688fd7d128007cf6c1b",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 43
+              },
+              {
+                "Single": 45
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/package.json": [
+      {
+        "hash": "s_52ac168976c9df::t_4b97c518738d93",
+        "line_ranges": [
+          {
+            "Single": 27
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ced22168cd7594c10e193",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 27
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_84d3ddba11dedc",
+        "line_ranges": [
+          {
+            "Single": 59
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba9e6fd7d128007cf6f6a",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 59
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_3a14d0e90e4ef8",
+        "line_ranges": [
+          {
+            "Range": [
+              29,
+              30
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa1afd7d128007cf6fd3",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  29,
+                  30
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_bdfec01caad70c",
+        "line_ranges": [
+          {
+            "Single": 26
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa56fd7d128007cf7027",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 26
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/client/http-client.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_a3f4af909064cd",
+        "line_ranges": [
+          {
+            "Single": 1
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ced31168cd7594c10e1b9",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/commands/config.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_68a37aa18d74df",
+        "line_ranges": [
+          {
+            "Range": [
+              21,
+              22
+            ]
+          },
+          {
+            "Single": 24
+          },
+          {
+            "Range": [
+              146,
+              149
+            ]
+          },
+          {
+            "Range": [
+              156,
+              158
+            ]
+          },
+          {
+            "Range": [
+              166,
+              167
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba5f4fd7d128007cf6b23",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  21,
+                  22
+                ]
+              },
+              {
+                "Single": 24
+              },
+              {
+                "Range": [
+                  146,
+                  149
+                ]
+              },
+              {
+                "Range": [
+                  156,
+                  158
+                ]
+              },
+              {
+                "Range": [
+                  166,
+                  167
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/commands/install.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_63dccfbe944978",
+        "line_ranges": [
+          {
+            "Range": [
+              9,
+              10
+            ]
+          },
+          {
+            "Single": 48
+          },
+          {
+            "Single": 51
+          },
+          {
+            "Single": 59
+          },
+          {
+            "Single": 76
+          },
+          {
+            "Single": 82
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba602fd7d128007cf6b3f",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  9,
+                  10
+                ]
+              },
+              {
+                "Single": 48
+              },
+              {
+                "Single": 51
+              },
+              {
+                "Single": 59
+              },
+              {
+                "Single": 76
+              },
+              {
+                "Single": 82
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/commands/mcp.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_54357947537c91",
+        "line_ranges": [
+          {
+            "Single": 2
+          },
+          {
+            "Range": [
+              18,
+              21
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba570fd7d128007cf6a3d",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 2
+              },
+              {
+                "Range": [
+                  18,
+                  21
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/commands/update.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_c329ce630749e9",
+        "line_ranges": [
+          {
+            "Range": [
+              9,
+              10
+            ]
+          },
+          {
+            "Single": 95
+          },
+          {
+            "Single": 98
+          },
+          {
+            "Single": 105
+          },
+          {
+            "Single": 131
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba60dfd7d128007cf6b5b",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  9,
+                  10
+                ]
+              },
+              {
+                "Single": 95
+              },
+              {
+                "Single": 98
+              },
+              {
+                "Single": 105
+              },
+              {
+                "Single": 131
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-cli/src/mcp/server.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_d8bc96e25f965f",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              2
+            ]
+          },
+          {
+            "Range": [
+              5,
+              7
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba5b1fd7d128007cf6aca",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "Range": [
+                  5,
+                  7
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/CHANGELOG.md": [
+      {
+        "hash": "s_52ac168976c9df::t_49a2bc80bcc5d5",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              7
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba50efd7d128007cf6995",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  7
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/LICENSE": [
+      {
+        "hash": "s_52ac168976c9df::t_da3cdd63e82c60",
+        "line_ranges": [
+          {
+            "Single": 1
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba518fd7d128007cf69b2",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 1
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_2781f2ddfbaee6",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              2
+            ]
+          },
+          {
+            "Range": [
+              4,
+              57
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba500fd7d128007cf6979",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  2
+                ]
+              },
+              {
+                "Range": [
+                  4,
+                  57
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_db2ce06d577f05",
+        "line_ranges": [
+          {
+            "Single": 3
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec84168cd7594c10e0b3",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 3
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/__tests__/server.test.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_ef8cb25232b7f0",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              10
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba531fd7d128007cf69e9",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  10
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/package.json": [
+      {
+        "hash": "s_52ac168976c9df::t_7f4e5c91fd3ddc",
+        "line_ranges": [
+          {
+            "Single": 24
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa4dfd7d128007cf700c",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 24
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_fdcb388fc61199",
+        "line_ranges": [
+          {
+            "Range": [
+              26,
+              27
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3baa0ffd7d128007cf6fb8",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  26,
+                  27
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_097edd1a6c4f91",
+        "line_ranges": [
+          {
+            "Single": 25
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba5dcfd7d128007cf6aff",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 25
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_adf15107aee9d5",
+        "line_ranges": [
+          {
+            "Single": 21
+          },
+          {
+            "Single": 47
+          },
+          {
+            "Single": 49
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ced00168cd7594c10e155",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 21
+              },
+              {
+                "Single": 47
+              },
+              {
+                "Single": 49
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_847b2ab5faf184",
+        "line_ranges": [
+          {
+            "Single": 16
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec3c168cd7594c10e01f",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 16
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_47ee48f3381b9e",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              15
+            ]
+          },
+          {
+            "Range": [
+              17,
+              20
+            ]
+          },
+          {
+            "Range": [
+              22,
+              23
+            ]
+          },
+          {
+            "Range": [
+              28,
+              46
+            ]
+          },
+          {
+            "Single": 48
+          },
+          {
+            "Range": [
+              50,
+              55
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4a2fd7d128007cf68b1",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  15
+                ]
+              },
+              {
+                "Range": [
+                  17,
+                  20
+                ]
+              },
+              {
+                "Range": [
+                  22,
+                  23
+                ]
+              },
+              {
+                "Range": [
+                  28,
+                  46
+                ]
+              },
+              {
+                "Single": 48
+              },
+              {
+                "Range": [
+                  50,
+                  55
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/src/index.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_c7de532037652c",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              65
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4effd7d128007cf695d",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  65
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/src/register-tools.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_5f595542de6097",
+        "line_ranges": [
+          {
+            "Single": 9
+          },
+          {
+            "Range": [
+              29,
+              40
+            ]
+          },
+          {
+            "Range": [
+              74,
+              77
+            ]
+          },
+          {
+            "Range": [
+              93,
+              96
+            ]
+          },
+          {
+            "Range": [
+              118,
+              121
+            ]
+          },
+          {
+            "Range": [
+              145,
+              148
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba522fd7d128007cf69cc",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 9
+              },
+              {
+                "Range": [
+                  29,
+                  40
+                ]
+              },
+              {
+                "Range": [
+                  74,
+                  77
+                ]
+              },
+              {
+                "Range": [
+                  93,
+                  96
+                ]
+              },
+              {
+                "Range": [
+                  118,
+                  121
+                ]
+              },
+              {
+                "Range": [
+                  145,
+                  148
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_8340c83682e605",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              8
+            ]
+          },
+          {
+            "Range": [
+              10,
+              28
+            ]
+          },
+          {
+            "Range": [
+              41,
+              73
+            ]
+          },
+          {
+            "Range": [
+              78,
+              92
+            ]
+          },
+          {
+            "Range": [
+              97,
+              117
+            ]
+          },
+          {
+            "Range": [
+              122,
+              144
+            ]
+          },
+          {
+            "Range": [
+              149,
+              151
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4d4fd7d128007cf6924",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  8
+                ]
+              },
+              {
+                "Range": [
+                  10,
+                  28
+                ]
+              },
+              {
+                "Range": [
+                  41,
+                  73
+                ]
+              },
+              {
+                "Range": [
+                  78,
+                  92
+                ]
+              },
+              {
+                "Range": [
+                  97,
+                  117
+                ]
+              },
+              {
+                "Range": [
+                  122,
+                  144
+                ]
+              },
+              {
+                "Range": [
+                  149,
+                  151
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/src/result-adapter.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_db557fb721e596",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              5
+            ]
+          },
+          {
+            "Single": 7
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ced8d168cd7594c10e232",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  5
+                ]
+              },
+              {
+                "Single": 7
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_a99a6e1adce201",
+        "line_ranges": [
+          {
+            "Single": 6
+          },
+          {
+            "Range": [
+              8,
+              13
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4cafd7d128007cf6906",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 6
+              },
+              {
+                "Range": [
+                  8,
+                  13
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/src/server.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_512374f99ad1d5",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              28
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4e7fd7d128007cf6941",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  28
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/tsconfig.json": [
+      {
+        "hash": "s_52ac168976c9df::t_5cd2c0afcc93c8",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              16
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4b3fd7d128007cf68cc",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  16
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-mcp-server/vitest.config.ts": [
+      {
+        "hash": "s_52ac168976c9df::t_5449d6f70a15e4",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              7
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba4c0fd7d128007cf68e9",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  7
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-skills/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_e8f456ef4dab52",
+        "line_ranges": [
+          {
+            "Single": 3
+          },
+          {
+            "Single": 13
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba7b3fd7d128007cf6dea",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 3
+              },
+              {
+                "Single": 13
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-skills/my-notion-docs/references/cli-commands.md": [
+      {
+        "hash": "s_52ac168976c9df::t_cf197a8e99a2b4",
+        "line_ranges": [
+          {
+            "Single": 399
+          },
+          {
+            "Range": [
+              405,
+              411
+            ]
+          },
+          {
+            "Single": 416
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba6c6fd7d128007cf6c81",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 399
+              },
+              {
+                "Range": [
+                  405,
+                  411
+                ]
+              },
+              {
+                "Single": 416
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-skills/my-notion-mcp/SKILL.md": [
+      {
+        "hash": "s_52ac168976c9df::t_7379e7701d0d4d",
+        "line_ranges": [
+          {
+            "Single": 3
+          },
+          {
+            "Range": [
+              12,
+              13
+            ]
+          },
+          {
+            "Single": 31
+          },
+          {
+            "Range": [
+              37,
+              38
+            ]
+          },
+          {
+            "Range": [
+              43,
+              48
+            ]
+          },
+          {
+            "Single": 66
+          },
+          {
+            "Range": [
+              79,
+              80
+            ]
+          },
+          {
+            "Range": [
+              98,
+              112
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba69cfd7d128007cf6c3c",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 3
+              },
+              {
+                "Range": [
+                  12,
+                  13
+                ]
+              },
+              {
+                "Single": 31
+              },
+              {
+                "Range": [
+                  37,
+                  38
+                ]
+              },
+              {
+                "Range": [
+                  43,
+                  48
+                ]
+              },
+              {
+                "Single": 66
+              },
+              {
+                "Range": [
+                  79,
+                  80
+                ]
+              },
+              {
+                "Range": [
+                  98,
+                  112
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "packages/my-notion-skills/my-notion-shared/SKILL.md": [
+      {
+        "hash": "s_52ac168976c9df::t_0e0738493cf85f",
+        "line_ranges": [
+          {
+            "Single": 21
+          },
+          {
+            "Single": 154
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba6a9fd7d128007cf6c5d",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 21
+              },
+              {
+                "Single": 154
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "progress/20260624-independent-mcp-server.md": [
+      {
+        "hash": "s_52ac168976c9df::t_196866c8a203b5",
+        "line_ranges": [
+          {
+            "Range": [
+              1,
+              8
+            ]
+          },
+          {
+            "Range": [
+              10,
+              22
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba76efd7d128007cf6d95",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  1,
+                  8
+                ]
+              },
+              {
+                "Range": [
+                  10,
+                  22
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_9cb43407ec548f",
+        "line_ranges": [
+          {
+            "Single": 9
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ceca1168cd7594c10e0e6",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 9
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "progress/README.md": [
+      {
+        "hash": "s_52ac168976c9df::t_8ed924bb144b84",
+        "line_ranges": [
+          {
+            "Single": 26
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3cec99168cd7594c10e0cf",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 26
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts/e2e-my-notion-mcp-sdk-client.mjs": [
+      {
+        "hash": "s_52ac168976c9df::t_6f07e925ee1dbf",
+        "line_ranges": [
+          {
+            "Range": [
+              8,
+              9
+            ]
+          },
+          {
+            "Single": 13
+          },
+          {
+            "Single": 161
+          },
+          {
+            "Single": 209
+          },
+          {
+            "Single": 272
+          },
+          {
+            "Range": [
+              277,
+              281
+            ]
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba655fd7d128007cf6ba3",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Range": [
+                  8,
+                  9
+                ]
+              },
+              {
+                "Single": 13
+              },
+              {
+                "Single": 161
+              },
+              {
+                "Single": 209
+              },
+              {
+                "Single": 272
+              },
+              {
+                "Range": [
+                  277,
+                  281
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "scripts/e2e-my-notion-mcp.mjs": [
+      {
+        "hash": "s_52ac168976c9df::t_d5f94e986e1304",
+        "line_ranges": [
+          {
+            "Single": 404
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba93afd7d128007cf6f01",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 404
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "hash": "s_52ac168976c9df::t_cd33961e8e84b8",
+        "line_ranges": [
+          {
+            "Single": 12
+          },
+          {
+            "Single": 159
+          },
+          {
+            "Range": [
+              164,
+              165
+            ]
+          },
+          {
+            "Single": 291
+          },
+          {
+            "Single": 346
+          },
+          {
+            "Range": [
+              351,
+              356
+            ]
+          },
+          {
+            "Single": 475
+          }
+        ],
+        "mixed_line_ranges": [],
+        "operations": [
+          {
+            "operation_id": "6a3ba64bfd7d128007cf6b86",
+            "tool_type": "agent",
+            "tool_id": "apply_patch",
+            "line_ranges": [
+              {
+                "Single": 12
+              },
+              {
+                "Single": 159
+              },
+              {
+                "Range": [
+                  164,
+                  165
+                ]
+              },
+              {
+                "Single": 291
+              },
+              {
+                "Single": 346
+              },
+              {
+                "Range": [
+                  351,
+                  356
+                ]
+              },
+              {
+                "Single": 475
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "remote_transcripts": {
+    "s_52ac168976c9df": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_00529e89e43b67": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_06d6a38cff9b0f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_097edd1a6c4f91": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_0ab5bcf3eef267": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_0d4b5221002c37": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_0e0738493cf85f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_0f7b908cfe51d0": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_13fd058956583d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_196866c8a203b5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_2781f2ddfbaee6": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_2a13b5b2e4ecda": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_3119620bb30c2f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_31540c30c072fd": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_3a14d0e90e4ef8": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_3d6b4b57a72fa0": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_3fa545f0a02fc4": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_4264ee957ca34c": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_47ee48f3381b9e": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_49a2bc80bcc5d5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_4b97c518738d93": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_4ba70993dcb95d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_512374f99ad1d5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_51d2f0451e5b80": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_54357947537c91": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_5449d6f70a15e4": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_5ca4c1849dd4d5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_5cd08293309a7d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_5cd2c0afcc93c8": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_5f595542de6097": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_60435012bdb88d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_62cb9a7be7fb1a": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_63dccfbe944978": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_68a37aa18d74df": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_6f07e925ee1dbf": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_7154ae7bc723fd": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_722b8ed3ca3887": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_72b1985a14359d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_7379e7701d0d4d": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_75d2b082f41838": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_76cd764dc6a3e1": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_7728f0026e1c78": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_7f4e5c91fd3ddc": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_82d6270a0340ba": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_8340c83682e605": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_847b2ab5faf184": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_84d3ddba11dedc": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_86e1614c7b928a": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_8ea7a1eb14f9f1": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_8ed924bb144b84": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_90577a6411b94b": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_957c9f0e081180": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_96144957c53cb8": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_9bd24d835ee3f8": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_9cb43407ec548f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_a0ad6ca9c883fc": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_a3f4af909064cd": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_a99a6e1adce201": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_acb6f4fe0df136": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_adf15107aee9d5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_b5acf584a6ae42": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_bd0e6405909a03": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_bdfec01caad70c": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_c329ce630749e9": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_c7de532037652c": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_cd33961e8e84b8": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_cd5fdceeb2e5ad": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_ce4ad96d09a664": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_cf197a8e99a2b4": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_cf8925f63ee0fd": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_cfe83e7afdb174": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d08b994c6a0e89": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d2d131f2de9146": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d323c7e9884651": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d575b855e33881": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d5f94e986e1304": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d6f2c03131e9da": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_d8bc96e25f965f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_da3cdd63e82c60": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_da53b1e1be794f": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_db2ce06d577f05": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_db557fb721e596": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_e8f456ef4dab52": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_ec0f33464f08d0": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_ef8cb25232b7f0": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_f0dd79d8e0f70a": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_f17b4ade2b5621": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_f265c315cbaacd": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_f6c39776db95e0": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_fa65561d7c6847": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_fc36e815a8daab": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_fdcb388fc61199": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_fe75dbdae2d3d5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_52ac168976c9df::t_feae6d0b0f4ae5": {
+      "tool": "trae",
+      "conversation_id": "6a3b9087fd7d128007cf6141",
+      "session_id": "6a3b9087fd7d128007cf6141",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_5cde108d78ebda": {
+      "tool": "trae",
+      "conversation_id": "6a3749c70883b6698cb17a70",
+      "session_id": "6a3749c70883b6698cb17a70",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    },
+    "s_5cde108d78ebda::t_5cfd99203f9b39": {
+      "tool": "trae",
+      "conversation_id": "6a3749c70883b6698cb17a70",
+      "session_id": "6a3749c70883b6698cb17a70",
+      "status": "remote_only",
+      "message": "Remote transcript resolution is not implemented yet for TRAE prompts."
+    }
+  }
+}
