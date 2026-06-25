@@ -18,7 +18,10 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
+const MCP_PACKAGE_NAME = "@mynotion/mcp-server";
+const MCP_BINARY_NAME = "my-notion-mcp-server";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
+const MCP_INSTALL_COMMAND = `npm install -g ${MCP_PACKAGE_NAME}@latest`;
 const REQUIRED_NODE_MAJOR = 20;
 
 type PackageInfo = {
@@ -140,14 +143,19 @@ function buildConfigInitSummary(args: ParsedArgs) {
       },
       mcp: {
         ok: true,
-        command: `${BINARY_NAME} mcp serve --transport stdio`,
+        packageName: MCP_PACKAGE_NAME,
+        command: `${MCP_BINARY_NAME} --transport stdio`,
+        legacyCommand: `${BINARY_NAME} mcp serve --transport stdio`,
+        installCommand: MCP_INSTALL_COMMAND,
       },
     },
     commands: {
       login: authLogin,
       agentLogin,
       installSkills: SKILLS_INSTALL_COMMAND,
-      mcpServe: `${BINARY_NAME} mcp serve --transport stdio`,
+      installMcpServer: MCP_INSTALL_COMMAND,
+      mcpServe: `${MCP_BINARY_NAME} --transport stdio`,
+      legacyMcpServe: `${BINARY_NAME} mcp serve --transport stdio`,
       checkStatus: `${BINARY_NAME} auth status --format json`,
       createDoc: `${BINARY_NAME} docs create --title "Agent Doc" --content-file ./draft.md --format json`,
     },
@@ -155,7 +163,8 @@ function buildConfigInitSummary(args: ParsedArgs) {
       ? [
           `Verify auth: ${BINARY_NAME} auth status --format json`,
           `Install Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
-          `Start MCP server: ${BINARY_NAME} mcp serve --transport stdio`,
+          `Install MCP server: ${MCP_INSTALL_COMMAND}`,
+          `Start MCP server: ${MCP_BINARY_NAME} --transport stdio`,
         ]
       : [
           `Login with browser auth: ${authLogin}`,

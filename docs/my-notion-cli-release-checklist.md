@@ -1,20 +1,27 @@
 # My-Notion CLI / MCP Release Checklist
 
-本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。目标是确认 Agent 可以安全、稳定地通过 CLI 或 MCP STDIO 把 Markdown 内容写入 My-Notion 文档。当前 beta 已发布，后续版本发布仍按本清单执行。
+本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。CLI 与 MCP 已拆分发布；独立 MCP 包的专项检查见 `docs/my-notion-mcp-server-release-checklist.md`。
 
 ## 适用范围
 
 - `packages/my-notion-cli`
 - `packages/my-notion-skills`
+- `packages/my-notion-agent-tools`
+- `packages/my-notion-mcp-server`
 - `.trae/skills`
 - `/cli/v1/*` Machine API
-- MCP STDIO server：`my-notion mcp serve --transport stdio`
+- MCP STDIO server：`my-notion-mcp-server --transport stdio`
 
 ## 发布前命令
 
 按顺序运行：
 
 ```bash
+pnpm --filter @mynotion/agent-tools test
+pnpm --filter @mynotion/agent-tools typecheck
+pnpm --filter @mynotion/mcp-server test
+pnpm --filter @mynotion/mcp-server typecheck
+pnpm --filter @mynotion/mcp-server build
 pnpm --filter @mynotion/cli test
 pnpm --filter @mynotion/cli typecheck
 pnpm --filter @mynotion/cli build
@@ -26,7 +33,7 @@ pnpm e2e:mcp
 pnpm sync:skills
 pnpm sync:skills:package
 pnpm sync:skills:check
-cd packages/my-notion-cli && npm pack --dry-run
+pnpm --filter @mynotion/cli pack:dry-run
 ```
 
 如改动影响 Web UI、PAT 管理入口或 Next.js API，再追加：
@@ -116,7 +123,7 @@ current latest: 0.1.0
 - `npm config get registry` 和 `pnpm config get registry` 必须都是 `https://registry.npmjs.org/`，不得使用公司内部源或镜像源发布。
 - 当前 npm 用户拥有 `@mynotion` organization/scope 的 publish 权限。
 - `@mynotion/cli` 使用 `publishConfig.access = public` 或发布时显式传 `--access public`。
-- `npm pack --dry-run` 只包含 `dist`、`README.md`、`docs`、`skills`、`LICENSE`、`CHANGELOG.md`、`package.json` 等预期文件。
+- `pnpm --filter @mynotion/cli pack:dry-run` 只包含 `dist`、`README.md`、`docs`、`skills`、`LICENSE`、`CHANGELOG.md`、`package.json` 等预期文件。
 - 本地 tarball 安装后 `my-notion --help`、`my-notion install --check`、`my-notion auth login --no-open` 可运行。
 - Skills 安装命令为 `npx skills add @mynotion/cli -y -g`；如果该工具不支持 npm package source，立即切换到 GitHub URL 或 `my-notion install --skills` 方案。
 
@@ -124,8 +131,8 @@ current latest: 0.1.0
 
 ```bash
 cd packages/my-notion-cli
-npm publish --tag beta --access public
-# 如使用本地 token 文件：npm publish --tag beta --access public --userconfig ./.npmrc.publish
+pnpm publish --tag beta --access public
+# 如使用本地 token 文件：pnpm publish --tag beta --access public --userconfig ./.npmrc.publish
 npm view @mynotion/cli@latest version bin dist-tags
 npx @mynotion/cli@latest --help
 ```
@@ -177,7 +184,7 @@ npm dist-tag add @mynotion/cli@0.1.0 latest
 - `pnpm sync:skills`：通过
 - `pnpm sync:skills:package`：通过
 - `pnpm sync:skills:check`：通过
-- `npm pack --dry-run`：通过
+- `pnpm --filter @mynotion/cli pack:dry-run`：通过
 
 ## 发布判断
 

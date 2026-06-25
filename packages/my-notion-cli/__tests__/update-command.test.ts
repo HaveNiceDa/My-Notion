@@ -40,7 +40,9 @@ describe("runUpdateCommand", () => {
         requiresUserConfirmation: true,
         commands: expect.objectContaining({
           updateCli: "npm install -g @mynotion/cli@latest",
+          updateMcpServer: "npm install -g @mynotion/mcp-server@latest",
           updateSkills: "npx skills add @mynotion/cli -y -g",
+          verifyMcpServer: "my-notion-mcp-server --help",
           verifyCli: "my-notion update --check --format json",
           verifyConfig: "my-notion config init --check --format json",
         }),

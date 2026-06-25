@@ -1,5 +1,5 @@
 import { readStringOption } from "../config/store.js";
-import { runMcpStdioServer } from "../mcp/server.js";
+import { runMyNotionMcpStdioServer } from "@mynotion/mcp-server";
 import type { ParsedArgs } from "../types.js";
 
 export async function runMcpCommand(args: ParsedArgs) {
@@ -15,5 +15,8 @@ export async function runMcpCommand(args: ParsedArgs) {
     throw new Error("Unsupported MCP transport. Only `stdio` is available.");
   }
 
-  await runMcpStdioServer(args);
+  await runMyNotionMcpStdioServer({
+    transport: "stdio",
+    options: args.options,
+  });
 }

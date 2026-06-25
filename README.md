@@ -8,7 +8,8 @@
 
 - [Web 应用说明](./apps/web/README.md)：Next.js Web 端、BlockNote 编辑器、AI Agent、CLI 授权页和机器 API。
 - [Mobile 应用说明](./apps/mobile/README.md)：Expo 移动端、文档工作区、移动 AI Chat 和跨端共享架构。
-- [My-Notion CLI](./packages/my-notion-cli/README.md)：已发布 npm 包 [`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)，提供 `my-notion` 命令和 MCP STDIO server。
+- [My-Notion CLI](./packages/my-notion-cli/README.md)：已发布 npm 包 [`@mynotion/cli`](https://www.npmjs.com/package/@mynotion/cli)，提供 `my-notion` 命令。
+- [My-Notion MCP Server](./packages/my-notion-mcp-server/README.md)：独立 MCP STDIO server，提供 Agent 文档工具和 `my_notion_readme`。
 - [My-Notion Skills](./packages/my-notion-skills/README.md)：供 Agent 调用 CLI/MCP 的 Skills 源文件与同步规则。
 - [里程碑索引](./milestones/README.md)：稳定阶段结论和下一步路线。
 - [阶段进展摘要](./progress/README.md)：压缩后的历史过程记录。
@@ -20,7 +21,7 @@
 - **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
 - **Web Agent**：ReAct Loop、结构感知 RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
 - **Mobile 工作区**：Expo + React Native，支持移动文档树、文档编辑、AI Chat、会话管理、模型选择、深度思考展示和安全代理。
-- **CLI / Skills / MCP**：`@mynotion/cli@latest` 已发布，支持浏览器 Device Flow 登录、文档 CRUD、导入导出、MCP STDIO 和随包发布的 Agent Skills。
+- **CLI / Skills / MCP**：`@mynotion/cli@latest` 负责浏览器 Device Flow 登录、文档 CRUD、导入导出和随包发布的 Agent Skills；`@mynotion/mcp-server` 独立提供 MCP STDIO 工具。
 - **共享包**：`packages/ai`、`packages/business`、`packages/convex` 收敛 AI、业务状态、i18n、Convex schema 和文档逻辑。
 - **验证链路**：覆盖 Web typecheck/build/lint、Agent 单测、AI smoke、CLI E2E、MCP E2E、Skills 漂移检查和 npm pack/publish 验证。
 
@@ -31,12 +32,14 @@
   ├─ Web UI: apps/web
   ├─ Mobile UI: apps/mobile
   ├─ CLI: @mynotion/cli / packages/my-notion-cli
-  └─ Skills / MCP: packages/my-notion-skills + my-notion mcp serve
+  ├─ MCP: @mynotion/mcp-server / packages/my-notion-mcp-server
+  └─ Skills: packages/my-notion-skills
 
 共享包
   ├─ packages/ai        # RAG、Embedding、Agent、AI 配置
   ├─ packages/business  # Zustand、i18n、共享类型和工具函数
-  └─ packages/convex    # Convex schema、文档、Chat、CLI Token 逻辑
+  ├─ packages/convex    # Convex schema、文档、Chat、CLI Token 逻辑
+  └─ packages/my-notion-agent-tools # CLI/MCP 内部共享 Machine API client 和 Agent 工具契约
 
 后端与服务
   ├─ Convex             # 实时数据库 + HTTP Actions / Machine API
@@ -57,7 +60,9 @@ My-Notion/
 │   ├── ai/                     # AI、RAG、Embeddings、Agent 服务端逻辑
 │   ├── business/               # Zustand Stores、i18n、类型、工具函数
 │   ├── convex/                 # Convex Schema、Documents、Chat、CLI Token 逻辑
+│   ├── my-notion-agent-tools/  # CLI/MCP 内部共享 Machine API client 和 Agent 工具契约
 │   ├── my-notion-cli/          # @mynotion/cli 源码与 npm 包内容
+│   ├── my-notion-mcp-server/   # @mynotion/mcp-server 独立 MCP STDIO server
 │   └── my-notion-skills/       # Agent Skills 源文件
 ├── docs/                       # 当前方案、发布检查、AI 外部文档索引
 ├── milestones/                 # 稳定阶段结论
@@ -87,6 +92,7 @@ CLI 已发布到 npm latest：[`@mynotion/cli`](https://www.npmjs.com/package/@m
 
 ```bash
 npm install -g @mynotion/cli@latest
+npm install -g @mynotion/mcp-server@latest
 npx skills add @mynotion/cli -y -g
 my-notion install --check
 my-notion config init
@@ -99,7 +105,7 @@ Agent 场景使用：
 my-notion auth login --no-open
 my-notion config init --check --format json
 my-notion docs create --title "Agent Doc" --content-file /tmp/doc.md --format json
-my-notion mcp serve --transport stdio
+my-notion-mcp-server --transport stdio
 ```
 
 约定：Agent 必须把授权 URL 以 Markdown 可点击链接发给用户；写入已有文档优先使用 append；MCP 写工具默认保持 `dryRun: true`。

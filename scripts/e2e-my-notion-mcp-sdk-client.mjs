@@ -5,11 +5,12 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { Client } from "../packages/my-notion-cli/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
-import { StdioClientTransport } from "../packages/my-notion-cli/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js";
+import { Client } from "../packages/my-notion-mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
+import { StdioClientTransport } from "../packages/my-notion-mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
+const mcpEntry = join(root, "packages/my-notion-mcp-server/dist/index.js");
 
 setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
@@ -157,7 +158,7 @@ function assert(condition, message) {
 async function createSdkClient(env) {
   const transport = new StdioClientTransport({
     command: "node",
-    args: [cliEntry, "mcp", "serve", "--transport", "stdio"],
+    args: [mcpEntry, "--transport", "stdio"],
     cwd: root,
     env,
     stderr: "pipe",
@@ -205,7 +206,7 @@ async function main() {
   let archivedDocument = null;
 
   try {
-    console.log("[1/11] Build CLI");
+    console.log("[1/11] Build CLI and MCP server");
     run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
     console.log(`[2/11] Seed PAT token: ${pat.tokenPrefix}...`);
@@ -268,9 +269,16 @@ async function main() {
       "my_notion_docs_fetch",
       "my_notion_docs_create",
       "my_notion_docs_update",
+      "my_notion_readme",
     ]) {
       assert(toolNames.has(name), `Missing MCP tool: ${name}`);
     }
+
+    const readme = await callTool(validClient, "my_notion_readme", {});
+    assert(
+      readme.markdown?.includes("my-notion-mcp-server"),
+      "MCP readme did not expose standalone server guidance",
+    );
 
     console.log("[7/11] Validate dry-run create and update");
     const createPreview = await callTool(validClient, "my_notion_docs_create", {

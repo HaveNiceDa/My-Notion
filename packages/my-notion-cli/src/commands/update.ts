@@ -6,6 +6,8 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
+const MCP_PACKAGE_NAME = "@mynotion/mcp-server";
+const MCP_BINARY_NAME = "my-notion-mcp-server";
 const DEFAULT_TAG = "latest";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 const NPM_REGISTRY_URL = "https://registry.npmjs.org";
@@ -90,14 +92,17 @@ function buildUpdateSummary(input: {
     requiresUserConfirmation: true,
     commands: {
       updateCli: `npm install -g ${packageName}@${input.tag}`,
+      updateMcpServer: `npm install -g ${MCP_PACKAGE_NAME}@${input.tag}`,
       runLatestWithNpx: `npx ${packageName}@${input.tag} --help`,
       updateSkills: SKILLS_INSTALL_COMMAND,
+      verifyMcpServer: `${MCP_BINARY_NAME} --help`,
       verifyCli: `${BINARY_NAME} update --check --format json`,
       verifyConfig: `${BINARY_NAME} config init --check --format json`,
     },
     nextSteps: [
       `Ask the user before updating the global CLI.`,
       `Update CLI: npm install -g ${packageName}@${input.tag}`,
+      `Update MCP server: npm install -g ${MCP_PACKAGE_NAME}@${input.tag}`,
       `Update Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
       `Verify: ${BINARY_NAME} update --check --format json`,
     ],
@@ -123,6 +128,7 @@ Update available: ${available}
 
 Recommended:
   ${summary.commands.updateCli}
+  ${summary.commands.updateMcpServer}
   ${summary.commands.updateSkills}
   ${summary.commands.verifyCli}
 `);

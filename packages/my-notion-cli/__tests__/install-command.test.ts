@@ -32,7 +32,9 @@ describe("runInstallCommand", () => {
         binary: "my-notion",
         commands: expect.objectContaining({
           installCli: "npm install -g @mynotion/cli@latest",
+          installMcpServer: "npm install -g @mynotion/mcp-server@latest",
           installSkills: "npx skills add @mynotion/cli -y -g",
+          runMcpServer: "my-notion-mcp-server --transport stdio",
           checkUpdate: "my-notion update --check --format json",
           agentLogin: "my-notion auth login --no-open",
         }),

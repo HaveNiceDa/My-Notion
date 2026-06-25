@@ -1,10 +1,10 @@
 {
-  "name": "@mynotion/cli",
+  "name": "@mynotion/mcp-server",
   "version": "0.1.0",
-  "description": "Agent-native CLI and MCP adapter for My-Notion documents",
+  "description": "Standalone MCP STDIO server for My-Notion document tools",
   "type": "module",
   "bin": {
-    "my-notion": "dist/index.js"
+    "my-notion-mcp-server": "dist/index.js"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,56 +12,41 @@
     "dist",
     "README.md",
     "CHANGELOG.md",
-    "docs",
-    "skills",
     "LICENSE"
   ],
   "publishConfig": {
     "access": "public"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "tsc -p tsconfig.json && esbuild src/index.ts src/server.ts src/register-tools.ts src/result-adapter.ts --bundle --platform=node --format=esm --outdir=dist --outbase=src --external:@modelcontextprotocol/sdk/* --external:zod",
     "clean": "rimraf dist",
     "dev": "tsx src/index.ts",
     "pack:dry-run": "pnpm publish --dry-run --no-git-checks",
-    "prebuild": "pnpm --filter @mynotion/mcp-server build",
-    "prepack": "pnpm run sync:skills && pnpm run build",
+    "prebuild": "pnpm --filter @mynotion/agent-tools build",
     "release:beta": "pnpm publish --tag beta --access public",
     "release:latest": "pnpm publish --tag latest --access public",
-    "sync:skills": "node ../../scripts/sync-my-notion-package-skills.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "keywords": [
     "my-notion",
-    "notion",
-    "cli",
-    "agent",
     "mcp",
-    "skills",
+    "model-context-protocol",
+    "agent",
     "documents"
   ],
-  "author": "",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/HaveNiceDa/My-Notion.git",
-    "directory": "packages/my-notion-cli"
-  },
-  "bugs": {
-    "url": "https://github.com/HaveNiceDa/My-Notion/issues"
-  },
-  "homepage": "https://github.com/HaveNiceDa/My-Notion#readme",
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "@mynotion/mcp-server": "workspace:^0.1.0",
-    "yaml": "^2.9.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.25.1"
   },
   "devDependencies": {
+    "@mynotion/agent-tools": "workspace:^0.1.0",
     "@types/node": "^20",
+    "esbuild": "^0.27.2",
     "rimraf": "^6.1.3",
     "tsx": "^4.21.0",
     "typescript": "^5.0.0",

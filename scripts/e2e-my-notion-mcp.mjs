@@ -9,6 +9,7 @@ import { once } from "node:events";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
+const mcpEntry = join(root, "packages/my-notion-mcp-server/dist/index.js");
 
 setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
@@ -155,13 +156,13 @@ function assert(condition, message) {
 }
 
 class McpStdioClient {
-  constructor(env) {
+  constructor(env, entry = mcpEntry, args = ["--transport", "stdio"]) {
     this.nextId = 1;
     this.pending = new Map();
     this.stdoutBuffer = "";
     this.stderr = "";
-    // 像真实 MCP 客户端一样启动已构建 CLI：通过 stdin/stdout 传输 JSON-RPC。
-    this.process = spawn("node", [cliEntry, "mcp", "serve", "--transport", "stdio"], {
+    // 像真实 MCP 客户端一样启动已构建 MCP server：通过 stdin/stdout 传输 JSON-RPC。
+    this.process = spawn("node", [entry, ...args], {
       cwd: root,
       env: { ...process.env, ...env },
       stdio: ["pipe", "pipe", "pipe"],
@@ -287,7 +288,7 @@ async function main() {
   let archivedDocument = null;
 
   try {
-    console.log("[1/10] Build CLI");
+    console.log("[1/10] Build CLI and MCP server");
     run("pnpm", ["--filter", "@mynotion/cli", "build"]);
 
     console.log(`[2/10] Seed PAT token: ${pat.tokenPrefix}...`);
@@ -342,9 +343,16 @@ async function main() {
       "my_notion_docs_fetch",
       "my_notion_docs_create",
       "my_notion_docs_update",
+      "my_notion_readme",
     ]) {
       assert(toolNames.has(name), `Missing MCP tool: ${name}`);
     }
+
+    const readme = await callTool(client, "my_notion_readme", {});
+    assert(
+      typeof readme.markdown === "string" && readme.markdown.includes("my-notion-mcp-server"),
+      "MCP readme did not return standalone server guidance",
+    );
 
     console.log("[6/10] Validate dry-run write tools");
     const createPreview = await callTool(client, "my_notion_docs_create", {
@@ -393,7 +401,7 @@ async function main() {
     assert(updateError.isError === true, "update error did not return isError=true");
     assert(updateError.structuredContent?.error?.message, "update error did not include structured error message");
     assert(
-      updateError.content.map((item) => item.text).join("\n").includes("My-Notion MCP tool failed during update"),
+      updateError.content.map((item) => item.text).join("\n").includes("My-Notion tool failed during update"),
       "update error text fallback did not include readable failure context",
     );
 
@@ -464,6 +472,7 @@ async function main() {
           tokenPrefix: pat.tokenPrefix,
           documentId: createdDocumentId,
           archived: archivedDocument.isArchived,
+          discoveredTools: [...toolNames].sort(),
           searchHits: documents.length,
         },
         null,

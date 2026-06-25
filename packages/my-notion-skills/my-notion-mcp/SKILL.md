@@ -1,6 +1,6 @@
 ---
 name: my-notion-mcp
-description: Run the My-Notion MCP STDIO server so MCP clients can create, fetch, search, and update My-Notion documents through the CLI-backed API.
+description: Run the standalone My-Notion MCP STDIO server so MCP clients can create, fetch, search, and update My-Notion documents.
 ---
 
 # My-Notion MCP
@@ -9,8 +9,8 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 
 ## Prerequisites
 
-- The `my-notion` CLI must be installed, linked, or run from the monorepo.
-- npm latest install: `npm install -g @mynotion/cli@latest`; Agent Skills install: `npx skills add @mynotion/cli -y -g`.
+- The `my-notion-mcp-server` binary must be installed, linked, or run from the monorepo.
+- npm latest install: `npm install -g @mynotion/mcp-server@latest`; CLI auth install: `npm install -g @mynotion/cli@latest`; Agent Skills install: `npx skills add @mynotion/cli -y -g`.
 - Authentication must already be configured by browser-based `my-notion auth login`; `MY_NOTION_API_TOKEN` is a legacy/CI fallback. `MY_NOTION_API_URL` is optional for the default online deployment.
 - In Agent mode, run `my-notion auth login --no-open`, send the printed authorization URL as a clickable Markdown link, then retry after approval.
 - Do not pass full PAT values through MCP tool arguments. The MCP server reads credentials from CLI config or environment variables.
@@ -28,17 +28,23 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 Development entry:
 
 ```bash
-pnpm --filter @mynotion/cli dev mcp serve --transport stdio
+pnpm --filter @mynotion/mcp-server dev --transport stdio
 ```
 
 Built entry:
 
 ```bash
-pnpm --filter @mynotion/cli build
-node packages/my-notion-cli/dist/index.js mcp serve --transport stdio
+pnpm --filter @mynotion/mcp-server build
+node packages/my-notion-mcp-server/dist/index.js --transport stdio
 ```
 
 Installed binary:
+
+```bash
+my-notion-mcp-server --transport stdio
+```
+
+Compatibility entry:
 
 ```bash
 my-notion mcp serve --transport stdio
@@ -57,7 +63,7 @@ pnpm e2e:mcp:client
 This script uses `@modelcontextprotocol/sdk` `Client + StdioClientTransport` and verifies:
 
 - auth failure returns `isError: true` with `structuredContent.error`
-- tools/list discovers `my_notion_docs_search`, `my_notion_docs_fetch`, `my_notion_docs_create`, and `my_notion_docs_update`
+- tools/list discovers `my_notion_readme`, `my_notion_docs_search`, `my_notion_docs_fetch`, `my_notion_docs_create`, and `my_notion_docs_update`
 - create/update dry-run returns `confirmationRequired: true` and explicit no-write text
 - real create/fetch/update/search works after explicit approval by setting `dryRun: false`
 - test documents are archived and temporary PAT credentials are revoked
@@ -70,8 +76,8 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const client = new Client({ name: "my-agent", version: "0.1.0" });
 const transport = new StdioClientTransport({
-  command: "my-notion",
-  args: ["mcp", "serve", "--transport", "stdio"],
+  command: "my-notion-mcp-server",
+  args: ["--transport", "stdio"],
 });
 
 await client.connect(transport);
@@ -88,6 +94,22 @@ await client.close();
 ```
 
 ## Tools
+
+### `my_notion_readme`
+
+Return MCP server usage guidance, authentication source, content format contract, tool list, and safe write rules.
+
+Input:
+
+```json
+{}
+```
+
+Behavior:
+
+- Read-only.
+- Does not require passing tokens as arguments.
+- Agents should call this first when they need to understand the available tools.
 
 ### `my_notion_docs_search`
 

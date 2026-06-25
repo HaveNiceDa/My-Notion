@@ -18,6 +18,7 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 - The CLI package is `@mynotion/cli`.
 - The binary name is `my-notion` after installation, linking, or `npx`.
 - After npm release, users can run `npx @mynotion/cli@latest <command>` or install it globally with `npm install -g @mynotion/cli@latest`.
+- Install the standalone MCP server with `npm install -g @mynotion/mcp-server@latest` and start it with `my-notion-mcp-server --transport stdio`.
 - Install bundled Agent Skills with `npx skills add @mynotion/cli -y -g`. If the skills tool does not support npm package sources, use the repository URL or `my-notion install --skills` fallback.
 - Check first-run state with:
 
@@ -150,7 +151,7 @@ The CLI does not auto-update itself. Use this command to obtain machine-readable
 my-notion update --check --format json
 ```
 
-Agents should execute `npm install -g @mynotion/cli@latest` and `npx skills add @mynotion/cli -y -g` only after user confirmation.
+Agents should execute `npm install -g @mynotion/cli@latest`, `npm install -g @mynotion/mcp-server@latest`, and `npx skills add @mynotion/cli -y -g` only after user confirmation.
 
 ## Output Formats
 

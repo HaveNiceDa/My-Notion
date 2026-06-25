@@ -23,6 +23,7 @@
 13. `M25-agent-memory-inbox-confirmation.md`：Memory proposal、pending review、Inbox 和确认式提交链路。
 14. `M26-agent-memory-center-ui.md`：`/memories` 从 CRUD 列表升级为 Memory Center。
 15. `M27-agent-memory-eval-auto-extraction.md`：Memory eval、trace 观测和受控自动提取。
+16. `M28-independent-mcp-server.md`：MCP 从 CLI 内部子命令拆为独立发布产物，CLI/MCP 共享工具核心。
 16. `progress/20260527-20260531-consolidated.md`：近期 Web Agent、CLI/Skills/MCP、Device Flow 与 npm 发布的压缩过程记录。
 17. `progress/20260602-173825.md`：M19 Plan 模式最小闭环的过程记录。
 
@@ -41,6 +42,7 @@
 - M20 ✅ 已完成最小闭环：Web Agent 通过受控 My-Notion MCP adapter 调用白名单文档工具，并继续遵守确认式写入。
 - M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化、流式续跑可用闭环，以及 2026-06-07 的 AI 工具交互治理与 MCP ID 防护。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
+- M28 🚧 实施中：独立 `@mynotion/mcp-server` 与内部共享 `@mynotion/agent-tools`，保留 CLI 兼容入口。
 
 ## 下一批候选里程碑
 
@@ -69,6 +71,7 @@ pnpm ci:ai-smoke
 pnpm --filter @mynotion/cli test
 pnpm --filter @mynotion/cli typecheck
 pnpm --filter @mynotion/cli build
+pnpm --filter @mynotion/mcp-server build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp

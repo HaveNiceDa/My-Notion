@@ -23,6 +23,7 @@
 - `20260614-mobile-agent-stream-client.md`：Mobile Agent Stream 客户端阶段收口，覆盖 `/api/agent/stream` 接入、AI Chat 状态机 hook、停止生成和移动端 typecheck 修复。
 - `20260616-rag-adaptive-chunking.md`：RAG 自适应切分收口，覆盖 BlockNote 标题层级切分、语义边界合并、固定兜底和 Qdrant chunk metadata 扩展。
 - `20260621-mobile-current-document-context.md`：Mobile currentDocument 上下文收口，覆盖文档详情页 AI 入口、Agent Stream 当前文档透传和移动端验证脚本补齐。
+- `20260624-independent-mcp-server.md`：MCP 独立发布链路，覆盖内部 `@mynotion/agent-tools`、`@mynotion/mcp-server` 和 CLI 兼容入口。
 
 ## 阅读规则
 

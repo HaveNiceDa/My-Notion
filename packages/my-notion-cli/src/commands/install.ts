@@ -6,6 +6,8 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
+const MCP_PACKAGE_NAME = "@mynotion/mcp-server";
+const MCP_BINARY_NAME = "my-notion-mcp-server";
 const DEFAULT_TAG = "latest";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 
@@ -43,8 +45,10 @@ function buildInstallSummary() {
     skillsBundled: existsSync(skillsPath),
     commands: {
       installCli: `npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
+      installMcpServer: `npm install -g ${MCP_PACKAGE_NAME}@${DEFAULT_TAG}`,
       installSkills: SKILLS_INSTALL_COMMAND,
       runWithNpx: `npx ${PACKAGE_NAME}@${DEFAULT_TAG} --help`,
+      runMcpServer: `${MCP_BINARY_NAME} --transport stdio`,
       updateCli: `npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
       checkUpdate: `${BINARY_NAME} update --check --format json`,
       login: `${BINARY_NAME} auth login`,
@@ -52,6 +56,7 @@ function buildInstallSummary() {
     },
     nextSteps: [
       `Install the CLI: npm install -g ${PACKAGE_NAME}@${DEFAULT_TAG}`,
+      `Install the MCP server: npm install -g ${MCP_PACKAGE_NAME}@${DEFAULT_TAG}`,
       `Install Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
       `Check updates: ${BINARY_NAME} update --check --format json`,
       `Login with browser auth: ${BINARY_NAME} auth login`,
@@ -68,11 +73,13 @@ Skills:  ${summary.skillsBundled ? "bundled" : "not bundled in this build"}
 
 Recommended:
   ${summary.commands.installCli}
+  ${summary.commands.installMcpServer}
   ${summary.commands.installSkills}
   ${summary.commands.login}
 
 Agent mode:
   ${summary.commands.agentLogin}
+  ${summary.commands.runMcpServer}
 `);
 }
 

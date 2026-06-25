@@ -396,17 +396,24 @@ Typical output includes `isArchived: true`.
 Start the STDIO MCP server:
 
 ```bash
-my-notion mcp serve --transport stdio
+my-notion-mcp-server --transport stdio
 ```
 
 Development entry:
 
 ```bash
-pnpm --filter @mynotion/cli dev mcp serve --transport stdio
+pnpm --filter @mynotion/mcp-server dev --transport stdio
+```
+
+Compatibility entry:
+
+```bash
+my-notion mcp serve --transport stdio
 ```
 
 The first MCP version exposes:
 
+- `my_notion_readme`
 - `my_notion_docs_search`
 - `my_notion_docs_fetch`
 - `my_notion_docs_create`
