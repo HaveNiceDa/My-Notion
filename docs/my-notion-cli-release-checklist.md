@@ -1,16 +1,16 @@
 # My-Notion CLI / MCP Release Checklist
 
-本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。CLI 与 MCP 已拆分发布；独立 MCP 包的专项检查见 `docs/my-notion-mcp-server-release-checklist.md`。
+本清单用于发布或交付 CLI / Skills / MCP Agent 写文档能力前的最终检查。CLI 与 MCP 已拆分发布；独立 MCP 包的专项检查见 `docs/my-notion-mcp-release-checklist.md`。
 
 ## 适用范围
 
 - `packages/my-notion-cli`
 - `packages/my-notion-skills`
 - `packages/my-notion-agent-tools`
-- `packages/my-notion-mcp-server`
+- `packages/my-notion-mcp`
 - `.trae/skills`
 - `/cli/v1/*` Machine API
-- MCP STDIO server：`my-notion-mcp-server --transport stdio`
+- MCP STDIO server：`my-notion-mcp --transport stdio`
 
 ## 发布前命令
 
@@ -19,9 +19,9 @@
 ```bash
 pnpm --filter @mynotion/agent-tools test
 pnpm --filter @mynotion/agent-tools typecheck
-pnpm --filter @mynotion/mcp-server test
-pnpm --filter @mynotion/mcp-server typecheck
-pnpm --filter @mynotion/mcp-server build
+pnpm --filter @mynotion/mcp test
+pnpm --filter @mynotion/mcp typecheck
+pnpm --filter @mynotion/mcp build
 pnpm --filter @mynotion/cli test
 pnpm --filter @mynotion/cli typecheck
 pnpm --filter @mynotion/cli build

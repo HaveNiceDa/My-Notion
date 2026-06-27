@@ -504,9 +504,9 @@ importers:
 
   packages/my-notion-cli:
     dependencies:
-      '@mynotion/mcp-server':
-        specifier: workspace:^0.1.0
-        version: link:../my-notion-mcp-server
+      '@mynotion/mcp':
+        specifier: workspace:^0.1.2
+        version: link:../my-notion-mcp
       yaml:
         specifier: ^2.9.0
         version: 2.9.0
@@ -530,7 +530,7 @@ importers:
         specifier: ^4.1.5
         version: 4.1.5(@opentelemetry/api@1.9.1)(@types/node@20.19.39)(jsdom@0.2.19)(vite@8.0.10(@types/node@20.19.39)(esbuild@0.27.7)(jiti@1.21.7)(terser@5.46.1)(tsx@4.21.0)(yaml@2.9.0))
 
-  packages/my-notion-mcp-server:
+  packages/my-notion-mcp:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
@@ -21394,7 +21394,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.58.1(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@1.21.7)):
+  eslint-module-utils@2.12.1(@typescript-eslint/parser@8.58.1(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@1.21.7)))(eslint@9.39.4(jiti@1.21.7)):
     dependencies:
       debug: 3.2.7
     optionalDependencies:
@@ -21425,7 +21425,7 @@ snapshots:
       doctrine: 2.1.0
       eslint: 9.39.4(jiti@1.21.7)
       eslint-import-resolver-node: 0.3.10
-      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.58.1(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@1.21.7))
+      eslint-module-utils: 2.12.1(@typescript-eslint/parser@8.58.1(eslint@9.39.4(jiti@1.21.7))(typescript@5.9.3))(eslint-import-resolver-node@0.3.10)(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0)(eslint@9.39.4(jiti@1.21.7)))(eslint@9.39.4(jiti@1.21.7))
       hasown: 2.0.2
       is-core-module: 2.16.1
       is-glob: 4.0.3
@@ -22526,7 +22526,7 @@ snapshots:
       jsonwebtoken: 9.0.3
       load-esm: 1.0.3
       mime-types: 2.1.35
-      retry-axios: 2.6.0(axios@1.15.0)
+      retry-axios: 2.6.0(axios@1.15.0(debug@4.4.3))
       tough-cookie: 4.1.4
     transitivePeerDependencies:
       - supports-color
@@ -25162,7 +25162,7 @@ snapshots:
       onetime: 2.0.1
       signal-exit: 3.0.7
 
-  retry-axios@2.6.0(axios@1.15.0):
+  retry-axios@2.6.0(axios@1.15.0(debug@4.4.3)):
     dependencies:
       axios: 1.15.0(debug@4.4.3)
 

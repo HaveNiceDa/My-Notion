@@ -6,6 +6,14 @@ export type CliConfigV1 = {
 };
 
 export type AuthMethod = "legacy-token" | "device";
+export type ConfigValueSource =
+  | "flag"
+  | "profile-env"
+  | "env"
+  | "config"
+  | "default"
+  | "missing";
+export type RuntimeEnvironment = "prod" | "local" | "custom";
 
 export type CliProfileConfig = {
   apiUrl?: string;
@@ -28,6 +36,8 @@ export type CliConfig = CliConfigV1 | CliConfigV2;
 
 export type ResolvedProfile = {
   name: string;
+  environment: RuntimeEnvironment;
+  local: boolean;
   apiUrl: string;
   webUrl: string;
   token?: string;
@@ -35,6 +45,13 @@ export type ResolvedProfile = {
   scopes?: string[];
   expiresAt?: number | null;
   authMethod?: AuthMethod;
+  configPath: string;
+  sources: {
+    profile: ConfigValueSource;
+    apiUrl: ConfigValueSource;
+    webUrl: ConfigValueSource;
+    token: ConfigValueSource;
+  };
 };
 
 export type ParsedArgs = {

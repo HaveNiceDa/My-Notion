@@ -1,6 +1,6 @@
 {
   "name": "@mynotion/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent-native CLI and MCP adapter for My-Notion documents",
   "type": "module",
   "bin": {
@@ -24,7 +24,7 @@
     "clean": "rimraf dist",
     "dev": "tsx src/index.ts",
     "pack:dry-run": "pnpm publish --dry-run --no-git-checks",
-    "prebuild": "pnpm --filter @mynotion/mcp-server build",
+    "prebuild": "pnpm --filter @mynotion/mcp build",
     "prepack": "pnpm run sync:skills && pnpm run build",
     "release:beta": "pnpm publish --tag beta --access public",
     "release:latest": "pnpm publish --tag latest --access public",
@@ -56,7 +56,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@mynotion/mcp-server": "workspace:^0.1.0",
+    "@mynotion/mcp": "workspace:^0.1.2",
     "yaml": "^2.9.0",
     "zod": "^3.25.1"
   },

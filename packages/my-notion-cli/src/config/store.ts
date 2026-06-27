@@ -13,7 +13,9 @@ import type {
   CliConfig,
   CliConfigV2,
   CliProfileConfig,
+  ConfigValueSource,
   ResolvedProfile,
+  RuntimeEnvironment,
 } from "../types.js";
 
 export const DEFAULT_API_URL = "https://moonlit-ptarmigan-478.convex.site";
@@ -184,13 +186,23 @@ export function saveConfigV2(config: CliConfigV2, profileName = DEFAULT_PROFILE)
   saveConfig(config, profileName);
 }
 
+function resolveProfileNameWithSource(
+  options: Record<string, string | boolean>,
+): { name: string; source: ConfigValueSource } {
+  if (options.local === true) {
+    return { name: DEFAULT_LOCAL_PROFILE, source: "flag" };
+  }
+
+  const profileOption = readStringOption(options, "profile");
+  if (profileOption) {
+    return { name: profileOption, source: "flag" };
+  }
+
+  return { name: DEFAULT_PROFILE, source: "default" };
+}
+
 export function resolveProfileName(options: Record<string, string | boolean>) {
-  if (options.local === true) return DEFAULT_LOCAL_PROFILE;
-  return (
-    readStringOption(options, "profile") ??
-    process.env.MY_NOTION_PROFILE ??
-    DEFAULT_PROFILE
-  );
+  return resolveProfileNameWithSource(options).name;
 }
 
 export function getDefaultWebUrlForProfile(profile: string) {
@@ -201,36 +213,94 @@ export function getDefaultApiUrlForProfile(_profile: string) {
   return DEFAULT_API_URL;
 }
 
+function getProfileEnvName(profileName: string, suffix: string) {
+  return `MY_NOTION_${profileName.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_${suffix}`;
+}
+
+function readEnvForProfile(profileName: string, suffix: string, fallbackName: string) {
+  const profileEnvName = getProfileEnvName(profileName, suffix);
+  const profileValue = process.env[profileEnvName];
+  if (profileValue) {
+    return { value: profileValue, source: "profile-env" as const };
+  }
+
+  const fallbackValue = process.env[fallbackName];
+  if (fallbackValue) {
+    return { value: fallbackValue, source: "env" as const };
+  }
+
+  return undefined;
+}
+
+function resolveStringSetting(input: {
+  optionValue?: string;
+  envValue?: { value: string; source: ConfigValueSource };
+  configValue?: string;
+  defaultValue?: string;
+}) {
+  if (input.optionValue) {
+    return { value: input.optionValue, source: "flag" as const };
+  }
+  if (input.envValue) {
+    return input.envValue;
+  }
+  if (input.configValue) {
+    return { value: input.configValue, source: "config" as const };
+  }
+  if (input.defaultValue) {
+    return { value: input.defaultValue, source: "default" as const };
+  }
+  return { value: undefined, source: "missing" as const };
+}
+
+function getRuntimeEnvironment(profileName: string): RuntimeEnvironment {
+  if (profileName === DEFAULT_LOCAL_PROFILE) return "local";
+  if (profileName === DEFAULT_PROFILE) return "prod";
+  return "custom";
+}
+
 export function resolveProfile(
   options: Record<string, string | boolean>,
 ): ResolvedProfile {
-  const name = resolveProfileName(options);
+  const { name, source: profileSource } = resolveProfileNameWithSource(options);
   const config = loadConfigV2(name);
   const saved = config.profiles[name] ?? {};
-  const apiUrl =
-    readStringOption(options, "api-url") ??
-    process.env.MY_NOTION_API_URL ??
-    saved.apiUrl ??
-    getDefaultApiUrlForProfile(name);
-  const webUrl =
-    readStringOption(options, "web-url") ??
-    process.env.MY_NOTION_WEB_URL ??
-    saved.webUrl ??
-    getDefaultWebUrlForProfile(name);
-  const token =
-    readStringOption(options, "token") ??
-    process.env.MY_NOTION_API_TOKEN ??
-    saved.token;
+  const apiUrl = resolveStringSetting({
+    optionValue: readStringOption(options, "api-url"),
+    envValue: readEnvForProfile(name, "API_URL", "MY_NOTION_API_URL"),
+    configValue: saved.apiUrl,
+    defaultValue: getDefaultApiUrlForProfile(name),
+  });
+  const webUrl = resolveStringSetting({
+    optionValue: readStringOption(options, "web-url"),
+    envValue: readEnvForProfile(name, "WEB_URL", "MY_NOTION_WEB_URL"),
+    configValue: saved.webUrl,
+    defaultValue: getDefaultWebUrlForProfile(name),
+  });
+  const token = resolveStringSetting({
+    optionValue: readStringOption(options, "token"),
+    envValue: readEnvForProfile(name, "API_TOKEN", "MY_NOTION_API_TOKEN"),
+    configValue: saved.token,
+  });
 
   return {
     name,
-    apiUrl: normalizeApiUrl(apiUrl),
-    webUrl: normalizeWebUrl(webUrl),
-    token,
+    environment: getRuntimeEnvironment(name),
+    local: name === DEFAULT_LOCAL_PROFILE,
+    apiUrl: normalizeApiUrl(apiUrl.value ?? getDefaultApiUrlForProfile(name)),
+    webUrl: normalizeWebUrl(webUrl.value ?? getDefaultWebUrlForProfile(name)),
+    token: token.value,
     tokenPrefix: saved.tokenPrefix,
     scopes: saved.scopes,
     expiresAt: saved.expiresAt,
     authMethod: saved.authMethod,
+    configPath: getConfigPath(name),
+    sources: {
+      profile: profileSource,
+      apiUrl: apiUrl.source,
+      webUrl: webUrl.source,
+      token: token.source,
+    },
   };
 }
 

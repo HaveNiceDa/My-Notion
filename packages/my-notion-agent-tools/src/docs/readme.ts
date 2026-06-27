@@ -1,10 +1,26 @@
 import { myNotionToolManifest } from "./manifest.js";
+import { resolveProfile, type ResolveOptions } from "../config/resolve.js";
 import { toToolResult } from "../results/tool-result.js";
 
-export function buildMyNotionReadmeMarkdown() {
+function buildProfileCommand(command: string, profileName: string) {
+  if (profileName === "local") {
+    return `${command} --local`;
+  }
+  if (profileName !== "prod") {
+    return `${command} --profile ${profileName}`;
+  }
+  return command;
+}
+
+export function buildMyNotionReadmeMarkdown(options: ResolveOptions = {}) {
+  const profile = resolveProfile(options);
   const tools = myNotionToolManifest
     .map((tool) => `- \`${tool.name}\`: ${tool.description} 安全策略：${tool.safety}`)
     .join("\n");
+  const mcpCommand = buildProfileCommand("my-notion-mcp --transport stdio", profile.name);
+  const legacyMcpCommand = buildProfileCommand("my-notion mcp serve --transport stdio", profile.name);
+  const statusCommand = buildProfileCommand("my-notion auth status", profile.name);
+  const loginCommand = buildProfileCommand("my-notion auth login", profile.name);
 
   return [
     "# My-Notion MCP Server",
@@ -14,13 +30,13 @@ export function buildMyNotionReadmeMarkdown() {
     "## 启动方式",
     "",
     "```bash",
-    "my-notion-mcp-server --transport stdio",
+    mcpCommand,
     "```",
     "",
     "兼容入口仍可用：",
     "",
     "```bash",
-    "my-notion mcp serve --transport stdio",
+    legacyMcpCommand,
     "```",
     "",
     "## 认证",
@@ -28,6 +44,18 @@ export function buildMyNotionReadmeMarkdown() {
     "- 推荐先运行 `my-notion auth login` 完成浏览器授权。",
     "- MCP server 从 CLI config 或 `MY_NOTION_API_TOKEN` / `MY_NOTION_API_URL` 读取凭据。",
     "- 不要把完整 PAT 作为 tool 参数传入，也不要写入文档、日志或聊天。",
+    "",
+    "## 当前运行环境",
+    "",
+    `- Profile: \`${profile.name}\` (${profile.environment})`,
+    `- API URL: \`${profile.apiUrl}\`，来源：\`${profile.sources.apiUrl}\``,
+    `- Web URL: \`${profile.webUrl}\`，来源：\`${profile.sources.webUrl}\``,
+    `- Token configured: \`${Boolean(profile.token)}\`，来源：\`${profile.sources.token}\``,
+    `- Config path: \`${profile.configPath}\``,
+    `- 校验命令：\`${statusCommand} --format json\``,
+    `- 登录命令：\`${loginCommand}\``,
+    "",
+    "如果 token 来源是 `env`，说明泛用环境变量覆盖了保存的 profile；需要区分线上/线下时优先使用 `--local`、`--profile` 或 `MY_NOTION_<PROFILE>_API_TOKEN`。",
     "",
     "## 内容格式",
     "",
@@ -57,8 +85,9 @@ export function buildMyNotionReadmeMarkdown() {
   ].join("\n");
 }
 
-export function readmeTool() {
-  const markdown = buildMyNotionReadmeMarkdown();
+export function readmeTool(options: ResolveOptions = {}) {
+  const profile = resolveProfile(options);
+  const markdown = buildMyNotionReadmeMarkdown(options);
   return toToolResult({
     markdown,
     tools: myNotionToolManifest,
@@ -66,6 +95,7 @@ export function readmeTool() {
     auth: {
       preferred: "my-notion auth login",
       envFallbacks: ["MY_NOTION_API_URL", "MY_NOTION_API_TOKEN"],
+      profile,
     },
     contentContract: {
       editableFormat: "markdown",

@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+import { realpathSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { runMyNotionMcpStdioServer } from "./server.js";
 
 function parseArgs(argv: string[]) {
@@ -28,7 +30,7 @@ function printHelp() {
   console.log(`My-Notion MCP Server
 
 Usage:
-  my-notion-mcp-server --transport stdio
+  my-notion-mcp --transport stdio
 
 Options:
   --transport stdio    Start the MCP server over STDIO
@@ -39,7 +41,7 @@ Options:
 
 Recommended setup:
   my-notion auth login
-  my-notion-mcp-server --transport stdio
+  my-notion-mcp --transport stdio
 `);
 }
 
@@ -49,7 +51,17 @@ export {
 } from "./server.js";
 export { registerMyNotionTools } from "./register-tools.js";
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+function isDirectCliEntry() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return realpathSync(entry) === realpathSync(fileURLToPath(import.meta.url));
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectCliEntry()) {
   const options = parseArgs(process.argv.slice(2));
   if (options.help || options.h) {
     printHelp();

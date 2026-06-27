@@ -9,7 +9,7 @@
 ## 目标
 
 - 新增内部 `@mynotion/agent-tools`，承载 Machine API client、文档工具 dry-run 逻辑和工具 manifest；该包不单独发布到 npm。
-- 新增 `@mynotion/mcp-server`，提供独立 `my-notion-mcp-server --transport stdio`。
+- 新增 `@mynotion/mcp`，提供独立 `my-notion-mcp --transport stdio`。
 - 保留 `my-notion mcp serve --transport stdio` 兼容入口。
 - 新增 `my_notion_readme`，让 Agent 先通过工具了解调用方式、安全规则和 Markdown 契约。
 
@@ -24,7 +24,7 @@
 
 ```bash
 pnpm --filter @mynotion/agent-tools test
-pnpm --filter @mynotion/mcp-server test
+pnpm --filter @mynotion/mcp test
 pnpm --filter @mynotion/cli test
 pnpm e2e:mcp
 pnpm e2e:mcp:client

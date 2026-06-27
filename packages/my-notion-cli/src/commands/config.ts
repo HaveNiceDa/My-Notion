@@ -4,12 +4,8 @@ import { fileURLToPath } from "node:url";
 import {
   DEFAULT_LOCAL_PROFILE,
   getConfigPath,
-  getDefaultApiUrlForProfile,
-  getDefaultWebUrlForProfile,
   loadConfigV2,
-  normalizeApiUrl,
-  normalizeWebUrl,
-  readStringOption,
+  resolveProfile,
   resolveProfileName,
   saveProfileConfig,
 } from "../config/store.js";
@@ -18,8 +14,8 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
-const MCP_PACKAGE_NAME = "@mynotion/mcp-server";
-const MCP_BINARY_NAME = "my-notion-mcp-server";
+const MCP_PACKAGE_NAME = "@mynotion/mcp";
+const MCP_BINARY_NAME = "my-notion-mcp";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 const MCP_INSTALL_COMMAND = `npm install -g ${MCP_PACKAGE_NAME}@latest`;
 const REQUIRED_NODE_MAJOR = 20;
@@ -74,27 +70,56 @@ function buildLoginCommand(input: {
   return parts.join(" ");
 }
 
+function buildStatusCommand(profileName: string) {
+  const parts = [`${BINARY_NAME} auth status`];
+  appendProfileArgs(parts, profileName);
+  parts.push("--format", "json");
+  return parts.join(" ");
+}
+
+function appendProfileArgs(parts: string[], profileName: string) {
+  if (profileName === DEFAULT_LOCAL_PROFILE) {
+    parts.push("--local");
+  } else if (profileName !== "prod") {
+    parts.push("--profile", profileName);
+  }
+}
+
+function buildCreateDocCommand(profileName: string) {
+  const parts = [
+    BINARY_NAME,
+    "docs",
+    "create",
+    "--title",
+    '"Agent Doc"',
+    "--content-file",
+    "./draft.md",
+  ];
+  appendProfileArgs(parts, profileName);
+  parts.push("--format", "json");
+  return parts.join(" ");
+}
+
+function buildMcpServeCommand(profileName: string) {
+  const parts = [MCP_BINARY_NAME, "--transport", "stdio"];
+  appendProfileArgs(parts, profileName);
+  return parts.join(" ");
+}
+
+function buildLegacyMcpServeCommand(profileName: string) {
+  const parts = [BINARY_NAME, "mcp", "serve", "--transport", "stdio"];
+  appendProfileArgs(parts, profileName);
+  return parts.join(" ");
+}
+
 function buildConfigInitSummary(args: ParsedArgs) {
   const profileName = resolveProfileName(args.options);
+  const resolvedProfile = resolveProfile(args.options);
   const savedConfig = loadConfigV2(profileName);
   const savedProfile = savedConfig.profiles[profileName] ?? {};
-  const apiUrl = normalizeApiUrl(
-    readStringOption(args.options, "api-url") ??
-      process.env.MY_NOTION_API_URL ??
-      savedProfile.apiUrl ??
-      getDefaultApiUrlForProfile(profileName),
-  );
-  const webUrl = normalizeWebUrl(
-    readStringOption(args.options, "web-url") ??
-      process.env.MY_NOTION_WEB_URL ??
-      savedProfile.webUrl ??
-      getDefaultWebUrlForProfile(profileName),
-  );
-  const tokenConfigured = Boolean(
-    readStringOption(args.options, "token") ??
-      process.env.MY_NOTION_API_TOKEN ??
-      savedProfile.token,
-  );
+  const apiUrl = resolvedProfile.apiUrl;
+  const webUrl = resolvedProfile.webUrl;
+  const tokenConfigured = Boolean(resolvedProfile.token);
   const shouldWrite = args.options.check !== true && args.options["dry-run"] !== true;
   const profile = shouldWrite
     ? saveProfileConfig({ profileName, apiUrl, webUrl })
@@ -114,11 +139,14 @@ function buildConfigInitSummary(args: ParsedArgs) {
     version: packageInfo.version ?? "0.0.0",
     profile: {
       name: profileName,
-      local: profileName === DEFAULT_LOCAL_PROFILE,
+      environment: resolvedProfile.environment,
+      local: resolvedProfile.local,
       apiUrl,
       webUrl,
       authMethod: profile.authMethod,
       tokenConfigured,
+      tokenSource: resolvedProfile.sources.token,
+      sources: resolvedProfile.sources,
       configPath: getConfigPath(profileName),
     },
     checks: {
@@ -144,8 +172,8 @@ function buildConfigInitSummary(args: ParsedArgs) {
       mcp: {
         ok: true,
         packageName: MCP_PACKAGE_NAME,
-        command: `${MCP_BINARY_NAME} --transport stdio`,
-        legacyCommand: `${BINARY_NAME} mcp serve --transport stdio`,
+        command: buildMcpServeCommand(profileName),
+        legacyCommand: buildLegacyMcpServeCommand(profileName),
         installCommand: MCP_INSTALL_COMMAND,
       },
     },
@@ -154,17 +182,17 @@ function buildConfigInitSummary(args: ParsedArgs) {
       agentLogin,
       installSkills: SKILLS_INSTALL_COMMAND,
       installMcpServer: MCP_INSTALL_COMMAND,
-      mcpServe: `${MCP_BINARY_NAME} --transport stdio`,
-      legacyMcpServe: `${BINARY_NAME} mcp serve --transport stdio`,
-      checkStatus: `${BINARY_NAME} auth status --format json`,
-      createDoc: `${BINARY_NAME} docs create --title "Agent Doc" --content-file ./draft.md --format json`,
+      mcpServe: buildMcpServeCommand(profileName),
+      legacyMcpServe: buildLegacyMcpServeCommand(profileName),
+      checkStatus: buildStatusCommand(profileName),
+      createDoc: buildCreateDocCommand(profileName),
     },
     nextSteps: tokenConfigured
       ? [
-          `Verify auth: ${BINARY_NAME} auth status --format json`,
+          `Verify auth: ${buildStatusCommand(profileName)}`,
           `Install Agent Skills: ${SKILLS_INSTALL_COMMAND}`,
           `Install MCP server: ${MCP_INSTALL_COMMAND}`,
-          `Start MCP server: ${MCP_BINARY_NAME} --transport stdio`,
+          `Start MCP server: ${buildMcpServeCommand(profileName)}`,
         ]
       : [
           `Login with browser auth: ${authLogin}`,

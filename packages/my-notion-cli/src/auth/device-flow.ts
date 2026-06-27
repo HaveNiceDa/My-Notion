@@ -126,8 +126,10 @@ function printDeviceLoginPrompt(input: {
   console.log(`My-Notion CLI browser login
 
 Profile: ${input.profile.name}
+Environment: ${input.profile.environment}
 Web URL: ${input.profile.webUrl}
 API URL: ${input.profile.apiUrl}
+Config path: ${input.profile.configPath}
 
 Open this authorization URL:
 ${input.authorization.verificationUriComplete}
@@ -157,9 +159,14 @@ export async function runDeviceLogin(args: ParsedArgs) {
   }
 
   if (args.options["no-wait"] === true) {
+    const resumeProfileArgs = profile.local
+      ? "--local"
+      : profile.name === "prod"
+        ? ""
+        : `--profile ${profile.name}`;
     console.log(
       [
-        `Device login started. Resume polling with: my-notion auth login --profile ${profile.name} --device-code <device-code>`,
+        `Device login started. Resume polling with: my-notion auth login ${resumeProfileArgs} --device-code <device-code>`.replace(/\s+/g, " "),
         "The device code is a sensitive temporary credential; do not paste it into chats or logs.",
       ].join("\n"),
     );
@@ -167,6 +174,7 @@ export async function runDeviceLogin(args: ParsedArgs) {
       authenticated: false,
       pending: true,
       profile: profile.name,
+        environment: profile.environment,
       deviceCode,
       verificationUriComplete: authorization?.verificationUriComplete,
     };
@@ -199,8 +207,10 @@ export async function runDeviceLogin(args: ParsedArgs) {
       return {
         authenticated: true,
         profile: profile.name,
+        environment: profile.environment,
         apiUrl: profile.apiUrl,
         webUrl: profile.webUrl,
+        configPath: profile.configPath,
         tokenPrefix: result.tokenPrefix,
         scopes: result.scopes,
         expiresAt: result.expiresAt,

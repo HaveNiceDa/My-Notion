@@ -63,7 +63,9 @@ async function login(args: ParsedArgs) {
       webUrl: profile.webUrl,
       tokenPrefix: status.tokenPrefix,
       scopes: status.scopes,
-      configPath: getConfigPath(),
+      configPath: getConfigPath(profile.name),
+      environment: profile.environment,
+      sources: profile.sources,
     },
     getOutputFormat(args.options, "pretty"),
   );
@@ -72,8 +74,12 @@ async function login(args: ParsedArgs) {
 async function status(args: ParsedArgs) {
   const profile = resolveProfile(args.options);
   if (!profile.token) {
+    const loginCommand =
+      profile.local
+        ? "my-notion auth login --local"
+        : `my-notion auth login --profile ${profile.name}`;
     throw new Error(
-      `Profile "${profile.name}" is not authenticated. Run \`my-notion auth login --profile ${profile.name}\`.`,
+      `Profile "${profile.name}" is not authenticated. Run \`${loginCommand}\`.`,
     );
   }
 
@@ -91,7 +97,10 @@ async function status(args: ParsedArgs) {
       token: showToken ? profile.token : undefined,
       scopes: status.scopes,
       expiresAt: status.expiresAt,
-      configPath: getConfigPath(),
+      configPath: getConfigPath(profile.name),
+      environment: profile.environment,
+      local: profile.local,
+      sources: profile.sources,
     },
     getOutputFormat(args.options, "pretty"),
   );
@@ -107,7 +116,7 @@ async function logout(args: ParsedArgs) {
       apiUrl: result.profile.apiUrl,
       webUrl: result.profile.webUrl,
       hasToken: Boolean(result.profile.token),
-      configPath: getConfigPath(),
+      configPath: getConfigPath(result.profileName),
     },
     getOutputFormat(args.options, "pretty"),
   );

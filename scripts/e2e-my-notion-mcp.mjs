@@ -9,7 +9,7 @@ import { once } from "node:events";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
-const mcpEntry = join(root, "packages/my-notion-mcp-server/dist/index.js");
+const mcpEntry = join(root, "packages/my-notion-mcp/dist/index.js");
 
 setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
@@ -350,7 +350,7 @@ async function main() {
 
     const readme = await callTool(client, "my_notion_readme", {});
     assert(
-      typeof readme.markdown === "string" && readme.markdown.includes("my-notion-mcp-server"),
+      typeof readme.markdown === "string" && readme.markdown.includes("my-notion-mcp"),
       "MCP readme did not return standalone server guidance",
     );
 

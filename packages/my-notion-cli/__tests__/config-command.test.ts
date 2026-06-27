@@ -64,8 +64,8 @@ describe("runConfigCommand", () => {
           login: "my-notion auth login",
           agentLogin: "my-notion auth login --no-open",
           installSkills: "npx skills add @mynotion/cli -y -g",
-          installMcpServer: "npm install -g @mynotion/mcp-server@latest",
-          mcpServe: "my-notion-mcp-server --transport stdio",
+          installMcpServer: "npm install -g @mynotion/mcp@latest",
+          mcpServe: "my-notion-mcp --transport stdio",
           legacyMcpServe: "my-notion mcp serve --transport stdio",
         }),
       }),
@@ -126,14 +126,25 @@ describe("runConfigCommand", () => {
         initialized: false,
         profile: expect.objectContaining({
           name: "local",
+          environment: "local",
           apiUrl: "https://dev.convex.site",
           webUrl: "http://localhost:3000",
+          sources: expect.objectContaining({
+            apiUrl: "flag",
+            webUrl: "flag",
+            token: "missing",
+          }),
         }),
         commands: expect.objectContaining({
           login:
             "my-notion auth login --local --web-url http://localhost:3000 --api-url https://dev.convex.site",
           agentLogin:
             "my-notion auth login --no-open --local --web-url http://localhost:3000 --api-url https://dev.convex.site",
+          checkStatus: "my-notion auth status --local --format json",
+          mcpServe: "my-notion-mcp --transport stdio --local",
+          legacyMcpServe: "my-notion mcp serve --transport stdio --local",
+          createDoc:
+            'my-notion docs create --title "Agent Doc" --content-file ./draft.md --local --format json',
         }),
       }),
       "json",

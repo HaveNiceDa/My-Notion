@@ -42,7 +42,7 @@
 - M20 ✅ 已完成最小闭环：Web Agent 通过受控 My-Notion MCP adapter 调用白名单文档工具，并继续遵守确认式写入。
 - M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化、流式续跑可用闭环，以及 2026-06-07 的 AI 工具交互治理与 MCP ID 防护。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
-- M28 🚧 实施中：独立 `@mynotion/mcp-server` 与内部共享 `@mynotion/agent-tools`，保留 CLI 兼容入口。
+- M28 🚧 实施中：独立 `@mynotion/mcp` 与内部共享 `@mynotion/agent-tools`，保留 CLI 兼容入口。
 
 ## 下一批候选里程碑
 
@@ -71,7 +71,7 @@ pnpm ci:ai-smoke
 pnpm --filter @mynotion/cli test
 pnpm --filter @mynotion/cli typecheck
 pnpm --filter @mynotion/cli build
-pnpm --filter @mynotion/mcp-server build
+pnpm --filter @mynotion/mcp build
 pnpm e2e:cli
 pnpm e2e:cli:errors
 pnpm e2e:mcp

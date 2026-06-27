@@ -6,8 +6,8 @@ import type { ParsedArgs } from "../types.js";
 
 const PACKAGE_NAME = "@mynotion/cli";
 const BINARY_NAME = "my-notion";
-const MCP_PACKAGE_NAME = "@mynotion/mcp-server";
-const MCP_BINARY_NAME = "my-notion-mcp-server";
+const MCP_PACKAGE_NAME = "@mynotion/mcp";
+const MCP_BINARY_NAME = "my-notion-mcp";
 const DEFAULT_TAG = "latest";
 const SKILLS_INSTALL_COMMAND = "npx skills add @mynotion/cli -y -g";
 const NPM_REGISTRY_URL = "https://registry.npmjs.org";

@@ -1,11 +1,11 @@
-# @mynotion/mcp-server
+# @mynotion/mcp
 
 独立发布的 My-Notion MCP STDIO server。它面向支持 MCP 的 Agent / Client 暴露 My-Notion 文档工具，底层复用仓库内部 `@mynotion/agent-tools` 工具契约；`agent-tools` 会随本包打包，不单独发布。
 
 ## Install
 
 ```bash
-npm install -g @mynotion/mcp-server@latest
+npm install -g @mynotion/mcp@latest
 ```
 
 需要先用 CLI 完成授权：
@@ -18,7 +18,7 @@ my-notion auth login
 ## Start
 
 ```bash
-my-notion-mcp-server --transport stdio
+my-notion-mcp --transport stdio
 ```
 
 MCP Client 配置示例：
@@ -27,7 +27,7 @@ MCP Client 配置示例：
 {
   "mcpServers": {
     "my-notion": {
-      "command": "my-notion-mcp-server",
+      "command": "my-notion-mcp",
       "args": ["--transport", "stdio"]
     }
   }

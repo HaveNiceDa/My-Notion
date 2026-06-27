@@ -1,6 +1,6 @@
 # My-Notion Skills
 
-My-Notion Skills 是给 AI Agent 的操作手册，不是业务代码。它们约束 Agent 如何安装、认证和调用 `my-notion` CLI / `my-notion-mcp-server`，目标是用最少用户可见输出完成安全的文档读写。
+My-Notion Skills 是给 AI Agent 的操作手册，不是业务代码。它们约束 Agent 如何安装、认证和调用 `my-notion` CLI / `my-notion-mcp`，目标是用最少用户可见输出完成安全的文档读写。
 
 [Skills](#skills) · [安装](#安装) · [Agent 流程](#agent-流程) · [输出规则](#输出规则) · [同步](#sync) · [安全](#safety)
 

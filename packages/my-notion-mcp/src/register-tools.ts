@@ -3,8 +3,7 @@ import {
   createDocumentTool,
   fetchDocumentTool,
   readmeTool,
-  resolveApiUrl,
-  resolveToken,
+  resolveProfile,
   searchDocumentsTool,
   toErrorToolResult,
   updateDocumentTool,
@@ -18,10 +17,19 @@ export type McpServerOptions = {
 };
 
 function createContext(options: Record<string, string | boolean> = {}) {
+  const profile = resolveProfile(options);
+  if (!profile.token) {
+    throw new Error(
+      `Profile "${profile.name}" is not authenticated. Run \`${
+        profile.local ? "my-notion auth login --local" : "my-notion auth login"
+      }\`.`,
+    );
+  }
+
   return {
     client: new MyNotionClient({
-      apiUrl: resolveApiUrl(options),
-      token: resolveToken(options),
+      apiUrl: profile.apiUrl,
+      token: profile.token,
     }),
   };
 }
@@ -54,7 +62,7 @@ export function registerMyNotionTools(
         readOnlyHint: true,
       },
     },
-    async () => toMcpToolResult(readmeTool()),
+    async () => toMcpToolResult(readmeTool(options)),
   );
 
   // 只读工具必须无副作用，MCP 客户端可以在无需用户确认时安全调用。

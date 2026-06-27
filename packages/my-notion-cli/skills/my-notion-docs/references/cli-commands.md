@@ -396,13 +396,13 @@ Typical output includes `isArchived: true`.
 Start the STDIO MCP server:
 
 ```bash
-my-notion-mcp-server --transport stdio
+my-notion-mcp --transport stdio
 ```
 
 Development entry:
 
 ```bash
-pnpm --filter @mynotion/mcp-server dev --transport stdio
+pnpm --filter @mynotion/mcp dev --transport stdio
 ```
 
 Compatibility entry:

@@ -9,8 +9,8 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 
 ## Prerequisites
 
-- The `my-notion-mcp-server` binary must be installed, linked, or run from the monorepo.
-- npm latest install: `npm install -g @mynotion/mcp-server@latest`; CLI auth install: `npm install -g @mynotion/cli@latest`; Agent Skills install: `npx skills add @mynotion/cli -y -g`.
+- The `my-notion-mcp` binary must be installed, linked, or run from the monorepo.
+- npm latest install: `npm install -g @mynotion/mcp@latest`; CLI auth install: `npm install -g @mynotion/cli@latest`; Agent Skills install: `npx skills add @mynotion/cli -y -g`.
 - Authentication must already be configured by browser-based `my-notion auth login`; `MY_NOTION_API_TOKEN` is a legacy/CI fallback. `MY_NOTION_API_URL` is optional for the default online deployment.
 - In Agent mode, run `my-notion auth login --no-open`, send the printed authorization URL as a clickable Markdown link, then retry after approval.
 - Do not pass full PAT values through MCP tool arguments. The MCP server reads credentials from CLI config or environment variables.
@@ -28,20 +28,20 @@ Use this skill when an Agent or MCP-capable client needs direct tool access to M
 Development entry:
 
 ```bash
-pnpm --filter @mynotion/mcp-server dev --transport stdio
+pnpm --filter @mynotion/mcp dev --transport stdio
 ```
 
 Built entry:
 
 ```bash
-pnpm --filter @mynotion/mcp-server build
-node packages/my-notion-mcp-server/dist/index.js --transport stdio
+pnpm --filter @mynotion/mcp build
+node packages/my-notion-mcp/dist/index.js --transport stdio
 ```
 
 Installed binary:
 
 ```bash
-my-notion-mcp-server --transport stdio
+my-notion-mcp --transport stdio
 ```
 
 Compatibility entry:
@@ -76,7 +76,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const client = new Client({ name: "my-agent", version: "0.1.0" });
 const transport = new StdioClientTransport({
-  command: "my-notion-mcp-server",
+  command: "my-notion-mcp",
   args: ["--transport", "stdio"],
 });
 

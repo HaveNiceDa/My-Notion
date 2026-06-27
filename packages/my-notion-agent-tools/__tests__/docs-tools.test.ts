@@ -46,6 +46,41 @@ describe("@mynotion/agent-tools docs tools", () => {
     expect(result.content[0]?.text).toContain("dryRun: true");
   });
 
+  it("readme exposes the selected profile so MCP clients do not guess auth state", () => {
+    const result = readmeTool({ local: true });
+
+    expect(result.structuredContent.auth).toMatchObject({
+      profile: expect.objectContaining({
+        name: "local",
+        environment: "local",
+      }),
+    });
+    expect(result.content[0]?.text).toContain("my-notion-mcp --transport stdio --local");
+    expect(result.content[0]?.text).toContain("Token configured");
+  });
+
+  it("readme defaults to prod even when MY_NOTION_PROFILE points at local", () => {
+    const previousProfile = process.env.MY_NOTION_PROFILE;
+    process.env.MY_NOTION_PROFILE = "local";
+
+    try {
+      const result = readmeTool();
+
+      expect(result.structuredContent.auth).toMatchObject({
+        profile: expect.objectContaining({
+          name: "prod",
+          environment: "prod",
+        }),
+      });
+    } finally {
+      if (previousProfile === undefined) {
+        delete process.env.MY_NOTION_PROFILE;
+      } else {
+        process.env.MY_NOTION_PROFILE = previousProfile;
+      }
+    }
+  });
+
   it("search 调用 client 并返回文档列表", async () => {
     const context = createContext();
     const result = await searchDocumentsTool({ query: "roadmap", limit: 99 }, context);

@@ -3,15 +3,21 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const DEFAULT_API_URL = "https://moonlit-ptarmigan-478.convex.site";
+export const DEFAULT_WEB_URL = "https://notion-j9zj.vercel.app";
 export const DEFAULT_PROFILE = "prod";
 export const DEFAULT_LOCAL_PROFILE = "local";
+export const DEFAULT_LOCAL_WEB_URL = "http://localhost:3000";
 
 const DEFAULT_CONFIG_FILE = "config.json";
 const LOCAL_CONFIG_FILE = "config.local.json";
 
 type CliProfileConfig = {
   apiUrl?: string;
+  webUrl?: string;
   token?: string;
+  tokenPrefix?: string;
+  authMethod?: string;
+  expiresAt?: number | null;
 };
 
 type CliConfigV1 = {
@@ -25,6 +31,32 @@ type CliConfigV2 = {
 };
 
 export type ResolveOptions = Record<string, string | boolean>;
+export type ConfigValueSource =
+  | "flag"
+  | "profile-env"
+  | "env"
+  | "config"
+  | "default"
+  | "missing";
+export type RuntimeEnvironment = "prod" | "local" | "custom";
+export type ResolvedMyNotionProfile = {
+  name: string;
+  environment: RuntimeEnvironment;
+  local: boolean;
+  apiUrl: string;
+  webUrl: string;
+  token?: string;
+  tokenPrefix?: string;
+  authMethod?: string;
+  expiresAt?: number | null;
+  configPath: string;
+  sources: {
+    profile: ConfigValueSource;
+    apiUrl: ConfigValueSource;
+    webUrl: ConfigValueSource;
+    token: ConfigValueSource;
+  };
+};
 
 export function readStringOption(options: ResolveOptions, name: string) {
   const value = options[name];
@@ -36,12 +68,20 @@ export function normalizeApiUrl(value: string) {
 }
 
 export function resolveProfileName(options: ResolveOptions = {}) {
-  if (options.local === true) return DEFAULT_LOCAL_PROFILE;
-  return (
-    readStringOption(options, "profile") ??
-    process.env.MY_NOTION_PROFILE ??
-    DEFAULT_PROFILE
-  );
+  return resolveProfileNameWithSource(options).name;
+}
+
+function resolveProfileNameWithSource(options: ResolveOptions = {}) {
+  if (options.local === true) {
+    return { name: DEFAULT_LOCAL_PROFILE, source: "flag" as const };
+  }
+
+  const profileOption = readStringOption(options, "profile");
+  if (profileOption) {
+    return { name: profileOption, source: "flag" as const };
+  }
+
+  return { name: DEFAULT_PROFILE, source: "default" as const };
 }
 
 function configFileForProfile(profileName: string) {
@@ -67,40 +107,117 @@ function isConfigV2(config: CliConfigV1 | CliConfigV2): config is CliConfigV2 {
   return (config as CliConfigV2).version === 2 && "profiles" in config;
 }
 
-export function resolveApiUrl(options: ResolveOptions = {}) {
-  const profileName = resolveProfileName(options);
-  const config = loadConfig(profileName);
-  const saved = isConfigV2(config) ? config.profiles[profileName] : config;
-  const apiUrl =
-    readStringOption(options, "api-url") ??
-    process.env.MY_NOTION_API_URL ??
-    saved?.apiUrl ??
-    DEFAULT_API_URL;
+function getDefaultWebUrlForProfile(profileName: string) {
+  return profileName === DEFAULT_LOCAL_PROFILE ? DEFAULT_LOCAL_WEB_URL : DEFAULT_WEB_URL;
+}
 
-  return normalizeApiUrl(apiUrl);
+function getRuntimeEnvironment(profileName: string): RuntimeEnvironment {
+  if (profileName === DEFAULT_LOCAL_PROFILE) return "local";
+  if (profileName === DEFAULT_PROFILE) return "prod";
+  return "custom";
+}
+
+function getProfileEnvName(profileName: string, suffix: string) {
+  return `MY_NOTION_${profileName.toUpperCase().replace(/[^A-Z0-9]+/g, "_")}_${suffix}`;
+}
+
+function readEnvForProfile(profileName: string, suffix: string, fallbackName: string) {
+  const profileValue = process.env[getProfileEnvName(profileName, suffix)];
+  if (profileValue) {
+    return { value: profileValue, source: "profile-env" as const };
+  }
+
+  const fallbackValue = process.env[fallbackName];
+  if (fallbackValue) {
+    return { value: fallbackValue, source: "env" as const };
+  }
+
+  return undefined;
+}
+
+function resolveStringSetting(input: {
+  optionValue?: string;
+  envValue?: { value: string; source: ConfigValueSource };
+  configValue?: string;
+  defaultValue?: string;
+}) {
+  if (input.optionValue) return { value: input.optionValue, source: "flag" as const };
+  if (input.envValue) return input.envValue;
+  if (input.configValue) return { value: input.configValue, source: "config" as const };
+  if (input.defaultValue) return { value: input.defaultValue, source: "default" as const };
+  return { value: undefined, source: "missing" as const };
+}
+
+export function resolveProfile(options: ResolveOptions = {}): ResolvedMyNotionProfile {
+  const { name: profileName, source: profileSource } = resolveProfileNameWithSource(options);
+  const config = loadConfig(profileName);
+  const savedV2 = isConfigV2(config) ? config.profiles[profileName] : undefined;
+  const savedV1 = isConfigV2(config) ? undefined : config;
+  const savedApiUrl = savedV2?.apiUrl ?? savedV1?.apiUrl;
+  const savedToken = savedV2?.token ?? savedV1?.token;
+  const apiUrl = resolveStringSetting({
+    optionValue: readStringOption(options, "api-url"),
+    envValue: readEnvForProfile(profileName, "API_URL", "MY_NOTION_API_URL"),
+    configValue: savedApiUrl,
+    defaultValue: DEFAULT_API_URL,
+  });
+  const webUrl = resolveStringSetting({
+    optionValue: readStringOption(options, "web-url"),
+    envValue: readEnvForProfile(profileName, "WEB_URL", "MY_NOTION_WEB_URL"),
+    configValue: savedV2?.webUrl,
+    defaultValue: getDefaultWebUrlForProfile(profileName),
+  });
+  const token = resolveStringSetting({
+    optionValue: readStringOption(options, "token"),
+    envValue: readEnvForProfile(profileName, "API_TOKEN", "MY_NOTION_API_TOKEN"),
+    configValue: savedToken,
+  });
+
+  return {
+    name: profileName,
+    environment: getRuntimeEnvironment(profileName),
+    local: profileName === DEFAULT_LOCAL_PROFILE,
+    apiUrl: normalizeApiUrl(apiUrl.value ?? DEFAULT_API_URL),
+    webUrl: (webUrl.value ?? getDefaultWebUrlForProfile(profileName)).replace(/\/+$/, ""),
+    token: token.value,
+    tokenPrefix: savedV2?.tokenPrefix,
+    authMethod: savedV2?.authMethod,
+    expiresAt: savedV2?.expiresAt,
+    configPath: getConfigPath(profileName),
+    sources: {
+      profile: profileSource,
+      apiUrl: apiUrl.source,
+      webUrl: webUrl.source,
+      token: token.source,
+    },
+  };
+}
+
+export function resolveApiUrl(options: ResolveOptions = {}) {
+  return resolveProfile(options).apiUrl;
 }
 
 export function getTokenSetupMessage(profileName = DEFAULT_PROFILE) {
+  const loginCommand =
+    profileName === DEFAULT_LOCAL_PROFILE
+      ? "my-notion auth login --local"
+      : profileName === DEFAULT_PROFILE
+        ? "my-notion auth login"
+        : `my-notion auth login --profile ${profileName}`;
   return [
     "Missing API token.",
-    "Run `my-notion auth login` and open the browser authorization link.",
-    "For MCP usage, install and start `my-notion-mcp-server --transport stdio` after CLI auth is configured.",
+    `Run \`${loginCommand}\` and open the browser authorization link.`,
+    "For MCP usage, install and start `my-notion-mcp --transport stdio` after CLI auth is configured.",
     `The token is read from ${getConfigPath(profileName)} or MY_NOTION_API_TOKEN.`,
   ].join(" ");
 }
 
 export function resolveToken(options: ResolveOptions = {}) {
-  const profileName = resolveProfileName(options);
-  const config = loadConfig(profileName);
-  const saved = isConfigV2(config) ? config.profiles[profileName] : config;
-  const token =
-    readStringOption(options, "token") ??
-    process.env.MY_NOTION_API_TOKEN ??
-    saved?.token;
+  const profile = resolveProfile(options);
 
-  if (!token) {
-    throw new Error(getTokenSetupMessage(profileName));
+  if (!profile.token) {
+    throw new Error(getTokenSetupMessage(profile.name));
   }
 
-  return token;
+  return profile.token;
 }

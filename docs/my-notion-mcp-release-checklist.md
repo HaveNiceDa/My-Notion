@@ -1,11 +1,11 @@
 # My-Notion MCP Server Release Checklist
 
-本清单用于发布独立 `@mynotion/mcp-server` 前确认 MCP STDIO server 可被 Agent 安全使用。
+本清单用于发布独立 `@mynotion/mcp` 前确认 MCP STDIO server 可被 Agent 安全使用。
 
 ## 发布对象
 
-- npm package: `@mynotion/mcp-server`
-- binary: `my-notion-mcp-server`
+- npm package: `@mynotion/mcp`
+- binary: `my-notion-mcp`
 - internal build-time dependency: `@mynotion/agent-tools`，只作为仓库内部共享代码，不单独发布 npm 包；MCP server 构建时通过 esbuild 打进 `dist`
 - compatibility entry: `my-notion mcp serve --transport stdio`
 
@@ -16,10 +16,10 @@ pnpm --filter @mynotion/agent-tools typecheck
 pnpm --filter @mynotion/agent-tools test
 pnpm --filter @mynotion/agent-tools build
 
-pnpm --filter @mynotion/mcp-server typecheck
-pnpm --filter @mynotion/mcp-server test
-pnpm --filter @mynotion/mcp-server build
-pnpm --filter @mynotion/mcp-server pack:dry-run
+pnpm --filter @mynotion/mcp typecheck
+pnpm --filter @mynotion/mcp test
+pnpm --filter @mynotion/mcp build
+pnpm --filter @mynotion/mcp pack:dry-run
 
 pnpm e2e:mcp
 pnpm e2e:mcp:client
@@ -46,7 +46,7 @@ pnpm e2e:mcp:client
 
 ## 发布顺序
 
-1. 确认 `@mynotion/agent-tools` 为 `private: true`，且 `@mynotion/mcp-server/dist` 中没有裸的 `@mynotion/agent-tools` runtime import。
-2. 发布 `@mynotion/mcp-server`。
+1. 确认 `@mynotion/agent-tools` 为 `private: true`，且 `@mynotion/mcp/dist` 中没有裸的 `@mynotion/agent-tools` runtime import。
+2. 发布 `@mynotion/mcp`。
 3. 如 CLI 依赖版本发生变化，再发布 `@mynotion/cli`。
 4. 更新并同步 Skills。

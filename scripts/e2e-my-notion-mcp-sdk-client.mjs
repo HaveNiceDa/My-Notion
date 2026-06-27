@@ -5,12 +5,12 @@ import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { setDefaultAutoSelectFamilyAttemptTimeout } from "node:net";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { Client } from "../packages/my-notion-mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
-import { StdioClientTransport } from "../packages/my-notion-mcp-server/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js";
+import { Client } from "../packages/my-notion-mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js";
+import { StdioClientTransport } from "../packages/my-notion-mcp/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js";
 
 const root = resolve(new URL("..", import.meta.url).pathname);
 const cliEntry = join(root, "packages/my-notion-cli/dist/index.js");
-const mcpEntry = join(root, "packages/my-notion-mcp-server/dist/index.js");
+const mcpEntry = join(root, "packages/my-notion-mcp/dist/index.js");
 
 setDefaultAutoSelectFamilyAttemptTimeout(1_000);
 
@@ -276,7 +276,7 @@ async function main() {
 
     const readme = await callTool(validClient, "my_notion_readme", {});
     assert(
-      readme.markdown?.includes("my-notion-mcp-server"),
+      readme.markdown?.includes("my-notion-mcp"),
       "MCP readme did not expose standalone server guidance",
     );
 

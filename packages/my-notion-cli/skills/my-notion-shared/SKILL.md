@@ -18,7 +18,7 @@ Use this skill whenever an Agent needs to use the My-Notion CLI, configure authe
 - The CLI package is `@mynotion/cli`.
 - The binary name is `my-notion` after installation, linking, or `npx`.
 - After npm release, users can run `npx @mynotion/cli@latest <command>` or install it globally with `npm install -g @mynotion/cli@latest`.
-- Install the standalone MCP server with `npm install -g @mynotion/mcp-server@latest` and start it with `my-notion-mcp-server --transport stdio`.
+- Install the standalone MCP server with `npm install -g @mynotion/mcp@latest` and start it with `my-notion-mcp --transport stdio`.
 - Install bundled Agent Skills with `npx skills add @mynotion/cli -y -g`. If the skills tool does not support npm package sources, use the repository URL or `my-notion install --skills` fallback.
 - Check first-run state with:
 
@@ -128,14 +128,24 @@ For CI or isolated permission debugging, `MY_NOTION_CONFIG_PATH` can point to an
 
 If the CLI reports `TOKEN_EXPIRED`, `TOKEN_REVOKED`, or `UNAUTHORIZED`, run `my-notion auth login --no-open` again and ask the user to open the authorization URL.
 
-Environment variables override saved config:
+Profile-specific environment variables override saved config before legacy generic env:
+
+```bash
+export MY_NOTION_LOCAL_API_URL="https://<dev-deployment>.convex.site"
+export MY_NOTION_LOCAL_API_TOKEN="mnt_xxx"
+export MY_NOTION_PROD_API_TOKEN="mnt_xxx"
+```
+
+Legacy environment variables still override saved config for compatibility:
 
 ```bash
 export MY_NOTION_API_URL="https://<deployment>.convex.site"
 export MY_NOTION_API_TOKEN="mnt_xxx"
 ```
 
-`MY_NOTION_API_TOKEN` is a legacy/CI escape hatch. Prefer browser authorization for Agent workflows.
+`MY_NOTION_API_TOKEN` is a legacy/CI escape hatch and applies to whichever profile the command selects. Prefer browser authorization, `--local` / `--profile`, or `MY_NOTION_<PROFILE>_API_TOKEN` when Agents must distinguish online and local login state.
+
+Profile selection itself is intentionally not driven by environment variables. The default profile is always online `prod`; use `--local` or `--profile local` when local/dev auth is required.
 
 Command flags have the highest priority:
 
@@ -151,7 +161,7 @@ The CLI does not auto-update itself. Use this command to obtain machine-readable
 my-notion update --check --format json
 ```
 
-Agents should execute `npm install -g @mynotion/cli@latest`, `npm install -g @mynotion/mcp-server@latest`, and `npx skills add @mynotion/cli -y -g` only after user confirmation.
+Agents should execute `npm install -g @mynotion/cli@latest`, `npm install -g @mynotion/mcp@latest`, and `npx skills add @mynotion/cli -y -g` only after user confirmation.
 
 ## Output Formats
 

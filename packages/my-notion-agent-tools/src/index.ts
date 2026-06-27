@@ -11,8 +11,14 @@ export {
   normalizeApiUrl,
   readStringOption,
   resolveApiUrl,
+  resolveProfile,
   resolveProfileName,
   resolveToken,
+} from "./config/resolve.js";
+export type {
+  ConfigValueSource,
+  ResolvedMyNotionProfile,
+  RuntimeEnvironment,
 } from "./config/resolve.js";
 export {
   MY_NOTION_DOC_TOOL_NAMES,

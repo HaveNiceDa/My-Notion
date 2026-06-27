@@ -20,6 +20,11 @@ beforeEach(() => {
   process.env = { ...originalEnv, HOME: tempHome };
   delete process.env.MY_NOTION_API_URL;
   delete process.env.MY_NOTION_API_TOKEN;
+  delete process.env.MY_NOTION_PROFILE;
+  delete process.env.MY_NOTION_LOCAL_API_URL;
+  delete process.env.MY_NOTION_LOCAL_API_TOKEN;
+  delete process.env.MY_NOTION_PROD_API_URL;
+  delete process.env.MY_NOTION_PROD_API_TOKEN;
   delete process.env.MY_NOTION_CONFIG_PATH;
 });
 
@@ -61,6 +66,69 @@ describe("config store", () => {
 
     expect(store.resolveApiUrl({})).toBe("https://env.convex.site");
     expect(store.resolveToken({})).toBe("mnt_env");
+  });
+
+  it("prefers profile-specific environment variables over legacy generic env", async () => {
+    const store = await loadStore();
+
+    process.env.MY_NOTION_API_URL = "https://generic.convex.site/";
+    process.env.MY_NOTION_API_TOKEN = "mnt_generic";
+    process.env.MY_NOTION_LOCAL_API_URL = "https://local.convex.site/";
+    process.env.MY_NOTION_LOCAL_API_TOKEN = "mnt_local";
+
+    expect(store.resolveProfile({ local: true })).toMatchObject({
+      name: "local",
+      environment: "local",
+      apiUrl: "https://local.convex.site",
+      token: "mnt_local",
+      sources: {
+        apiUrl: "profile-env",
+        token: "profile-env",
+      },
+    });
+    expect(store.resolveProfile({})).toMatchObject({
+      name: "prod",
+      environment: "prod",
+      apiUrl: "https://generic.convex.site",
+      token: "mnt_generic",
+      sources: {
+        apiUrl: "env",
+        token: "env",
+      },
+    });
+  });
+
+  it("does not switch to local from environment without an explicit flag", async () => {
+    const store = await loadStore();
+
+    process.env.MY_NOTION_PROFILE = "local";
+    process.env.MY_NOTION_LOCAL_API_URL = "https://local.convex.site/";
+    process.env.MY_NOTION_LOCAL_API_TOKEN = "mnt_local";
+    process.env.MY_NOTION_PROD_API_URL = "https://prod.convex.site/";
+    process.env.MY_NOTION_PROD_API_TOKEN = "mnt_prod";
+
+    expect(store.resolveProfile({})).toMatchObject({
+      name: "prod",
+      environment: "prod",
+      apiUrl: "https://prod.convex.site",
+      token: "mnt_prod",
+      sources: {
+        profile: "default",
+        apiUrl: "profile-env",
+        token: "profile-env",
+      },
+    });
+    expect(store.resolveProfile({ local: true })).toMatchObject({
+      name: "local",
+      environment: "local",
+      apiUrl: "https://local.convex.site",
+      token: "mnt_local",
+      sources: {
+        profile: "flag",
+        apiUrl: "profile-env",
+        token: "profile-env",
+      },
+    });
   });
 
   it("uses saved config and can clear only the saved token", async () => {

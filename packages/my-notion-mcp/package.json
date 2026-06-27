@@ -1,9 +1,10 @@
 {
-  "name": "@mynotion/mcp-server",
-  "version": "0.1.0",
+  "name": "@mynotion/mcp",
+  "version": "0.1.2",
   "description": "Standalone MCP STDIO server for My-Notion document tools",
   "type": "module",
   "bin": {
+    "my-notion-mcp": "dist/index.js",
     "my-notion-mcp-server": "dist/index.js"
   },
   "main": "./dist/index.js",

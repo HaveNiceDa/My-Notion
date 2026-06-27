@@ -1,5 +1,5 @@
 import { readStringOption } from "../config/store.js";
-import { runMyNotionMcpStdioServer } from "@mynotion/mcp-server";
+import { runMyNotionMcpStdioServer } from "@mynotion/mcp";
 import type { ParsedArgs } from "../types.js";
 
 export async function runMcpCommand(args: ParsedArgs) {
