@@ -265,16 +265,17 @@ export function resolveProfile(
   const { name, source: profileSource } = resolveProfileNameWithSource(options);
   const config = loadConfigV2(name);
   const saved = config.profiles[name] ?? {};
+  const useSavedEndpoint = name !== DEFAULT_PROFILE;
   const apiUrl = resolveStringSetting({
     optionValue: readStringOption(options, "api-url"),
     envValue: readEnvForProfile(name, "API_URL", "MY_NOTION_API_URL"),
-    configValue: saved.apiUrl,
+    configValue: useSavedEndpoint ? saved.apiUrl : undefined,
     defaultValue: getDefaultApiUrlForProfile(name),
   });
   const webUrl = resolveStringSetting({
     optionValue: readStringOption(options, "web-url"),
     envValue: readEnvForProfile(name, "WEB_URL", "MY_NOTION_WEB_URL"),
-    configValue: saved.webUrl,
+    configValue: useSavedEndpoint ? saved.webUrl : undefined,
     defaultValue: getDefaultWebUrlForProfile(name),
   });
   const token = resolveStringSetting({

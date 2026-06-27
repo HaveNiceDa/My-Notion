@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import {
   createDocumentTool,
@@ -78,6 +81,51 @@ describe("@mynotion/agent-tools docs tools", () => {
       } else {
         process.env.MY_NOTION_PROFILE = previousProfile;
       }
+    }
+  });
+
+  it("readme ignores stale saved prod endpoints and keeps canonical prod URLs", () => {
+    const previousConfigPath = process.env.MY_NOTION_CONFIG_PATH;
+    const tempDir = mkdtempSync(join(tmpdir(), "my-notion-agent-tools-config-"));
+    const configPath = join(tempDir, "config.json");
+    process.env.MY_NOTION_CONFIG_PATH = configPath;
+    writeFileSync(
+      configPath,
+      JSON.stringify({
+        version: 2,
+        profiles: {
+          prod: {
+            apiUrl: "https://capable-hippopotamus-766.convex.site",
+            webUrl: "http://localhost:3000",
+            token: "mnt_saved",
+          },
+        },
+      }),
+    );
+
+    try {
+      const result = readmeTool();
+
+      expect(result.structuredContent.auth).toMatchObject({
+        profile: expect.objectContaining({
+          name: "prod",
+          apiUrl: "https://moonlit-ptarmigan-478.convex.site",
+          webUrl: "https://notion-j9zj.vercel.app",
+          token: "mnt_saved",
+          sources: expect.objectContaining({
+            apiUrl: "default",
+            webUrl: "default",
+            token: "config",
+          }),
+        }),
+      });
+    } finally {
+      if (previousConfigPath === undefined) {
+        delete process.env.MY_NOTION_CONFIG_PATH;
+      } else {
+        process.env.MY_NOTION_CONFIG_PATH = previousConfigPath;
+      }
+      rmSync(tempDir, { recursive: true, force: true });
     }
   });
 

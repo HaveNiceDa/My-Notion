@@ -180,7 +180,7 @@ my-notion tokens revoke-current --format json
 4. 本地配置：线上 `config.json`，本地 `config.local.json`
 5. 默认线上配置
 
-默认 profile 固定为线上 `prod`；不会因为 `MY_NOTION_PROFILE=local` 或本机存在 local 登录态自动切到线下。线下只在显式传入 `--local` 或 `--profile local` 时启用。`MY_NOTION_API_TOKEN` 和 `--token` 仅作为兼容或 CI 调试入口；需要同时区分线上/线下时，优先使用 `--local` / `--profile` 或 `MY_NOTION_<PROFILE>_API_TOKEN`，避免泛用环境变量覆盖保存的 profile。
+默认 profile 固定为线上 `prod`；不会因为 `MY_NOTION_PROFILE=local` 或本机存在 local 登录态自动切到线下。线下只在显式传入 `--local` 或 `--profile local` 时启用。默认 prod 还会固定使用当前线上 `apiUrl/webUrl`，忽略旧配置中保存的 prod endpoint，只复用保存的 prod token。`MY_NOTION_API_TOKEN` 和 `--token` 仅作为兼容或 CI 调试入口；需要同时区分线上/线下时，优先使用 `--local` / `--profile` 或 `MY_NOTION_<PROFILE>_API_TOKEN`，避免泛用环境变量覆盖保存的 profile。
 
 ## 命令体系
 

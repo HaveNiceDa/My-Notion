@@ -153,7 +153,9 @@ export function resolveProfile(options: ResolveOptions = {}): ResolvedMyNotionPr
   const config = loadConfig(profileName);
   const savedV2 = isConfigV2(config) ? config.profiles[profileName] : undefined;
   const savedV1 = isConfigV2(config) ? undefined : config;
-  const savedApiUrl = savedV2?.apiUrl ?? savedV1?.apiUrl;
+  const useSavedEndpoint = profileName !== DEFAULT_PROFILE;
+  const savedApiUrl = useSavedEndpoint ? savedV2?.apiUrl ?? savedV1?.apiUrl : undefined;
+  const savedWebUrl = useSavedEndpoint ? savedV2?.webUrl : undefined;
   const savedToken = savedV2?.token ?? savedV1?.token;
   const apiUrl = resolveStringSetting({
     optionValue: readStringOption(options, "api-url"),
@@ -164,7 +166,7 @@ export function resolveProfile(options: ResolveOptions = {}): ResolvedMyNotionPr
   const webUrl = resolveStringSetting({
     optionValue: readStringOption(options, "web-url"),
     envValue: readEnvForProfile(profileName, "WEB_URL", "MY_NOTION_WEB_URL"),
-    configValue: savedV2?.webUrl,
+    configValue: savedWebUrl,
     defaultValue: getDefaultWebUrlForProfile(profileName),
   });
   const token = resolveStringSetting({

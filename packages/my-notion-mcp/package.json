@@ -1,6 +1,6 @@
 {
   "name": "@mynotion/mcp",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Standalone MCP STDIO server for My-Notion document tools",
   "type": "module",
   "bin": {

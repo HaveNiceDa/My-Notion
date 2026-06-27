@@ -1,6 +1,6 @@
 {
   "name": "@mynotion/cli",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Agent-native CLI and MCP adapter for My-Notion documents",
   "type": "module",
   "bin": {
@@ -56,7 +56,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@mynotion/mcp": "workspace:^0.1.2",
+    "@mynotion/mcp": "workspace:^0.1.3",
     "yaml": "^2.9.0",
     "zod": "^3.25.1"
   },

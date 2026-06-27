@@ -131,20 +131,32 @@ describe("config store", () => {
     });
   });
 
-  it("uses saved config and can clear only the saved token", async () => {
+  it("keeps default prod on canonical URLs even when saved prod endpoints are stale", async () => {
     const store = await loadStore();
 
     store.saveConfig({
-      apiUrl: "https://saved.convex.site/",
+      apiUrl: "https://capable-hippopotamus-766.convex.site/",
       token: "mnt_saved",
     });
 
-    expect(store.resolveApiUrl({})).toBe("https://saved.convex.site");
+    expect(store.resolveProfile({})).toMatchObject({
+      name: "prod",
+      environment: "prod",
+      apiUrl: "https://moonlit-ptarmigan-478.convex.site",
+      webUrl: "https://notion-j9zj.vercel.app",
+      token: "mnt_saved",
+      sources: {
+        apiUrl: "default",
+        webUrl: "default",
+        token: "config",
+      },
+    });
+    expect(store.resolveApiUrl({})).toBe("https://moonlit-ptarmigan-478.convex.site");
     expect(store.resolveToken({})).toBe("mnt_saved");
     expect(store.clearSavedToken()).toMatchObject({
       profileName: "prod",
       profile: {
-        apiUrl: "https://saved.convex.site",
+        apiUrl: "https://capable-hippopotamus-766.convex.site",
         webUrl: "https://notion-j9zj.vercel.app",
       },
     });
@@ -152,7 +164,7 @@ describe("config store", () => {
       version: 2,
       profiles: {
         prod: {
-          apiUrl: "https://saved.convex.site",
+          apiUrl: "https://capable-hippopotamus-766.convex.site",
           webUrl: "https://notion-j9zj.vercel.app",
         },
       },
@@ -198,8 +210,8 @@ describe("config store", () => {
 
     expect(store.resolveProfile({ profile: "prod" })).toMatchObject({
       name: "prod",
-      apiUrl: "https://prod.convex.site",
-      webUrl: "https://prod.example.com",
+      apiUrl: "https://moonlit-ptarmigan-478.convex.site",
+      webUrl: "https://notion-j9zj.vercel.app",
       token: "mnt_prod",
     });
     expect(store.resolveProfile({ local: true })).toMatchObject({
@@ -210,7 +222,7 @@ describe("config store", () => {
     });
     expect(store.resolveProfile({})).toMatchObject({
       name: "prod",
-      apiUrl: "https://prod.convex.site",
+      apiUrl: "https://moonlit-ptarmigan-478.convex.site",
       token: "mnt_prod",
     });
     expect(store.loadConfigV2()).toMatchObject({
@@ -241,7 +253,7 @@ describe("config store", () => {
 
     expect(store.getConfigPath()).toBe(customPath);
     expect(store.resolveProfile({})).toMatchObject({
-      apiUrl: "https://custom.convex.site",
+      apiUrl: "https://moonlit-ptarmigan-478.convex.site",
       token: "mnt_custom",
     });
   });

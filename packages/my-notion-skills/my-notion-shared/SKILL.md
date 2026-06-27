@@ -147,6 +147,8 @@ export MY_NOTION_API_TOKEN="mnt_xxx"
 
 Profile selection itself is intentionally not driven by environment variables. The default profile is always online `prod`; use `--local` or `--profile local` when local/dev auth is required.
 
+The default `prod` profile also ignores stale saved prod `apiUrl` / `webUrl` values and uses the current canonical online endpoints. Saved prod tokens are still reused; local/custom profiles continue to use their saved endpoints.
+
 Command flags have the highest priority:
 
 ```bash
