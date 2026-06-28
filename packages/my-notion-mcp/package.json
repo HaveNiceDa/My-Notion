@@ -24,6 +24,7 @@
     "dev": "tsx src/index.ts",
     "pack:dry-run": "pnpm publish --dry-run --no-git-checks",
     "prebuild": "pnpm --filter @mynotion/agent-tools build",
+    "pretest": "pnpm --filter @mynotion/agent-tools build",
     "release:beta": "pnpm publish --tag beta --access public",
     "release:latest": "pnpm publish --tag latest --access public",
     "typecheck": "tsc --noEmit",
