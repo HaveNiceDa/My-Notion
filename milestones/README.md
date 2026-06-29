@@ -2,30 +2,30 @@
 
 ## 目的
 
-`progress/` 现在只保留压缩后的阶段摘要，避免旧中间态误导后续 Agent。
+`milestones/` 保存稳定阶段结论，适合快速理解“项目已经完成了什么、关键设计为什么这样做、下一步该接哪里”。
 
-`milestones/` 用于把阶段摘要进一步收敛成稳定结论，适合后续喂给 AI 快速理解项目状态。
+`progress/` 保存过程摘要；`milestones/` 只保留沉淀后的工程事实。
 
-## 阅读顺序
+## 专题索引
 
-1. `M10-ai-chat-sidebar.md`：AI Chat 从独立页面重构为右侧可拖拽侧边栏面板。
-2. `M11-agent-stream-rag-tool.md`：AI Chat 后端从单一 RAG pipeline 重构为 Agent + Tool 架构。
-3. `M12-agent-auto-tool-routing.md`：移除显式 RAG 开关，Agent 统一 auto 模式。
-4. `M13-document-read-tool.md`：当前文档读取能力接入 Agent 体系。
-5. `M14-react-agent-loop.md`：硬编码 tool 路由重构为标准 ReAct 循环，LLM 自主决策工具调用。
-6. `M15-ux-polish-markdown-rendering.md`：AI Chat 展示、Markdown 渲染和交互体验打磨。
-7. `M16-cli-skills-mcp-agent-docs.md`：CLI / Skills / MCP Agent 写文档能力交付。
-8. `M19-plan-mode-minimal-loop.md`：Plan 模式最小闭环，覆盖计划生成、用户确认与确认后执行。
-9. `docs/ai-chat-refactor-plan.md`：M19 后的当前 Agent 基线与 M20-M22 下一阶段建议。
-10. `docs/agent-memory-redesign-report.md`：Agent Memory 当前问题分析与完整重构设计。
-11. `M23-agent-memory-schema-foundation.md`：Memory schema、兼容层、作用域、证据链和同步状态基础。
-12. `M24-agent-memory-retrieval-runtime.md`：纯读检索、`memory_search`、scope-aware ranking 和 compact instruction memory。
-13. `M25-agent-memory-inbox-confirmation.md`：Memory proposal、pending review、Inbox 和确认式提交链路。
-14. `M26-agent-memory-center-ui.md`：`/memories` 从 CRUD 列表升级为 Memory Center。
-15. `M27-agent-memory-eval-auto-extraction.md`：Memory eval、trace 观测和受控自动提取。
-16. `M28-independent-mcp-server.md`：MCP 从 CLI 内部子命令拆为独立发布产物，CLI/MCP 共享工具核心。
-16. `progress/20260527-20260531-consolidated.md`：近期 Web Agent、CLI/Skills/MCP、Device Flow 与 npm 发布的压缩过程记录。
-17. `progress/20260602-173825.md`：M19 Plan 模式最小闭环的过程记录。
+| 方向 | 文档 |
+| --- | --- |
+| Web Agent 成型 | `M10` -> `M11` -> `M12` -> `M13` -> `M14` -> `M15` |
+| Agent 写文档与外部生态 | `M16` -> `M20` -> `M28` |
+| Plan 与流式治理 | `M19` -> `M21` -> `docs/agent-stream-resume-protocol.md` |
+| Memory 产品化 | `docs/agent-memory-redesign-report.md` -> `M23` -> `M24` -> `M25` -> `M26` -> `M27` |
+| Mobile 后续路线 | `docs/web-mobile-gap-analysis.md` |
+
+## 阶段摘要
+
+| 阶段 | 状态 | 说明 |
+| --- | --- | --- |
+| M10-M15 | ✅ 完成 | AI Chat 从页面重构为侧边栏，并完成 Agent Stream、自动工具路由、当前文档读取、ReAct Loop 和 Markdown 展示体验。 |
+| M16 | ✅ 完成 | CLI / Skills / MCP 打通 Agent 写文档链路，确立 Markdown 契约和确认式写入边界。 |
+| M19 | ✅ 完成 | Plan 模式最小闭环，支持计划生成、用户确认、确认后执行和状态可见。 |
+| M20-M21 | ✅ 完成 | Web Agent 接入受控 MCP adapter，统一 `tool-result-v1`，补齐强类型 sources、流式安全重试和 checkpoint/resume。 |
+| M23-M27 | ✅ 完成 | Memory 从单点保存升级为 Context Governance System，覆盖 schema、检索、Inbox、Memory Center、Eval 和自动提取。 |
+| M28 | ✅ 完成 | MCP 从 CLI 子命令拆成独立 `@mynotion/mcp` 包，CLI/MCP 共享 `@mynotion/agent-tools`，保留兼容入口。 |
 
 ## 当前总状态
 
@@ -35,19 +35,19 @@
 - M13 ✅ 已完成：Document Read Tool。
 - M14 ✅ 已完成：ReAct Agent Loop 重构。
 - M15 ✅ 已完成：AI Chat UX 与 Markdown 渲染打磨。
-- M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档；`@mynotion/cli@0.1.0` 已发布到 `latest`。
+- M16 ✅ 已完成：Agent 可通过 CLI / Skills / MCP STDIO 安全写入 My-Notion 文档；CLI 首个 stable 版本已发布到 `latest`。
 - M17 ✅ 已完成：Web Agent 主线、Memory MVP、Hybrid Retrieval、文档写入 dry-run 与前端确认。
 - M18 ✅ 部分完成并后置 Harness：Agent 单测、AI Chat 组件/流客户端测试、最小 retrieval eval、`ci:ai-smoke` 和无 secrets 版 GitHub Actions 已完成；Storybook、Trace Replay、Memory/RAG 真实评估后置。
 - M19 ✅ 已完成：Plan 模式最小闭环，支持展示计划、确认计划、确认后执行和状态可见。
 - M20 ✅ 已完成最小闭环：Web Agent 通过受控 My-Notion MCP adapter 调用白名单文档工具，并继续遵守确认式写入。
 - M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化、流式续跑可用闭环，以及 2026-06-07 的 AI 工具交互治理与 MCP ID 防护。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
-- M28 🚧 实施中：独立 `@mynotion/mcp` 与内部共享 `@mynotion/agent-tools`，保留 CLI 兼容入口。
+- M28 ✅ 已完成：独立 `@mynotion/mcp` 与内部共享 `@mynotion/agent-tools` 已发布验证，保留 CLI 兼容入口。
 
 ## 下一批候选里程碑
 
-- M28 候选：Mobile AI Native Client，围绕 Expo / React Native 客户端学习与建设，接入 Web Agent Stream、checkpoint/resume、AI Chat 状态机、本地缓存和弱网恢复。
-- M29 候选：Mobile Editor Deepening，验证并补强正文图片插入/上传、复杂 block 移动端降级、键盘/选区/工具栏和长文编辑体验。
+- M29 候选：Mobile AI Native Client，围绕 Expo / React Native 客户端学习与建设，继续补强 Agent Stream、checkpoint/resume、AI Chat 状态机、本地缓存和弱网恢复。
+- M30 候选：Mobile Editor Deepening，验证并补强正文图片插入/上传、复杂 block 移动端降级、键盘/选区/工具栏和长文编辑体验。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
 - 详细路线见 `docs/web-mobile-gap-analysis.md` 与 `docs/ai-chat-refactor-plan.md`。
 

@@ -1,8 +1,18 @@
 # Progress
 
-`progress/` 只保留阶段性过程摘要，不再保存每次微调的完整流水账。
+`progress/` 保存阶段性过程摘要，回答“这一阶段具体改了什么、为什么这么改、当时怎么验证”。稳定结论优先看 [milestones](../milestones/README.md)，当前状态优先看根 [README](../README.md)。
 
-## 当前保留
+## 阶段索引
+
+| 需求 | 推荐文档 |
+| --- | --- |
+| 快速了解 5 月底 Web Agent / CLI / MCP 成型过程 | `20260527-20260531-consolidated.md` |
+| 查看 Plan、MCP adapter、流式续跑治理 | `20260602-173825.md`、`20260605-233018.md`、`20260605-234802.md`、`20260606-*` |
+| 查看 Agent Memory 产品化 | `20260603-170146.md` 到 `20260603-195302.md` |
+| 查看 Mobile Agent Stream 和当前文档上下文 | `20260614-mobile-agent-stream-client.md`、`20260621-mobile-current-document-context.md` |
+| 查看 CLI/MCP 独立发布 | `20260624-independent-mcp-server.md` |
+
+## 当前保留摘要
 
 - `20260527-20260531-consolidated.md`：2026-05-27 至 2026-05-31 的阶段压缩记录，覆盖 Web Agent、RAG/Memory、CLI/Skills/MCP、Device Flow、npm 发布等已稳定工作。
 - `20260602-173825.md`：M19 Plan 模式最小闭环，覆盖 Plan 模式入口、计划确认、确认后执行和路线调整。
@@ -27,6 +37,7 @@
 
 ## 阅读规则
 
-- 需要快速了解当前状态：优先读根 `README.md`、`AGENTS.md`、`milestones/README.md`。
-- 需要追溯历史过程：再读本目录的 consolidated 记录。
-- 新增重大阶段改动时，优先追加到 consolidated 或新增按主题命名的阶段摘要，避免按小时生成碎片日志。
+- 当前工程事实以根 `README.md`、`AGENTS.md`、`milestones/README.md` 为准。
+- 本目录记录过程，不作为最新 API 或发布版本的唯一来源。
+- 新增重大阶段改动时，按主题新增摘要或追加到 consolidated 记录；避免按小时继续生成碎片日志。
+- 旧方案若已经被 milestone、release checklist 或当前 README 覆盖，应压缩、归档或删除重复段落。

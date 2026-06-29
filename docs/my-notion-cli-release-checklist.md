@@ -140,7 +140,7 @@ npx @mynotion/cli@latest --help
 稳定版发布后再切 latest：
 
 ```bash
-npm dist-tag add @mynotion/cli@0.1.0 latest
+npm dist-tag add @mynotion/cli@<version> latest
 ```
 
 ## 配置兼容性

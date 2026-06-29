@@ -2,6 +2,13 @@
 
 基于 Next.js 16 + React 19 的 My-Notion Web 应用，提供文档编辑、AI Agent 侧边栏、RAG 知识库、编辑器 AI、CLI Device Flow 授权页和 CLI/MCP 机器访问能力。
 
+## 核心关注
+
+- **完整 Notion-like Web 工作区**：文档树、编辑器、公开预览、收藏、归档、回收站和设置页都已成型。
+- **Agent 是主线能力**：ReAct Loop、RAG、Memory、联网搜索、网页抽取、文档读写、Plan 和流式续跑集中在 Web 端。
+- **写入安全边界清晰**：文档写入、文档更新和 Memory 写入走 dry-run / preview / confirmation，不让 Agent 静默落库。
+- **对外 Agent 生态完整**：Web 提供 CLI Device Flow、PAT 管理和 Convex Machine API，支撑 CLI/MCP/Skills 调用。
+
 ## 线上体验
 
 - <https://notion-j9zj.vercel.app/>

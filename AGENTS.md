@@ -48,7 +48,7 @@ My-Notion 是一个定制化个人版 Notion，核心目标是把文档编辑、
 - `packages/my-notion-skills/README.md`：Agent Skills 列表、同步规则、安全输出约束。
 - `milestones/README.md`：阶段性里程碑索引，适合快速理解已完成能力和下一步路线。
 - `progress/README.md`：压缩后的历史过程记录入口。
-- `docs/README.md`：当前维护文档、操作手册、历史复盘和外部 AI 参考入口。
+- `docs/README.md`：当前维护方案、操作手册、发布检查和外部 AI 参考入口。
 - `docs/ai-docs/README.md`：外部 AI/DashScope 能力文档索引；开发 Agent、工具调用、流式输出前按需阅读。
 - `docs/my-notion-cli-release-checklist.md`：CLI/MCP npm 发布和交付前检查清单。
 - `docs/web-mobile-gap-analysis.md`：当前 Web / Mobile 差距和后续 backlog。
@@ -101,9 +101,10 @@ pnpm exec playwright test
 
 ## 当前主线
 
-截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.0` 已发布到 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环、受控 My-Notion MCP adapter、流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环。
+截至当前文档状态，CLI/MCP/Skills 主链路可用，`@mynotion/cli@0.1.2` 与 `@mynotion/mcp@0.1.3` 已发布到 `latest`；Web Agent 已具备 ReAct Loop、RAG、Memory、文档读写 dry-run、确认式写入、统一 tool fallback、Plan 模式最小闭环、受控 My-Notion MCP adapter、流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 `sources`、Plan 执行状态持久化，以及流式续跑可用闭环。
 
 - Web Agent 续跑当前支持 `run-start/checkpoint`、事件/checkpoint 持久化、backlog replay、失败 run checkpoint 恢复、“继续生成”入口、完整 `currentDocument` 恢复、assistant 消息原地更新，以及 running run 长轮询接管；协议见 `docs/agent-stream-resume-protocol.md`。
 - Agent 交互治理已收口：确认型 tool 在生成中禁用，`document_write` 支持空白文档预览，Memory 保存有明确反馈，MCP `docs_fetch` 会把非 documents ID 转成可恢复工具错误。
-- Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 索引；线上需继续观察 run recording 稳定性。
+- 独立 MCP 包已完成拆分；CLI/MCP 默认固定线上 `prod`，旧 prod endpoint 不再污染 latest，local/custom 仅在显式传参时启用。
+- Mobile 已接入 Agent Stream、checkpoint/resume 基础链路和当前文档上下文；后续主线是移动编辑器、弱网恢复和真机验证。
 - Harness、Trace Replay、Storybook、Memory/RAG 真实评估继续后置，不作为当前主线。

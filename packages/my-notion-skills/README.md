@@ -4,6 +4,13 @@ My-Notion Skills 是给 AI Agent 的操作手册，不是业务代码。它们�
 
 [Skills](#skills) · [安装](#安装) · [Agent 流程](#agent-流程) · [输出规则](#输出规则) · [同步](#sync) · [安全](#safety)
 
+## 设计要点
+
+- **给 Agent 的最小操作手册**：把登录、配置、文档读写和 MCP 调用拆成可触发的 Skill。
+- **安全输出默认值**：不展示完整 PAT、profile 细节或冗长 CLI JSON，只把必要结果反馈给用户。
+- **写入流程可控**：长内容先写 Markdown 文件，更新默认 append，MCP 写工具默认 dry-run。
+- **与 npm 包同步**：源文件、`.trae/skills/` 和 `packages/my-notion-cli/skills/` 通过脚本保持一致。
+
 ## Skills
 
 | Skill | 触发场景 | 核心能力 |

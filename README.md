@@ -1,8 +1,24 @@
 # My-Notion
 
-定制化个人版 Notion，聚合 Web 文档编辑、移动端工作区、AI Agent、RAG/Memory、CLI/Skills/MCP Agent 生态。
+定制化个人版 Notion。它不是单纯的编辑器 demo，而是一套把 Web 文档编辑、移动端工作区、AI Agent、RAG/Memory、CLI/Skills/MCP Agent 生态放在同一个 pnpm monorepo 里的完整工程。
 
 **线上体验：** <https://notion-j9zj.vercel.app/>
+
+## 项目概览
+
+- **产品闭环完整**：Web 编辑器、移动端工作区、AI 侧边栏、文档树、发布、收藏、归档、回收站都在同一个业务系统里。
+- **Agent 工程化充分**：Web Agent 已覆盖 ReAct Loop、RAG、Memory、文档读写 dry-run、确认式写入、Plan、流式续跑和 tool result 契约。
+- **外部 Agent 可用**：`@mynotion/cli`、`@mynotion/mcp` 和 Skills 已形成独立使用链路，支持外部 Agent 安全读写 My-Notion 文档。
+- **跨端架构清晰**：Web 和 Mobile 共享 AI、业务状态、Convex schema 与文档逻辑，移动端正在补齐 Agent Stream、弱网恢复和编辑器深水区。
+
+## 快速入口
+
+| 关注方向 | 文档 |
+| --- | --- |
+| 项目全貌和当前状态 | 本 README、[AGENTS.md](./AGENTS.md)、[milestones/README.md](./milestones/README.md) |
+| Web Agent / RAG / Memory | [apps/web/README.md](./apps/web/README.md)、[docs/ai-chat-refactor-plan.md](./docs/ai-chat-refactor-plan.md)、[docs/agent-stream-resume-protocol.md](./docs/agent-stream-resume-protocol.md) |
+| Mobile 客户端路线 | [apps/mobile/README.md](./apps/mobile/README.md)、[docs/web-mobile-gap-analysis.md](./docs/web-mobile-gap-analysis.md) |
+| CLI / MCP / Skills | [packages/my-notion-cli/README.md](./packages/my-notion-cli/README.md)、[packages/my-notion-mcp/README.md](./packages/my-notion-mcp/README.md)、[packages/my-notion-skills/README.md](./packages/my-notion-skills/README.md) |
 
 ## 项目入口
 
@@ -12,11 +28,10 @@
 - [My-Notion MCP Server](./packages/my-notion-mcp/README.md)：独立 MCP STDIO server，提供 Agent 文档工具和 `my_notion_readme`。
 - [My-Notion Skills](./packages/my-notion-skills/README.md)：供 Agent 调用 CLI/MCP 的 Skills 源文件与同步规则。
 - [里程碑索引](./milestones/README.md)：稳定阶段结论和下一步路线。
-- [阶段进展摘要](./progress/README.md)：压缩后的历史过程记录。
-- [Docs 索引](./docs/README.md)：当前维护文档、操作手册、历史复盘和外部 AI 参考入口。
+- [Docs 索引](./docs/README.md)：当前维护方案、操作手册、发布检查和外部 AI 参考入口。
 - [Web / Mobile 差距](./docs/web-mobile-gap-analysis.md)：当前双端能力差距和后续 backlog。
 
-## 当前能力
+## 核心能力
 
 - **Web 文档编辑**：Next.js + Convex + Clerk + BlockNote，支持文档树、编辑器 AI、公开预览、收藏、归档、回收站和设置页。
 - **Web Agent**：ReAct Loop、结构感知 RAG、Memory MVP、联网搜索、网页抽取、文档读写 dry-run、确认式写入、`task_plan`、受控 MCP adapter、`tool-result-v1` 契约和流式续跑可用闭环。
@@ -62,7 +77,7 @@ My-Notion/
 │   ├── convex/                 # Convex Schema、Documents、Chat、CLI Token 逻辑
 │   ├── my-notion-agent-tools/  # CLI/MCP 内部共享 Machine API client 和 Agent 工具契约
 │   ├── my-notion-cli/          # @mynotion/cli 源码与 npm 包内容
-│   ├── my-notion-mcp/   # @mynotion/mcp 独立 MCP STDIO server
+│   ├── my-notion-mcp/          # @mynotion/mcp 独立 MCP STDIO server
 │   └── my-notion-skills/       # Agent Skills 源文件
 ├── docs/                       # 当前方案、发布检查、AI 外部文档索引
 ├── milestones/                 # 稳定阶段结论
@@ -140,6 +155,7 @@ pnpm exec playwright test
 
 - P0：Web Agent 基础操作闭环已完成，覆盖 ReAct、RAG、Memory、文档读写 dry-run、确认式写入、Plan 模式、受控 MCP adapter、`tool-result-v1`、强类型 `sources` 和流式续跑；续跑协议见 [Agent Stream Resume Protocol](./docs/agent-stream-resume-protocol.md)。
 - P0：Agent 交互治理已收口，包含生成中禁用确认型 tool 操作、发送后滚动收口、Memory 保存反馈、`document_write` 空白文档预览、MCP `docs_fetch` ID 防护，以及 Convex/Clerk 短时不可用时的主链路降级。
-- P1：Convex prod functions 已推送到 `moonlit-ptarmigan-478`，包含 `agentRuns` / `agentRunEvents` / `agentRunCheckpoints` 相关索引；后续需观察线上 run recording 稳定性。
-- P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估和 Mobile AI/RAG 对齐继续后置。
-- 发布：[`@mynotion/cli@0.1.0`](https://www.npmjs.com/package/@mynotion/cli) 已发布到 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md)。
+- P0：独立 `@mynotion/mcp` 已拆出并发布，CLI 保留兼容入口；CLI/MCP 默认线上 `prod`，本地调试必须显式 `--local`。
+- P1：Mobile 已接入 Agent Stream、checkpoint/resume 基础链路和当前文档上下文；下一步聚焦真机验证、正文图片上传、弱网恢复和移动编辑器复杂 block 降级。
+- P2：Harness、Trace Replay、Storybook、Memory/RAG 真实质量评估继续后置。
+- 发布：[`@mynotion/cli@0.1.2`](https://www.npmjs.com/package/@mynotion/cli) 与 [`@mynotion/mcp@0.1.3`](https://www.npmjs.com/package/@mynotion/mcp) 已发布到 `latest`；稳定版发布前参考 [CLI Release Checklist](./docs/my-notion-cli-release-checklist.md) 和 [MCP Release Checklist](./docs/my-notion-mcp-release-checklist.md)。
