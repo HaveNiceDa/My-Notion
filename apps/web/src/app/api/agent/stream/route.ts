@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
-import { DASHSCOPE_BASE_URL, getActualModelId } from "@notion/ai/config";
+import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
@@ -239,7 +239,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const model = getActualModelId(body.modelId || "deepseek-v4-pro");
+    let model: string;
+    try {
+      model = resolveAllowedModelId(body.modelId, DEFAULT_MODEL);
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: error instanceof Error ? error.message : "Unsupported AI model" },
+        { status: 400, headers: corsHeaders },
+      );
+    }
+
     const enableThinking = Boolean(body.enableThinking);
     const knowledgeBaseEnabled = body.knowledgeBaseEnabled !== false;
     const mode = body.mode === "plan" ? "plan" : "chat";

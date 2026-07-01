@@ -172,7 +172,11 @@ async function main() {
   let revokedToken = null;
   let archivedDocument = null;
   let archivedImportedDocument = null;
-  const cliEnv = { HOME: tempHome };
+  const cliEnv = {
+    HOME: tempHome,
+    // prod 默认 endpoint 固定，E2E 必须显式指定本次测试的 Machine API。
+    MY_NOTION_PROD_API_URL: apiUrl,
+  };
 
   const identityArgs = JSON.stringify({ subject: testUserId, tokenIdentifier: testUserId });
 

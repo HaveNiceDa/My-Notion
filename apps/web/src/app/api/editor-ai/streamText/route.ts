@@ -4,8 +4,7 @@ import {
   createUIMessageStreamResponse,
   createUIMessageStream,
 } from "ai";
-import { DASHSCOPE_BASE_URL, getActualModelId, DEFAULT_MODEL } from "@notion/ai/config";
-import type { AIModel } from "@notion/ai/config";
+import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
 import {
   injectDocumentStateMessages,
   convertToOpenAIMessages,
@@ -73,7 +72,18 @@ export async function POST(req: Request) {
     );
   }
 
-  const resolvedModelId = (modelId || DEFAULT_MODEL) as AIModel;
+  let resolvedModelId: string;
+  try {
+    resolvedModelId = resolveAllowedModelId(modelId, DEFAULT_MODEL);
+  } catch (error) {
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : "Unsupported AI model" }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   const openai = new OpenAI({
     apiKey,
@@ -87,7 +97,7 @@ export async function POST(req: Request) {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       const response = await openai.chat.completions.create({
-        model: getActualModelId(resolvedModelId),
+        model: resolvedModelId,
         messages: [
           { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
           ...openaiMessages,

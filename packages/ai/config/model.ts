@@ -1,33 +1,54 @@
 export const AI_MODELS = [
-  "deepseek-v4-pro",
-  "qwen3.6-27b",
-  "kimi-k2.6",
-  "glm-5.1",
+  "kimi-k2.7-code",
+  "qwen3.7-max-2026-06-08",
+  "qwen3.7-plus",
+  "qwen3.7-plus-2026-05-26",
 ] as const;
 
 export type AIModel = (typeof AI_MODELS)[number];
 
-export const DEFAULT_MODEL: AIModel = "deepseek-v4-pro";
+export const DEFAULT_MODEL: AIModel = "kimi-k2.7-code";
 
 export const MODEL_ID_MAPPING: Record<AIModel, string> = {
-  "deepseek-v4-pro": "deepseek-v4-pro",
-  "qwen3.6-27b": "qwen3.6-27b",
-  "kimi-k2.6": "kimi-k2.6",
-  "glm-5.1": "glm-5.1",
+  "kimi-k2.7-code": "kimi-k2.7-code",
+  "qwen3.7-max-2026-06-08": "qwen3.7-max-2026-06-08",
+  "qwen3.7-plus": "qwen3.7-plus",
+  "qwen3.7-plus-2026-05-26": "qwen3.7-plus-2026-05-26",
 };
 
 export const MODEL_DISPLAY_NAMES: Record<AIModel, string> = {
-  "deepseek-v4-pro": "DeepSeek V4 Pro",
-  "qwen3.6-27b": "Qwen 3.6 27B",
-  "kimi-k2.6": "Kimi K2.6",
-  "glm-5.1": "GLM 5.1",
+  "kimi-k2.7-code": "Kimi K2.7 Code",
+  "qwen3.7-max-2026-06-08": "Qwen 3.7 Max 2026-06-08",
+  "qwen3.7-plus": "Qwen 3.7 Plus",
+  "qwen3.7-plus-2026-05-26": "Qwen 3.7 Plus 2026-05-26",
 };
 
+const AI_MODEL_SET = new Set<string>(AI_MODELS);
+
+export function isAIModel(model: unknown): model is AIModel {
+  return typeof model === "string" && AI_MODEL_SET.has(model);
+}
+
 export function getActualModelId(model: string): string {
-  if (model in MODEL_ID_MAPPING) {
+  if (isAIModel(model)) {
     return MODEL_ID_MAPPING[model as AIModel];
   }
-  return model;
+  throw new Error(`Unsupported AI model: ${model}`);
+}
+
+export function resolveAllowedModelId(
+  model: unknown,
+  fallback: AIModel = DEFAULT_MODEL,
+): string {
+  const requestedModel = typeof model === "string" && model.trim()
+    ? model.trim()
+    : fallback;
+
+  if (!isAIModel(requestedModel)) {
+    throw new Error(`Unsupported AI model: ${requestedModel}`);
+  }
+
+  return getActualModelId(requestedModel);
 }
 
 export interface ModelConfig {
@@ -41,27 +62,27 @@ export interface ModelConfig {
 
 export const MODELS_CONFIG: ModelConfig[] = [
   {
-    id: "deepseek-v4-pro",
-    actualModelId: "deepseek-v4-pro",
-    displayName: "DeepSeek V4 Pro",
+    id: "kimi-k2.7-code",
+    actualModelId: "kimi-k2.7-code",
+    displayName: "Kimi K2.7 Code",
     enabled: true,
   },
   {
-    id: "qwen3.6-27b",
-    actualModelId: "qwen3.6-27b",
-    displayName: "Qwen 3.6 27B",
+    id: "qwen3.7-max-2026-06-08",
+    actualModelId: "qwen3.7-max-2026-06-08",
+    displayName: "Qwen 3.7 Max 2026-06-08",
     enabled: true,
   },
   {
-    id: "kimi-k2.6",
-    actualModelId: "kimi-k2.6",
-    displayName: "Kimi K2.6",
+    id: "qwen3.7-plus",
+    actualModelId: "qwen3.7-plus",
+    displayName: "Qwen 3.7 Plus",
     enabled: true,
   },
   {
-    id: "glm-5.1",
-    actualModelId: "glm-5.1",
-    displayName: "GLM 5.1",
+    id: "qwen3.7-plus-2026-05-26",
+    actualModelId: "qwen3.7-plus-2026-05-26",
+    displayName: "Qwen 3.7 Plus 2026-05-26",
     enabled: true,
   },
 ];

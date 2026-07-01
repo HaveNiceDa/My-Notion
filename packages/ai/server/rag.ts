@@ -1,6 +1,6 @@
 import { Document } from "@langchain/core/documents";
 import { promptLoader } from "../prompts";
-import { getActualModelId, MODEL_DISPLAY_NAMES, type AIModel } from "../config";
+import { getActualModelId, isAIModel, MODEL_DISPLAY_NAMES } from "../config";
 import { streamChat } from "./chat";
 import { getOrCreateVectorStore } from "./vector-store-cache";
 import type {
@@ -42,8 +42,8 @@ export async function streamRAG(
   } = options;
 
   const dataSource = options.dataSource as DataSource | undefined;
-  const actualModelId = typeof model === "string" && model in MODEL_DISPLAY_NAMES
-    ? getActualModelId(model as AIModel)
+  const actualModelId = isAIModel(model)
+    ? getActualModelId(model)
     : model;
 
   let searchResults: Array<{ document: Document; score: number }> = [];
@@ -157,7 +157,7 @@ export async function streamRAG(
     { role: "user", content: userPrompt },
   ];
 
-  const displayModelName = MODEL_DISPLAY_NAMES[model as AIModel] || model;
+  const displayModelName = isAIModel(model) ? MODEL_DISPLAY_NAMES[model] : model;
   emitThinkingStep(
     onEvent,
     dataSource,

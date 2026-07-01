@@ -1,19 +1,19 @@
 export const AI_MODELS = [
-  "deepseek-v4-pro",
-  "qwen3.6-27b",
-  "kimi-k2.6",
-  "glm-5.1",
+  "kimi-k2.7-code",
+  "qwen3.7-max-2026-06-08",
+  "qwen3.7-plus",
+  "qwen3.7-plus-2026-05-26",
 ] as const;
 
 export type AIModelId = (typeof AI_MODELS)[number];
 
-export const DEFAULT_AI_MODEL_ID: AIModelId = "deepseek-v4-pro";
+export const DEFAULT_AI_MODEL_ID: AIModelId = "kimi-k2.7-code";
 
 export const MODEL_DISPLAY_NAMES: Record<AIModelId, string> = {
-  "deepseek-v4-pro": "DeepSeek V4 Pro",
-  "qwen3.6-27b": "Qwen 3.6 27B",
-  "kimi-k2.6": "Kimi K2.6",
-  "glm-5.1": "GLM 5.1",
+  "kimi-k2.7-code": "Kimi K2.7 Code",
+  "qwen3.7-max-2026-06-08": "Qwen 3.7 Max 2026-06-08",
+  "qwen3.7-plus": "Qwen 3.7 Plus",
+  "qwen3.7-plus-2026-05-26": "Qwen 3.7 Plus 2026-05-26",
 };
 
 export function getInitialAIModelId(): AIModelId {

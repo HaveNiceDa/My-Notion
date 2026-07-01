@@ -6,6 +6,8 @@ import {
   MODEL_DISPLAY_NAMES,
   MODELS_CONFIG,
   getActualModelId,
+  isAIModel,
+  resolveAllowedModelId,
   EMB_MODEL,
 } from "../config/model";
 
@@ -50,6 +52,27 @@ describe("AI config", () => {
       AI_MODELS.forEach((model) => {
         expect(getActualModelId(model)).toBe(MODEL_ID_MAPPING[model]);
       });
+    });
+
+    it("rejects unknown upstream model ids", () => {
+      expect(() => getActualModelId("glm-5.2")).toThrow("Unsupported AI model");
+    });
+  });
+
+  describe("isAIModel", () => {
+    it("recognizes allowlisted models only", () => {
+      expect(isAIModel(DEFAULT_MODEL)).toBe(true);
+      expect(isAIModel("glm-5.2")).toBe(false);
+    });
+  });
+
+  describe("resolveAllowedModelId", () => {
+    it("uses the fallback model when the input is empty", () => {
+      expect(resolveAllowedModelId(undefined)).toBe(MODEL_ID_MAPPING[DEFAULT_MODEL]);
+    });
+
+    it("rejects unknown request models", () => {
+      expect(() => resolveAllowedModelId("glm-5.2")).toThrow("Unsupported AI model");
     });
   });
 

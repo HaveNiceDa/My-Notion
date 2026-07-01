@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
 
 export const runtime = "edge";
 export const preferredRegion = "hkg1";
@@ -8,6 +9,12 @@ const DASHSCOPE_BASE_URL =
   "https://dashscope.aliyuncs.com/compatible-mode/v1";
 
 const CHAT_FIRST_EVENT_TIMEOUT_MS = 20_000;
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX_REQUESTS = 20;
+
+type RequestWindow = { timestamps: number[] };
+
+const rateLimitStore = new Map<string, RequestWindow>();
 
 function getOpenAIClient(): OpenAI {
   const apiKey = process.env.LLM_API_KEY;
@@ -15,18 +22,116 @@ function getOpenAIClient(): OpenAI {
   return new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
 }
 
+function getCorsHeaders(request: Request): Record<string, string> {
+  const allowedOrigins = parseCsv(process.env.AI_SERVICE_ALLOWED_ORIGINS);
+  const origin = request.headers.get("origin") || "";
+  const allowedOrigin = allowedOrigins.length === 0
+    ? "*"
+    : allowedOrigins.includes(origin)
+      ? origin
+      : "";
+
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  };
+}
+
+function parseCsv(value: string | undefined): string[] {
+  return (value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function jsonResponse(
+  request: Request,
+  data: object,
+  status: number,
+): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      ...getCorsHeaders(request),
+      "Content-Type": "application/json",
+    },
+  });
+}
+
+function getBearerToken(request: Request): string | null {
+  const authorization = request.headers.get("authorization") || "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return match?.[1]?.trim() || null;
+}
+
+function authorizeRequest(request: Request): { ok: true; key: string } | { ok: false; status: number; error: string } {
+  const expectedToken = process.env.AI_SERVICE_AUTH_TOKEN;
+  if (!expectedToken) {
+    return {
+      ok: false,
+      status: 503,
+      error: "AI_SERVICE_AUTH_TOKEN is not configured",
+    };
+  }
+
+  const token = getBearerToken(request);
+  if (!token || token !== expectedToken) {
+    return { ok: false, status: 401, error: "Unauthorized" };
+  }
+
+  return { ok: true, key: request.headers.get("x-forwarded-for") || "authenticated" };
+}
+
+function checkRateLimit(key: string): { ok: true } | { ok: false; retryAfter: number } {
+  const now = Date.now();
+  const cutoff = now - RATE_LIMIT_WINDOW_MS;
+  const window = rateLimitStore.get(key) ?? { timestamps: [] };
+  window.timestamps = window.timestamps.filter((timestamp) => timestamp > cutoff);
+
+  if (window.timestamps.length >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((window.timestamps[0] + RATE_LIMIT_WINDOW_MS - now) / 1000);
+    rateLimitStore.set(key, window);
+    return { ok: false, retryAfter: Math.max(retryAfter, 1) };
+  }
+
+  window.timestamps.push(now);
+  rateLimitStore.set(key, window);
+  return { ok: true };
+}
+
 function encodeSSE(event: string, data: object): string {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+}
+
+export async function OPTIONS(request: Request): Promise<Response> {
+  return new Response(null, {
+    status: 204,
+    headers: getCorsHeaders(request),
+  });
 }
 
 export async function POST(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
+      headers: getCorsHeaders(request),
+    });
+  }
+
+  const authorization = authorizeRequest(request);
+  if (!authorization.ok) {
+    return jsonResponse(request, { error: authorization.error }, authorization.status);
+  }
+
+  const rateLimit = checkRateLimit(authorization.key);
+  if (!rateLimit.ok) {
+    return new Response(JSON.stringify({ error: "Too many requests" }), {
+      status: 429,
       headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
+        ...getCorsHeaders(request),
+        "Content-Type": "application/json",
+        "Retry-After": String(rateLimit.retryAfter),
       },
     });
   }
@@ -35,10 +140,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     body = await request.json();
   } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse(request, { error: "Invalid JSON" }, 400);
   }
 
   const { messages, model, enableThinking, thinkingBudget } = body as {
@@ -49,24 +151,32 @@ export async function POST(request: Request): Promise<Response> {
   };
 
   if (!messages || !Array.isArray(messages)) {
-    return new Response(JSON.stringify({ error: "Invalid messages format" }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse(request, { error: "Invalid messages format" }, 400);
+  }
+
+  let resolvedModel: string;
+  try {
+    resolvedModel = resolveAllowedModelId(model, DEFAULT_MODEL);
+  } catch (error) {
+    return jsonResponse(
+      request,
+      { error: error instanceof Error ? error.message : "Unsupported AI model" },
+      400,
+    );
   }
 
   const requestId = crypto.randomUUID();
   const startedAt = Date.now();
 
   console.log(`[edge/chat][${requestId}] request_received`, {
-    model,
+    model: resolvedModel,
     messageCount: messages.length,
   });
 
   const openai = getOpenAIClient();
 
   const requestParams: OpenAI.ChatCompletionCreateParamsStreaming = {
-    model,
+    model: resolvedModel,
     messages: messages as OpenAI.ChatCompletionMessageParam[],
     stream: true,
   };
@@ -176,7 +286,7 @@ export async function POST(request: Request): Promise<Response> {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*",
+      ...getCorsHeaders(request),
     },
   });
 }

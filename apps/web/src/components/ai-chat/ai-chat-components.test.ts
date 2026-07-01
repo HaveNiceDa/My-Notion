@@ -97,7 +97,7 @@ describe("AI Chat 组件渲染", () => {
         onSend: vi.fn(),
         agentMode: "chat",
         onAgentModeChange: vi.fn(),
-        modelId: "deepseek-v4-pro",
+        modelId: "kimi-k2.7-code",
         onModelChange: vi.fn(),
         enableThinking: true,
         isSending: false,
@@ -106,7 +106,7 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("使用 AI 处理各种任务");
     expect(html).toContain("计划");
-    expect(html).toContain("DeepSeek V4 Pro");
+    expect(html).toContain("Kimi K2.7 Code");
     expect(html).toContain("disabled");
   });
 
@@ -118,14 +118,14 @@ describe("AI Chat 组件渲染", () => {
         onSend: vi.fn(),
         agentMode: "plan",
         onAgentModeChange: vi.fn(),
-        modelId: "qwen3.6-27b",
+        modelId: "qwen3.7-plus",
         onModelChange: vi.fn(),
         enableThinking: true,
         isSending: true,
       }),
     );
 
-    expect(html).toContain("Qwen 3.6 27B");
+    expect(html).toContain("Qwen 3.7 Plus");
     expect(html).toContain("计划中");
     expect(html).toContain("animate-spin");
     expect(html).toContain("disabled");

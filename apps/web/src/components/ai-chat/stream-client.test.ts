@@ -55,13 +55,13 @@ describe("runAgentStream", () => {
       JSON.stringify({ type: "tool-call-delta", toolCallId: "tool-1", delta: "{\"query\":" }) + "\n",
       JSON.stringify({ type: "tool-result-delta", toolCallId: "tool-1", delta: "检索中" }) + "\n",
       JSON.stringify({ type: "tool-call-result", toolCallId: "tool-1", result: { ok: true } }) + "\n",
-      JSON.stringify({ type: "finish", model: "deepseek-v4-pro", usage: null }) + "\n",
+      JSON.stringify({ type: "finish", model: "kimi-k2.7-code", usage: null }) + "\n",
     ]));
     vi.stubGlobal("fetch", fetchMock);
 
     await runAgentStream({
       messages: [{ role: "user", content: "你好" }],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -73,7 +73,7 @@ describe("runAgentStream", () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: [{ role: "user", content: "你好" }],
-        modelId: "deepseek-v4-pro",
+        modelId: "kimi-k2.7-code",
         conversationId: "conv-1",
         enableThinking: true,
         currentDocument: null,
@@ -94,12 +94,12 @@ describe("runAgentStream", () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(createStreamResponse([
       "{\"type\":\"text-delta\",\"id\":\"msg\",",
       "\"delta\":\"拆分\"}\n",
-      "{\"type\":\"finish\",\"model\":\"deepseek-v4-pro\",\"usage\":null}\n",
+      "{\"type\":\"finish\",\"model\":\"kimi-k2.7-code\",\"usage\":null}\n",
     ])));
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: false,
       currentDocument: null,
@@ -118,13 +118,13 @@ describe("runAgentStream", () => {
       JSON.stringify({ type: "run-start", runId: "run-1", seq: 1, assistantMessageId: "assistant-1" }) + "\n",
       JSON.stringify({ type: "text-delta", runId: "run-1", seq: 2, id: "assistant-1", delta: "第一段" }) + "\n",
       JSON.stringify({ type: "checkpoint", runId: "run-1", seq: 3, checkpointKind: "run_started" }) + "\n",
-      JSON.stringify({ type: "finish", runId: "run-1", seq: 4, model: "deepseek-v4-pro", usage: null }) + "\n",
+      JSON.stringify({ type: "finish", runId: "run-1", seq: 4, model: "kimi-k2.7-code", usage: null }) + "\n",
     ]));
     vi.stubGlobal("fetch", fetchMock);
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: false,
       currentDocument: null,
@@ -147,12 +147,12 @@ describe("runAgentStream", () => {
     fetchMock.mockResolvedValueOnce(createStreamResponse([
       JSON.stringify({ type: "resume-start", runId: "run-1", fromSeq: 3, replayedCount: 1 }) + "\n",
       JSON.stringify({ type: "checkpoint", runId: "run-1", seq: 5, checkpointKind: "iteration_completed" }) + "\n",
-      JSON.stringify({ type: "finish", runId: "run-1", seq: 6, model: "deepseek-v4-pro", usage: null }) + "\n",
+      JSON.stringify({ type: "finish", runId: "run-1", seq: 6, model: "kimi-k2.7-code", usage: null }) + "\n",
     ]));
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: false,
       currentDocument: null,
@@ -167,7 +167,7 @@ describe("runAgentStream", () => {
     expect(fetchMock).toHaveBeenLastCalledWith("/api/agent/stream", expect.objectContaining({
       body: JSON.stringify({
         messages: [],
-        modelId: "deepseek-v4-pro",
+        modelId: "kimi-k2.7-code",
         conversationId: "conv-1",
         enableThinking: false,
         currentDocument: null,
@@ -199,7 +199,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: false,
       currentDocument: null,
@@ -212,13 +212,13 @@ describe("runAgentStream", () => {
   it("支持透传 Plan 模式到 Agent stream API", async () => {
     const callbacks = createCallbacks();
     const fetchMock = vi.fn().mockResolvedValue(createStreamResponse([
-      JSON.stringify({ type: "finish", model: "deepseek-v4-pro", usage: null }) + "\n",
+      JSON.stringify({ type: "finish", model: "kimi-k2.7-code", usage: null }) + "\n",
     ]));
     vi.stubGlobal("fetch", fetchMock);
 
     await runAgentStream({
       messages: [{ role: "user", content: "先规划" }],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -229,7 +229,7 @@ describe("runAgentStream", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/agent/stream", expect.objectContaining({
       body: JSON.stringify({
         messages: [{ role: "user", content: "先规划" }],
-        modelId: "deepseek-v4-pro",
+        modelId: "kimi-k2.7-code",
         conversationId: "conv-1",
         enableThinking: true,
         currentDocument: null,
@@ -246,7 +246,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -266,7 +266,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -294,7 +294,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -317,7 +317,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -336,14 +336,14 @@ describe("runAgentStream", () => {
       .mockRejectedValueOnce(new TypeError("network down"))
       .mockResolvedValueOnce(createStreamResponse([
         JSON.stringify({ type: "text-delta", id: "msg", delta: "恢复" }) + "\n",
-        JSON.stringify({ type: "finish", model: "deepseek-v4-pro", usage: null }) + "\n",
+        JSON.stringify({ type: "finish", model: "kimi-k2.7-code", usage: null }) + "\n",
       ]));
     callbacks.onRetry = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,
@@ -376,7 +376,7 @@ describe("runAgentStream", () => {
 
     await runAgentStream({
       messages: [],
-      model: "deepseek-v4-pro",
+      model: "kimi-k2.7-code",
       conversationId: "conv-1",
       enableThinking: true,
       currentDocument: null,

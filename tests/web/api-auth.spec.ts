@@ -85,7 +85,7 @@ test.describe("Web - API Routes (Authenticated POST)", () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           messages: [{ role: "user", content: "Hello" }],
-          modelId: "deepseek-v4-pro",
+          modelId: "kimi-k2.7-code",
         }),
       });
       res.body?.cancel();
@@ -141,7 +141,7 @@ test.describe("Web - AI Chat mock E2E", () => {
         },
       },
       { type: "text-delta", id: "assistant", delta: "这是 mock 回答。" },
-      { type: "finish", model: "deepseek-v4-pro", usage: null },
+      { type: "finish", model: "kimi-k2.7-code", usage: null },
     ]);
 
     await openAIChat(page);
@@ -173,7 +173,7 @@ test.describe("Web - AI Chat mock E2E", () => {
         },
       },
       { type: "text-delta", id: "assistant", delta: "已生成文档预览，请确认。" },
-      { type: "finish", model: "deepseek-v4-pro", usage: null },
+      { type: "finish", model: "kimi-k2.7-code", usage: null },
     ]);
 
     await openAIChat(page);

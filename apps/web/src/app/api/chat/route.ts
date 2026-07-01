@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import { getActualModelId } from "@notion/ai/config";
+import { DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
 import { streamChat, type AIStreamEvent, type ChatMessage } from "@notion/ai/server";
 import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
 
@@ -73,7 +73,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = getActualModelId(body.model || body.modelId || "deepseek-v4-pro");
+    let model: string;
+    try {
+      model = resolveAllowedModelId(body.model || body.modelId, DEFAULT_MODEL);
+    } catch (error) {
+      return NextResponse.json(
+        { success: false, error: error instanceof Error ? error.message : "Unsupported AI model" },
+        { status: 400, headers: corsHeaders },
+      );
+    }
+
     const enableThinking = Boolean(body.enableThinking);
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({

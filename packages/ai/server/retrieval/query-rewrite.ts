@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, getActualModelId } from "../../config";
+import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, resolveAllowedModelId } from "../../config";
 import type { QueryRewriteVariant } from "./types";
 
 interface QueryRewriteResponse {
@@ -38,7 +38,7 @@ async function rewriteWithLLM(query: string): Promise<QueryRewriteVariant[]> {
   }
 
   const client = new OpenAI({ apiKey, baseURL: DASHSCOPE_BASE_URL });
-  const model = getActualModelId(process.env.RETRIEVAL_REWRITE_MODEL || DEFAULT_MODEL);
+  const model = resolveAllowedModelId(process.env.RETRIEVAL_REWRITE_MODEL, DEFAULT_MODEL);
 
   const response = await client.chat.completions.create({
     model,
