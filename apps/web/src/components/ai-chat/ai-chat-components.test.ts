@@ -106,7 +106,7 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("使用 AI 处理各种任务");
     expect(html).toContain("计划");
-    expect(html).toContain("Kimi K2.7 Code");
+    expect(html).toContain("Kimi Code");
     expect(html).toContain("disabled");
   });
 
@@ -125,7 +125,7 @@ describe("AI Chat 组件渲染", () => {
       }),
     );
 
-    expect(html).toContain("Qwen 3.7 Plus");
+    expect(html).toContain("Qwen Plus");
     expect(html).toContain("计划中");
     expect(html).toContain("animate-spin");
     expect(html).toContain("disabled");

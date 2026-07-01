@@ -17,10 +17,10 @@ export const MODEL_ID_MAPPING: Record<AIModel, string> = {
 };
 
 export const MODEL_DISPLAY_NAMES: Record<AIModel, string> = {
-  "kimi-k2.7-code": "Kimi K2.7 Code",
-  "qwen3.7-max-2026-06-08": "Qwen 3.7 Max 2026-06-08",
-  "qwen3.7-plus": "Qwen 3.7 Plus",
-  "qwen3.7-plus-2026-05-26": "Qwen 3.7 Plus 2026-05-26",
+  "kimi-k2.7-code": "Kimi Code",
+  "qwen3.7-max-2026-06-08": "Qwen Max",
+  "qwen3.7-plus": "Qwen Plus",
+  "qwen3.7-plus-2026-05-26": "Qwen Plus 0526",
 };
 
 const AI_MODEL_SET = new Set<string>(AI_MODELS);
@@ -64,25 +64,25 @@ export const MODELS_CONFIG: ModelConfig[] = [
   {
     id: "kimi-k2.7-code",
     actualModelId: "kimi-k2.7-code",
-    displayName: "Kimi K2.7 Code",
+    displayName: "Kimi Code",
     enabled: true,
   },
   {
     id: "qwen3.7-max-2026-06-08",
     actualModelId: "qwen3.7-max-2026-06-08",
-    displayName: "Qwen 3.7 Max 2026-06-08",
+    displayName: "Qwen Max",
     enabled: true,
   },
   {
     id: "qwen3.7-plus",
     actualModelId: "qwen3.7-plus",
-    displayName: "Qwen 3.7 Plus",
+    displayName: "Qwen Plus",
     enabled: true,
   },
   {
     id: "qwen3.7-plus-2026-05-26",
     actualModelId: "qwen3.7-plus-2026-05-26",
-    displayName: "Qwen 3.7 Plus 2026-05-26",
+    displayName: "Qwen Plus 0526",
     enabled: true,
   },
 ];
