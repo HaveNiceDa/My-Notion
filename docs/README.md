@@ -29,7 +29,6 @@
 | [mobile-debug-guide.md](./mobile-debug-guide.md) | Expo 环境变量、路由、真机、弱网、Agent Stream 和图片上传排查。 |
 | [my-notion-cli-release-checklist.md](./my-notion-cli-release-checklist.md) | CLI / Skills 发布前检查，覆盖验证、npm、登录和安全输出。 |
 | [my-notion-mcp-release-checklist.md](./my-notion-mcp-release-checklist.md) | 独立 MCP 发布前检查，覆盖 pack、stdio、SDK client 和 npm smoke。 |
-| [fly-io-deployment-guide.md](./fly-io-deployment-guide.md) | `services/ai` 的 Fly.io 备用部署方案，作为 Vercel 网络不稳时的选项。 |
 
 ## 外部 AI 参考
 

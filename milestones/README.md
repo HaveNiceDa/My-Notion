@@ -14,7 +14,7 @@
 | Agent 写文档与外部生态 | `M16` -> `M20` -> `M28` |
 | Plan 与流式治理 | `M19` -> `M21` -> `docs/agent-stream-resume-protocol.md` |
 | Memory 产品化 | `docs/agent-memory-redesign-report.md` -> `M23` -> `M24` -> `M25` -> `M26` -> `M27` |
-| Mobile 后续路线 | `docs/web-mobile-gap-analysis.md` |
+| Mobile 后续路线 | `docs/web-mobile-gap-analysis.md` -> `M29` -> `M30` |
 
 ## 阶段摘要
 
@@ -26,6 +26,8 @@
 | M20-M21 | ✅ 完成 | Web Agent 接入受控 MCP adapter，统一 `tool-result-v1`，补齐强类型 sources、流式安全重试和 checkpoint/resume。 |
 | M23-M27 | ✅ 完成 | Memory 从单点保存升级为 Context Governance System，覆盖 schema、检索、Inbox、Memory Center、Eval 和自动提取。 |
 | M28 | ✅ 完成 | MCP 从 CLI 子命令拆成独立 `@mynotion/mcp` 包，CLI/MCP 共享 `@mynotion/agent-tools`，保留兼容入口。 |
+| M29 | 规划中 | Mobile AI Native Client，聚焦 Agent Stream 真机验证、弱网恢复、resume、本地缓存和错误边界。 |
+| M30 | 规划中 | Mobile Editor Deepening，聚焦正文图片、复杂 block 降级、键盘/选区、长文和弱网保存。 |
 
 ## 当前总状态
 
@@ -43,11 +45,13 @@
 - M21 ✅ 已完成操作闭环：流式安全重试、主要 Web Agent tools 的 `tool-result-v1` 契约统一、强类型 sources、Plan 执行状态持久化、流式续跑可用闭环，以及 2026-06-07 的 AI 工具交互治理与 MCP ID 防护。
 - M23-M27 ✅ 已完成：Agent Memory 从 MVP 升级为 Context Governance System，覆盖 schema、检索运行时、Inbox、Memory Center、Eval 和受控自动提取。
 - M28 ✅ 已完成：独立 `@mynotion/mcp` 与内部共享 `@mynotion/agent-tools` 已发布验证，保留 CLI 兼容入口。
+- M29 规划中：Mobile AI Native Client，补齐真机 Agent Stream、checkpoint/resume、本地缓存和弱网恢复。
+- M30 规划中：Mobile Editor Deepening，补齐正文图片、复杂 block 降级、键盘/选区和长文编辑体验。
 
 ## 下一批候选里程碑
 
-- M29 候选：Mobile AI Native Client，围绕 Expo / React Native 客户端学习与建设，继续补强 Agent Stream、checkpoint/resume、AI Chat 状态机、本地缓存和弱网恢复。
-- M30 候选：Mobile Editor Deepening，验证并补强正文图片插入/上传、复杂 block 移动端降级、键盘/选区/工具栏和长文编辑体验。
+- M29：Mobile AI Native Client，围绕 Expo / React Native 客户端学习与建设，继续补强 Agent Stream、checkpoint/resume、AI Chat 状态机、本地缓存和弱网恢复。
+- M30：Mobile Editor Deepening，验证并补强正文图片插入/上传、复杂 block 移动端降级、键盘/选区/工具栏和长文编辑体验。
 - Harness / Trace Replay / Storybook / Memory-RAG 真实评估继续后置，不作为当前主线。
 - 详细路线见 `docs/web-mobile-gap-analysis.md` 与 `docs/ai-chat-refactor-plan.md`。
 

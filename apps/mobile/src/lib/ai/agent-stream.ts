@@ -113,13 +113,15 @@ export type MobileAgentStreamEvent =
     message: string;
   };
 
-const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
+const WEB_AGENT_URL =
+  process.env.EXPO_PUBLIC_WEB_AGENT_URL ||
+  process.env.EXPO_PUBLIC_AI_SERVICE_URL;
 
-function getAIServiceUrl(): string {
-  if (!AI_SERVICE_URL) {
-    throw new Error("EXPO_PUBLIC_AI_SERVICE_URL is not configured");
+function getWebAgentUrl(): string {
+  if (!WEB_AGENT_URL) {
+    throw new Error("EXPO_PUBLIC_WEB_AGENT_URL is not configured");
   }
-  return AI_SERVICE_URL;
+  return WEB_AGENT_URL;
 }
 
 function buildJsonHeaders(authToken?: string | null): Record<string, string> {
@@ -289,7 +291,7 @@ async function postAgentStream(
   callbacks: MobileAgentStreamCallbacks,
   initialCursor: MobileAgentStreamCursor | null,
 ) {
-  const serviceUrl = getAIServiceUrl();
+  const serviceUrl = getWebAgentUrl();
   const response = await fetch(`${serviceUrl}/api/agent/stream`, {
     method: "POST",
     headers: buildJsonHeaders(authToken),

@@ -74,7 +74,7 @@ expo-router 会扫描 `app/` 下文件。业务源码不应放在 `app/src` 里�
 
 移动端图片上传走 Web `/api/upload-image`。本地调试时需要同时确认两个地址：
 
-- `EXPO_PUBLIC_AI_SERVICE_URL`：AI Chat / Agent Stream 服务地址。
+- `EXPO_PUBLIC_WEB_AGENT_URL`：Web Agent 服务地址，当前应指向 Web 应用。
 - `EXPO_PUBLIC_WEB_URL`：图片上传、预览链接等 Web API 地址。
 
 如果浏览器控制台出现 `Request header field authorization is not allowed by Access-Control-Allow-Headers`，说明当前请求打到的 Web API 还没允许 `Authorization` 预检头，或者请求打到了尚未部署新代码的线上地址。
@@ -87,7 +87,7 @@ pnpm --filter @notion/web exec next dev -H 0.0.0.0 -p 3000
 
 # 终端 2：Mobile 同时指向本地 Web/AI 服务
 EXPO_PUBLIC_WEB_URL=http://<电脑局域网IP>:3000 \
-EXPO_PUBLIC_AI_SERVICE_URL=http://<电脑局域网IP>:3000 \
+EXPO_PUBLIC_WEB_AGENT_URL=http://<电脑局域网IP>:3000 \
 pnpm --filter @notion/mobile start:clear
 ```
 
@@ -103,7 +103,7 @@ pnpm --filter @notion/mobile start:clear
 
 前置条件：
 
-- `EXPO_PUBLIC_AI_SERVICE_URL` 指向可被真机访问的 Web/AI 服务地址。
+- `EXPO_PUBLIC_WEB_AGENT_URL` 指向可被真机访问的 Web 应用地址。
 - 目标文档包含标题、正文段落和至少一次未等待防抖保存的编辑。
 
 检查步骤：
@@ -186,4 +186,3 @@ pnpm --filter @notion/mobile exec tsc --noEmit
 
 - 当前 Web / Mobile 差距：`web-mobile-gap-analysis.md`
 - Mobile AI 历史排障复盘：`blog-archive.md`
-- Fly.io 备用部署：`fly-io-deployment-guide.md`

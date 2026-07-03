@@ -57,4 +57,4 @@
 原文：`blog-vercel-edge-runtime.md`
 
 - 记录 Vercel Serverless 调国内 DashScope 504、区域切换无效、Edge Runtime 改善首包的排查过程。
-- 这是一份历史复盘，不代表当前唯一生产部署建议；`services/ai` 如需更稳定区域控制，可参考 `fly-io-deployment-guide.md`。
+- 这是一份历史复盘，不代表当前生产部署建议；当前 Mobile AI 主线已收敛到 Web API。

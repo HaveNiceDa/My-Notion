@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "expo start",
     "dev:clear": "expo start --clear",
-    "dev:local": "EXPO_PUBLIC_AI_SERVICE_URL=http://localhost:3000 expo start",
-    "dev:local:clear": "EXPO_PUBLIC_AI_SERVICE_URL=http://localhost:3000 expo start --clear",
+    "dev:local": "EXPO_PUBLIC_WEB_AGENT_URL=http://localhost:3000 expo start",
+    "dev:local:clear": "EXPO_PUBLIC_WEB_AGENT_URL=http://localhost:3000 expo start --clear",
     "dev:convex": "npx convex dev --typecheck=disable",
     "dev:all": "concurrently \"pnpm run dev\" \"pnpm run dev:convex\"",
     "dev:all:local": "concurrently \"pnpm run dev:local\" \"pnpm run dev:convex\"",

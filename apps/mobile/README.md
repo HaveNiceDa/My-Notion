@@ -45,7 +45,7 @@ cd apps/mobile
 pnpm dev
 ```
 
-本地 AI 服务调试：
+本地 Web Agent 调试：
 
 ```bash
 cd apps/mobile
@@ -69,11 +69,12 @@ EXPO_PUBLIC_CONVEX_URL=your-convex-url
 EXPO_PUBLIC_CONVEX_SITE_URL=your-convex-site-url
 
 EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY=your-clerk-publishable-key
+EXPO_PUBLIC_WEB_AGENT_URL=your-web-app-url
 ```
 
-AI 服务地址由运行模式决定：
+Web Agent 地址由运行模式决定：
 
-| 场景 | AI 地址 |
+| 场景 | Web Agent 地址 |
 |---|---|
 | `pnpm dev` | 默认线上 AI 服务 |
 | `pnpm dev:local` | `http://localhost:3000` |
@@ -98,7 +99,7 @@ Mobile App
 
 服务端代理
   ├─ Mobile -> Web API -> EdgeStore
-  └─ Mobile -> AI Gateway / Vercel Edge Function -> LLM API
+  └─ Mobile -> Web /api/agent/stream -> LLM API
 ```
 
 ## 目录结构

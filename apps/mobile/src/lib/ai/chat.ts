@@ -21,18 +21,20 @@ export type StreamCallbacks = {
   onComplete: () => void;
 };
 
-const AI_SERVICE_URL = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
+const WEB_AGENT_URL =
+  process.env.EXPO_PUBLIC_WEB_AGENT_URL ||
+  process.env.EXPO_PUBLIC_AI_SERVICE_URL;
 
 type StreamRequestOptions = {
   authToken?: string | null;
   signal?: AbortSignal;
 };
 
-function getAIServiceUrl(): string {
-  if (!AI_SERVICE_URL) {
-    throw new Error("EXPO_PUBLIC_AI_SERVICE_URL is not configured");
+function getWebAgentUrl(): string {
+  if (!WEB_AGENT_URL) {
+    throw new Error("EXPO_PUBLIC_WEB_AGENT_URL is not configured");
   }
-  return AI_SERVICE_URL;
+  return WEB_AGENT_URL;
 }
 
 function buildJsonHeaders(authToken?: string | null): Record<string, string> {
@@ -141,7 +143,7 @@ export async function streamChat(
   callbacks: StreamCallbacks,
   options: StreamRequestOptions = {},
 ): Promise<void> {
-  const serviceUrl = getAIServiceUrl();
+  const serviceUrl = getWebAgentUrl();
   const actualModelId = getActualModelId(model);
 
   try {
@@ -182,7 +184,7 @@ export async function streamRAG(
   callbacks: StreamCallbacks,
   options: StreamRequestOptions = {},
 ): Promise<void> {
-  const serviceUrl = getAIServiceUrl();
+  const serviceUrl = getWebAgentUrl();
   const actualModelId = getActualModelId(params.model);
 
   try {
