@@ -96,15 +96,23 @@ export async function POST(req: Request) {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      const response = await openai.chat.completions.create({
+      const createParams: Record<string, unknown> = {
         model: resolvedModelId,
         messages: [
           { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
           ...openaiMessages,
         ],
         tools: tools.length > 0 ? tools : undefined,
+        // 编辑器 AI 的前端只消费文档操作 tool；纯文本回答会让菜单看起来没有反应。
+        tool_choice: tools.length > 0 ? "required" : undefined,
+        // 编辑器操作不需要思考模式，显式关闭以规避 DashScope tool_choice 兼容问题。
+        enable_thinking: false,
         stream: true,
-      });
+      };
+
+      const response = await openai.chat.completions.create(
+        createParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
+      );
 
       const toolCallState = new Map<
         number,
