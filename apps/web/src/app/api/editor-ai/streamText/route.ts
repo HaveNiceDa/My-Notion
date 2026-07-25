@@ -96,105 +96,117 @@ export async function POST(req: Request) {
 
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
-      const createParams: Record<string, unknown> = {
-        model: resolvedModelId,
-        messages: [
-          { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
-          ...openaiMessages,
-        ],
-        tools: tools.length > 0 ? tools : undefined,
-        // 编辑器 AI 的前端只消费文档操作 tool；纯文本回答会让菜单看起来没有反应。
-        tool_choice: tools.length > 0 ? "required" : undefined,
-        // 编辑器操作不需要思考模式，显式关闭以规避 DashScope tool_choice 兼容问题。
-        enable_thinking: false,
-        stream: true,
-      };
+      try {
+        // DashScope 上 Kimi k2.7-code 和 Qwen 3.7 系列都默认开启 thinking mode，
+        // 而 thinking mode 不支持 tool_choice: "required"，必须显式关闭。
+        const response = await openai.chat.completions.create({
+          model: resolvedModelId,
+          messages: [
+            { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
+            ...openaiMessages,
+          ],
+          tools: tools.length > 0 ? tools : undefined,
+          tool_choice: tools.length > 0 ? "required" : undefined,
+          enable_thinking: false,
+          max_tokens: 8192,
+          stream: true,
+        } as OpenAI.ChatCompletionCreateParamsStreaming);
 
-      const response = await openai.chat.completions.create(
-        createParams as unknown as OpenAI.ChatCompletionCreateParamsStreaming,
-      );
+        const toolCallState = new Map<
+          number,
+          { id: string; name: string; args: string }
+        >();
 
-      const toolCallState = new Map<
-        number,
-        { id: string; name: string; args: string }
-      >();
-      let textId: string | null = null;
+        for await (const chunk of response) {
+          const choice = chunk.choices[0];
+          if (!choice) continue;
+          const delta = choice.delta;
 
-      for await (const chunk of response) {
-        const delta = chunk.choices[0]?.delta;
-        if (!delta) continue;
+          // tool_choice: "required" 下模型可能仍输出少量前置文本（如"好的"），
+          // BlockNote 编辑器模式只期望 tool 事件，文本内容会干扰操作解析，直接丢弃。
+          if (delta.tool_calls) {
+            for (const toolCall of delta.tool_calls) {
+              const idx = toolCall.index ?? 0;
 
-        if (delta.content) {
-          if (!textId) {
-            textId = `txt_${Date.now()}`;
-            writer.write({ type: "text-start", id: textId });
+              if (toolCall.id) {
+                toolCallState.set(idx, {
+                  id: toolCall.id,
+                  name: toolCall.function?.name || "",
+                  args: "",
+                });
+
+                writer.write({
+                  type: "tool-input-start",
+                  toolCallId: toolCall.id,
+                  toolName: toolCall.function?.name || "",
+                });
+              }
+
+              if (toolCall.function?.name) {
+                const state = toolCallState.get(idx);
+                if (state && !state.name) {
+                  state.name = toolCall.function.name;
+                }
+              }
+
+              if (toolCall.function?.arguments) {
+                const state = toolCallState.get(idx);
+                if (state) {
+                  state.args += toolCall.function.arguments;
+                  writer.write({
+                    type: "tool-input-delta",
+                    toolCallId: state.id,
+                    inputTextDelta: toolCall.function.arguments,
+                  });
+                }
+              }
+            }
+          }
+        }
+
+        for (const [, state] of toolCallState) {
+          if (!state.args) {
+            writer.write({
+              type: "error",
+              errorText: "AI 返回的文档操作为空，请重试。",
+            });
+            continue;
+          }
+          let parsedInput: Record<string, unknown> = {};
+          try {
+            parsedInput = JSON.parse(state.args);
+          } catch {
+            writer.write({
+              type: "error",
+              errorText: "生成的文档操作格式有误，请重试。",
+            });
+            continue;
           }
           writer.write({
-            type: "text-delta",
-            id: textId,
-            delta: delta.content,
+            type: "tool-input-available",
+            toolCallId: state.id,
+            toolName: state.name || "applyDocumentOperations",
+            input: parsedInput,
           });
         }
 
-        if (delta.tool_calls) {
-          for (const toolCall of delta.tool_calls) {
-            const idx = toolCall.index ?? 0;
-
-            if (toolCall.id) {
-              if (textId) {
-                writer.write({ type: "text-end", id: textId });
-                textId = null;
-              }
-
-              toolCallState.set(idx, {
-                id: toolCall.id,
-                name: toolCall.function?.name || "",
-                args: "",
-              });
-
-              writer.write({
-                type: "tool-input-start",
-                toolCallId: toolCall.id,
-                toolName: toolCall.function?.name || "",
-              });
-            }
-
-            if (toolCall.function?.arguments) {
-              const state = toolCallState.get(idx);
-              if (state) {
-                state.args += toolCall.function.arguments;
-                writer.write({
-                  type: "tool-input-delta",
-                  toolCallId: state.id,
-                  inputTextDelta: toolCall.function.arguments,
-                });
-              }
-            }
-          }
+        if (toolCallState.size === 0) {
+          writer.write({
+            type: "error",
+            errorText: "AI 未返回文档操作，请重试。",
+          });
         }
-      }
-
-      if (textId) {
-        writer.write({ type: "text-end", id: textId });
-      }
-
-      for (const [, state] of toolCallState) {
-        let parsedInput: Record<string, unknown> = {};
-        try {
-          parsedInput = JSON.parse(state.args || "{}");
-        } catch {
-          parsedInput = { raw: state.args };
-        }
+      } catch (error) {
+        console.error("[Editor AI] Stream error:", error);
         writer.write({
-          type: "tool-input-available",
-          toolCallId: state.id,
-          toolName: state.name,
-          input: parsedInput,
+          type: "error",
+          errorText:
+            error instanceof Error ? error.message : "AI 请求失败，请重试。",
         });
       }
     },
     onError: (error) => {
-      console.error("[Editor AI] Stream error:", error);
+      console.error("[Editor AI] Stream onError:", error);
       return error instanceof Error ? error.message : String(error);
     },
   });

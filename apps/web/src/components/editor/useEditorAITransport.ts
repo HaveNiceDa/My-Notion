@@ -6,7 +6,6 @@ import { getInitialAIModelId } from "@/src/components/ai-chat/models";
 export function useEditorAITransport() {
   const { isSignedIn, isLoaded } = useAuth();
   const { openSignIn } = useClerk();
-  const model = getInitialAIModelId();
 
   return useMemo(() => {
     const authFetch: typeof globalThis.fetch = async (input, init) => {
@@ -23,9 +22,11 @@ export function useEditorAITransport() {
     return new DefaultChatTransport({
       api: "/api/editor-ai/streamText",
       fetch: authFetch,
-      body: {
-        modelId: model,
-      },
+      // Use a function so the latest modelId from localStorage is read
+      // on each request (user may switch models in the sidebar).
+      body: () => ({
+        modelId: getInitialAIModelId(),
+      }),
     });
-  }, [model, isSignedIn, isLoaded, openSignIn]);
+  }, [isSignedIn, isLoaded, openSignIn]);
 }
