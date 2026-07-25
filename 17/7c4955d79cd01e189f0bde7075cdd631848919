@@ -1,0 +1,14 @@
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.10",
+  "base_commit_sha": "177c4955d79cd01e189f0bde7075cdd631848919",
+  "prompts": {},
+  "humans": {
+    "h_8934eb58eb068d": {
+      "author": "lishijie.36 <lishijie.36@bytedance.com>"
+    }
+  },
+  "attestation_metadata": {},
+  "remote_transcripts": {}
+}
