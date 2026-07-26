@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { hashString } from "@notion/ai/utils";
 import type { AgentTool } from "./tools/definitions";
 import type { ToolContext } from "./tools/types";
 import {
@@ -400,14 +401,6 @@ function safeParseJson(value: string): unknown {
   } catch {
     return value;
   }
-}
-
-function hashString(value: string): string {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
-  }
-  return String(hash >>> 0);
 }
 
 function nowMs(): number {

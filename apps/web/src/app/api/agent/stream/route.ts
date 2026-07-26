@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { ConvexHttpClient } from "convex/browser";
 import OpenAI from "openai";
 import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
+import { hashString } from "@notion/ai/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
@@ -910,14 +911,6 @@ function buildResumeState(options: {
     toolResults: options.toolResults,
     assistantDraft: options.assistantDraft,
   };
-}
-
-function hashString(value: string): string {
-  let hash = 0;
-  for (let i = 0; i < value.length; i += 1) {
-    hash = ((hash << 5) - hash + value.charCodeAt(i)) | 0;
-  }
-  return String(hash >>> 0);
 }
 
 function elapsedSince(startedAt: number): number {

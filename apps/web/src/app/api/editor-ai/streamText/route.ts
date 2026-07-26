@@ -5,6 +5,7 @@ import {
   createUIMessageStream,
 } from "ai";
 import { DASHSCOPE_BASE_URL, DEFAULT_MODEL, resolveAllowedModelId } from "@notion/ai/config";
+import { ToolCallAccumulator } from "@notion/ai/utils";
 import {
   injectDocumentStateMessages,
   convertToOpenAIMessages,
@@ -112,10 +113,7 @@ export async function POST(req: Request) {
           stream: true,
         } as OpenAI.ChatCompletionCreateParamsStreaming);
 
-        const toolCallState = new Map<
-          number,
-          { id: string; name: string; args: string }
-        >();
+        const accumulator = new ToolCallAccumulator();
 
         for await (const chunk of response) {
           const choice = chunk.choices[0];
@@ -124,48 +122,36 @@ export async function POST(req: Request) {
 
           // tool_choice: "required" 下模型可能仍输出少量前置文本（如"好的"），
           // BlockNote 编辑器模式只期望 tool 事件，文本内容会干扰操作解析，直接丢弃。
-          if (delta.tool_calls) {
-            for (const toolCall of delta.tool_calls) {
-              const idx = toolCall.index ?? 0;
+          const changes = accumulator.feed(delta);
 
-              if (toolCall.id) {
-                toolCallState.set(idx, {
-                  id: toolCall.id,
-                  name: toolCall.function?.name || "",
-                  args: "",
-                });
-
+          for (const change of changes) {
+            if (change.idUpdated) {
+              writer.write({
+                type: "tool-input-start",
+                toolCallId: change.call.id,
+                toolName: change.call.name || "applyDocumentOperations",
+              });
+              if (change.argsBeforeId) {
                 writer.write({
-                  type: "tool-input-start",
-                  toolCallId: toolCall.id,
-                  toolName: toolCall.function?.name || "",
+                  type: "tool-input-delta",
+                  toolCallId: change.call.id,
+                  inputTextDelta: change.argsBeforeId,
                 });
               }
-
-              if (toolCall.function?.name) {
-                const state = toolCallState.get(idx);
-                if (state && !state.name) {
-                  state.name = toolCall.function.name;
-                }
-              }
-
-              if (toolCall.function?.arguments) {
-                const state = toolCallState.get(idx);
-                if (state) {
-                  state.args += toolCall.function.arguments;
-                  writer.write({
-                    type: "tool-input-delta",
-                    toolCallId: state.id,
-                    inputTextDelta: toolCall.function.arguments,
-                  });
-                }
-              }
+            }
+            if (change.argsDelta) {
+              writer.write({
+                type: "tool-input-delta",
+                toolCallId: change.call.id,
+                inputTextDelta: change.argsDelta,
+              });
             }
           }
         }
 
-        for (const [, state] of toolCallState) {
-          if (!state.args) {
+        const toolCalls = accumulator.getToolCalls();
+        for (const tc of toolCalls) {
+          if (!tc.function.arguments) {
             writer.write({
               type: "error",
               errorText: "AI 返回的文档操作为空，请重试。",
@@ -174,7 +160,7 @@ export async function POST(req: Request) {
           }
           let parsedInput: Record<string, unknown> = {};
           try {
-            parsedInput = JSON.parse(state.args);
+            parsedInput = JSON.parse(tc.function.arguments);
           } catch {
             writer.write({
               type: "error",
@@ -184,13 +170,13 @@ export async function POST(req: Request) {
           }
           writer.write({
             type: "tool-input-available",
-            toolCallId: state.id,
-            toolName: state.name || "applyDocumentOperations",
+            toolCallId: tc.id,
+            toolName: tc.function.name || "applyDocumentOperations",
             input: parsedInput,
           });
         }
 
-        if (toolCallState.size === 0) {
+        if (toolCalls.length === 0) {
           writer.write({
             type: "error",
             errorText: "AI 未返回文档操作，请重试。",

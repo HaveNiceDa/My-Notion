@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { ToolCallAccumulator } from "@notion/ai/utils";
 import type { AgentTracer } from "./trace";
 import { getErrorMessage } from "./trace";
 
@@ -99,7 +100,7 @@ export async function streamModelResponse(
     timeoutMs = 120_000,
     eventSink,
   } = options;
-  const pendingToolCalls: Record<number, OpenAI.ChatCompletionMessageFunctionToolCall> = {};
+  const accumulator = new ToolCallAccumulator();
   const startedToolCallIds = new Set<string>();
   const startedAt = typeof performance !== "undefined" ? performance.now() : Date.now();
   let firstChunkMs: number | undefined;
@@ -167,36 +168,28 @@ export async function streamModelResponse(
       }
 
       // 累积 tool_call deltas，DashScope 可能分多次返回一个 tool_call 的参数
-      for (const toolCallDelta of delta.tool_calls ?? []) {
-        const index = toolCallDelta.index ?? 0;
-        const existing = pendingToolCalls[index] ?? {
-          id: toolCallDelta.id ?? `tool-${options.iteration ?? 0}-${index}`,
-          type: "function" as const,
-          function: { name: "", arguments: "" },
-        };
-
-        if (toolCallDelta.id) existing.id = toolCallDelta.id;
-        if (toolCallDelta.function?.name) existing.function.name = toolCallDelta.function.name;
-        if (toolCallDelta.function?.arguments) {
-          existing.function.arguments += toolCallDelta.function.arguments;
-        }
-        pendingToolCalls[index] = existing;
-
-        // 首次收到 tool name 时发送 tool-call-start 事件
-        if (existing.function.name && !startedToolCallIds.has(existing.id)) {
-          startedToolCallIds.add(existing.id);
+      for (const change of accumulator.feed(delta)) {
+        // 首次收到 tool name 且 id 可用时发送 tool-call-start 事件
+        if (change.call.name && !change.call.id.startsWith("tool-") && !startedToolCallIds.has(change.call.id)) {
+          startedToolCallIds.add(change.call.id);
           emitStreamEvent(options, {
             type: "tool-call-start",
-            toolCallId: existing.id,
-            toolName: existing.function.name,
+            toolCallId: change.call.id,
+            toolName: change.call.name,
           });
+          if (change.argsBeforeId) {
+            emitStreamEvent(options, {
+              type: "tool-call-delta",
+              toolCallId: change.call.id,
+              delta: change.argsBeforeId,
+            });
+          }
         }
-
-        if (toolCallDelta.function?.arguments) {
+        if (change.argsDelta) {
           emitStreamEvent(options, {
             type: "tool-call-delta",
-            toolCallId: existing.id,
-            delta: toolCallDelta.function.arguments,
+            toolCallId: change.call.id,
+            delta: change.argsDelta,
           });
         }
       }
@@ -206,7 +199,7 @@ export async function streamModelResponse(
       firstChunkMs,
       textDeltaCount,
       reasoningDeltaCount,
-      toolCallCount: Object.keys(pendingToolCalls).length,
+      toolCallCount: accumulator.size,
     });
   } catch (error) {
     trace?.event("llm_error", elapsedSince(startedAt), {
@@ -218,7 +211,7 @@ export async function streamModelResponse(
     clearTimeout(timeoutId);
   }
 
-  return Object.values(pendingToolCalls);
+  return accumulator.getToolCalls();
 }
 
 export function emitStreamEvent(
