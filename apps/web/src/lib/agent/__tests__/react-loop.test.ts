@@ -215,6 +215,50 @@ describe("runReActLoop", () => {
       result: cachedResult,
     }));
   });
+
+  it("返回最终 messages 和 completedToolResults 状态", async () => {
+    const toolCall = createToolCallChunk(
+      "call-final",
+      "web_extract",
+      '{"url":"https://example.com"}',
+    );
+    const finalText = { choices: [{ delta: { content: "总结完成。" } }] };
+    const create = vi.fn()
+      .mockResolvedValueOnce(createMockStream([toolCall]))
+      .mockResolvedValueOnce(createMockStream([finalText]));
+
+    const openai = {
+      chat: { completions: { create } },
+    } as unknown as import("openai").default;
+    const execute = vi.fn().mockResolvedValue({ title: "Example", content: "Result" });
+    const tool: AgentTool = {
+      name: "web_extract",
+      description: "extract web page",
+      parameters: { type: "object", properties: {} },
+      execute,
+    };
+    const { controller } = createController();
+
+    const result = await runReActLoop({
+      openai,
+      model: "test-model",
+      messages: [{ role: "user", content: "总结这个链接" }],
+      tools: [{ type: "function", function: { name: "web_extract", description: "", parameters: {} } }],
+      toolMap: new Map([["web_extract", tool]]),
+      toolContext: { userId: "user-1", model: "test-model" },
+      enableThinking: false,
+      controller,
+      encoder: new TextEncoder(),
+      responseId: "assistant-1",
+    });
+
+    expect(result.reachedMaxIterations).toBe(false);
+    expect(result.completedToolResults).toHaveLength(1);
+    expect(result.completedToolResults[0].toolCallId).toBe("call-final");
+    expect(result.completedToolResults[0].toolName).toBe("web_extract");
+    expect(result.messages.some((m) => m.role === "assistant" && "tool_calls" in m)).toBe(true);
+    expect(result.messages.some((m) => m.role === "tool" && "tool_call_id" in m)).toBe(true);
+  });
 });
 
 function createToolCallChunk(id: string, name: string, args: string) {

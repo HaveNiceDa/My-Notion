@@ -46,10 +46,23 @@ interface ReActLoopParams {
   resumeToolResults?: Record<string, string>;
 }
 
+export interface ReActLoopResult {
+  messages: OpenAI.ChatCompletionMessageParam[];
+  completedToolResults: Array<{
+    toolCallId: string;
+    toolName: string;
+    argumentsJson: string;
+    result: unknown;
+    resultHash: string;
+    completedAt: number;
+  }>;
+  reachedMaxIterations: boolean;
+}
+
 // ReAct 循环引擎：LLM 自主决策是否调用工具，支持多轮工具调用
 // 每轮迭代：LLM 生成回复 → 如有 tool_calls 则执行 → 将结果加入 messages → 继续下一轮
 // 最多 MAX_ITERATIONS 轮，防止无限循环
-export async function runReActLoop(params: ReActLoopParams): Promise<void> {
+export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopResult> {
   const {
     openai,
     model,
@@ -335,14 +348,14 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
 
   if (reachedMaxIterationsWithTools) {
     console.warn("[ReAct] 达到最大工具迭代次数，强制进入最终回答阶段");
-    messages.push({
+    const maxIterSystemMessage: OpenAI.ChatCompletionMessageParam = {
       role: "system",
       content:
         "Tool iteration limit reached. Do not call any more tools. Use the available tool results above to answer the user's latest request directly.",
-    });
+    };
     const finalParams: Record<string, unknown> = {
       model,
-      messages,
+      messages: [...messages, maxIterSystemMessage],
       max_tokens: 4096,
       stream: true,
     };
@@ -359,6 +372,12 @@ export async function runReActLoop(params: ReActLoopParams): Promise<void> {
       eventSink,
     });
   }
+
+  return {
+    messages,
+    completedToolResults,
+    reachedMaxIterations: reachedMaxIterationsWithTools,
+  };
 }
 
 function buildCompletedToolResult(

@@ -7,7 +7,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
-import { runReActLoop } from "@/src/lib/agent/react-loop";
+import { runReActLoop, type ReActLoopResult } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
 import { AgentRunRecorder } from "@/src/lib/agent/run-recorder";
 import { getToolSignature } from "@/src/lib/agent/tool-result-cache";
@@ -344,7 +344,7 @@ export async function POST(req: NextRequest) {
           }),
         });
         try {
-          await runReActLoop({
+          const loopResult: ReActLoopResult = await runReActLoop({
             openai,
             model,
             messages: compressedMessages,
@@ -379,13 +379,13 @@ export async function POST(req: NextRequest) {
           recorder.checkpoint({
             kind: "run_finished",
             resumeState: buildResumeState({
-              messages: compressedMessages,
+              messages: loopResult.messages,
               model,
               enableThinking,
               knowledgeBaseEnabled,
               mode,
               currentDocument: body.currentDocument,
-              toolResults: [],
+              toolResults: loopResult.completedToolResults,
               assistantDraft: recorder.getDraft(),
             }),
           });
@@ -405,7 +405,8 @@ export async function POST(req: NextRequest) {
               });
           }
           tracer.event("run_end", elapsedSince(runStartedAt), {
-            compressedMessageCount: compressedMessages.length,
+            compressedMessageCount: loopResult.messages.length,
+            reachedMaxIterations: loopResult.reachedMaxIterations,
           });
         } catch (error) {
           tracer.event("run_error", elapsedSince(runStartedAt), {
@@ -711,7 +712,7 @@ async function resumeFromCheckpoint(options: {
 
   await options.convex.mutation(api.aiChat.finishAgentRun, { runId: options.runId, status: "running" });
   try {
-    await runReActLoop({
+    const loopResult: ReActLoopResult = await runReActLoop({
       openai: getOpenAIClient(),
       model,
       messages: checkpoint.resumeState.compressedMessages,
@@ -746,6 +747,8 @@ async function resumeFromCheckpoint(options: {
       kind: "run_finished",
       resumeState: {
         ...checkpoint.resumeState,
+        compressedMessages: loopResult.messages,
+        toolResults: loopResult.completedToolResults,
         assistantDraft: recorder.getDraft(),
       },
       metadata: { resumed: true },
