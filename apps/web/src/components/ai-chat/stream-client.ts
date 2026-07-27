@@ -1,5 +1,5 @@
 import { devLog } from "@notion/business/utils";
-import type { AgentCheckpointKind, AgentRunMode, AgentStreamEvent, AgentStreamResumeCursor } from "./types";
+import type { AgentCheckpointKind, AgentRunMode, AgentStreamEvent, AgentStreamResumeCursor, ConfirmedPlan } from "./types";
 import type { AIModelId } from "./models";
 import type { CurrentDocumentContext } from "@/src/lib/store/use-current-document-store";
 
@@ -25,6 +25,7 @@ export interface AgentStreamOptions {
   enableThinking: boolean;
   currentDocument: CurrentDocumentContext | null;
   mode?: AgentRunMode;
+  confirmedPlan?: ConfirmedPlan | null;
   callbacks: AgentStreamCallbacks;
   maxRetries?: number;
   resume?: AgentStreamResumeCursor;
@@ -69,6 +70,7 @@ async function fetchAgentStream(options: AgentStreamOptions): Promise<Response> 
         enableThinking: options.enableThinking,
         currentDocument: options.currentDocument,
         mode: options.mode,
+        confirmedPlan: options.confirmedPlan,
         resume: options.resume,
       }),
     });

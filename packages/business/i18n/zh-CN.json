@@ -365,6 +365,7 @@
     "planConfirmationRequired": "确认后会按计划继续执行",
     "toolActionAvailableAfterResponse": "回复结束后可操作",
     "planExecutionVisible": "执行过程会在新的回复中展示",
+    "planExecutionCompleted": "计划已全部执行完成",
     "planExecutionPromptIntro": "请按以下已确认的计划开始执行。执行时按步骤推进，必要时调用可用工具；涉及写入或持久化变更时继续遵循预览与用户确认流程。",
     "planExecutionPromptObjective": "目标",
     "planExecutionPromptSteps": "步骤",

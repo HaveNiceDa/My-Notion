@@ -5,7 +5,7 @@ import { useMemoizedFn } from "ahooks";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { useCurrentDocumentStore } from "@/src/lib/store/use-current-document-store";
-import type { AgentRunMode, AgentStreamResumeCursor, ChatMessage, ToolCallResult } from "./types";
+import type { AgentRunMode, AgentStreamResumeCursor, ChatMessage, ConfirmedPlan, ToolCallResult } from "./types";
 import { runAgentStream } from "./stream-client";
 import type { useAIChatPersistence } from "./useAIChatPersistence";
 import type { useAIChatState } from "./useAIChatState";
@@ -32,10 +32,11 @@ export function useAIChatStream(
 
   const sendMessage = useMemoizedFn(async (
     images: string[] = [],
-    options: { inputOverride?: string; mode?: AgentRunMode } = {},
+    options: { inputOverride?: string; mode?: AgentRunMode; confirmedPlan?: ConfirmedPlan | null } = {},
   ) => {
     const currentInput = options.inputOverride ?? state.input;
     const runMode = options.mode ?? state.agentMode;
+    const confirmedPlan = options.confirmedPlan ?? null;
     if ((!currentInput.trim() && images.length === 0) || state.isLoading || !user) return;
 
     const currentImages = [...images];
@@ -71,6 +72,7 @@ export function useAIChatStream(
     let completedToolResults: ToolCallResult[] = [];
     const toolArgumentsById = new Map<string, string>();
     let activeResumeCursor: AgentStreamResumeCursor | null = null;
+    const isExecutePlanMode = runMode === "execute-plan";
 
     const flushMessages = () => {
       pendingRender = false;
@@ -138,19 +140,31 @@ export function useAIChatStream(
         enableThinking: state.enableThinking,
         currentDocument,
         mode: runMode,
+        confirmedPlan,
         callbacks: {
           onChunk: (chunk: string) => { currentContent += chunk; scheduleRender(); },
           onReasoningChunk: (chunk: string) => { if (state.enableThinking) { currentReasoningContent += chunk; scheduleRender(); } },
           onToolCallStart: (toolCallId: string, toolName: string) => {
             toolArgumentsById.set(toolCallId, "");
-            state.setToolCalls((prev) => [
-              ...prev.filter((tc) => tc.id !== toolCallId),
-              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
-            ]);
-            completedToolResults = [
-              ...completedToolResults.filter((result) => result.id !== toolCallId),
-              { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
-            ];
+            if (isExecutePlanMode && toolName === "task_plan") {
+              state.setToolCalls((prev) => [
+                ...prev.filter((tc) => tc.name !== "task_plan"),
+                { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+              ]);
+              completedToolResults = [
+                ...completedToolResults.filter((r) => r.name !== "task_plan"),
+                { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+              ];
+            } else {
+              state.setToolCalls((prev) => [
+                ...prev.filter((tc) => tc.id !== toolCallId),
+                { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+              ]);
+              completedToolResults = [
+                ...completedToolResults.filter((result) => result.id !== toolCallId),
+                { id: toolCallId, name: toolName, parameters: {}, status: "calling" },
+              ];
+            }
           },
           onToolCallDelta: (toolCallId: string, delta: string) => {
             const nextArguments = `${toolArgumentsById.get(toolCallId) ?? ""}${delta}`;
@@ -181,6 +195,20 @@ export function useAIChatStream(
             );
           },
           onToolCallResult: (toolCallId: string, result: unknown) => {
+            if (isExecutePlanMode) {
+              const toolName = completedToolResults.find((r) => r.id === toolCallId)?.name;
+              if (toolName === "task_plan") {
+                state.setToolCalls((prev) => {
+                  const filtered = prev.filter((tc) => tc.name !== "task_plan");
+                  return [...filtered, { id: toolCallId, name: "task_plan", parameters: { arguments: toolArgumentsById.get(toolCallId) ?? "" }, status: "completed", result }];
+                });
+                completedToolResults = [
+                  ...completedToolResults.filter((r) => r.name !== "task_plan"),
+                  { id: toolCallId, name: "task_plan", parameters: { arguments: toolArgumentsById.get(toolCallId) ?? "" }, status: "completed", result },
+                ];
+                return;
+              }
+            }
             state.setToolCalls((prev) =>
               prev.map((tc) =>
                 tc.id === toolCallId ? { ...tc, result, status: "completed" } : tc,

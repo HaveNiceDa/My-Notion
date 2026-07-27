@@ -30,7 +30,16 @@ export interface ToolResultEnvelope {
   };
 }
 
-export type AgentRunMode = "chat" | "plan";
+export type AgentRunMode = "chat" | "plan" | "execute-plan";
+
+export interface ConfirmedPlan {
+  objective: string;
+  steps: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+}
 
 export interface TaskPlanStep {
   id?: string;
@@ -43,7 +52,8 @@ export interface TaskPlanToolResult {
   objective?: string;
   steps?: TaskPlanStep[];
   summary?: string;
-  planExecutionStatus?: "started" | "cancelled";
+  planExecutionStatus?: "started" | "cancelled" | "completed";
+  isUpdate?: boolean;
   error?: string;
 }
 

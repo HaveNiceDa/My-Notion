@@ -14,7 +14,7 @@ interface MessageItemProps {
   message: ChatMessage;
   activeToolCalls?: ToolCall[];
   isStreaming?: boolean;
-  onExecutePlan?: (prompt: string) => Promise<void>;
+  onExecutePlan?: (plan: { objective: string; steps: Array<{ id: string; title: string; description?: string }> }) => Promise<void>;
   canResume?: boolean;
   onResume?: () => Promise<void>;
 }
@@ -286,7 +286,7 @@ interface MessageListProps {
   toolCalls?: ToolCall[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   conversationCreatedAt: Date | null;
-  onExecutePlan?: (prompt: string) => Promise<void>;
+  onExecutePlan?: (plan: { objective: string; steps: Array<{ id: string; title: string; description?: string }> }) => Promise<void>;
   canResumeLastRun?: boolean;
   onResumeLastRun?: () => Promise<void>;
 }

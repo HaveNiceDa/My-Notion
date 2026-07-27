@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useMutation } from "convex/react";
 import { useTranslations } from "next-intl";
-import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain, PencilLine, ListChecks } from "lucide-react";
+import { BookOpen, FileText, Globe, Loader2, Check, ChevronDown, ChevronUp, Brain, PencilLine, ListChecks, CheckCircle2, Circle, Clock, AlertCircle } from "lucide-react";
 import { cn } from "@notion/business/utils";
 import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
@@ -19,7 +19,7 @@ interface ToolCallCardProps {
   toolResult: ToolCallResult;
   messageId?: Id<"aiMessages">;
   isStreaming?: boolean;
-  onExecutePlan?: (prompt: string) => Promise<void>;
+  onExecutePlan?: (plan: { objective: string; steps: Array<{ id: string; title: string; description?: string }> }) => Promise<void>;
 }
 
 type RetrievalStrategy = "fast" | "balanced" | "deep";
@@ -293,28 +293,6 @@ function DocumentReadResult({ result }: { result: { document?: { id: string; tit
   );
 }
 
-function buildPlanExecutionPrompt(
-  result: TaskPlanToolResult,
-  t: ReturnType<typeof useTranslations>,
-): string {
-  const steps = result.steps ?? [];
-  const stepList = steps
-    .map((step, index) => {
-      const description = step.description ? `: ${step.description}` : "";
-      return `${index + 1}. ${step.title ?? t("taskPlanUntitledStep")}${description}`;
-    })
-    .join("\n");
-
-  return [
-    t("planExecutionPromptIntro"),
-    "",
-    `${t("planExecutionPromptObjective")}: ${result.objective ?? ""}`,
-    "",
-    `${t("planExecutionPromptSteps")}:`,
-    stepList,
-  ].join("\n");
-}
-
 function TaskPlanResult({
   result,
   toolCallId,
@@ -326,17 +304,27 @@ function TaskPlanResult({
   toolCallId: string;
   messageId?: Id<"aiMessages">;
   isStreaming?: boolean;
-  onExecutePlan?: (prompt: string) => Promise<void>;
+  onExecutePlan?: (plan: { objective: string; steps: Array<{ id: string; title: string; description?: string }> }) => Promise<void>;
 }) {
   const t = useTranslations("AI");
   const steps = result.steps ?? [];
   const updateToolResultState = useMutation(api.aiChat.updateToolResultState);
-  const initialStatus = result.planExecutionStatus === "started" ? "started" : "idle";
-  const [executionStatus, setExecutionStatus] = useState<"idle" | "starting" | "started">(initialStatus);
+  const initialStatus = result.planExecutionStatus === "started"
+    ? "started"
+    : result.planExecutionStatus === "completed"
+      ? "completed"
+      : "idle";
+  const [executionStatus, setExecutionStatus] = useState<"idle" | "starting" | "started" | "completed">(initialStatus);
 
   if (result.error) {
     return <span className="text-destructive text-xs">{result.error}</span>;
   }
+
+  const isExecuting = Boolean(isStreaming) && executionStatus !== "idle";
+  const completedCount = steps.filter((s) => s.status === "completed").length;
+  const inProgressCount = steps.filter((s) => s.status === "in_progress").length;
+  const blockedCount = steps.filter((s) => s.status === "blocked").length;
+  const allCompleted = steps.length > 0 && completedCount === steps.length;
 
   async function handleExecutePlan() {
     if (isStreaming || !onExecutePlan || steps.length === 0) return;
@@ -344,8 +332,24 @@ function TaskPlanResult({
     if (messageId) {
       await updateToolResultState({ messageId, toolCallId, status: "started" });
     }
-    await onExecutePlan(buildPlanExecutionPrompt(result, t));
+    const plan = {
+      objective: result.objective ?? "",
+      steps: steps.map((step, idx) => ({
+        id: step.id ?? `step-${idx + 1}`,
+        title: step.title ?? t("taskPlanUntitledStep"),
+        description: step.description,
+      })),
+    };
+    await onExecutePlan(plan);
     setExecutionStatus("started");
+  }
+
+  function getStepIcon(status: TaskPlanStep["status"], isCurrentExecuting: boolean) {
+    if (status === "completed") return <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-green-600 dark:text-green-400" />;
+    if (status === "in_progress") return <Loader2 className={cn("mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600 dark:text-blue-400", isExecuting && "animate-spin")} />;
+    if (status === "blocked") return <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600 dark:text-amber-400" />;
+    if (isCurrentExecuting) return <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground" />;
+    return <Circle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground/60" />;
   }
 
   return (
@@ -355,14 +359,26 @@ function TaskPlanResult({
           {result.objective}
         </div>
       )}
+      {steps.length > 0 && (executionStatus !== "idle" || steps.some((s) => s.status && s.status !== "pending")) && (
+        <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground">
+          <span>{completedCount}/{steps.length} {t("taskPlanCompleted")}</span>
+          {inProgressCount > 0 && <span>· {inProgressCount} {t("taskPlanInProgress")}</span>}
+          {blockedCount > 0 && <span>· {blockedCount} {t("taskPlanBlocked")}</span>}
+        </div>
+      )}
       {steps.map((step, index) => (
         <div key={`${step.id ?? "step"}-${index}`} className="flex gap-2 rounded-md px-2 py-1 text-xs">
-          <span className="mt-0.5 text-muted-foreground">{index + 1}.</span>
+          {getStepIcon(step.status, isExecuting)}
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
-              <span className="font-medium text-foreground">{step.title ?? t("taskPlanUntitledStep")}</span>
-              {step.status && (
-                <span className="rounded-full bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              <span className={cn(
+                "font-medium",
+                step.status === "completed" ? "text-muted-foreground line-through" : "text-foreground",
+              )}>
+                {step.title ?? t("taskPlanUntitledStep")}
+              </span>
+              {step.status === "blocked" && (
+                <span className="rounded-full bg-amber-100 dark:bg-amber-950/50 px-1.5 py-0.5 text-[10px] text-amber-700 dark:text-amber-400">
                   {formatTaskPlanStatus(t, step.status)}
                 </span>
               )}
@@ -373,27 +389,37 @@ function TaskPlanResult({
           </div>
         </div>
       ))}
-      {onExecutePlan && steps.length > 0 && (
+      {onExecutePlan && steps.length > 0 && executionStatus === "idle" && (
         <div className="flex items-center gap-2 pt-1">
           <button
             type="button"
             onClick={handleExecutePlan}
-            disabled={isStreaming || executionStatus !== "idle"}
+            disabled={Boolean(isStreaming)}
             className="rounded-md bg-primary px-2 py-1 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
           >
-            {executionStatus === "starting"
-              ? t("planExecutionStarting")
-              : executionStatus === "started"
-                ? t("planExecutionStarted")
-                : t("executePlan")}
+            {t("executePlan")}
           </button>
           <span className="text-[11px] text-muted-foreground">
             {isStreaming
               ? t("toolActionAvailableAfterResponse")
-              : executionStatus === "idle"
-                ? t("planConfirmationRequired")
-                : t("planExecutionVisible")}
+              : t("planConfirmationRequired")}
           </span>
+        </div>
+      )}
+      {executionStatus !== "idle" && !allCompleted && (
+        <div className="flex items-center gap-2 px-2 pt-1">
+          <span className="rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
+            {executionStatus === "starting" ? t("planExecutionStarting") : t("planExecutionStarted")}
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {t("planExecutionVisible")}
+          </span>
+        </div>
+      )}
+      {allCompleted && executionStatus !== "idle" && (
+        <div className="flex items-center gap-1.5 px-2 pt-1 text-[11px] text-green-600 dark:text-green-400">
+          <CheckCircle2 className="h-3 w-3" />
+          {t("planExecutionCompleted")}
         </div>
       )}
     </div>

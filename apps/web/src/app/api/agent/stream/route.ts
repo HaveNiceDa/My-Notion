@@ -33,6 +33,15 @@ const ALLOWED_ORIGINS = [
   "https://notion-j9zj.vercel.app",
 ];
 
+type ConfirmedPlan = {
+  objective: string;
+  steps: Array<{
+    id: string;
+    title: string;
+    description?: string;
+  }>;
+};
+
 type AgentRequestBody = {
   messages?: OpenAI.ChatCompletionMessageParam[];
   modelId?: string;
@@ -40,7 +49,8 @@ type AgentRequestBody = {
   knowledgeBaseEnabled?: boolean;
   conversationId?: string;
   currentDocument?: CurrentDocumentContext | null;
-  mode?: "chat" | "plan";
+  mode?: "chat" | "plan" | "execute-plan";
+  confirmedPlan?: ConfirmedPlan | null;
   autoExtractMemories?: boolean;
   resume?: {
     runId: string;
@@ -101,16 +111,35 @@ async function getAuthenticatedConvexClient(
 function buildSystemMessage(
   hasToolContext: boolean,
   instructionMemoryContext?: string,
-  mode: "chat" | "plan" = "chat",
+  mode: "chat" | "plan" | "execute-plan" = "chat",
+  confirmedPlan?: ConfirmedPlan | null,
 ): OpenAI.ChatCompletionSystemMessageParam {
-  const planModeInstruction = mode === "plan"
-    ? [
+  let modeInstruction = "";
+  if (mode === "plan") {
+    modeInstruction = [
       "The user is asking for a plan. You must call the task_plan tool exactly once before the final answer.",
       "Do not execute the plan yet. Do not call write tools, memory write, or any irreversible operation in plan mode.",
       "Make the plan concrete and ordered. Each step should be independently executable and have a clear title.",
       "After calling task_plan, ask the user to review and confirm the plan before execution.",
-    ].join("\n")
-    : "";
+    ].join("\n");
+  } else if (mode === "execute-plan" && confirmedPlan) {
+    const stepList = confirmedPlan.steps
+      .map((step, i) => `${i + 1}. [${step.id}] ${step.title}${step.description ? ` - ${step.description}` : ""}`)
+      .join("\n");
+    modeInstruction = [
+      "The user has confirmed the following plan. You MUST execute the steps strictly in order, one at a time.",
+      "Before starting each step, call task_plan with the same objective and all steps, setting the current step's status to 'in_progress'.",
+      "After completing each step, call task_plan again to update that step's status to 'completed' before moving to the next step.",
+      "If a step cannot be completed, set its status to 'blocked' and explain the blocker before continuing or stopping.",
+      "After all steps are completed, set all steps to 'completed' and provide a final summary.",
+      "",
+      `Plan objective: ${confirmedPlan.objective}`,
+      "Steps:",
+      stepList,
+      "",
+      "All write operations (document_write, document_update, memory_write) still follow the dry-run -> user confirmation flow.",
+    ].join("\n");
+  }
 
   return {
     role: "system",
@@ -121,7 +150,7 @@ function buildSystemMessage(
         ? "When the user's question requires information from multiple sources, call multiple tools in the same response instead of making separate calls. For example, if the user asks about both their notes and current events, call knowledge_search and web_search together."
         : "Answer directly and concisely. If the user asks for private workspace knowledge and no tool context is provided, explain what information is missing.",
       "Keep your answers concise and well-structured. Avoid overly long responses.",
-      planModeInstruction,
+      modeInstruction,
       instructionMemoryContext
         ? `User-confirmed preferences and project rules:\n${instructionMemoryContext}\nTreat these as compact soft rules. The current user instruction and explicit system safety constraints still have higher priority. Use memory_search when you need more confirmed preferences, project rules, or recent decisions.`
         : "",
@@ -252,7 +281,12 @@ export async function POST(req: NextRequest) {
 
     const enableThinking = Boolean(body.enableThinking);
     const knowledgeBaseEnabled = body.knowledgeBaseEnabled !== false;
-    const mode = body.mode === "plan" ? "plan" : "chat";
+    const mode: "chat" | "plan" | "execute-plan" = body.mode === "plan"
+      ? "plan"
+      : body.mode === "execute-plan"
+        ? "execute-plan"
+        : "chat";
+    const confirmedPlan = mode === "execute-plan" ? body.confirmedPlan ?? null : null;
     const autoExtractMemories = mode === "chat"
       && (body.autoExtractMemories === true || process.env.AGENT_MEMORY_AUTO_EXTRACT === "1");
     const tracer = new AgentTracer({
@@ -280,6 +314,7 @@ export async function POST(req: NextRequest) {
 
     // 构建可用 tool 列表和映射
     // Plan 模式只暴露 task_plan，避免模型在用户确认前直接执行写入类工具。
+    // execute-plan 模式暴露所有工具，Agent 按计划逐步执行。
     const availableTools = buildAvailableTools(body.currentDocument, {
       knowledgeBaseEnabled,
     }).filter((tool) => mode === "plan" ? tool.name === "task_plan" : true);
@@ -296,10 +331,11 @@ export async function POST(req: NextRequest) {
       toolNames: availableTools.map((tool) => tool.name),
       knowledgeBaseEnabled,
       latestUserTextLength: latestUserText.length,
+      mode,
     });
 
     const allMessages: OpenAI.ChatCompletionMessageParam[] = [
-      buildSystemMessage(availableTools.length > 0, instructionMemory.text, mode),
+      buildSystemMessage(availableTools.length > 0, instructionMemory.text, mode, confirmedPlan),
       ...messages,
     ];
 
@@ -313,7 +349,7 @@ export async function POST(req: NextRequest) {
           conversationId: body.conversationId as Id<"aiConversations">,
           assistantMessageId: responseId,
           model,
-          mode,
+          mode: mode === "execute-plan" ? "chat" : mode,
         });
       } catch (error) {
         console.warn("[Agent Stream] Failed to create Agent run; disabling run recording for this response:", error);
@@ -696,7 +732,11 @@ async function resumeFromCheckpoint(options: {
     assistantMessageId: options.assistantMessageId,
     initialSeq: options.initialSeq,
   });
-  const mode = checkpoint.resumeState.mode === "plan" ? "plan" : "chat";
+  const mode: "chat" | "plan" | "execute-plan" = checkpoint.resumeState.mode === "plan"
+    ? "plan"
+    : checkpoint.resumeState.mode === "execute-plan"
+      ? "execute-plan"
+      : "chat";
   const model = checkpoint.resumeState.model;
   const restoredCurrentDocument = await restoreCurrentDocumentFromCheckpoint(
     options.convex,
@@ -775,7 +815,7 @@ interface ParsedCheckpoint {
     model: string;
     enableThinking: boolean;
     knowledgeBaseEnabled: boolean;
-    mode: "chat" | "plan";
+    mode: "chat" | "plan" | "execute-plan";
     currentDocument?: {
       id: string;
       title?: string;
@@ -796,13 +836,18 @@ function parseCheckpoint(value: string): ParsedCheckpoint | null {
     const resumeState = parsed.resumeState as ParsedCheckpoint["resumeState"] | undefined;
     if (!resumeState || !Array.isArray(resumeState.compressedMessages)) return null;
     if (typeof resumeState.model !== "string") return null;
+    const parsedMode = resumeState.mode === "plan"
+      ? "plan"
+      : resumeState.mode === "execute-plan"
+        ? "execute-plan"
+        : "chat";
     return {
       resumeState: {
         compressedMessages: resumeState.compressedMessages,
         model: resumeState.model,
         enableThinking: Boolean(resumeState.enableThinking),
         knowledgeBaseEnabled: resumeState.knowledgeBaseEnabled !== false,
-        mode: resumeState.mode === "plan" ? "plan" : "chat",
+        mode: parsedMode,
         currentDocument: normalizeCheckpointDocument(resumeState.currentDocument),
         toolResults: Array.isArray(resumeState.toolResults) ? resumeState.toolResults : [],
         assistantDraft: resumeState.assistantDraft ?? { text: "" },
@@ -883,7 +928,7 @@ function buildResumeState(options: {
   model: string;
   enableThinking: boolean;
   knowledgeBaseEnabled: boolean;
-  mode: "chat" | "plan";
+  mode: "chat" | "plan" | "execute-plan";
   currentDocument?: CurrentDocumentContext | null;
   toolResults: Array<{
     toolCallId: string;

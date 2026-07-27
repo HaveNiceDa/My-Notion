@@ -90,8 +90,9 @@ export function AIChatPanel() {
     setInput(prompt);
   }, [setInput]);
 
-  const handleExecutePlan = useCallback(async (prompt: string) => {
-    await sendMessage([], { inputOverride: prompt, mode: "chat" });
+  const handleExecutePlan = useCallback(async (plan: { objective: string; steps: Array<{ id: string; title: string; description?: string }> }) => {
+    const executionPrompt = `请按照已确认的计划开始执行：${plan.objective}`;
+    await sendMessage([], { inputOverride: executionPrompt, mode: "execute-plan", confirmedPlan: plan });
   }, [sendMessage]);
 
   const convListRef = useRef<HTMLDivElement>(null);

@@ -10,21 +10,9 @@ import {
   injectDocumentStateMessages,
   convertToOpenAIMessages,
   toolDefinitionsToOpenAITools,
+  buildEditorAIStreamOptions,
 } from "@notion/ai/server/editor-ai";
 import { checkRateLimit } from "@/src/lib/agent/rate-limiter";
-
-const EDITOR_AI_SYSTEM_PROMPT = `You're manipulating a text document using HTML blocks.
-Make sure to follow the json schema provided. When referencing ids they MUST be EXACTLY the same (including the trailing $).
-List items are 1 block with 1 list item each, so block content \`<ul><li>item1</li></ul>\` is valid, but \`<ul><li>item1</li><li>item2</li></ul>\` is invalid. We'll merge them automatically.
-For code blocks, you can use the \`data-language\` attribute on a <code> block (wrapped with <pre>) to specify the language.
-
-If the user requests updates to the document, use the "applyDocumentOperations" tool to update the document.
----
-IF there is no selection active in the latest state, first, determine what part of the document the user is talking about. You SHOULD probably take cursor info into account if needed.
-  EXAMPLE: if user says "below" (without pointing to a specific part of the document) he / she probably indicates the block(s) after the cursor.
-  EXAMPLE: If you want to insert content AT the cursor position (UNLESS indicated otherwise by the user), then you need \`referenceId\` to point to the block before the cursor with position \`after\` (or block below and \`before\`)
----
- `;
 
 export const runtime = "edge";
 export const preferredRegion = "hkg1";
@@ -98,20 +86,13 @@ export async function POST(req: Request) {
   const stream = createUIMessageStream({
     execute: async ({ writer }) => {
       try {
-        // DashScope 上 Kimi k2.7-code 和 Qwen 3.7 系列都默认开启 thinking mode，
-        // 而 thinking mode 不支持 tool_choice: "required"，必须显式关闭。
-        const response = await openai.chat.completions.create({
-          model: resolvedModelId,
-          messages: [
-            { role: "system", content: EDITOR_AI_SYSTEM_PROMPT },
-            ...openaiMessages,
-          ],
-          tools: tools.length > 0 ? tools : undefined,
-          tool_choice: tools.length > 0 ? "required" : undefined,
-          enable_thinking: false,
-          max_tokens: 8192,
-          stream: true,
-        } as OpenAI.ChatCompletionCreateParamsStreaming);
+        const response = await openai.chat.completions.create(
+          buildEditorAIStreamOptions({
+            model: resolvedModelId,
+            messages: openaiMessages,
+            tools,
+          }),
+        );
 
         const accumulator = new ToolCallAccumulator();
 
