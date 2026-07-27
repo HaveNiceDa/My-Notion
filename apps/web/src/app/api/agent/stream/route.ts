@@ -8,7 +8,7 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import { buildAvailableTools } from "@/src/lib/agent/tools/registry";
 import type { CurrentDocumentContext } from "@/src/lib/agent/tools/types";
-import { runReActLoop, type ReActLoopResult } from "@/src/lib/agent/react-loop";
+import { runReActLoop, type ReActLoopResult, EXECUTE_PLAN_MAX_ITERATIONS, DEFAULT_MAX_ITERATIONS } from "@/src/lib/agent/react-loop";
 import { enqueueEvent } from "@/src/lib/agent/stream";
 import { AgentRunRecorder } from "@/src/lib/agent/run-recorder";
 import { getToolSignature } from "@/src/lib/agent/tool-result-cache";
@@ -392,6 +392,7 @@ export async function POST(req: NextRequest) {
             controller,
             encoder,
             responseId,
+            maxIterations: mode === "execute-plan" ? EXECUTE_PLAN_MAX_ITERATIONS : DEFAULT_MAX_ITERATIONS,
             trace: tracer,
             eventSink: recorder.emit,
             checkpoint: (payload) => {
@@ -769,6 +770,7 @@ async function resumeFromCheckpoint(options: {
       controller: options.controller,
       encoder: options.encoder,
       responseId: options.assistantMessageId,
+      maxIterations: mode === "execute-plan" ? EXECUTE_PLAN_MAX_ITERATIONS : DEFAULT_MAX_ITERATIONS,
       eventSink: recorder.emit,
       resumeToolResults: buildResumeToolCache(checkpoint.resumeState.toolResults),
       checkpoint: (payload) => {

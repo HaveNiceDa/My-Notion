@@ -16,7 +16,8 @@ import {
   setCachedToolResult,
 } from "./tool-result-cache";
 
-const MAX_ITERATIONS = 5;
+export const DEFAULT_MAX_ITERATIONS = 5;
+export const EXECUTE_PLAN_MAX_ITERATIONS = 15;
 
 interface ReActLoopParams {
   openai: OpenAI;
@@ -29,6 +30,7 @@ interface ReActLoopParams {
   controller: ReadableStreamDefaultController<Uint8Array>;
   encoder: TextEncoder;
   responseId: string;
+  maxIterations?: number;
   trace?: AgentTracer;
   eventSink?: AgentStreamEventSink;
   checkpoint?: (payload: {
@@ -79,6 +81,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
     checkpoint,
     resumeToolResults,
   } = params;
+  const maxIterations = params.maxIterations ?? DEFAULT_MAX_ITERATIONS;
   const messages = [...params.messages];
   const toolResultCache = new Map<string, string>();
   for (const [signature, result] of Object.entries(resumeToolResults ?? {})) {
@@ -95,15 +98,15 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
   let reachedMaxIterationsWithTools = false;
 
   debugLog(
-    `[ReAct] 开始循环 model=${model} tools=[${tools.map((t) => "function" in t ? t.function.name : t.type).join(",")}] messages=${messages.length} thinking=${enableThinking}`,
+    `[ReAct] 开始循环 model=${model} tools=[${tools.map((t) => "function" in t ? t.function.name : t.type).join(",")}] messages=${messages.length} thinking=${enableThinking} maxIter=${maxIterations}`,
   );
 
-  for (let iteration = 0; iteration < MAX_ITERATIONS; iteration++) {
-    debugLog(`[ReAct] 迭代 ${iteration + 1}/${MAX_ITERATIONS}`);
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    debugLog(`[ReAct] 迭代 ${iteration + 1}/${maxIterations}`);
     const iterationStartedAt = nowMs();
     trace?.mark("react_iteration_start", {
       iteration: iteration + 1,
-      maxIterations: MAX_ITERATIONS,
+      maxIterations,
       messageCount: messages.length,
     });
 
@@ -114,8 +117,6 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
       tools: tools.length > 0 ? tools : undefined,
       // tool_choice 始终 "auto"：规避 DashScope thinking mode 与 object/required 的 400 冲突
       tool_choice: tools.length > 0 ? "auto" : undefined,
-      // 限制最大输出 token，防止无限生成
-      max_tokens: 4096,
       stream: true,
     };
 
@@ -331,7 +332,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
     trace?.event("react_iteration_end", nowMs() - iterationStartedAt, {
       iteration: iteration + 1,
       toolCallCount: pendingToolCalls.length,
-      stopReason: iteration === MAX_ITERATIONS - 1 ? "max_iterations" : "continue",
+      stopReason: iteration === maxIterations - 1 ? "max_iterations" : "continue",
       messageCount: messages.length,
     });
     checkpoint?.({
@@ -340,7 +341,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
       messages,
       completedToolResults,
     });
-    if (iteration === MAX_ITERATIONS - 1) {
+    if (iteration === maxIterations - 1) {
       reachedMaxIterationsWithTools = true;
     }
 
@@ -357,7 +358,6 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
     const finalParams: Record<string, unknown> = {
       model,
       messages: [...messages, maxIterSystemMessage],
-      max_tokens: 4096,
       stream: true,
     };
     applyThinkingParams(finalParams, enableThinking);
@@ -369,7 +369,7 @@ export async function runReActLoop(params: ReActLoopParams): Promise<ReActLoopRe
       responseId,
       enableThinking,
       trace,
-      iteration: MAX_ITERATIONS + 1,
+      iteration: maxIterations + 1,
       eventSink,
     });
   }
