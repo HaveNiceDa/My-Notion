@@ -38,9 +38,14 @@ export function useAIChatState(persistence: ReturnType<typeof useAIChatPersisten
 
   const refreshConversations = useMemoizedFn(async () => {
     setIsLoadingConversations(true);
-    const loaded = await persistence.loadConversations();
-    setConversations(loaded);
-    setIsLoadingConversations(false);
+    try {
+      const loaded = await persistence.loadConversations();
+      setConversations(loaded);
+    } catch (error) {
+      console.error("Error loading conversations:", error);
+    } finally {
+      setIsLoadingConversations(false);
+    }
   });
 
   const loadConversation = useMemoizedFn(async (convId: Id<"aiConversations">) => {
