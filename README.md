@@ -98,7 +98,7 @@ pnpm start:web
 pnpm start:mobile
 
 # 本地 RAG / Agent 调试通常需要先启动 Qdrant
-docker compose -f my-notion-go/docker-compose.yml up -d qdrant
+docker compose -f docker-compose.dev.yml up -d qdrant
 ```
 
 ## CLI / MCP Quick Start

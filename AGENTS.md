@@ -67,7 +67,7 @@ My-Notion 是一个定制化个人版 Notion，核心目标是把文档编辑、
 - Agent 写入文档、记忆等持久化内容必须遵循 `Dry-run -> Preview -> User Confirmation -> Commit` 安全链路。
 - MCP 写工具默认 `dryRun: true`，只有用户明确批准后才允许真实写入。
 - 连接 Convex Machine API 时使用 `.site` URL；Convex client/runtime 使用 `.cloud` URL。
-- 本地 RAG/Agent 调试通常需要先启动 Qdrant：`docker compose -f my-notion-go/docker-compose.yml up -d qdrant`。
+- 本地 RAG/Agent 调试通常需要先启动 Qdrant：`docker compose -f docker-compose.dev.yml up -d qdrant`。
 
 ## 常用验证
 
