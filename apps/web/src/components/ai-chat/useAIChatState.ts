@@ -8,6 +8,7 @@ import type { AgentRunMode, ChatMessage, Conversation, ToolCall } from "./types"
 import type { AIModelId } from "./models";
 import { getInitialAIModelId } from "./models";
 import type { useAIChatPersistence } from "./useAIChatPersistence";
+import { refreshConversationsWithLoading } from "./refreshConversations";
 import type { Id } from "@/convex/_generated/dataModel";
 
 /**
@@ -37,10 +38,11 @@ export function useAIChatState(persistence: ReturnType<typeof useAIChatPersisten
   }, []);
 
   const refreshConversations = useMemoizedFn(async () => {
-    setIsLoadingConversations(true);
-    const loaded = await persistence.loadConversations();
-    setConversations(loaded);
-    setIsLoadingConversations(false);
+    await refreshConversationsWithLoading({
+      loadConversations: () => persistence.loadConversations(),
+      setConversations,
+      setIsLoadingConversations,
+    });
   });
 
   const loadConversation = useMemoizedFn(async (convId: Id<"aiConversations">) => {
