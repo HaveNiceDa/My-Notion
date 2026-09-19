@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "start": "concurrently \"pnpm run dev\" \"npx convex dev\"",
+    "start": "concurrently \"pnpm run dev\" \"npx convex dev --typecheck=disable\"",
     "build": "next build",
     "typecheck": "node ../../scripts/web-typecheck.mjs",
     "lint": "eslint src/ --max-warnings=50",

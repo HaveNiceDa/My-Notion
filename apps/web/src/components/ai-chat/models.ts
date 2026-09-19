@@ -2,7 +2,6 @@ export const AI_MODELS = [
   "qwen3.8-max-0902",
   "qwen3.8-flash",
   "qwen3.8-27b",
-  "kimi-k3",
 ] as const;
 
 export type AIModelId = (typeof AI_MODELS)[number];
@@ -13,7 +12,6 @@ export const MODEL_DISPLAY_NAMES: Record<AIModelId, string> = {
   "qwen3.8-max-0902": "Qwen Max 0902",
   "qwen3.8-flash": "Qwen Flash",
   "qwen3.8-27b": "Qwen 27B",
-  "kimi-k3": "Kimi K3",
 };
 
 export function getInitialAIModelId(): AIModelId {

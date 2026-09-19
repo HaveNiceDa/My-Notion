@@ -97,7 +97,7 @@ describe("AI Chat 组件渲染", () => {
         onSend: vi.fn(),
         agentMode: "chat",
         onAgentModeChange: vi.fn(),
-        modelId: "kimi-k3",
+        modelId: "qwen3.8-max-0902",
         onModelChange: vi.fn(),
         enableThinking: true,
         isSending: false,
@@ -106,7 +106,7 @@ describe("AI Chat 组件渲染", () => {
 
     expect(html).toContain("使用 AI 处理各种任务");
     expect(html).toContain("计划");
-    expect(html).toContain("Kimi K3");
+    expect(html).toContain("Qwen Max 0902");
     expect(html).toContain("disabled");
   });
 

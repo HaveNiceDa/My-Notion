@@ -52,11 +52,11 @@ describe("AI config", () => {
       AI_MODELS.forEach((model) => {
         expect(getActualModelId(model)).toBe(MODEL_ID_MAPPING[model]);
       });
-      expect(getActualModelId("kimi-k3")).toBe("kimi/kimi-k3");
     });
 
     it("rejects unknown upstream model ids", () => {
       expect(() => getActualModelId("glm-5.2")).toThrow("Unsupported AI model");
+      expect(() => getActualModelId("kimi-k3")).toThrow("Unsupported AI model");
     });
   });
 
@@ -66,7 +66,7 @@ describe("AI config", () => {
       expect(isAIModel("qwen3.8-max-0902")).toBe(true);
       expect(isAIModel("qwen3.8-flash")).toBe(true);
       expect(isAIModel("qwen3.8-27b")).toBe(true);
-      expect(isAIModel("kimi-k3")).toBe(true);
+      expect(isAIModel("kimi-k3")).toBe(false);
       expect(isAIModel("qwen3.8-max")).toBe(false);
       expect(isAIModel("glm-5.2")).toBe(false);
     });

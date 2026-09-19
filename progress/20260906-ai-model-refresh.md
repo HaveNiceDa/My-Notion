@@ -10,9 +10,8 @@
   - `qwen3.8-max-0902`（Qwen Max 0902）
   - `qwen3.8-flash`（Qwen Flash）
   - `qwen3.8-27b`（Qwen 27B）
-  - `kimi-k3`（Kimi K3）
 - 默认模型更新为 `qwen3.8-max-0902`。
-- Kimi 的前端模型 ID 保持为 `kimi-k3`，请求上游时映射为百炼要求的 `kimi/kimi-k3`。
+- 移除 `kimi-k3`：当前百炼业务空间未激活 Kimi 产品，避免选择后返回上游 400。
 - Web 模型选择器、共享后端白名单和相关组件测试保持一致。
 - 旧模型 ID 不再通过共享后端白名单校验；浏览器中已保存的旧 ID 会自动回退到新默认模型。
 
